@@ -8,6 +8,7 @@
 (function()
 {
    // debugging info and functions
+   window.forge = window.forge || {};
    var forge = window.forge;
    forge.debug =
    {

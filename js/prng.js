@@ -119,7 +119,6 @@
          // be sad and add some weak random data
          if(ctx.pools[0].messageLength < 32)
          {
-            console.log('XXX', 'doing it');
             /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
             implemented with David G. Carta's optimization: with 32 bit math
             and without division (Public Domain). */

@@ -81,7 +81,7 @@
       var messageLevelIndex = sLevelInfo[message.level].index;
       for(var i = 0; i < sLoggers.length; ++i)
       {
-         var logger = sLoggers[logger];
+         var logger = sLoggers[i];
          if(logger.flags & forge.log.NO_LEVEL_CHECK)
          {
             logger.f(message);

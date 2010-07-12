@@ -12,6 +12,9 @@
    // logging category
    var cat = 'forge.task';
    
+   // local alias
+   var forge = window.forge;
+   
    // verbose level
    // 0: off, 1: a little, 2: a whole lot
    // Verbose debug logging is surrounded by a level check to avoid the

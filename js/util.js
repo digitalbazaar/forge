@@ -372,7 +372,7 @@
        */
       buf.copy = function()
       {
-         var c = window.forge.util.createBuffer(buf.data);
+         var c = util.createBuffer(buf.data);
          c.read = buf.read;
          return c;
       };
@@ -792,7 +792,7 @@
     *
     * @return object mapping keys to variables. 
     */
-   forge.util.getQueryVariables = function(query)
+   util.getQueryVariables = function(query)
    {
       var parse = function(q)
       {
@@ -855,7 +855,7 @@
     * 
     * @return object with a path array and query object.
     */
-   forge.util.parseFragment = function(fragment)
+   util.parseFragment = function(fragment)
    {
       // default to whole fragment
       var fp = fragment;
@@ -874,7 +874,7 @@
          path.shift();
       }
       // convert query into object
-      var query = (fq == '') ? {} : forge.util.getQueryVariables(fq);
+      var query = (fq == '') ? {} : util.getQueryVariables(fq);
       
       return {
          pathString: fp,
@@ -903,9 +903,9 @@
     * 
     * @return object with request parameters.
     */
-   forge.util.makeRequest = function(reqString)
+   util.makeRequest = function(reqString)
    {
-      var frag = forge.util.parseFragment(reqString);
+      var frag = util.parseFragment(reqString);
       var req =
       {
          // full path string
@@ -977,7 +977,7 @@
     * 
     * @return string object with request parameters.
     */
-   forge.util.makeLink = function(path, query, fragment)
+   util.makeLink = function(path, query, fragment)
    {
       // join path parts if needed
       path = jQuery.isArray(path) ? path.join('/') : path;
@@ -1000,7 +1000,7 @@
     * @param keys an array of string keys.
     * @param value the value to set.
     */
-   forge.util.setPath = function(object, keys, value)
+   util.setPath = function(object, keys, value)
    {
       // need to start at an object
       if(typeof(object) === 'object' && object !== null)
@@ -1042,7 +1042,7 @@
     * @return the value at the path if found, else default if given, else
     *         undefined.
     */
-   forge.util.getPath = function(object, keys, _default)
+   util.getPath = function(object, keys, _default)
    {
       var i = 0;
       var len = keys.length;
@@ -1068,7 +1068,7 @@
     * @param object the starting object.
     * @param keys an array of string keys.
     */
-   forge.util.deletePath = function(object, keys)
+   util.deletePath = function(object, keys)
    {
       // need to start at an object
       if(typeof(object) === 'object' && object !== null)
@@ -1107,7 +1107,7 @@
     *
     * @param object the object to check.
     */
-   forge.util.isEmpty = function(obj)
+   util.isEmpty = function(obj)
    {
       for(var prop in obj)
       {
@@ -1128,7 +1128,7 @@
     * @param format the string to format.
     * @param ... arguments to interpolate into the format string.
     */
-   forge.util.format = function(format)
+   util.format = function(format)
    {
       var re = /%./g;
       // current match
@@ -1187,8 +1187,7 @@
     *
     * http://snipplr.com/view/5945/javascript-numberformat--ported-from-php/
     */
-   forge.util.formatNumber = function(
-      number, decimals, dec_point, thousands_sep)
+   util.formatNumber = function(number, decimals, dec_point, thousands_sep)
    {
        // http://kevin.vanzonneveld.net
        // +   original by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
@@ -1216,27 +1215,25 @@
     * 
     * http://snipplr.com/view/5949/format-humanize-file-byte-size-presentation-in-javascript/
     */
-   forge.util.formatSize = function(size)
+   util.formatSize = function(size)
    {
       if(size >= 1073741824)
       {
-         size = forge.util.formatNumber(size / 1073741824, 2, '.', '') +
-            ' GiB';
+         size = util.formatNumber(size / 1073741824, 2, '.', '') + ' GiB';
       }
       else
       {
          if(size >= 1048576)
          {
-            size = forge.util.formatNumber(size / 1048576, 2, '.', '') +
-               ' MiB';
+            size = util.formatNumber(size / 1048576, 2, '.', '') + ' MiB';
          }
          else if (size >= 1024)
          {
-            size = forge.util.formatNumber(size / 1024, 0) + ' KiB';
+            size = util.formatNumber(size / 1024, 0) + ' KiB';
          }
          else
          {
-            size = forge.util.formatNumber(size, 0) + ' bytes';
+            size = util.formatNumber(size, 0) + ' bytes';
          }
       }
       return size;
