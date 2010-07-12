@@ -980,7 +980,7 @@
    forge.util.makeLink = function(path, query, fragment)
    {
       // join path parts if needed
-      path = $.isArray(path) ? path.join('/') : path;
+      path = jQuery.isArray(path) ? path.join('/') : path;
        
       var qstr = jQuery.param(query || {});
       fragment = fragment || '';
