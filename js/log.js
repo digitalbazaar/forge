@@ -180,7 +180,7 @@
             // process this message
             forge.log.logMessage(msg);
          };
-      });
+      }
    }
    
    /**
@@ -234,7 +234,7 @@
                rval = true;
                break;
             }
-         });
+         }
       }
       
       return rval;
