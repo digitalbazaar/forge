@@ -349,4 +349,7 @@
          }
       }
    }
+   
+   // provide public access to console logger
+   forge.log.consoleLogger = sConsoleLogger;
 })();
