@@ -100,7 +100,7 @@ package
                ExternalInterface.addCallback("clearItems", clearItems);
                
                // socket pool is now ready
-               ExternalInterface.call("window.krypto.socketPool.ready");
+               ExternalInterface.call("window.forge.socketPool.ready");
             }
             catch(e:Error)
             {
