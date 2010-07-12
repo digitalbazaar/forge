@@ -159,27 +159,30 @@
       var levels = ['error', 'warning', 'info', 'debug', 'verbose'];
       for(var i = 0; i < levels.length; ++i)
       {
-         var level = levels[i];
-         // create function for this level
-         forge.log[level] = function(category, message/*, args...*/)
+         // wrap in a function to ensure proper level var is passed
+         (function(level)
          {
-            // convert arguments to real array, remove category and message
-            var args = Array.prototype.slice.call(arguments).slice(2);
-            // create message object
-            // Note: interpolation and standard formatting is done lazily
-            var msg = {
-               timestamp: new Date(),
-               level: level,
-               category: category,
-               message: message,
-               'arguments': args
-               /*standard*/
-               /*full*/
-               /*fullMessage*/
+            // create function for this level
+            forge.log[level] = function(category, message/*, args...*/)
+            {
+               // convert arguments to real array, remove category and message
+               var args = Array.prototype.slice.call(arguments).slice(2);
+               // create message object
+               // Note: interpolation and standard formatting is done lazily
+               var msg = {
+                  timestamp: new Date(),
+                  level: level,
+                  category: category,
+                  message: message,
+                  'arguments': args
+                  /*standard*/
+                  /*full*/
+                  /*fullMessage*/
+               };
+               // process this message
+               forge.log.logMessage(msg);
             };
-            // process this message
-            forge.log.logMessage(msg);
-         };
+         })(levels[i]);
       }
    }
    
