@@ -1,0 +1,50 @@
+# Makefile for Forge
+
+# Top-level dist dir
+TOP_DIST_DIR=@FORGE_DIR@/dist
+DIST_DIR=$(TOP_DIST_DIR)/forge
+
+FLASH := $(DIST_DIR)/SocketPool.swf
+JS_SOURCES := $(wildcard js/*.js)
+JS_DIST := $(JS_SOURCES:js/%.js=$(DIST_DIR)/%.js)
+JS_DIST_MIN := $(JS_DIST:%.js=%.min.js)
+
+# Whether or not to print commands as they are being executed, helpful for
+# debugging the build system.
+ifdef PRINT_COMMANDS
+PCMD=
+else
+PCMD=@
+endif
+
+.PHONY: all verbose clean verbose-commands
+
+# debug flags for flash build
+ifeq (@MXMLC_DEBUG_MODE@,true)
+FLASH_FLAGS = -define=CONFIG::debugging,true -define=CONFIG::release,false
+else
+FLASH_FLAGS = -define=CONFIG::debugging,false -define=CONFIG::release,true
+endif
+
+all: $(DIST_DIR) $(FLASH) $(JS_DIST)
+
+$(DIST_DIR):
+	$(PCMD) mkdir -p $@
+
+$(DIST_DIR)/SocketPool.swf: flash/SocketPool.as flash/PooledSocket.as flash/SocketEvent.as
+	@echo "Building $@..."
+	$(PCMD) @MXMLC@ $(FLASH_FLAGS) \
+		-load-config+=build-flash.xml \
+		-debug=@MXMLC_DEBUG_MODE@ \
+		-output=$@ $<
+
+$(DIST_DIR)/%.js: js/%.js
+	@echo "Linking $@..."
+	$(PCMD) ln -sf $(realpath $<) $@
+
+clean:
+	$(PCMD) rm -rf $(TOP_DIST_DIR)
+	@echo "Removed all generated files."
+
+verbose-commands:
+	PRINT_COMMANDS=true $(MAKE) all
