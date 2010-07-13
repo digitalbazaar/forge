@@ -403,6 +403,64 @@
    };
    
    /**
+    * Compresses the TLSPlaintext record into a TLSCompressed record using
+    * the deflate algorithm.
+    * 
+    * @param c the TLS connection.
+    * @param record the TLSPlaintext record to compress.
+    * @param s the ConnectionState to use.
+    * 
+    * @return true on success, false on failure.
+    */
+   var deflate = function(c, record, s)
+   {
+      var rval = false;
+      
+      try
+      {
+         var bytes = c.deflate(record.fragment.getBytes());
+         record.fragment = forge.util.createBuffer(bytes);
+         record.length = bytes.length;
+         rval = true;
+      }
+      catch(ex)
+      {
+         // deflate error, fail out
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Decompresses the TLSCompressed record into a TLSPlaintext record using
+    * the deflate algorithm.
+    * 
+    * @param c the TLS connection.
+    * @param record the TLSCompressed record to decompress.
+    * @param s the ConnectionState to use.
+    * 
+    * @return true on success, false on failure.
+    */
+   var inflate = function(c, record, s)
+   {
+      var rval = false;
+      
+      try
+      {
+         var bytes = c.inflate(record.fragment.getBytes());
+         record.fragment = forge.util.createBuffer(bytes);
+         record.length = bytes.length;
+         rval = true;
+      }
+      catch(ex)
+      {
+         // inflate error, fail out
+      }
+      
+      return rval;
+   };
+   
+   /**
     * Encrypts the TLSCompressed record into a TLSCipherText record using
     * AES-128 in CBC mode.
     * 
@@ -666,9 +724,10 @@
    };
    
    /**
-    * Maximum fragment size.
+    * Maximum fragment size. True maximum is 16384, but we fragment before
+    * that to allow for unusual small increases during compression.
     */
-   tls.MaxFragment = 16384;
+   tls.MaxFragment = (1 << 14) - 1024;
    
    /**
     * Whether this entity is considered the "client" or "server".
@@ -730,11 +789,12 @@
    
    /**
     * Compression algorithms.
-    * enum { null(0), (255) } CompressionMethod;
+    * enum { null(0), deflate(1), (255) } CompressionMethod;
     */
    tls.CompressionMethod =
    {
-      none: 0
+      none: 0,
+      deflate: 1
    };
    
    /**
@@ -976,7 +1036,7 @@
             random: forge.util.createBuffer(b.getBytes(32)),
             session_id: readVector(b, 1),
             cipher_suite: b.getBytes(2),
-            compression_methods: b.getByte(),
+            compression_method: b.getByte(),
             extensions: []
          };
          
@@ -1075,7 +1135,7 @@
                   mac_algorithm: tls.MACAlgorithm.hmac_sha1,
                   mac_length: 20,
                   mac_key_length: 20,
-                  compression_algorithm: tls.CompressionMethod.none,
+                  compression_algorithm: msg.compression_method,
                   pre_master_secret: null,
                   master_secret: null,
                   client_random: null,
@@ -2194,7 +2254,7 @@
                }
             });
          }
-         else if(!state.read.compressFunction(record, state.read))
+         else if(!state.read.compressFunction(c, record, state.read))
          {
             c.error(c, {
                message: 'Could not decompress record.',
@@ -2212,7 +2272,7 @@
       // update function in write mode will compress then encrypt a record
       state.write.update = function(c, record)
       {
-         if(!state.write.compressFunction(record, state.write))
+         if(!state.write.compressFunction(c, record, state.write))
          {
             // error, but do not send alert since it would require
             // compression as well
@@ -2308,6 +2368,10 @@
          switch(sp.compression_algorithm)
          {
             case tls.CompressionMethod.none:
+               break;
+            case tls.CompressionMethod.deflate:
+               state.read.compressFunction = inflate;
+               state.write.compressFunction = deflate;
                break;
             default:
                throw {
@@ -2422,7 +2486,7 @@
     * Creates a ClientHello message.
     * 
     * opaque SessionID<0..32>;
-    * enum { null(0), (255) } CompressionMethod;
+    * enum { null(0), deflate(1), (255) } CompressionMethod;
     * uint8 CipherSuite[2];
     * 
     * struct {
@@ -2480,9 +2544,18 @@
       cipherSuites.putByte(0x35);
       var cSuites = cipherSuites.length();
       
-      // create supported compression methods, only null supported
+      // create supported compression methods, null always supported, but
+      // also support deflate if connection has inflate and deflate methods
       var compressionMethods = forge.util.createBuffer();
-      compressionMethods.putByte(0x00);
+      compressionMethods.putByte(0x00); // null method
+      // FIXME: deflate support disabled until issues with raw deflate data
+      // without zlib headers are resolved
+      /*
+      if(c.inflate !== null && c.deflate !== null)
+      {
+         compressionMethods.putByte(0x01); // deflate method
+      }
+      */
       var cMethods = compressionMethods.length();
       
       // create TLS SNI (server name indication) extension if virtual host
@@ -3348,7 +3421,9 @@
                // fatal error, close connection
                c.close();
             }
-         }      
+         },
+         deflate: options.deflate || null,
+         inflate: options.inflate || null
       };
       
       // used while buffering enough data to read an entire record
@@ -3727,6 +3802,10 @@
     *       application, read from conn.data buffer.
     *    closed: function(conn) called when the connection has been closed.
     *    error: function(conn, error) called when there was an error.
+    *    deflate: function(inBytes) if provided, will deflate TLS records using
+    *       the deflate algorithm if the server supports it.
+    *    inflate: function(inBytes) if provided, will inflate TLS records using
+    *       the deflate algorithm if the server supports it.
     * 
     * @return the new TLS connection.
     */
@@ -3746,6 +3825,10 @@
     *    socket: the socket to wrap.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
+    *    deflate: function(inBytes) if provided, will deflate TLS records using
+    *       the deflate algorithm if the server supports it.
+    *    inflate: function(inBytes) if provided, will inflate TLS records using
+    *       the deflate algorithm if the server supports it.
     * 
     * @return the TLS-wrapped socket.
     */
@@ -3772,6 +3855,8 @@
          sessionCache: options.sessionCache || null,
          virtualHost: options.virtualHost,
          verify: options.verify,
+         deflate: options.deflate,
+         inflate: options.inflate,
          connected: function(c)
          {
             // update session ID

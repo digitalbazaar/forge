@@ -645,12 +645,32 @@
     * 
     * @param api the flash interface.
     * @param bytes the data.
+    * @param raw true to return only raw deflate data, false to include zlib
+    *           header and trailer.
     * 
     * @return the deflated data as a string.
     */
-   util.deflate = function(api, bytes)
+   util.deflate = function(api, bytes, raw)
    {
-      return util.decode64(api.deflate(util.encode64(bytes)).rval);
+      bytes = util.decode64(api.deflate(util.encode64(bytes)).rval);
+      
+      // strip zlib header and trailer if necessary
+      if(raw)
+      {
+         // zlib header is 2 bytes (CMF,FLG) where FLG indicates that
+         // there is a 4-byte DICT (alder-32) block before the data if
+         // its 5th bit is set
+         var start = 2;
+         var flg = bytes.charCodeAt(1);
+         if(flg & 0x20)
+         {
+            start = 6;
+         }
+         // zlib trailer is 4 bytes of adler-32
+         bytes = bytes.substring(start, bytes.length - 4);
+      }
+      
+      return bytes;
    };
    
    /**
@@ -658,11 +678,14 @@
     * 
     * @param api the flash interface.
     * @param bytes the data.
+    * @param raw true if the incoming data has no zlib header or trailer and
+    *           is raw DEFLATE data.
     * 
     * @return the inflated data as a string, null on error.
     */
-   util.inflate = function(api, bytes)
+   util.inflate = function(api, bytes, raw)
    {
+      // TODO: add zlib header and trailer if necessary/possible
       var rval = api.inflate(util.encode64(bytes)).rval;
       return (rval === null) ? null : util.decode64(rval);
    };

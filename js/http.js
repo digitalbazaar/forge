@@ -315,7 +315,9 @@
             caStore: tlsOptions.caStore,
             socket: socket,
             virtualHost: tlsOptions.virtualHost,
-            verify: tlsOptions.verify
+            verify: tlsOptions.verify,
+            deflate: tlsOptions.deflate || null,
+            inflate: tlsOptions.inflate || null
          });
          
          socket.idle = true;
@@ -518,6 +520,20 @@
             verify: options.verify || http.defaultCertificateVerify,
             prime: options.primeTlsSockets || false
          };
+         
+         // if socket pool uses a flash api, then add deflate support to TLS
+         if(sp.flashApi !== null)
+         {
+            tlsOptions.deflate = function(bytes)
+            {
+               // strip 2 byte zlib header and 4 byte trailer
+               return forge.util.deflate(sp.flashApi, bytes, true);
+            };
+            tlsOptions.inflate = function(bytes)
+            {
+               return forge.util.inflate(sp.flashApi, bytes, true);
+            };
+         }
       }
       
       // create and initialize sockets
