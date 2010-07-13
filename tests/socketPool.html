@@ -1,0 +1,140 @@
+<html>
+   <head>
+      <style> 
+      canvas {
+        background: black;
+      }
+      </style>
+      <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+      <script type="text/javascript" src="forge/util.js"></script>
+      <script type="text/javascript" src="forge/socket.js"></script>
+      
+      <script type="text/javascript">
+      window.forge.socketPool =
+      {
+         ready: function()
+         {
+            console.log('SocketPool ready.');
+         }
+      };
+      
+      swfobject.embedSWF(
+         "forge/SocketPool.swf", "socketPool", "400", "224", "9.0.0",
+         false, {}, {allowscriptaccess: 'always'}, {});
+      
+      // local alias
+      var net = window.krypto.net;
+
+      // socket to use
+      var socket;
+      
+      function sp_init()
+      {
+         net.createSocketPool({
+            flashId: 'socketPool',
+            policyPort: 19845,
+            msie: false
+         });
+         document.getElementById('feedback').innerHTML =
+            'SocketPool initialized';
+         return false;
+      }
+      
+      function sp_cleanup()
+      {
+         net.destroySocketPool({flashId: 'socketPool'});
+         document.getElementById('feedback').innerHTML =
+            'SocketPool cleaned up';
+         return false;
+      }
+
+      function sp_create()
+      {
+         socket = net.createSocket({
+            flashId: 'socketPool',
+            connected: function(e)
+            {
+               console.log('connected', e);
+            },
+            closed: function(e)
+            {
+               console.log('closed', e);
+            },
+            data: function(e)
+            {
+               console.log('data received', e);
+               console.log('bytes available', socket.bytesAvailable());
+               var bytes = socket.receive(e.bytesAvailable);
+               console.log(bytes);
+            },
+            error: function(e)
+            {
+               console.log('error', e);
+            }
+         });
+         document.getElementById('feedback').innerHTML =
+            'Socket created';
+         return false;
+      }
+      
+      function sp_destroy()
+      {
+         socket.destroy();
+         document.getElementById('feedback').innerHTML = 
+            'Socket destroyed';
+         return false;
+      }
+
+      function sp_connect()
+      {
+         socket.connect({
+            host: 'localhost',
+            port: 19300
+         });
+      }
+
+      function sp_isConnected()
+      {
+         var connected = socket.isConnected();
+         document.getElementById('feedback').innerHTML = 
+            'Socket connected: ' + connected;
+      }
+
+      function sp_send()
+      {
+         socket.send('GET / HTTP/1.0\r\n\r\n');
+      }
+
+      function sp_close()
+      {
+         socket.close();
+      }
+      
+      function error(e)
+      {
+         console.log('error', e);
+      }
+
+      </script>
+   </head>
+   <body>
+      <div id="socketPool">
+         <p>Could not load the flash SocketPool.</p>
+      </div>
+      <p>Use the controls below to test the SocketPool.</p>
+      <div id="controls">
+         <button id="init" onclick="javascript:return sp_init();">init</button>
+         <button id="cleanup" onclick="javascript:return sp_cleanup();">cleanup</button>
+         <button id="create" onclick="javascript:return sp_create();">create socket</button>
+         <button id="destroy" onclick="javascript:return sp_destroy();">destroy socket</button>
+         <button id="connect" onclick="javascript:return sp_connect();">connect</button>
+         <button id="isConnected" onclick="javascript:return sp_isConnected();">is connected</button>
+         <button id="send" onclick="javascript:return sp_send();">send</button>
+         <button id="close" onclick="javascript:return sp_close();">close</button>
+      </div>
+      <p>Feedback from the flash SocketPool:</p>
+      <div id="feedback">
+      None
+      </div>
+   </body>
+</html>

@@ -1,0 +1,202 @@
+<html>
+   <head>
+      <style> 
+      canvas {
+        background: black;
+      }
+      </style>
+      <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+      <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+      <script type="text/javascript" src="forge/debug.js"></script>
+      <script type="text/javascript" src="forge/util.js"></script>
+      <script type="text/javascript" src="forge/log.js"></script>
+      <script type="text/javascript" src="forge/socket.js"></script>
+      <script type="text/javascript" src="forge/md5.js"></script>
+      <script type="text/javascript" src="forge/sha1.js"></script>
+      <script type="text/javascript" src="forge/hmac.js"></script>
+      <script type="text/javascript" src="forge/aes.js"></script>
+      <script type="text/javascript" src="forge/asn1.js"></script>
+      <script type="text/javascript" src="forge/jsbn.js"></script>
+      <script type="text/javascript" src="forge/jsbn2.js"></script>
+      <script type="text/javascript" src="forge/prng.js"></script>
+      <script type="text/javascript" src="forge/random.js"></script>
+      <script type="text/javascript" src="forge/pki.js"></script>
+      <script type="text/javascript" src="forge/tls.js"></script>
+      <script type="text/javascript" src="forge/http.js"></script>
+      <script type="text/javascript" src="forge/xhr.js"></script>
+      <script type="text/javascript" src="xhr.js"></script>
+      
+      <script type="text/javascript">
+      swfobject.embedSWF(
+         'forge/SocketPool.swf', 'socketPool', '400', '224', '9.0.0',
+         false, {}, {allowscriptaccess: 'always'}, {});
+      
+      // CA certificate for test server
+      var certificatePem =
+      '-----BEGIN CERTIFICATE-----\r\n' +
+      'MIIDIjCCAougAwIBAgIJANE2aHSbwpaRMA0GCSqGSIb3DQEBBQUAMGoxCzAJBgNV\r\n' +
+      'BAYTAlVTMREwDwYDVQQIEwhWaXJnaW5pYTETMBEGA1UEBxMKQmxhY2tzYnVyZzEN\r\n' +
+      'MAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDEVMBMGA1UEAxMMbXlzZXJ2ZXIu\r\n' +
+      'Y29tMB4XDTEwMDYxOTE3MzYyOFoXDTExMDYxOTE3MzYyOFowajELMAkGA1UEBhMC\r\n' +
+      'VVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYDVQQHEwpCbGFja3NidXJnMQ0wCwYD\r\n' +
+      'VQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MRUwEwYDVQQDEwxteXNlcnZlci5jb20w\r\n' +
+      'gZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMvQS6BSI0YxaxwsBUzRWgx2ENkQ\r\n' +
+      'k6p2xQynH1TRhkjuzOiQmpA0jCiSJDoSic2dZIyUi/LjoCGeVFif57N5N5Tt4wZO\r\n' +
+      'Q/dUXb29cGj50url77xXIDJDcXMzXAji2ziFEAIXzDqarKBdDuL9IO7z+tepEa2+\r\n' +
+      'cz7PQxgN0qjzR5/PAgMBAAGjgc8wgcwwHQYDVR0OBBYEFPV1Y+DHXW6bA/r9sv1y\r\n' +
+      'NJ8jAwMAMIGcBgNVHSMEgZQwgZGAFPV1Y+DHXW6bA/r9sv1yNJ8jAwMAoW6kbDBq\r\n' +
+      'MQswCQYDVQQGEwJVUzERMA8GA1UECBMIVmlyZ2luaWExEzARBgNVBAcTCkJsYWNr\r\n' +
+      'c2J1cmcxDTALBgNVBAoTBFRlc3QxDTALBgNVBAsTBFRlc3QxFTATBgNVBAMTDG15\r\n' +
+      'c2VydmVyLmNvbYIJANE2aHSbwpaRMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEF\r\n' +
+      'BQADgYEARdH2KOlJWTC1CS2y/PAvg4uiM31PXMC1hqSdJlnLM1MY4hRfuf9VyTeX\r\n' +
+      'Y6FdybcyDLSxKn9id+g9229ci9/s9PI+QmD5vXd8yZyScLc2JkYB4GC6+9D1+/+x\r\n' +
+      's2hzMxuK6kzZlP+0l9LGcraMQPGRydjCARZZm4Uegln9rh85XFQ=\r\n' +
+      '-----END CERTIFICATE-----';
+      
+      // local aliases
+      var net = window.krypto.net;
+      var http = window.krypto.http;
+      var util = window.krypto.util;
+
+      var client;
+      
+      function client_init(primed)
+      {
+         try
+         {
+	         var sp = net.createSocketPool({
+	            flashId: 'socketPool',
+	            policyPort: 19845,
+	            msie: false
+	         });
+	         client = http.createClient({
+	            //url: 'https://localhost:4433',
+	            url: 'https://' + window.location.host,
+	            socketPool: sp,
+	            connections: 10,
+	            caCerts: [certificatePem],
+	            verify: function(c, verified, depth, certs)
+	            {
+	               console.log(
+	   	            'TLS certificate ' + depth + ' verified', verified);
+	               // Note: change to always true to test verifying without cert
+	               //return verified;
+	               // FIXME: temporarily accept any cert to allow hitting any bpe
+	               if(verified !== true)
+	               {
+	                  console.log('Certificate NOT verified. Ignored for test.');
+	               }
+	               return true;
+	            },
+	            primeTlsSockets: primed
+	         });
+	         document.getElementById('feedback').innerHTML =
+		         'http client created';
+         }
+         catch(ex)
+         {
+            console.log(ex);
+         }
+         
+         return false;
+      }
+      
+      function client_cleanup()
+      {
+         var sp = client.socketPool;
+         client.destroy();
+         sp.destroy();
+         document.getElementById('feedback').innerHTML =
+            'http client cleaned up';
+         return false;
+      }
+
+      function client_send()
+      {
+         /*
+         var request = http.createRequest({
+            method: 'POST',
+            path: '/',
+            body: 'echo=foo',
+            headers: [{'Content-Type': 'application/x-www-form-urlencoded'}]
+         });
+         */
+         var request = http.createRequest({
+            method: 'GET',
+            path: '/'
+         });
+         
+         client.send({
+            request: request,
+            connected: function(e)
+            {
+               console.log('connected', e);
+            },
+            headerReady: function(e)
+            {
+               console.log('header ready', e);
+            },
+            bodyReady: function(e)
+            {
+               console.log('body ready', e);
+            },
+            error: function(e)
+            {
+               console.log('error', e);
+            }
+         });
+         document.getElementById('feedback').innerHTML =
+            'http request sent';
+         return false;
+      }
+
+      function client_send_10()
+      {
+         for(var i = 0; i < 10; ++i)
+         {
+            client_send();
+         }
+         return false;
+      }
+
+      function client_cookies()
+      {
+         var cookie =
+         {
+            name: 'test-cookie',
+            value: 'test-value',
+            maxAge: -1,
+            secure: true,
+            path: '/'
+         };
+         client.setCookie(cookie);
+         console.log('cookie', client.getCookie('test-cookie'));
+      }
+
+      function client_clear_cookies()
+      {
+         client.clearCookies();
+      }
+      
+      </script>
+   </head>
+   <body>
+      <div id="socketPool">
+         <p>Could not load the flash SocketPool.</p>
+      </div>
+      <p>Use the controls below to test the http client.</p>
+      <div id="controls">
+         <button id="init" onclick="javascript:return client_init(false);">init</button>
+         <button id="init_primed" onclick="javascript:return client_init(true);">init primed</button>
+         <button id="cleanup" onclick="javascript:return client_cleanup();">cleanup</button>
+         <button id="send" onclick="javascript:return client_send();">send</button>
+         <button id="send10" onclick="javascript:return client_send_10();">send 10</button>
+         <button id="client_cookies" onclick="javascript:return client_cookies();">cookies</button>
+         <button id="clear_cookies" onclick="javascript:return client_clear_cookies();">clear cookies</button>
+      </div>
+      <p>Feedback from the flash SocketPool:</p>
+      <div id="feedback">
+      None
+      </div>
+   </body>
+</html>

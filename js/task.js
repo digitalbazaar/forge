@@ -21,7 +21,7 @@
    // performance issues with even calling the logging code regardless if it
    // is actually logged.  For performance reasons this should not be set to 2
    // for production use.
-   // ex: if(sVL >= 2) bitmunk.log.verbose(....)
+   // ex: if(sVL >= 2) forge.log.verbose(....)
    var sVL = 0;
 
    // track tasks for debugging
