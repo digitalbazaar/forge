@@ -652,7 +652,7 @@
     */
    util.deflate = function(api, bytes, raw)
    {
-      var bytes = util.decode64(api.deflate(util.encode64(bytes)).rval);
+      bytes = util.decode64(api.deflate(util.encode64(bytes)).rval);
       
       // strip zlib header and trailer if necessary
       if(raw)
@@ -662,7 +662,7 @@
          // its 5th bit is set
          var start = 2;
          var flg = bytes.charCodeAt(1);
-         if((flg & 0x16) == 0x16)
+         if(flg & 0x20)
          {
             start = 6;
          }
