@@ -314,6 +314,7 @@
             sessionCache: {},
             caStore: tlsOptions.caStore,
             socket: socket,
+            virtualHost: tlsOptions.virtualHost,
             verify: tlsOptions.verify
          });
          
@@ -442,6 +443,8 @@
     *           connections: number of connections to use to handle requests.
     *           caCerts: an array of certificates to trust for TLS, certs may
     *              be PEM-formatted or cert objects produced via forge.pki.
+    *           virtualHost: the virtual server name to use in a TLS SNI
+    *              extension, if not provided the url host will be used.
     *           verify: a custom TLS certificate verify callback to use.
     *           persistCookies: true to use persistent cookies via flash local
     *              storage, false to only keep cookies in javascript.
@@ -511,6 +514,7 @@
          tlsOptions =
          {
             caStore: caStore,
+            virtualHost: options.virtualHost || url.host,
             verify: options.verify || http.defaultCertificateVerify,
             prime: options.primeTlsSockets || false
          };

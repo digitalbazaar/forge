@@ -87,12 +87,12 @@ fi
 dnl ----------------- mxmlc debug -----------------
 
 AC_ARG_ENABLE([mxmlc-debug],
-   AC_HELP_STRING([--disable-mxmlc-debug], [disable mxmlc debug mode [[false]]]),
+   AC_HELP_STRING([--enable-mxmlc-debug], [enable mxmlc debug mode [[false]]]),
    [
    case "${enableval}" in
       yes) MXMLC_DEBUG_MODE=true ;;
       no)  MXMLC_DEBUG_MODE=false ;;
-      *)   AC_MSG_ERROR(bad value ${enableval} for --disable-mxmlc-debug) ;;
+      *)   AC_MSG_ERROR(bad value ${enableval} for --enable-mxmlc-debug) ;;
    esac
    ], [MXMLC_DEBUG_MODE=false]) dnl Default value
 

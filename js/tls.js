@@ -2439,12 +2439,35 @@
     *    };
     * } ClientHello;
     * 
+    * The extension format for extended client hellos and extended server
+    * hellos is:
+    * 
+    * struct {
+    *    ExtensionType extension_type;
+    *    opaque extension_data<0..2^16-1>;
+    * } Extension;
+    * 
+    * Here:
+    * 
+    * - "extension_type" identifies the particular extension type.
+    * - "extension_data" contains information specific to the particular
+    * extension type.
+    * 
+    * The extension types defined in this document are:
+    * 
+    * enum {
+    *    server_name(0), max_fragment_length(1),
+    *    client_certificate_url(2), trusted_ca_keys(3),
+    *    truncated_hmac(4), status_request(5), (65535)
+    * } ExtensionType;
+    * 
+    * @param c the connection.
     * @param sessionId the session ID to use.
     * @param random the client random structure to use.
     * 
     * @return the ClientHello byte buffer.
     */
-   tls.createClientHello = function(sessionId, random)
+   tls.createClientHello = function(c, sessionId, random)
    {
       // create supported cipher suites, only 2 at present
       // TLS_RSA_WITH_AES_128_CBC_SHA = { 0x00,0x2F }
@@ -2462,6 +2485,55 @@
       compressionMethods.putByte(0x00);
       var cMethods = compressionMethods.length();
       
+      // create TLS SNI (server name indication) extension if virtual host
+      // has been specified, see RFC 3546
+      var extensions = forge.util.createBuffer();
+      if(c.virtualHost)
+      {
+         // create extension struct
+         var ext = forge.util.createBuffer();
+         ext.putByte(0x00); // type server_name (ExtensionType is 2 bytes)
+         ext.putByte(0x00);
+         
+         /* In order to provide the server name, clients MAY include an
+          * extension of type "server_name" in the (extended) client hello.
+          * The "extension_data" field of this extension SHALL contain
+          * "ServerNameList" where:
+          * 
+          * struct {
+          *    NameType name_type;
+          *    select(name_type) {
+          *       case host_name: HostName;
+          *    } name;
+          * } ServerName;
+          * 
+          * enum {
+          *    host_name(0), (255)
+          * } NameType;
+          * 
+          * opaque HostName<1..2^16-1>;
+          * 
+          * struct {
+          *    ServerName server_name_list<1..2^16-1>
+          * } ServerNameList;
+          */
+         var serverName = forge.util.createBuffer();
+         serverName.putByte(0x00); // type host_name
+         writeVector(serverName, 2, forge.util.createBuffer(c.virtualHost));
+         
+         // ServerNameList is in extension_data
+         var snList = forge.util.createBuffer();
+         writeVector(snList, 2, serverName);
+         writeVector(ext, 2, snList);
+         extensions.putBuffer(ext);
+      }
+      var extLength = extensions.length();
+      if(extLength > 0)
+      {
+         // add extension vector length
+         extLength += 2;
+      }
+      
       // determine length of the handshake message
       // cipher suites and compression methods size will need to be
       // updated if more get added to the list
@@ -2471,7 +2543,7 @@
          4 + 28 +               // random time and random bytes
          2 + cSuites +          // cipher suites vector
          1 + cMethods +         // compression methods vector
-         0;                     // no extensions (TODO: add TLS SNI)
+         extLength;             // extensions vector
       
       // build record fragment
       var rval = forge.util.createBuffer();
@@ -2483,6 +2555,10 @@
       writeVector(rval, 1, forge.util.createBuffer(sessionId));
       writeVector(rval, 2, cipherSuites);
       writeVector(rval, 1, compressionMethods);
+      if(extLength > 0)
+      {
+         writeVector(rval, 2, extensions);
+      }
       return rval;
    };
    
@@ -3238,6 +3314,7 @@
          caStore: caStore,
          sessionCache: options.sessionCache,
          connected: options.connected,
+         virtualHost: options.virtualHost || null,
          verify: options.verify || function(cn,vfd,dpth,cts){return vfd;},
          input: forge.util.createBuffer(),
          tlsData: forge.util.createBuffer(),
@@ -3386,7 +3463,7 @@
             var record = tls.createRecord(
             {
                type: tls.ContentType.handshake,
-               data: tls.createClientHello(sessionId, random)
+               data: tls.createClientHello(c, sessionId, random)
             });
             
             // TODO: clean up session/handshake state design
@@ -3639,6 +3716,7 @@
     *    caStore: an array of certificates to trust.
     *    sessionCache: a session cache to use.
     *    connected: function(conn) called when the first handshake completes.
+    *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
     *    tlsDataReady: function(conn) called when TLS protocol data has
     *       been prepared and is ready to be used (typically sent over a
@@ -3666,6 +3744,7 @@
     *    sessionCache: a session cache to use.
     *    caStore: an array of certificates to trust.
     *    socket: the socket to wrap.
+    *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
     * 
     * @return the TLS-wrapped socket.
@@ -3691,6 +3770,7 @@
          sessionId: options.sessionId || null,
          caStore: options.caStore || [],
          sessionCache: options.sessionCache || null,
+         virtualHost: options.virtualHost,
          verify: options.verify,
          connected: function(c)
          {
