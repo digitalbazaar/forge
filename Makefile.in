@@ -8,6 +8,7 @@ FLASH := $(DIST_DIR)/SocketPool.swf
 JS_SOURCES := $(wildcard js/*.js)
 JS_DIST := $(JS_SOURCES:js/%.js=$(DIST_DIR)/%.js)
 JS_DIST_MIN := $(JS_DIST:%.js=%.min.js)
+TESTS_FORGE_LINK := @FORGE_DIR@/tests/forge
 
 # Whether or not to print commands as they are being executed, helpful for
 # debugging the build system.
@@ -26,7 +27,7 @@ else
 FLASH_FLAGS = -define=CONFIG::debugging,false -define=CONFIG::release,true
 endif
 
-all: $(DIST_DIR) $(FLASH) $(JS_DIST)
+all: $(DIST_DIR) $(FLASH) $(JS_DIST) $(TESTS_FORGE_LINK)
 
 $(DIST_DIR):
 	$(PCMD) mkdir -p $@
@@ -39,6 +40,10 @@ $(DIST_DIR)/SocketPool.swf: flash/SocketPool.as flash/PooledSocket.as flash/Sock
 		-output=$@ $<
 
 $(DIST_DIR)/%.js: js/%.js
+	@echo "Linking $@..."
+	$(PCMD) ln -sf $(realpath $<) $@
+
+$(TESTS_FORGE_LINK): $(DIST_DIR)
 	@echo "Linking $@..."
 	$(PCMD) ln -sf $(realpath $<) $@
 
