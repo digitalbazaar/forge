@@ -291,7 +291,7 @@
          // if there are no unused bits, maybe the bitstring holds ASN.1 objs
          var read = bytes.read;
          var unused = bytes.getByte();
-         if(unused == 0)
+         if(unused === 0)
          {
             // if the first byte indicates UNIVERSAL or CONTEXT_SPECIFIC,
             // and the length is valid, assume we've got an ASN.1 object
@@ -441,7 +441,7 @@
       var bytes = forge.util.createBuffer();
       
       // first byte is 40 * value1 + value2
-      bytes.putByte(40 * parseInt(values[0]) + parseInt(values[1]));
+      bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
       // other bytes are each value in base 128 with 8th bit set except for
       // the last byte for each value
       var last, valueBytes, value, b;
@@ -451,7 +451,7 @@
          // bytes it will take to store the value
          last = true;
          valueBytes = [];
-         value = parseInt(values[i]);
+         value = parseInt(values[i], 10);
          do
          {
             b = value & 0x7F;
@@ -559,12 +559,12 @@
       var date = new Date();
       
       // if YY >= 50 use 19xx, if YY < 50 use 20xx
-      var year = parseInt(utc.substr(0, 2));
+      var year = parseInt(utc.substr(0, 2), 10);
       year = (year >= 50) ? 1900 + year : 2000 + year;
-      var MM = parseInt(utc.substr(2, 2)) - 1; // use 0-11 for month
-      var DD = parseInt(utc.substr(4, 2));
-      var hh = parseInt(utc.substr(6, 2));
-      var mm = parseInt(utc.substr(8, 2));
+      var MM = parseInt(utc.substr(2, 2), 10) - 1; // use 0-11 for month
+      var DD = parseInt(utc.substr(4, 2), 10);
+      var hh = parseInt(utc.substr(6, 2), 10);
+      var mm = parseInt(utc.substr(8, 2), 10);
       var ss = 0;
       
       // not just YYMMDDhhmmZ
@@ -578,7 +578,7 @@
          if(c !== '+' && c !== '-')
          {
             // get seconds
-            ss = parseInt(utc.substr(10, 2));
+            ss = parseInt(utc.substr(10, 2), 10);
             end += 2;
          }
          
@@ -591,8 +591,8 @@
          if(c === '+' || c === '-')
          {
             // get hours+minutes offset
-            var hhoffset = parseInt(utc.substr(end + 1, 2));
-            var mmoffset = parseInt(utc.substr(end + 4, 2));
+            var hhoffset = parseInt(utc.substr(end + 1, 2), 10);
+            var mmoffset = parseInt(utc.substr(end + 4, 2), 10);
             
             // calculate offset in milliseconds
             var offset = hhoffset * 360 + mmoffset;
@@ -732,7 +732,7 @@
     */
    asn1.prettyPrint = function(obj, level, indentation)
    {
-      var rval = new String();
+      var rval = '';
       
       // set default level and indentation
       level = level || 0;
@@ -745,7 +745,7 @@
       }
       
       // create indent
-      var indent = new String();
+      var indent = '';
       for(var i = 0; i < level * indentation; ++i)
       {
          indent += ' ';
@@ -849,7 +849,7 @@
       }
       else
       {
-         rval += indent + 'Value: '
+         rval += indent + 'Value: ';
          if(_nonLatinRegex.test(obj.value))
          {
             rval += '0x' + forge.util.createBuffer(obj.value).toHex();

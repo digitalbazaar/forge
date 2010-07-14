@@ -383,7 +383,7 @@
          }
          
          // get next element and inverse
-         if(e == 0)
+         if(e === 0)
          {
             // 1 is the inverse of 1
             e = ei = 1;
@@ -444,7 +444,7 @@
       for(var i = Nk; i < Nb * Nr1; ++i)
       {
          temp = w[i - 1];
-         if(i % Nk == 0)
+         if(i % Nk === 0)
          {
             // temp = SubWord(RotWord(temp)) ^ Rcon[i / Nk]
             temp =
@@ -527,7 +527,7 @@
             // do not sub the first or last round key (round keys are Nb
             // words) as no column mixing is performed before they are added,
             // but do change the key order
-            if(i == 0 || i == (end - Nb))
+            if(i === 0 || i === (end - Nb))
             {
                wnew[i] = w[wi]; 
                wnew[i + 1] = w[wi + 3];
@@ -1007,7 +1007,7 @@
             if(decrypt)
             {
                // check for error: input data not a multiple of blockSize
-               rval = (_input.length() == 0);
+               rval = (_input.length() === 0);
                if(rval)
                {
                   if(pad)

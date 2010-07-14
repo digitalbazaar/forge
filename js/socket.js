@@ -78,7 +78,7 @@
                   running javascript in the middle of its execution (BAD!) ...
                   calling setTimeout() will schedule the javascript to run on
                   the javascript thread and solve this EVIL problem. */
-               setTimeout(function(){sp.sockets[e.id][f](e)}, 0);
+               setTimeout(function(){sp.sockets[e.id][f](e);}, 0);
             }
          };
       }

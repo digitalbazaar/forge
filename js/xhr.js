@@ -213,7 +213,7 @@
          for(var key in _clients)
          {
             var client = _clients[key];
-            if(http.withinCookieDomain(client.url, cookie))
+            if(http.withinCookieDomain(client.url, domain))
             {
                var cookie = client.getCookie(name, path);
                if(cookie !== null)
@@ -264,7 +264,7 @@
          for(var key in _clients)
          {
             var client = _clients[key];
-            if(http.withinCookieDomain(client.url, cookie))
+            if(http.withinCookieDomain(client.url, domain))
             {
                if(client.removeCookie(name, path))
                {
@@ -452,7 +452,6 @@
             case 'TRACK':
                // FIXME: handle exceptions
                throw SECURITY_ERR;
-               break;
             default:
                // FIXME: handle exceptions
                //throw new SyntaxError('Invalid method: ' + method);
@@ -642,16 +641,17 @@
                (e.request.connectTime + e.request.time + e.response.time) +
                'ms';
             // TODO: provide log functions via options
+            var lFunc;
             if(options.verbose)
             {
-               var lFunc = (xhr.status >= 400 && options.logWarningOnError) ?
+               lFunc = (xhr.status >= 400 && options.logWarningOnError) ?
                   _log.warning : _log.verbose;
                lFunc(cat, output,
                   e, e.response.body ? '\n' + e.response.body : '\nNo content');
             }
             else
             {
-               var lFunc = (xhr.status >= 400 && options.logWarningOnError) ?
+               lFunc = (xhr.status >= 400 && options.logWarningOnError) ?
                   _log.warning : _log.debug;
                lFunc(cat, output);
             }

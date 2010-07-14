@@ -22,7 +22,7 @@
       var buf =
       {
          // the data in this buffer.
-         data: b || new String(),
+         data: b || '',
          // the pointer for reading from this buffer.
          read: 0
       };
@@ -394,7 +394,7 @@
        */
       buf.clear = function()
       {
-         buf.data = new String();
+         buf.data = '';
          buf.read = 0;
       };
       
@@ -575,7 +575,7 @@
     */
    util.encode64 = function(input)
    {
-      var output = new String();
+      var output = '';
       var chr1, chr2, chr3;
       var i = 0;
       while(i < input.length)
@@ -613,7 +613,7 @@
       // remove all non-base64 characters
       input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
       
-      var output = new String();
+      var output = '';
       var enc1, enc2, enc3, enc4;
       var i = 0;
       
@@ -1098,7 +1098,6 @@
       {
          var i = 0;
          var len = keys.length;
-         var hasNext = true;
          while(i < len)
          {
             var next = keys[i++];
@@ -1226,7 +1225,7 @@
        var d = dec_point === undefined ? ',' : dec_point;
        var t = thousands_sep === undefined ?
           '.' : thousands_sep, s = n < 0 ? '-' : '';
-       var i = parseInt(n = Math.abs(+n || 0).toFixed(c)) + '';
+       var i = parseInt((n = Math.abs(+n || 0).toFixed(c)), 10) + '';
        var j = (i.length > 3) ? i.length % 3 : 0;
        return s + (j ? i.substr(0, j) + t : '') +
           i.substr(j).replace(/(\d{3})(?=\d)/g, '$1' + t) +

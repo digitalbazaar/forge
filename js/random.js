@@ -33,7 +33,7 @@
       key[3] = tmp.getInt32();
       
       // convert seed into 32-bit integers
-      var tmp = forge.util.createBuffer(seed);
+      tmp = forge.util.createBuffer(seed);
       seed = new Array(4);
       seed[0] = tmp.getInt32();
       seed[1] = tmp.getInt32();
@@ -94,9 +94,6 @@
    {
       _ctx.collectInt(e.charCode, 8);
    });
-   
-   // local alias
-   var forge = window.forge;
    
    /**
     * The crypto namespace and random API.

@@ -372,8 +372,8 @@
             captureAsn1: 'certSubject'
          }, 
             // SubjectPublicKeyInfo
-            publicKeyValidator
-         , {
+            publicKeyValidator,
+         {
             // issuerUniqueID (optional)
             name: 'Certificate.TBSCertificate.issuerUniqueID',
             tagClass: asn1.Class.CONTEXT_SPECIFIC,
@@ -634,7 +634,7 @@
             e.critical = false;
             if(ext.value[1].type === asn1.Type.BOOLEAN)
             {
-               e.critical = (ext.value[1].value.charCodeAt(0) != 0x00);
+               e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
                e.value = ext.value[2].value;
             }
             else
@@ -680,7 +680,7 @@
                   // get cA BOOLEAN flag (defaults to false)
                   if(ev.value.length > 0)
                   {
-                     e.cA = (ev.value[0].value.charCodeAt(0) != 0x00);
+                     e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
                   }
                   else
                   {
@@ -703,7 +703,7 @@
    
    // regex for stripping PEM header and footer
    var _pemRegex = new RegExp(
-      '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\s/\r/\n]+)-----END [^-]+-----');
+      '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
    
    /**
     * Converts PEM-formatted data into an certificate or key.

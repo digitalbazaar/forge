@@ -571,7 +571,7 @@
             {
                options.headerReady(e);
             }
-         },
+         };
          opts.bodyReady = options.bodyReady || function(){};
          opts.error = options.error || function(){};
          
@@ -597,7 +597,7 @@
          _writeCookies(client, opts.request);
          
          // queue request options if there are no idle sockets
-         if(client.idle.length == 0)
+         if(client.idle.length === 0)
          {
             client.requests.push(opts);
          }
@@ -685,7 +685,7 @@
                cookie.maxAge = cookie.maxAge || 0;
                cookie.secure = (typeof(cookie.secure) === 'undefined') ?
                   true : cookie.secure;
-               cookie.httpOnly = cookie.httpOnly || true,
+               cookie.httpOnly = cookie.httpOnly || true;
                cookie.path = cookie.path || '/';
                cookie.domain = cookie.domain || null;
                cookie.version = cookie.version || null;
@@ -1120,7 +1120,7 @@
                   }
                }
                // handle final line
-               else if(line.length == 0)
+               else if(line.length === 0)
                {
                   // end of header
                   response.headerReceived = true;
@@ -1211,7 +1211,7 @@
                {
                   // parse chunk-size (ignore any chunk extension)
                   _chunkSize = parseInt(line.split(';', 1)[0], 16);
-                  _chunksFinished = (_chunkSize == 0);
+                  _chunksFinished = (_chunkSize === 0);
                }
             }
             // chunks finished, read trailers
@@ -1369,7 +1369,7 @@
                            cookie.maxAge = Math.max(0, secs - now);
                            break;
                         case 'max-age':
-                           cookie.maxAge = parseInt(value);
+                           cookie.maxAge = parseInt(value, 10);
                            break;
                         case 'secure':
                            cookie.secure = true;
@@ -1406,6 +1406,7 @@
     */
    http.parseUrl = function(str)
    {
+      // FIXME: this regex looks a bit broken
       var regex = /^(https?):\/\/([^:&^\/]*):?(\d*)(.*)$/g;
       regex.lastIndex = 0;
       var m = regex.exec(str);
@@ -1445,20 +1446,24 @@
     * Returns true if the given url is within the given cookie's domain.
     * 
     * @param url the url to check.
-    * @param cookie the cookie to check.
+    * @param cookie the cookie or cookie domain to check.
     */
    http.withinCookieDomain = function(url, cookie)
    {
       var rval = false;
+      
+      // cookie may be null, a cookie object, or a domain string
+      var domain = (cookie === null || cookie.constructor == String) ?
+         cookie : cookie.domain;
       
       if(url.constructor == String)
       {
          url = http.parseUrl(url);
       }
       
-      if(cookie.domain === null ||
-         ('.' + url.host).indexOf(cookie.domain) ===
-         (url.host.length - cookie.domain.length))
+      if(domain === null ||
+         ('.' + url.host).indexOf(domain) ===
+         (url.host.length - domain.length))
       {
          rval = true;
       }
