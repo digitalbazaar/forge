@@ -62,14 +62,14 @@ class PolicyHandler(SocketServer.BaseRequestHandler):
                     (self.client_address[0], repr(self.data))
 
 
-def policy(options):
+def create_policy_server(options):
     """Start a policy server"""
     print "Policy serving from %d." % (options.policy_port)
     policyd = SocketServer.TCPServer(("localhost", options.policy_port), PolicyHandler)
-    policyd.serve_forever()
+    return policyd
 
 
-def server(options, script_dir):
+def create_http_server(options, script_dir):
     """Start a static file server"""
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
     httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
@@ -87,8 +87,11 @@ def server(options, script_dir):
             (("https" if options.tls else "http"),
             httpd.server_address[0],
             options.port)
-    httpd.allow_reuse_address = True
-    httpd.serve_forever()
+    return httpd
+
+
+def serve(server):
+    server.serve_forever()
 
 
 def main():
@@ -108,13 +111,27 @@ def main():
     os.chdir(script_dir)
 
     print "Forge Test Server. Use ctrl-C or ctrl-\\ to exit."
+    
+    # create policy and http servers
+    httpd = create_http_server(options, script_dir)
+    policyd = create_policy_server(options)
 
-    server_p = Thread(target=server, args=(options, script_dir))
-    policy_p = Thread(target=policy, args=(options,))
-    server_p.start()
-    policy_p.start()
-    server_p.join()
-    policy_p.join()
+    # start servers
+    server_t = Thread(target=serve, args=(httpd,))
+    policy_t = Thread(target=serve, args=(policyd,))
+    server_t.start()
+    policy_t.start()
+    
+    try:
+        while True: pass
+    except KeyboardInterrupt:
+        print 'Stopping server...'
+    
+    httpd.shutdown();
+    policyd.shutdown();
+    
+    server_t.join()
+    policy_t.join()
 
 
 if __name__ == "__main__":
