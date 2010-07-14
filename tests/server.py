@@ -5,7 +5,9 @@
 # - The server changes to the directory of the server script.
 # - SSL uses "server.key" and "server.crt".
 # - Sever performs basic static file serving.
-# - Defaults to SSL on port 19400.
+# - Starts Flash cross domain policy file server.
+# - Defaults to HTTP/HTTPS port 19400.
+# - Defaults to Flash cross domain policy port 19945.
 #
 #   $ ./server.py [-p PORT] [--ssl]
 #
@@ -13,6 +15,7 @@
 #   $ python -m SimpleHTTPServer 19400
 #
 
+from threading import Thread
 import SimpleHTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -23,21 +26,53 @@ try:
 except ImportError:
     have_ssl = False
 
-def main():
-    usage = "Usage: %prog [options]"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-p", "--port", dest="port", type="int",
-            help="serve on PORT", metavar="PORT", default=19400)
-    parser.add_option("", "--tls", dest="tls", action="store_true",
-            help="serve HTTPS", default=False)
-    (options, args) = parser.parse_args()
+# Set address reuse for all TCPServers
+SocketServer.TCPServer.allow_reuse_addresss = True
 
-    # Change to script dir so SSL and test files are in current dir.
-    script_dir = os.path.dirname(os.path.realpath(__file__))
-    os.chdir(script_dir)
+# The policy file
+# NOTE: This format is very strict. Edit with care.
+policy_file = """\
+<?xml version="1.0"?>\
+<!DOCTYPE cross-domain-policy\
+ SYSTEM "http://www.adobe.com/xml/dtds/cross-domain-policy.dtd">\
+<cross-domain-policy>\
+<allow-access-from domain="*" to-ports="*"/>\
+</cross-domain-policy>\0"""
 
+
+class PolicyHandler(SocketServer.BaseRequestHandler):
+    """
+    The RequestHandler class for our server.
+
+    Returns a policy file when requested.
+    """
+
+    def handle(self):
+        # get some data
+        # TODO: make this more robust (while loop, etc)
+        self.data = self.request.recv(1024).rstrip('\0')
+        #print "%s wrote:" % self.client_address[0]
+        #print repr(self.data)
+        # if policy file request, send the file.
+        if self.data == "<policy-file-request/>":
+            print "Policy server request from %s." % (self.client_address[0])
+            self.request.send(policy_file)
+        else:
+            print "Policy server received junk from %s: \"%s\"" % \
+                    (self.client_address[0], repr(self.data))
+
+
+def policy(options):
+    """Start a policy server"""
+    print "Policy serving from %d." % (options.policy_port)
+    policyd = SocketServer.TCPServer(("localhost", options.policy_port), PolicyHandler)
+    policyd.serve_forever()
+
+
+def server(options, script_dir):
+    """Start a static file server"""
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    httpd = SocketServer.TCPServer(("", options.port), Handler)
+    httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
@@ -47,13 +82,40 @@ def main():
             certfile="server.crt",
             server_side=True)
 
-    print "Forge Test Server. Use ctrl-C to exit."
     print "Serving from \"%s\"." % (script_dir)
     print "%s://%s:%d/" % \
             (("https" if options.tls else "http"),
             httpd.server_address[0],
             options.port)
+    httpd.allow_reuse_address = True
     httpd.serve_forever()
+
+
+def main():
+    """Start static file and policy servers"""
+    usage = "Usage: %prog [options]"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-p", "--port", dest="port", type="int",
+            help="serve on PORT", metavar="PORT", default=19400)
+    parser.add_option("-P", "--policy-port", dest="policy_port", type="int",
+            help="serve policy file on PORT", metavar="PORT", default=19945)
+    parser.add_option("", "--tls", dest="tls", action="store_true",
+            help="serve HTTPS", default=False)
+    (options, args) = parser.parse_args()
+
+    # Change to script dir so SSL and test files are in current dir.
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    os.chdir(script_dir)
+
+    print "Forge Test Server. Use ctrl-C or ctrl-\\ to exit."
+
+    server_p = Thread(target=server, args=(options, script_dir))
+    policy_p = Thread(target=policy, args=(options,))
+    server_p.start()
+    policy_p.start()
+    server_p.join()
+    policy_p.join()
+
 
 if __name__ == "__main__":
     main()
