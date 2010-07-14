@@ -1,10 +1,6 @@
 <html>
    <head>
-      <style> 
-      canvas {
-        background: black;
-      }
-      </style>
+      <link type="text/css" rel="stylesheet" media="all" href="screen.css" />
       <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
       <script type="text/javascript" src="forge/debug.js"></script>
       <script type="text/javascript" src="forge/util.js"></script>
@@ -1246,6 +1242,9 @@
       </script>
    </head>
    <body>
+      <div class="nav"><a href="index.html">Forge Tests</a> / Common</div>
+      <div class="content">
+
       <p>Use the controls below to test forge stuff.</p>
       <div id="random_controls">
          <button id="clear" onclick="javascript:return canvas_clear();">clear</button>
@@ -1286,6 +1285,7 @@
          <button id="aes_forge_cbc_speed" onclick="javascript:return aes_forge_cbc_speed();">forge CBC speed</button>
          <br />
          <button id="tls_prf" onclick="javascript:return test_prf_tls1();">tls prf</button>
+      </div>
       </div>
    </body>
 </html>
