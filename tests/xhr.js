@@ -13,7 +13,6 @@
    {
       // init forge xhr
       forge.xhr.init({
-         url: 'https://' + window.location.host,
          flashId: 'socketPool',
          policyPort: 19945,
          msie: $.browser.msie,
@@ -267,9 +266,10 @@ jQuery(function($)
       $.ajax(
       {
          type: 'GET',
-         url: '/',
+         url: '/result.txt',
          success: function(data)
          {
+            test.expect.html('expected result');
             test.result.html(data);
             task.unblock();
          },
@@ -297,7 +297,7 @@ jQuery(function($)
             $.ajax(
             {
                type: 'GET',
-               url: '/',
+               url: '/result.txt',
                success: function(data, textStatus)
                {
                   test.result.append('.');
@@ -326,7 +326,7 @@ jQuery(function($)
          $.ajax(
          {
             type: 'GET',
-            url: '/',
+            url: '/result.txt',
             success: function(data, textStatus)
             {
                test.result.append('.');
@@ -355,9 +355,10 @@ jQuery(function($)
          $.ajax(
          {
             type: 'GET',
-            url: '/',
+            url: '/result.txt',
             success: function(data)
             {
+               test.expect.html('expected result');
                test.result.html(data);
                task.unblock();
             },
@@ -386,7 +387,7 @@ jQuery(function($)
                $.ajax(
                {
                   type: 'GET',
-                  url: '/',
+                  url: '/result.txt',
                   success: function(data, textStatus)
                   {
                      test.result.append('.');
@@ -416,7 +417,7 @@ jQuery(function($)
             $.ajax(
             {
                type: 'GET',
-               url: '/',
+               url: '/result.txt',
                success: function(data, textStatus)
                {
                   test.result.append('.');
@@ -445,9 +446,10 @@ jQuery(function($)
       $.ajax(
       {
          type: 'GET',
-         url: '/',
+         url: '/result.txt',
          success: function(data, textStatus)
          {
+            test.expect.html('expected result');
             test.result.html(data);
             task.unblock();
          },
@@ -477,7 +479,7 @@ jQuery(function($)
             $.ajax(
             {
                type: 'GET',
-               url: '/',
+               url: '/result.txt',
                success: function(data, textStatus)
                {
                   test.result.append('.');
@@ -507,7 +509,7 @@ jQuery(function($)
          $.ajax(
          {
             type: 'GET',
-            url: '/',
+            url: '/result.txt',
             success: function(data, textStatus)
             {
                test.result.append('.');
