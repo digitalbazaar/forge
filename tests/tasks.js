@@ -46,7 +46,7 @@ jQuery(function($)
             $.each(tests, function(i, test) {
                task.next('test', function(task) {
                   var title = $('li:first', test.container);
-                  $('html,body').animate({scrollTop: title.offset().top})
+                  $('html,body').animate({scrollTop: title.offset().top});
                   title.addClass('testing');
                   test.run(task, test);
                });
@@ -56,7 +56,7 @@ jQuery(function($)
             });
             task.next('success', function(task) {
                forge.log.debug(cat, 'done');
-               if(failed == 0) {
+               if(failed === 0) {
                   $('#status')
                      .text('PASS')
                      .addClass('pass')
@@ -125,7 +125,7 @@ jQuery(function($)
          }
       };
       tests.push(test);
-   }
+   };
 
    addTest('pass', function(task, test) {
       test.pass();
@@ -156,7 +156,7 @@ jQuery(function($)
       var n = 20;
       // counter used in the tasks
       var taskn = 0;
-      for(var i = 0; i < n; i++) {
+      for(var i = 0; i < n; ++i) {
          test.expect.append(i + ' ');
          task.next(function(task) {
             test.result.append(taskn++ + ' ');
@@ -187,14 +187,14 @@ jQuery(function($)
 
    addTest('serial ajax', function(task, test) {
       var n = 10;
-      for(var i = 0; i < n; i++)
+      for(var i = 0; i < n; ++i)
       {
          test.expect.append(i + ' ');
       }
       task.next(function(task) {
          // create parallel functions
          task.parent.block(n);
-         for(var i = 0; i < n; i++)
+         for(var i = 0; i < n; ++i)
          {
             // pass value into closure
             (function(i)
@@ -225,7 +225,7 @@ jQuery(function($)
          var n = 10;
          // create parallel functions
          var tasks = [];
-         for(var i = 0; i < n; i++)
+         for(var i = 0; i < n; ++i)
          {
             // pass value into closure
             (function(i)
@@ -255,10 +255,8 @@ jQuery(function($)
       test.expect.append('-');
       // total
       var n = 100;
-      // counter used in the tasks
       var start = new Date();
-      var taskn = 0;
-      for(var i = 0; i < n; i++) {
+      for(var i = 0; i < n; ++i) {
          // empty task
          task.next(function(task) {});
       }
@@ -286,7 +284,7 @@ jQuery(function($)
          var res = $('<ul/>')
             .append('<li>Sleep Time : ' + st + 'ms</li>')
             .append('<li>Real Time: ' + dt + 'ms</li>')
-            .append('<li>Diff: ' + (dt-st) + 'ms</li>')
+            .append('<li>Diff: ' + (dt-st) + 'ms</li>');
          test.result.html(res);
          test.pass();
       });
@@ -297,7 +295,7 @@ jQuery(function($)
       var n = 20;
       // counter used in the tasks
       var taskn = 0;
-      for(var i = 0; i < n; i++) {
+      for(var i = 0; i < n; ++i) {
          test.expect.append(i + ' ');
          task.next(function(task) {
             task.sleep(20);
@@ -330,7 +328,7 @@ jQuery(function($)
          task.block(count);
          
          var tasks = [];
-         for(var i = 0; i < count; i++)
+         for(var i = 0; i < count; ++i)
          {
             var makefunction = function(index)
             {
@@ -362,7 +360,7 @@ jQuery(function($)
             });
          }
          
-         for(var i = 0; i < count; i++)
+         for(var i = 0; i < count; ++i)
          {
             forge.task.start(tasks[i]);
          }

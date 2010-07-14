@@ -72,7 +72,7 @@ jQuery(function($)
             $.each(tests, function(i, test) {
                task.next('test', function(task) {
                   var title = $('li:first', test.container);
-                  $('html,body').animate({scrollTop: title.offset().top})
+                  $('html,body').animate({scrollTop: title.offset().top});
                   title.addClass('testing');
                   test.run(task, test);
                });
@@ -82,7 +82,7 @@ jQuery(function($)
             });
             task.next('success', function(task) {
                forge.log.debug(cat, 'done');
-               if(failed == 0) {
+               if(failed === 0) {
                   $('#status')
                      .text('PASS')
                      .addClass('pass')
