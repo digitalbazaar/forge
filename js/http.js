@@ -466,6 +466,8 @@
       }
       
       // get scheme, host, and port from url
+      options.url = (options.url ||
+         window.location.protocol + '//' + window.location.host);
       var url = http.parseUrl(options.url);
       if(!url)
       {
