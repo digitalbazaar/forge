@@ -612,7 +612,7 @@
                socket = client.idle[i];
                if(socket.isConnected())
                {
-                  client.idle(i, 1);
+                  client.idle.splice(i, 1);
                }
                else
                {
