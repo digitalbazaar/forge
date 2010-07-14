@@ -122,17 +122,20 @@ def main():
     policy_t = Thread(target=serve, args=(policyd,))
     server_t.start()
     policy_t.start()
-    
-    try:
-        while True: time.sleep(1)
-    except KeyboardInterrupt:
-        print '\nStopping test server...'
-    
-    httpd.shutdown();
-    policyd.shutdown();
-    
-    server_t.join()
-    policy_t.join()
+
+    threads = [server_t, policy_t]
+
+    while len(threads) > 0:
+        try:
+            for t in threads:
+               if t.isAlive():
+                  t.join(1)
+               else:
+                  threads.remove(t)
+        except KeyboardInterrupt:
+            print '\nStopping test server...'
+            httpd.shutdown();
+            policyd.shutdown();
 
 
 if __name__ == "__main__":
