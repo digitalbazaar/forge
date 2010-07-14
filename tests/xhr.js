@@ -15,7 +15,7 @@
       forge.xhr.init({
          url: 'https://' + window.location.host,
          flashId: 'socketPool',
-         policyPort: 19845,
+         policyPort: 19945,
          msie: $.browser.msie,
          connections: 10,
          caCerts: [],
