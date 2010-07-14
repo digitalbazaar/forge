@@ -3681,6 +3681,8 @@
        * been prepared.
        * 
        * @param data the application data, as a string, to be sent.
+       * 
+       * @return true on success, false on failure.
        */
       c.prepare = function(data)
       {
@@ -3690,7 +3692,7 @@
             data: forge.util.createBuffer(data)
          });
          tls.queue(c, record);
-         tls.flush(c);
+         return tls.flush(c);
       };
       
       /**
