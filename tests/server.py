@@ -20,6 +20,7 @@ import SimpleHTTPServer
 import SocketServer
 from optparse import OptionParser
 import os
+import time
 try:
     import ssl
     have_ssl = True
@@ -27,7 +28,7 @@ except ImportError:
     have_ssl = False
 
 # Set address reuse for all TCPServers
-SocketServer.TCPServer.allow_reuse_addresss = True
+SocketServer.TCPServer.allow_reuse_address = True
 
 # The policy file
 # NOTE: This format is very strict. Edit with care.
@@ -123,7 +124,7 @@ def main():
     policy_t.start()
     
     try:
-        while True: pass
+        while True: time.sleep(1)
     except KeyboardInterrupt:
         print '\nStopping test server...'
     
