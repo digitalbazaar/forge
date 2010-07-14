@@ -549,7 +549,7 @@
          input.fillWithByte(padding, padding + 1);
       }
       return true;
-   }
+   };
    
    /**
     * Handles padding for aes_128_cbc_sha1 in decrypt mode.
@@ -1650,10 +1650,10 @@
       b.read += 4;
       
       // message contains only verify_data
-      var vd = record.fragment.getBytes()
+      var vd = record.fragment.getBytes();
       
       // ensure verify data is correct
-      var b = forge.util.createBuffer();
+      b = forge.util.createBuffer();
       b.putBuffer(c.handshakeState.md5.digest());
       b.putBuffer(c.handshakeState.sha1.digest());
       
@@ -1814,7 +1814,7 @@
          default:
             msg = 'Unknown error.';
             break;
-      };
+      }
       
       // call error handler
       c.error(c, {
@@ -2323,7 +2323,6 @@
                 throw {
                    message: 'Unsupported MAC algorithm'
                 };
-                break;
          }
          
          // cipher setup
@@ -2351,7 +2350,6 @@
                throw {
                   message: 'Unsupported cipher algorithm'
                };
-               break;
          }
          switch(sp.cipher_type)
          {
@@ -2361,7 +2359,6 @@
                throw {
                   message: 'Unsupported cipher type'
                };
-               break;
          }
          
          // compression setup
@@ -2377,7 +2374,6 @@
                throw {
                   message: 'Unsupported compression algorithm'
                };
-               break;
          }
       }
       
@@ -3247,7 +3243,7 @@
          
          // 8. check for CA if not first or only certificate, first for
          // keyUsage extension and then for basic constraints
-         if(!first || chain.length == 0)
+         if(!first || chain.length === 0)
          {
             var bcExt = cert.getExtension('basicConstraints');
             var keyUsageExt = cert.getExtension('keyUsage');
@@ -3520,7 +3516,7 @@
                }
             }
             // else grab a session from the cache, if available
-            if(sessionId.length == 0 && c.sessionCache)
+            if(sessionId.length === 0 && c.sessionCache)
             {
                for(var key in c.sessionCache)
                {
