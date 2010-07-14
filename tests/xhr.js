@@ -447,10 +447,12 @@ jQuery(function($)
       {
          type: 'GET',
          url: '/result.txt',
-         success: function(data, textStatus)
+         success: function(data, textStatus, xhr)
          {
             test.expect.html('expected result');
             test.result.html(data);
+            // FIXME: current test server doesn't handle keep-alive correctly
+            xhr.abort();
             task.unblock();
          },
          error: function(xhr, textStatus, errorThrown)
@@ -480,9 +482,12 @@ jQuery(function($)
             {
                type: 'GET',
                url: '/result.txt',
-               success: function(data, textStatus)
+               success: function(data, textStatus, xhr)
                {
                   test.result.append('.');
+                  // FIXME: current test server doesn't handle keep-alive
+                  // correctly
+                  xhr.abort();
                   task.parent.unblock();
                },
                error: function(xhr, textStatus, errorThrown)
@@ -510,9 +515,11 @@ jQuery(function($)
          {
             type: 'GET',
             url: '/result.txt',
-            success: function(data, textStatus)
+            success: function(data, textStatus, xhr)
             {
                test.result.append('.');
+               // FIXME: current test server doesn't handle keep-alive correctly
+               xhr.abort();
                task.unblock();
             },
             error: function(xhr, textStatus, errorThrown)

@@ -139,6 +139,10 @@
             bodyReady: function(e)
             {
                console.log('body ready', e);
+
+               // FIXME: current test server doesn't seem to handle keep-alive
+               // correctly, so close connection 
+               e.socket.close();
             },
             error: function(e)
             {

@@ -174,6 +174,11 @@
          // mark socket idle if no pending requests
          if(pending === null)
          {
+            if(socket.options !== null)
+            {
+               socket.options.request.socket = null;
+               socket.options = null;
+            }
             socket.idle = true;
             client.idle.push(socket);
          }
@@ -596,6 +601,10 @@
             opts.headerReady = function(){};
             opts.bodyReady = function(){};
             opts.error = function(){};
+            if(opts.request.socket !== null)
+            {
+               opts.request.socket.close();
+            }
          };
          
          // add cookies to request
@@ -630,6 +639,7 @@
                socket = client.idle.pop();
             }
             socket.options = opts;
+            opts.request.socket = socket;
             _doRequest(client, socket);
          }
       };
