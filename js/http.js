@@ -208,6 +208,7 @@
          {
             var request = socket.options.request;
             request.connectTime = +new Date() - request.connectTime;
+            e.socket = socket;
             socket.options.connected(e);
             if(request.aborted)
             {
@@ -238,7 +239,8 @@
             response.bodyReceived = true;
             socket.options.bodyReady({
                request: socket.options.request,
-               response: response
+               response: response,
+               socket: socket
             });
          }
          socket.options.closed(e);
@@ -268,7 +270,8 @@
                   {
                      socket.options.headerReady({
                         request: socket.options.request,
-                        response: response
+                        response: response,
+                        socket: socket
                      });
                   }
                }
@@ -280,7 +283,8 @@
                {
                   socket.options.bodyReady({
                      request: socket.options.request,
-                     response: response
+                     response: response,
+                     socket: socket
                   });
                   var value = response.getField('Connection') || '';
                   if(value.indexOf('close') != -1)
@@ -300,7 +304,8 @@
             type: e.type,
             message: e.message,
             request: socket.options.request,
-            response: socket.options.response
+            response: socket.options.response,
+            socket: socket
          });
          socket.close();
          _handleNextRequest(client, socket);
