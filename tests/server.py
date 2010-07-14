@@ -125,7 +125,7 @@ def main():
     try:
         while True: pass
     except KeyboardInterrupt:
-        print 'Stopping server...'
+        print '\nStopping test server...'
     
     httpd.shutdown();
     policyd.shutdown();
