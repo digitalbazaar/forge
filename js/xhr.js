@@ -110,10 +110,13 @@
    {
       forge.log.debug(cat, 'initializing', options);
       
+      // update default policy port
+      _policyPort = options.policyPort || _policyPort;
+      
       // create the flash socket pool
       _sp = net.createSocketPool({
          flashId: options.flashId,
-         policyPort: options.policyPort || _policyPort,
+         policyPort: _policyPort,
          msie: options.msie || false
       });
       
@@ -122,7 +125,7 @@
          url: options.url || (
             window.location.protocol + '//' + window.location.host),
          socketPool: _sp,
-         policyPort: options.policyPort || _policyPort,
+         policyPort: _policyPort,
          connections: options.connections || _maxConnections,
          caCerts: options.caCerts,
          persistCookies: options.persistCookies || true,
