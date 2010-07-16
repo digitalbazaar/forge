@@ -108,7 +108,7 @@
     */
    xhrApi.init = function(options)
    {
-      forge.log.debug(cat, 'Initializing', options);
+      forge.log.debug(cat, 'initializing', options);
       
       // create the flash socket pool
       _sp = net.createSocketPool({
@@ -131,7 +131,7 @@
       });
       _clients[_client.url.full] = _client;
       
-      forge.log.debug(cat, 'Ready');
+      forge.log.debug(cat, 'ready');
    };
    
    /**
