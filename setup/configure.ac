@@ -87,14 +87,14 @@ fi
 dnl ----------------- mxmlc debug -----------------
 
 AC_ARG_ENABLE([mxmlc-debug],
-   AC_HELP_STRING([--enable-mxmlc-debug], [enable mxmlc debug mode [[false]]]),
+   AC_HELP_STRING([--enable-mxmlc-debug], [enable mxmlc debug mode [no]]),
    [
    case "${enableval}" in
-      yes) MXMLC_DEBUG_MODE=true ;;
-      no)  MXMLC_DEBUG_MODE=false ;;
+      yes) MXMLC_DEBUG_MODE=yes ;;
+      no)  MXMLC_DEBUG_MODE=no ;;
       *)   AC_MSG_ERROR(bad value ${enableval} for --enable-mxmlc-debug) ;;
    esac
-   ], [MXMLC_DEBUG_MODE=false]) dnl Default value
+   ], [MXMLC_DEBUG_MODE=no]) dnl Default value
 
 AC_SUBST(MXMLC_DEBUG_MODE)
 
@@ -106,7 +106,24 @@ PKG_PROG_PKG_CONFIG
 
 # Checking for standard build tools
 AC_PROG_INSTALL()
-AS_PATH_PYTHON([2.5])
+AS_PATH_PYTHON([2.6])
+
+if test "x$PYTHON" != x; then
+   save_CPPFLAGS="$CPPFLAGS"
+   AC_CHECK_PROGS([PYTHON_CONFIG], [python-config]) 
+   if test "x$PYTHON_CONFIG" != x; then
+      CPPFLAGS="$CPPFLAGS `$PYTHON_CONFIG --cflags`"
+   fi
+   AC_CHECK_HEADERS([Python.h],
+      [BUILD_PYTHON_MODULES=yes],
+      [BUILD_PYTHON_MODULES=no
+      AC_MSG_WARN([Python.h not found, SSL bindings will not be build.])])
+   CPPFLAGS="$save_CPPFLAGS"
+else
+   AC_MSG_WARN([Need at least Python 2.6 to build SSL bindings.])
+fi
+
+AC_SUBST(BUILD_PYTHON_MODULES)
 
 dnl ----------------------------------
 
@@ -127,13 +144,18 @@ AC_OUTPUT
 echo -e "\n--------- Forge Build Environment -----------"
 echo "Forge Version     : $PACKAGE_NAME $PACKAGE_DATE_VERSION"
 
-if test "$BUILD_FLASH" = "yes" ; then
-   echo "Python:           : $PYTHON (version $PYTHON_VERSION)"
+if test "x$BUILD_FLASH" = "xyes" ; then
    echo "Adobe Flash       : enabled"
    echo "MXMLC             : $MXMLC"
    echo "MXMLC Debug flags : $MXMLC_DEBUG_MODE"
 else
    echo "Adobe Flash       : disabled (use --enable-flash to enable)"
+fi
+
+if test "x$BUILD_PYTHON_MODULES" = "xyes" ; then
+   echo "Python            : $PYTHON (version $PYTHON_VERSION)"
+else
+   echo "Python            : development environment not found"
 fi
 
 if test "x$BUILD_DOCS" = "xyes"; then
