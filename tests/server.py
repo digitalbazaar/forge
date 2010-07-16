@@ -29,10 +29,8 @@ python_version = "python" + sys.version[:3]
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "..", "dist", "forge_ssl", "lib", python_version, "site-packages"))
-print sys.path[0]
 try:
     from forge import ssl
-    print 'imported forge ssl'
     have_ssl_sessions = True
     have_ssl = True
 except ImportError:
