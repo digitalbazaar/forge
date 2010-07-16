@@ -108,6 +108,8 @@
     */
    xhrApi.init = function(options)
    {
+      forge.log.debug(cat, 'Initializing', options);
+      
       // create the flash socket pool
       _sp = net.createSocketPool({
          flashId: options.flashId,
@@ -128,6 +130,8 @@
          verify: options.verify
       });
       _clients[_client.url.full] = _client;
+      
+      forge.log.debug(cat, 'Ready');
    };
    
    /**
@@ -353,10 +357,10 @@
       // private log functions
       var _log =
       {
-         error: options.logError,
-         warning: options.logWarning,
-         debug: options.logDebug,
-         verbose: options.logVerbose
+         error: options.logError || forge.log.error,
+         warning: options.logWarning || forge.log.warning,
+         debug: options.logDebug || forge.log.debug,
+         verbose: options.logVerbose || forge.log.verbose
       };
       
       // create public xhr interface
@@ -640,7 +644,6 @@
                length + 'B ' +
                (e.request.connectTime + e.request.time + e.response.time) +
                'ms';
-            // TODO: provide log functions via options
             var lFunc;
             if(options.verbose)
             {
