@@ -2,6 +2,7 @@
  * Forge XmlHttpRequest Test
  *
  * @author Dave Longley
+ * @author David I. Lehn <dlehn@digitalbazaar.com>
  *
  * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
  */
