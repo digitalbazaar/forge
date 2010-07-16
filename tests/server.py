@@ -21,11 +21,27 @@ import SocketServer
 from optparse import OptionParser
 import os
 import time
+import sys
+
+# Try to import special Forge SSL module with session cache support
+# Using the built directory directly
+python_version = "python" + sys.version[:3]
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "..", "dist", "forge_ssl", "lib", python_version, "site-packages"))
+print sys.path[0]
 try:
-    import ssl
+    from forge import ssl
+    print 'imported forge ssl'
+    have_ssl_sessions = True
     have_ssl = True
 except ImportError:
-    have_ssl = False
+    have_ssl_sessions = False
+    try:
+        import ssl
+        have_ssl = True
+    except ImportError:
+        have_ssl = False
 
 # Set address reuse for all TCPServers
 SocketServer.TCPServer.allow_reuse_address = True
@@ -77,11 +93,14 @@ def create_http_server(options, script_dir):
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
+        if not have_ssl_sessions:
+            print "Forge SSL with session cache not available, using standard version."
         httpd.socket = ssl.wrap_socket(
             httpd.socket,
             keyfile="server.key",
             certfile="server.crt",
-            server_side=True)
+            server_side=True,
+            sess_id_ctx="forgetest")
 
     print "Serving from \"%s\"." % (script_dir)
     print "%s://%s:%d/" % \
@@ -111,7 +130,7 @@ def main():
     script_dir = os.path.dirname(os.path.realpath(__file__))
     os.chdir(script_dir)
 
-    print "Forge Test Server. Use ctrl-C or ctrl-\\ to exit."
+    print "Forge Test Server. Use ctrl-c to exit."
     
     # create policy and http servers
     httpd = create_http_server(options, script_dir)

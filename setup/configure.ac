@@ -106,6 +106,7 @@ PKG_PROG_PKG_CONFIG
 
 # Checking for standard build tools
 AC_PROG_INSTALL()
+AS_PATH_PYTHON([2.5])
 
 dnl ----------------------------------
 
@@ -127,6 +128,7 @@ echo -e "\n--------- Forge Build Environment -----------"
 echo "Forge Version     : $PACKAGE_NAME $PACKAGE_DATE_VERSION"
 
 if test "$BUILD_FLASH" = "yes" ; then
+   echo "Python:           : $PYTHON (version $PYTHON_VERSION)"
    echo "Adobe Flash       : enabled"
    echo "MXMLC             : $MXMLC"
    echo "MXMLC Debug flags : $MXMLC_DEBUG_MODE"

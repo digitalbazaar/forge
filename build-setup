@@ -24,7 +24,7 @@ MAYBE_AC_DIRS="
    /opt/local/share/aclocal
    /sw/share/aclocal
    "
-ACDIRS="-I ../../monarch/setup/m4"
+ACDIRS="-I m4"
 for dir in $MAYBE_AC_DIRS; do
    if test -d $dir; then
       ACDIRS="$ACDIRS -I $dir"

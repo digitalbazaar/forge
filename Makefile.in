@@ -1,6 +1,7 @@
 # Makefile for Forge
 
-# Top-level dist dir
+# Top-level build and dist dir
+BUILD_DIR=@FORGE_DIR@/build
 TOP_DIST_DIR=@FORGE_DIR@/dist
 DIST_DIR=$(TOP_DIST_DIR)/forge
 
@@ -9,6 +10,11 @@ JS_SOURCES := $(wildcard js/*.js)
 JS_DIST := $(JS_SOURCES:js/%.js=$(DIST_DIR)/%.js)
 JS_DIST_MIN := $(JS_DIST:%.js=%.min.js)
 TESTS_FORGE_LINK := @FORGE_DIR@/tests/forge
+SSL_SESSIONS_DIR = \
+	$(TOP_DIST_DIR)/forge_ssl/lib/python@PYTHON_VERSION@/site-packages
+SSL_SESSIONS_FILES = \
+	$(SSL_SESSIONS_DIR)/_forge_ssl.so \
+	$(SSL_SESSIONS_DIR)/forge/ssl.py
 
 # Whether or not to print commands as they are being executed, helpful for
 # debugging the build system.
@@ -27,8 +33,10 @@ else
 FLASH_FLAGS = -define=CONFIG::debugging,false -define=CONFIG::release,true
 endif
 
-all: $(DIST_DIR) $(FLASH) $(JS_DIST) $(TESTS_FORGE_LINK)
+all: $(BUILD_DIR) $(DIST_DIR) $(FLASH) $(JS_DIST) $(TESTS_FORGE_LINK) $(SSL_SESSIONS_FILES)
 
+$(BUILD_DIR):
+	$(PCMD) mkdir -p $@
 $(DIST_DIR):
 	$(PCMD) mkdir -p $@
 
@@ -47,8 +55,24 @@ $(TESTS_FORGE_LINK): $(DIST_DIR)
 	@echo "Linking $@..."
 	$(PCMD) ln -sf $(realpath $<) $@
 
+$(SSL_SESSIONS_DIR)/_forge_ssl.so: \
+	@FORGE_DIR@/tests/forge_ssl/forge/_ssl.c \
+	@FORGE_DIR@/tests/forge_ssl/forge/socketmodule.h \
+	@FORGE_DIR@/tests/forge_ssl/setup.py
+$(SSL_SESSIONS_DIR)/forge/ssl.py: \
+	@FORGE_DIR@/tests/forge_ssl/forge/ssl.py \
+	@FORGE_DIR@/tests/forge_ssl/setup.py
+	(cd @FORGE_DIR@/tests/forge_ssl && \
+	@PYTHON@ setup.py \
+	   build --build-base $(BUILD_DIR) \
+	   install --prefix=$(TOP_DIST_DIR)/forge_ssl)
+	@# fix distutils timestamp issue
+	@# (sub-seconds of source file are truncated on target so rebuild is
+	@# always triggered)
+	@touch $@
+
 clean:
-	$(PCMD) rm -rf $(TOP_DIST_DIR)
+	$(PCMD) rm -rf $(BUILD_DIR) $(TOP_DIST_DIR)
 	@echo "Removed all generated files."
 
 verbose-commands:
