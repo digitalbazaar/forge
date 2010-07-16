@@ -41,6 +41,6 @@ cd ..
 # Run the configure script if "-s" isn't a command line option
 if [ $SKIP_CONFIGURE -eq 0 ]; then
    # Run the configure script in default development mode
-   ./configure
+   ./configure $*
 fi
 

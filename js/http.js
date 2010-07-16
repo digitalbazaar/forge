@@ -338,7 +338,11 @@
             // prime socket by connecting and caching TLS session, will do
             // next request from there
             socket.idle = false;
-            socket.connect(client.url);
+            socket.connect({
+               host: client.url.host,
+               port: client.url.port,
+               policyPort: client.policyPort
+            });
          }
          else
          {
@@ -838,6 +842,11 @@
          client.cookies = {};
          _clearCookies(client);
       };
+      
+      if(forge.log)
+      {
+         forge.log.debug('forge.http', 'created client', options);
+      }
       
       return client;
    };

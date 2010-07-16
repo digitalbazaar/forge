@@ -108,10 +108,15 @@
     */
    xhrApi.init = function(options)
    {
+      forge.log.debug(cat, 'initializing', options);
+      
+      // update default policy port
+      _policyPort = options.policyPort || _policyPort;
+      
       // create the flash socket pool
       _sp = net.createSocketPool({
          flashId: options.flashId,
-         policyPort: options.policyPort || _policyPort,
+         policyPort: _policyPort,
          msie: options.msie || false
       });
       
@@ -120,7 +125,7 @@
          url: options.url || (
             window.location.protocol + '//' + window.location.host),
          socketPool: _sp,
-         policyPort: options.policyPort || _policyPort,
+         policyPort: _policyPort,
          connections: options.connections || _maxConnections,
          caCerts: options.caCerts,
          persistCookies: options.persistCookies || true,
@@ -128,6 +133,8 @@
          verify: options.verify
       });
       _clients[_client.url.full] = _client;
+      
+      forge.log.debug(cat, 'ready');
    };
    
    /**
@@ -353,10 +360,10 @@
       // private log functions
       var _log =
       {
-         error: options.logError,
-         warning: options.logWarning,
-         debug: options.logDebug,
-         verbose: options.logVerbose
+         error: options.logError || forge.log.error,
+         warning: options.logWarning || forge.log.warning,
+         debug: options.logDebug || forge.log.debug,
+         verbose: options.logVerbose || forge.log.verbose
       };
       
       // create public xhr interface
@@ -640,7 +647,6 @@
                length + 'B ' +
                (e.request.connectTime + e.request.time + e.response.time) +
                'ms';
-            // TODO: provide log functions via options
             var lFunc;
             if(options.verbose)
             {
