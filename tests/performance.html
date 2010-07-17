@@ -160,7 +160,7 @@
 	         total /= 1000;
 	         var kb = 4200/1024;
 	         forge.log.debug(cat,
-	            'time per encode', (count*kb/total) + ' KiB/s');
+	            'encode:', (count*kb/total) + ' KiB/s');
          });
       };
 
@@ -197,7 +197,7 @@
 	         total /= 1000;
 	         var kb = 5600/1024;
 	         forge.log.debug(cat,
-	            'time per decode', (count*kb/total) + ' KiB/s');
+	            'decode:', (count*kb/total) + ' KiB/s');
          });
       };
       
