@@ -127,7 +127,8 @@
 	         forge.log.debug(cat, 'xor times', (et - st) + ' < ' + passed);
          });
       };
-      
+
+      // TODO: follow the same format as the hash tests
       var test_base64_encode = function()
       {
          forge.log.debug(cat, 'base64 encode running for about 5 seconds...');
@@ -164,6 +165,7 @@
          });
       };
 
+      // TODO: follow the same format as the hash tests
       var test_base64_decode = function()
       {
          forge.log.debug(cat, 'base64 decode running for about 5 seconds...');
@@ -320,7 +322,8 @@
             }(n);
          }
       };
-      
+
+      // TODO: follow the same format as the hash tests
       var aes_128 = function()
       {
          forge.log.debug(cat, 'running AES-128 for 5 seconds...');
@@ -376,6 +379,7 @@
          }, 0);
       };
 
+      // TODO: follow the same format as the hash tests
       var aes_128_cbc = function()
       {
          forge.log.debug(cat, 'running AES-128 CBC for 5 seconds...');
