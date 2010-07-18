@@ -1,18 +1,71 @@
 Introduction
 ------------
 
-The Forge software is a full native implementation of the TLS protocol in
+The Forge software is a fully native implementation of the TLS protocol in
 Javascript as well as a set of tools for developing Web Apps that utilize
 many network resources.
 
 Features
 --------
 
+forge.debug:
+   Provides storage of debugging information normally inaccessible in
+   closures for viewing/investigation.
+
+forge.util:
+   Provides utility functions, including byte buffer support, base64,
+   bytes to/from hex, zlib inflate/deflate, etc.
+
+forge.log:
+   Provides logging to a javascript console using various categories and
+   levels of verbosity.
+
+forge.task:
+   Provides queuing and synchronizing tasks in a web application.
+
+forge.aes:
+   Provides basic AES encryption and encryption in CBC mode.
+
+forge.md.md5:
+   Provides MD5 message digestion.
+
+forge.md.sha1:
+   Provides SHA-1 message digestion.
+
+forge.hmac:
+   Provides HMAC w/any supported message digest algorithm.
+
+forge.prng:
+   Provides a Fortuna-based cryptographically-secure pseudo-random number
+   generator, to be used with a cryptographic function backend, ie: AES.
+
+forge.random:
+   Provides an interface to getting cryptographically-secure bytes using
+   AES as a backend for forge.prng.
+
+forge.asn:
+   Provides ASN.1 DER encoding and decoding.
+
+forge.pki:
+   Provides X.509 certificate and RSA public and private key encoding,
+   decoding, encryption/decryption, and signing/verifying.
+
+forge.tls:
+   Provides a native javascript client-side TLS implementation.
+
+forge.socket:
+   Provides an interface to create and use raw sockets provided via flash.
+
+forge.http:
+   Provides a native javascript mini-implementation of an http client that
+   uses pooled sockets.
+
+forge.xhr:
+   Provides an XmlHttpRequest implementation using forge.http as a backend.
 
 
 Getting Started
 ---------------
-
 
 
 Library Details
