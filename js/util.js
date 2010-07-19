@@ -204,9 +204,11 @@
        */
       buf.getInt16 = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) << 8 ^
-            buf.data.charCodeAt(buf.read++));
+         var rval = (
+            buf.data.charCodeAt(buf.read) << 8 ^
+            buf.data.charCodeAt(buf.read + 1));
+         buf.read += 2;
+         return rval;
       };
       
       /**
@@ -217,10 +219,12 @@
        */
       buf.getInt24 = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) << 16 ^
-            buf.data.charCodeAt(buf.read++) << 8 ^
-            buf.data.charCodeAt(buf.read++));
+         var rval = (
+            buf.data.charCodeAt(buf.read) << 16 ^
+            buf.data.charCodeAt(buf.read + 1) << 8 ^
+            buf.data.charCodeAt(buf.read + 2));
+         buf.read += 3;
+         return rval;
       };
       
       /**
@@ -231,11 +235,13 @@
        */
       buf.getInt32 = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) << 24 ^
-            buf.data.charCodeAt(buf.read++) << 16 ^
-            buf.data.charCodeAt(buf.read++) << 8 ^
-            buf.data.charCodeAt(buf.read++));
+         var rval = (
+            buf.data.charCodeAt(buf.read) << 24 ^
+            buf.data.charCodeAt(buf.read + 1) << 16 ^
+            buf.data.charCodeAt(buf.read + 2) << 8 ^
+            buf.data.charCodeAt(buf.read + 3));
+         buf.read += 4;
+         return rval;
       };
       
       /**
@@ -246,9 +252,11 @@
        */
       buf.getInt16Le = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) ^
-            buf.data.charCodeAt(buf.read++) << 8);
+         var rval = (
+            buf.data.charCodeAt(buf.read) ^
+            buf.data.charCodeAt(buf.read + 1) << 8);
+         buf.read += 2;
+         return rval;
       };
       
       /**
@@ -259,10 +267,12 @@
        */
       buf.getInt24Le = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) ^
-            buf.data.charCodeAt(buf.read++) << 8 ^
-            buf.data.charCodeAt(buf.read++) << 16);
+         var rval = (
+            buf.data.charCodeAt(buf.read) ^
+            buf.data.charCodeAt(buf.read + 1) << 8 ^
+            buf.data.charCodeAt(buf.read + 2) << 16);
+         buf.read += 3;
+         return rval;
       };
       
       /**
@@ -273,11 +283,13 @@
        */
       buf.getInt32Le = function()
       {
-         return (
-            buf.data.charCodeAt(buf.read++) ^
-            buf.data.charCodeAt(buf.read++) << 8 ^
-            buf.data.charCodeAt(buf.read++) << 16 ^
-            buf.data.charCodeAt(buf.read++) << 24);
+         var rval = (
+            buf.data.charCodeAt(buf.read) ^
+            buf.data.charCodeAt(buf.read + 1) << 8 ^
+            buf.data.charCodeAt(buf.read + 2) << 16 ^
+            buf.data.charCodeAt(buf.read + 3) << 24);
+         buf.read += 4;
+         return rval;
       };
       
       /**
