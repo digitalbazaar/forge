@@ -66,16 +66,10 @@
    var _update = function(s, w, bytes)
    {
       // consume 512 bit (64 byte) chunks
-      var t1, t2, a, b, c, d, f, r;
+      var t, a, b, c, d, f, r;
       var len = bytes.length();
       while(len >= 64)
       {
-         // get sixteen 32-bit little-endian words
-         for(var i = 0; i < 16; ++i)
-         {
-            w[i] = bytes.getInt32Le();
-         }
-         
          // initialize hash value for this chunk
          a = s.h0;
          b = s.h1;
@@ -86,47 +80,44 @@
          var i = 0;
          for(; i < 16; ++i)
          {
+            w[i] = bytes.getInt32Le();
             f = d ^ (b & (c ^ d));
-            t1 = d;
+            t = (a + f + _k[i] + w[i]);
+            r = _r[i];
+            a = d;
             d = c;
             c = b;
-            t2 = (a + f + _k[i] + w[i]);
-            r = _r[i];
-            b += (t2 << r) | (t2 >>> (32 - r));
-            a = t1;
+            b += (t << r) | (t >>> (32 - r));
          }
          for(; i < 32; ++i)
          {
             f = c ^ (d & (b ^ c));
-            t1 = d;
+            t = (a + f + _k[i] + w[_g[i]]);
+            r = _r[i];
+            a = d;
             d = c;
             c = b;
-            t2 = (a + f + _k[i] + w[_g[i]]);
-            r = _r[i];
-            b += (t2 << r) | (t2 >>> (32 - r));
-            a = t1;
+            b += (t << r) | (t >>> (32 - r));
          }
          for(; i < 48; ++i)
          {
             f = b ^ c ^ d;
-            t1 = d;
+            t = (a + f + _k[i] + w[_g[i]]);
+            r = _r[i];
+            a = d;
             d = c;
             c = b;
-            t2 = (a + f + _k[i] + w[_g[i]]);
-            r = _r[i];
-            b += (t2 << r) | (t2 >>> (32 - r));
-            a = t1;
+            b += (t << r) | (t >>> (32 - r));
          }
          for(; i < 64; ++i)
          {
             f = c ^ (b | ~d);
-            t1 = d;
+            t = (a + f + _k[i] + w[_g[i]]);
+            r = _r[i];
+            a = d;
             d = c;
             c = b;
-            t2 = (a + f + _k[i] + w[_g[i]]);
-            r = _r[i];
-            b += (t2 << r) | (t2 >>> (32 - r));
-            a = t1;
+            b += (t << r) | (t >>> (32 - r));
          }
          
          // update hash state
