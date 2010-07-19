@@ -441,7 +441,8 @@
       var temp, iNk = 1;
       var Nk = w.length;
       var Nr1 = Nk + 6 + 1;
-      for(var i = Nk; i < Nb * Nr1; ++i)
+      var end = Nb * Nr1;
+      for(var i = Nk; i < end; ++i)
       {
          temp = w[i - 1];
          if(i % Nk === 0)
