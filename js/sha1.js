@@ -40,24 +40,24 @@
    var _update = function(s, w, bytes)
    {
       // consume 512 bit (64 byte) chunks
-      var t, a, b, c, d, e, f;
+      var t, a, b, c, d, e, f, i;
       var len = bytes.length();
       while(len >= 64)
       {
          // get sixteen 32-bit big-endian words
-         for(var i = 0; i < 16; ++i)
+         for(i = 0; i < 16; ++i)
          {
             w[i] = bytes.getInt32();
          }
          
          // extend 16 words into 80 32-bit words according to SHA-1 algorithm
          // and for 32-79 use Max Locktyukhin's optimization
-         for(var i = 16; i < 32; ++i)
+         for(i = 16; i < 32; ++i)
          {
             t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
             w[i] = (t << 1) | (t >>> 31);
          }
-         for(var i = 32; i < 80; ++i)
+         for(i = 32; i < 80; ++i)
          {
             t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
             w[i] = (t << 2) | (t >>> 30);
@@ -70,9 +70,8 @@
          d = s.h3;
          e = s.h4;
          
-         // do rounds loops
-         var i = 0;
-         for(; i < 20; ++i)
+         // round 1
+         for(i = 0; i < 20; ++i)
          {
             f = d ^ (b & (c ^ d));
             t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + w[i];
@@ -82,6 +81,7 @@
             b = a;
             a = t;
          }
+         // round 2
          for(; i < 40; ++i)
          {
             f = b ^ c ^ d;
@@ -92,6 +92,7 @@
             b = a;
             a = t;
          }
+         // round 3
          for(; i < 60; ++i)
          {
             f = (b & c) | (d & (b ^ c));
@@ -102,6 +103,7 @@
             b = a;
             a = t;
          }
+         // round 4
          for(; i < 80; ++i)
          {
             f = b ^ c ^ d;

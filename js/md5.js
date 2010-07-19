@@ -66,7 +66,7 @@
    var _update = function(s, w, bytes)
    {
       // consume 512 bit (64 byte) chunks
-      var t, a, b, c, d, f, r;
+      var t, a, b, c, d, f, r, i;
       var len = bytes.length();
       while(len >= 64)
       {
@@ -76,9 +76,8 @@
          c = s.h2;
          d = s.h3;
          
-         // do rounds loops
-         var i = 0;
-         for(; i < 16; ++i)
+         // round 1
+         for(i = 0; i < 16; ++i)
          {
             w[i] = bytes.getInt32Le();
             f = d ^ (b & (c ^ d));
@@ -89,6 +88,7 @@
             c = b;
             b += (t << r) | (t >>> (32 - r));
          }
+         // round 2
          for(; i < 32; ++i)
          {
             f = c ^ (d & (b ^ c));
@@ -99,6 +99,7 @@
             c = b;
             b += (t << r) | (t >>> (32 - r));
          }
+         // round 3
          for(; i < 48; ++i)
          {
             f = b ^ c ^ d;
@@ -109,6 +110,7 @@
             c = b;
             b += (t << r) | (t >>> (32 - r));
          }
+         // round 4
          for(; i < 64; ++i)
          {
             f = c ^ (b | ~d);
