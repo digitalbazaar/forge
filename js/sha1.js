@@ -40,7 +40,7 @@
    var _update = function(s, w, bytes)
    {
       // consume 512 bit (64 byte) chunks
-      var tmp, a, b, c, d, e, f;
+      var t, a, b, c, d, e, f;
       var len = bytes.length();
       while(len >= 64)
       {
@@ -54,13 +54,13 @@
          // and for 32-79 use Max Locktyukhin's optimization
          for(var i = 16; i < 32; ++i)
          {
-            tmp = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
-            w[i] = (tmp << 1) | (tmp >>> 31);
+            t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
+            w[i] = (t << 1) | (t >>> 31);
          }
          for(var i = 32; i < 80; ++i)
          {
-            tmp = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
-            w[i] = (tmp << 2) | (tmp >>> 30);
+            t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
+            w[i] = (t << 2) | (t >>> 30);
          }
          
          // initialize hash value for this chunk
@@ -75,42 +75,42 @@
          for(; i < 20; ++i)
          {
             f = d ^ (b & (c ^ d));
-            tmp = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + w[i];
+            t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + w[i];
             e = d;
             d = c;
             c = (b << 30) | (b >>> 2);
             b = a;
-            a = tmp;
+            a = t;
          }
          for(; i < 40; ++i)
          {
             f = b ^ c ^ d;
-            tmp = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + w[i];
+            t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + w[i];
             e = d;
             d = c;
             c = (b << 30) | (b >>> 2);
             b = a;
-            a = tmp;
+            a = t;
          }
          for(; i < 60; ++i)
          {
             f = (b & c) | (d & (b ^ c));
-            tmp = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + w[i];
+            t = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + w[i];
             e = d;
             d = c;
             c = (b << 30) | (b >>> 2);
             b = a;
-            a = tmp;
+            a = t;
          }
          for(; i < 80; ++i)
          {
             f = b ^ c ^ d;
-            tmp = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + w[i];
+            t = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + w[i];
             e = d;
             d = c;
             c = (b << 30) | (b >>> 2);
             b = a;
-            a = tmp;
+            a = t;
          }
          
          // update hash state
