@@ -157,368 +157,351 @@
     * 
     * @return the empty task.
     */
-   var create = function(options)
+   var Task = function(options)
    {
-      // create task object
-      var task =
+      // task id
+      this.id = -1;
+      
+      // task name
+      this.name = options.name || sNoTaskName;
+      
+      // task has no parent
+      this.parent = options.parent || null;
+      
+      // save run function
+      this.run = options.run;
+      
+      // create a queue of subtasks to run
+      this.subtasks = [];
+      
+      // error flag
+      this.error = false;
+      
+      // state of the task
+      this.state = READY;
+      
+      // number of times the task has been blocked (also the number
+      // of permits needed to be released to continue running)
+      this.blocks = 0;
+      
+      // timeout id when sleeping
+      this.timeoutId = null;
+      
+      // no swap time yet
+      this.swapTime = null;
+      
+      // no user data
+      this.userData = null;
+      
+      // initialize task
+      // FIXME: deal with overflow
+      this.id = sNextTaskId++;
+      sTasks[this.id] = this;
+      if(sVL >= 1)
       {
-         // task id
-         id: -1,
-         
-         // task name
-         name: options.name || sNoTaskName,
-         
-         // task has no parent
-         parent: options.parent || null,
-         
-         // save run function
-         run: options.run,
-         
-         // create a queue of subtasks to run
-         subtasks: [],
-         
-         // error flag
-         error: false,
-         
-         // state of the task
-         state: READY,
-         
-         // number of times the task has been blocked (also the number
-         // of permits needed to be released to continue running)
-         blocks: 0,
-         
-         // timeout id when sleeping
-         timeoutId: null,
-         
-         // no swap time yet
-         swapTime: null,
-         
-         // no user data
-         userData: null
-      };
-      
-      /**
-       * Logs debug information on this task and the system state.
-       */
-      task.debug = function(msg)
-      {
-         msg = msg || '';
-         forge.log.debug(cat, msg,
-            '[%s][%s] task:', task.id, task.name, task,
-            'subtasks:', task.subtasks.length,
-            'queue:', sTaskQueues);
-      };
-      
-      /**
-       * Adds a subtask to run after task.doNext() or task.fail()
-       * is called.  If an array of functions is specified then 
-       * 
-       * @param name human readable name for this task (optional).
-       * @param subrun a function to run that takes the current task as
-       *               its first parameter.
-       * 
-       * @return the current task (useful for chaining next() calls). 
-       */
-      task.next = function(name, subrun)
-      {
-         // juggle parameters if it looks like no name is given
-         if(typeof(name) === 'function')
-         {
-            subrun = name;
-            
-            // inherit parent's name
-            name = task.name;
-         }
-         // create subtask, set parent to this task, propagate callbacks
-         var subtask = create({
-            run: subrun,
-            name: name,
-            parent: task
-         });
-         // start subtasks running
-         subtask.state = RUNNING;
-         subtask.type = task.type;
-         subtask.successCallback = task.successCallback || null;
-         subtask.failureCallback = task.failureCallback || null;
-         
-         // queue a new subtask
-         task.subtasks.push(subtask);
-         
-         return task;
-      };
-      
-      /**
-       * Adds subtasks to run in parallel after task.doNext() or task.fail()
-       * is called. 
-       * 
-       * @param name human readable name for this task (optional).
-       * @param subrun functions to run that take the current task as
-       *               their first parameter.
-       * 
-       * @return the current task (useful for chaining next() calls). 
-       */
-      task.parallel = function(name, subrun)
-      {
-         // juggle parameters if it looks like no name is given
-         if(name.constructor == Array)
-         {
-            subrun = name;
-            
-            // inherit parent's name
-            name = task.name;
-         }
-         // Wrap parallel tasks in a regular task so they are started at the
-         // proper time.
-         return task.next(name, function(task)
-         {
-            // block waiting for subtasks
-            var ptask = task;
-            ptask.block(subrun.length);
-            
-            // we pass the iterator from the loop below as a parameter
-            // to a function because it is otherwise included in the
-            // closure and changes as the loop changes -- causing i
-            // to always be set to its highest value
-            var startParallelTask = function(pname, pi)
-            {
-               forge.task.start(
-               {
-                  type: pname,
-                  run: function(task)
-                  {
-                     subrun[pi](task);
-                  },
-                  success: function(task)
-                  {
-                     ptask.unblock();
-                  },
-                  failure: function(task)
-                  {
-                     ptask.unblock();
-                  }
-               });
-            };
-            
-            for(var i = 0; i < subrun.length; i++)
-            {
-               // Type must be unique so task starts in parallel:
-               //    name + private string + task id + sub-task index
-               // start tasks in parallel and unblock when the finish
-               var pname = name + '__parallel-' + task.id + '-' + i;
-               var pi = i;
-               startParallelTask(pname, pi);
-            }
-         });
-      };
-      
-      /**
-       * Stops a running task.
-       */
-      task.stop = function()
-      {
-         task.state = sStateTable[task.state][STOP];
-      };
-      
-      /**
-       * Starts running a task.
-       */
-      task.start = function()
-      {
-         task.error = false;
-         task.state = sStateTable[task.state][START];
-         
-         // try to restart
-         if(task.state === RUNNING)
-         {
-            task.start = new Date();
-            task.run(task);
-            runNext(task, 0);
-         }
-      };
-      
-      /**
-       * Blocks a task until it one or more permits have been released. The
-       * task will not resume until the requested number of permits have
-       * been released with call(s) to unblock().
-       * 
-       * @param n number of permits to wait for (default: 1).
-       */
-      task.block = function(n)
-      {
-         n = typeof(n) === 'undefined' ? 1 : n;
-         task.blocks += n;
-         if(task.blocks > 0)
-         {
-            task.state = sStateTable[task.state][BLOCK];
-         }
-      };
-      
-      /**
-       * Releases a permit to unblock a task. If a task was blocked by
-       * requesting N permits via block(), then it will only continue
-       * running once enough permits have been released via unblock() calls.
-       * 
-       * If multiple processes need to synchronize with a single task then
-       * use a condition variable (see forge.task.createCondition). It is
-       * an error to unblock a task more times than it has been blocked.
-       * 
-       * @param n number of permits to release (default: 1).
-       *
-       * @return the current block count (task is unblocked when count is 0) 
-       */
-      task.unblock = function(n)
-      {
-         n = typeof(n) === 'undefined' ? 1 : n;
-         task.blocks -= n;
-         if(task.blocks === 0 && task.state !== DONE)
-         {
-            task.state = RUNNING;
-            runNext(task, 0);
-         }
-         return task.blocks;
-      };
-      
-      /**
-       * Sleep for a period of time before resuming tasks.
-       *
-       * @param n number of milliseconds to sleep (default: 0).
-       */
-      task.sleep = function(n)
-      {
-         n = typeof(n) === 'undefined' ? 0 : n;
-         task.state = sStateTable[task.state][SLEEP];
-         task.timeoutId = setTimeout(function()
-         {
-            task.timeoutId = null;
-            task.state = RUNNING;
-            runNext(task, 0);
-         }, n);
-      };
-      
-      /**
-       * Waits on a condition variable until notified. The next task will
-       * not be scheduled until notification. A condition variable can be
-       * created with forge.task.createCondition().
-       * 
-       * Once cond.notify() is called, the task will continue.
-       * 
-       * @param cond the condition variable to wait on.
-       */
-      task.wait = function(cond)
-      {
-         cond.wait(task);
-      };
-      
-      /**
-       * If sleeping, wakeup and continue running tasks.
-       */
-      task.wakeup = function()
-      {
-         if(task.state === SLEEPING)
-         {
-            cancelTimeout(task.timeoutId);
-            task.timeoutId = null;
-            task.state = RUNNING;
-            runNext(task, 0);
-         }
-      };
-      
-      /**
-       * Cancel all remaining subtasks of this task.
-       */
-      task.cancel = function()
-      {
-         task.state = sStateTable[task.state][CANCEL];
-         // remove permits needed
-         task.permitsNeeded = 0;
-         // cancel timeouts
-         if(task.timeoutId !== null)
-         {
-            cancelTimeout(task.timeoutId);
-            task.timeoutId = null;
-         }
-         // remove subtasks
-         task.subtasks = [];
-      };
-      
-      /**
-       * Finishes this task with failure and sets error flag. The entire
-       * task will be aborted unless the next task that should execute
-       * is passed as a parameter. This allows levels of subtasks to be
-       * skipped. For instance, to abort only this tasks's subtasks, then
-       * call fail(task.parent). To abort this task's subtasks and its
-       * parent's subtasks, call fail(task.parent.parent). To abort
-       * all tasks and simply call the task callback, call fail() or
-       * fail(null).
-       * 
-       * The task callback (success or failure) will always, eventually, be
-       * called.
-       * 
-       * @param next the task to continue at, or null to abort entirely.
-       */
-      task.fail = function(next)
-      {
-         // set error flag
-         task.error = true;
-         
-         // finish task
-         finish(task, true);
-         
-         if(next)
-         {
-            // propagate task info
-            next.error = task.error;
-            next.swapTime = task.swapTime;
-            next.userData = task.userData;
-            
-            // do next task as specified
-            runNext(next, 0);
-         }
-         else
-         {
-            if(task.parent !== null)
-            {
-               // finish root task (ensures it is removed from task queue)
-               var parent = task.parent;
-               while(parent.parent !== null)
-               {
-                  // propagate task info
-                  parent.error = task.error;
-                  parent.swapTime = task.swapTime;
-                  parent.userData = task.userData;
-                  parent = parent.parent;
-               }
-               finish(parent, true);
-            }
-            
-            // call failure callback if one exists
-            if(task.failureCallback)
-            {
-               task.failureCallback(task);
-            }
-         }
-      };
-      
-      init(task);
-      
-      return task;
+         forge.log.verbose(cat, '[%s][%s] init', this.id, this.name, this);
+      }
    };
    
    /**
-    * Initialize a task.
-    * (Partial initialization done in createTask).
-    *
-    * @param task the task to initialize.
+    * Logs debug information on this task and the system state.
     */
-   var init = function(task)
+   Task.prototype.debug = function(msg)
    {
-      // FIXME: deal with overflow
-      task.id = sNextTaskId++;
-      sTasks[task.id] = task;
-      if(sVL >= 1)
+      msg = msg || '';
+      forge.log.debug(cat, msg,
+         '[%s][%s] task:', this.id, this.name, this,
+         'subtasks:', this.subtasks.length,
+         'queue:', sTaskQueues);
+   };
+   
+   /**
+    * Adds a subtask to run after task.doNext() or task.fail() is called.
+    * 
+    * @param name human readable name for this task (optional).
+    * @param subrun a function to run that takes the current task as
+    *               its first parameter.
+    * 
+    * @return the current task (useful for chaining next() calls). 
+    */
+   Task.prototype.next = function(name, subrun)
+   {
+      // juggle parameters if it looks like no name is given
+      if(typeof(name) === 'function')
       {
-         forge.log.verbose(cat, '[%s][%s] init',
-            task.id, task.name, task);
+         subrun = name;
+         
+         // inherit parent's name
+         name = this.name;
+      }
+      // create subtask, set parent to this task, propagate callbacks
+      var subtask = new Task({
+         run: subrun,
+         name: name,
+         parent: this
+      });
+      // start subtasks running
+      subtask.state = RUNNING;
+      subtask.type = this.type;
+      subtask.successCallback = this.successCallback || null;
+      subtask.failureCallback = this.failureCallback || null;
+      
+      // queue a new subtask
+      this.subtasks.push(subtask);
+      
+      return this;
+   };
+   
+   /**
+    * Adds subtasks to run in parallel after task.doNext() or task.fail()
+    * is called. 
+    * 
+    * @param name human readable name for this task (optional).
+    * @param subrun functions to run that take the current task as
+    *               their first parameter.
+    * 
+    * @return the current task (useful for chaining next() calls). 
+    */
+   Task.prototype.parallel = function(name, subrun)
+   {
+      // juggle parameters if it looks like no name is given
+      if(name.constructor == Array)
+      {
+         subrun = name;
+         
+         // inherit parent's name
+         name = this.name;
+      }
+      // Wrap parallel tasks in a regular task so they are started at the
+      // proper time.
+      return this.next(name, function(task)
+      {
+         // block waiting for subtasks
+         var ptask = task;
+         ptask.block(subrun.length);
+         
+         // we pass the iterator from the loop below as a parameter
+         // to a function because it is otherwise included in the
+         // closure and changes as the loop changes -- causing i
+         // to always be set to its highest value
+         var startParallelTask = function(pname, pi)
+         {
+            forge.task.start(
+            {
+               type: pname,
+               run: function(task)
+               {
+                  subrun[pi](task);
+               },
+               success: function(task)
+               {
+                  ptask.unblock();
+               },
+               failure: function(task)
+               {
+                  ptask.unblock();
+               }
+            });
+         };
+         
+         for(var i = 0; i < subrun.length; i++)
+         {
+            // Type must be unique so task starts in parallel:
+            //    name + private string + task id + sub-task index
+            // start tasks in parallel and unblock when the finish
+            var pname = name + '__parallel-' + task.id + '-' + i;
+            var pi = i;
+            startParallelTask(pname, pi);
+         }
+      });
+   };
+   
+   /**
+    * Stops a running task.
+    */
+   Task.prototype.stop = function()
+   {
+      this.state = sStateTable[this.state][STOP];
+   };
+   
+   /**
+    * Starts running a task.
+    */
+   Task.prototype.start = function()
+   {
+      this.error = false;
+      this.state = sStateTable[this.state][START];
+      
+      // try to restart
+      if(this.state === RUNNING)
+      {
+         this.start = new Date();
+         this.run(this);
+         runNext(this, 0);
+      }
+   };
+   
+   /**
+    * Blocks a task until it one or more permits have been released. The
+    * task will not resume until the requested number of permits have
+    * been released with call(s) to unblock().
+    * 
+    * @param n number of permits to wait for (default: 1).
+    */
+   Task.prototype.block = function(n)
+   {
+      n = typeof(n) === 'undefined' ? 1 : n;
+      this.blocks += n;
+      if(this.blocks > 0)
+      {
+         this.state = sStateTable[this.state][BLOCK];
+      }
+   };
+   
+   /**
+    * Releases a permit to unblock a task. If a task was blocked by
+    * requesting N permits via block(), then it will only continue
+    * running once enough permits have been released via unblock() calls.
+    * 
+    * If multiple processes need to synchronize with a single task then
+    * use a condition variable (see forge.task.createCondition). It is
+    * an error to unblock a task more times than it has been blocked.
+    * 
+    * @param n number of permits to release (default: 1).
+    *
+    * @return the current block count (task is unblocked when count is 0) 
+    */
+   Task.prototype.unblock = function(n)
+   {
+      n = typeof(n) === 'undefined' ? 1 : n;
+      this.blocks -= n;
+      if(this.blocks === 0 && this.state !== DONE)
+      {
+         this.state = RUNNING;
+         runNext(this, 0);
+      }
+      return this.blocks;
+   };
+   
+   /**
+    * Sleep for a period of time before resuming tasks.
+    *
+    * @param n number of milliseconds to sleep (default: 0).
+    */
+   Task.prototype.sleep = function(n)
+   {
+      n = typeof(n) === 'undefined' ? 0 : n;
+      this.state = sStateTable[this.state][SLEEP];
+      var task = this;
+      this.timeoutId = setTimeout(function()
+      {
+         task.timeoutId = null;
+         task.state = RUNNING;
+         runNext(task, 0);
+      }, n);
+   };
+   
+   /**
+    * Waits on a condition variable until notified. The next task will
+    * not be scheduled until notification. A condition variable can be
+    * created with forge.task.createCondition().
+    * 
+    * Once cond.notify() is called, the task will continue.
+    * 
+    * @param cond the condition variable to wait on.
+    */
+   Task.prototype.wait = function(cond)
+   {
+      cond.wait(this);
+   };
+   
+   /**
+    * If sleeping, wakeup and continue running tasks.
+    */
+   Task.prototype.wakeup = function()
+   {
+      if(this.state === SLEEPING)
+      {
+         cancelTimeout(this.timeoutId);
+         this.timeoutId = null;
+         this.state = RUNNING;
+         runNext(this, 0);
+      }
+   };
+   
+   /**
+    * Cancel all remaining subtasks of this task.
+    */
+   Task.prototype.cancel = function()
+   {
+      this.state = sStateTable[this.state][CANCEL];
+      // remove permits needed
+      this.permitsNeeded = 0;
+      // cancel timeouts
+      if(this.timeoutId !== null)
+      {
+         cancelTimeout(this.timeoutId);
+         this.timeoutId = null;
+      }
+      // remove subtasks
+      this.subtasks = [];
+   };
+   
+   /**
+    * Finishes this task with failure and sets error flag. The entire
+    * task will be aborted unless the next task that should execute
+    * is passed as a parameter. This allows levels of subtasks to be
+    * skipped. For instance, to abort only this tasks's subtasks, then
+    * call fail(task.parent). To abort this task's subtasks and its
+    * parent's subtasks, call fail(task.parent.parent). To abort
+    * all tasks and simply call the task callback, call fail() or
+    * fail(null).
+    * 
+    * The task callback (success or failure) will always, eventually, be
+    * called.
+    * 
+    * @param next the task to continue at, or null to abort entirely.
+    */
+   Task.prototype.fail = function(next)
+   {
+      // set error flag
+      this.error = true;
+      
+      // finish task
+      finish(this, true);
+      
+      if(next)
+      {
+         // propagate task info
+         next.error = this.error;
+         next.swapTime = this.swapTime;
+         next.userData = this.userData;
+         
+         // do next task as specified
+         runNext(next, 0);
+      }
+      else
+      {
+         if(this.parent !== null)
+         {
+            // finish root task (ensures it is removed from task queue)
+            var parent = this.parent;
+            while(parent.parent !== null)
+            {
+               // propagate task info
+               parent.error = this.error;
+               parent.swapTime = this.swapTime;
+               parent.userData = this.userData;
+               parent = parent.parent;
+            }
+            finish(parent, true);
+         }
+         
+         // call failure callback if one exists
+         if(this.failureCallback)
+         {
+            this.failureCallback(this);
+         }
       }
    };
    
@@ -734,7 +717,7 @@
    forge.task.start = function(options)
    {
       // create a new task
-      var task = create({
+      var task = new Task({
          run: options.run,
          name: options.name || sNoTaskName
       });
