@@ -51,7 +51,7 @@ jQuery(function($)
             $.each(tests, function(i, test) {
                task.next('test', function(task) {
                   var title = $('li:first', test.container);
-                  $('html,body').animate({scrollTop: title.offset().top});
+                  //$('html,body').animate({scrollTop: title.offset().top});
                   title.addClass('testing');
                   test.run(task, test);
                });
