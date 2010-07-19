@@ -874,7 +874,8 @@
          var len = tmp.length();
          if(len == 16 || len == 24 || len == 32)
          {
-            while(tmp.length() > 0)
+            len = len >>> 2;
+            for(var i = 0; i < len; ++i)
             {
                key.push(tmp.getInt32());
             }
