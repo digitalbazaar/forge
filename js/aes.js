@@ -1016,14 +1016,14 @@
                   }
                   else
                   {
-                     // ensure padding bytes are valid
+                     // ensure padding byte count is valid
                      var len = _output.length();
                      var count = _output.at(len - 1);
-                     for(var i = len - count; rval && i < len; ++i)
+                     if(count > (Nb << 2))
                      {
-                        rval = (_output.at(i) == count);
+                        rval = false;
                      }
-                     if(rval)
+                     else
                      {
                         // trim off padding bytes
                         _output.truncate(count);
