@@ -506,7 +506,8 @@ jQuery(function($)
       });
    });
    
-   addTest('TLS xhr (10 parallel)', function(task, test)
+   addTest('TLS xhr (10 parallel) (slow due to single threaded python server)',
+      function(task, test)
    {
       var N = 10;
       task.block(N);
