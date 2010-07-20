@@ -1,8 +1,15 @@
+Forge
+=====
+
+A native implementation of TLS in JavaScript and tools to write network based
+web apps.
+
+
 Introduction
 ------------
 
 The Forge software is a fully native implementation of the TLS protocol in
-Javascript as well as a set of tools for developing Web Apps that utilize
+JavaScript as well as a set of tools for developing Web Apps that utilize
 many network resources.
 
 Features
@@ -27,10 +34,10 @@ forge.aes:
    Provides basic AES encryption and encryption in CBC mode.
 
 forge.md.md5:
-   Provides MD5 message digestion.
+   Provides MD5 message digests.
 
 forge.md.sha1:
-   Provides SHA-1 message digestion.
+   Provides SHA-1 message digests.
 
 forge.hmac:
    Provides HMAC w/any supported message digest algorithm.
@@ -67,8 +74,43 @@ forge.xhr:
 Getting Started
 ---------------
 
+### Requirements
+
+* General:
+  * GNU autotools for the build infrastructure
+* Flash
+  * Adobe Flex SDK to build the Flash socket code.
+  * http://opensource.adobe.com/wiki/display/flexsdk/
+* Testing
+  * Python development packages to build a special SSL module with session
+    cache support. (optional)
+  * http://www.python.org/dev/
+
+### Building
+
+To build the whole project, run the following:
+
+ $ ./build-setup
+ $ make
+
+This will create the SWF, symlink all the JavaScript files, and build a Python
+SSL module for testing.
+
+### Testing
+
+A test server is provided which can be run in TLS mode and non-TLS mode. Use
+the --help option to get help for configuring ports. The server will print out
+the local URL you can vist to run tests. Some of the simplier tests can be run
+without TLS mode, but TLS mode is required for the more advanced tests.
+
+Run the test server with the following, and load the URL is prints:
+
+ $ ./tests/server.py --tls
+
 
 Library Details
 ---------------
 
+http://blog.digitalbazaar.com/2010/07/20/javascript-tls-1/
+http://blog.digitalbazaar.com/2010/07/20/javascript-tls-2/
 
