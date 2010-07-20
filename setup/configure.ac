@@ -18,7 +18,7 @@ AC_SUBST(PACKAGE_DATE_VERSION)
 dnl ----------------- docs -----------------
 
 AC_ARG_ENABLE([docs],
-   AS_HELP_STRING([--enable-docs], [build documentation [[no]]]),
+   AS_HELP_STRING([--enable-docs], [build documentation [no]]),
    [ 
       case "${enableval}" in
          yes) BUILD_DOCS=yes ;;
@@ -32,7 +32,7 @@ AC_SUBST(BUILD_DOCS)
 dnl ----------------- tests -----------------
 
 AC_ARG_ENABLE([tests],
-   AC_HELP_STRING([--disable-tests], [disable building test apps [[no]]]),
+   AC_HELP_STRING([--disable-tests], [disable building test apps [no]]),
    [
    case "${enableval}" in
       yes) BUILD_TESTS=yes ;;
@@ -46,7 +46,7 @@ AC_SUBST(BUILD_TESTS)
 dnl ----------------- build flash -----------------
 
 AC_ARG_ENABLE([flash],
-   AC_HELP_STRING([--enable-flash], [enable building flash [[yes]]]),
+   AC_HELP_STRING([--disable-flash], [disable building Flash [no]]),
    [
    case "${enableval}" in
       yes) BUILD_FLASH=yes ;;
@@ -55,7 +55,19 @@ AC_ARG_ENABLE([flash],
    esac
    ], [BUILD_FLASH=yes]) dnl Default value
 
+AC_ARG_ENABLE([pre-built-flash],
+   AC_HELP_STRING([--disable-pre-built-flash],
+      [disable use of pre-built Flash [no]]),
+   [
+   case "${enableval}" in
+      yes) USE_PRE_BUILT_FLASH=yes ;;
+      no)  USE_PRE_BUILT_FLASH=no ;;
+      *)   AC_MSG_ERROR(bad value ${enableval} for --disable-flash) ;;
+   esac
+   ], [USE_PRE_BUILT_FLASH=yes]) dnl Default value
+
 AC_SUBST(BUILD_FLASH)
+AC_SUBST(USE_PRE_BUILT_FLASH)
 
 dnl ----------------- mxmlc -----------------
 
@@ -79,10 +91,21 @@ if test "$BUILD_FLASH" = "yes" ; then
    fi
    dnl Check that mxmlc was found
    if test "x$MXMLC" = x; then
-      AC_MSG_ERROR([mxmlc not found, try --with-mxmlc])
+      if test "$USE_PRE_BUILT_FLASH" = "yes"; then
+         dnl Check pre-built SWF is present
+         if test -r "$FORGE_DIR/swf/SocketPool.swf"; then
+            AC_MSG_NOTICE([Using pre-built Flash])
+            BUILD_FLASH=no
+         else
+            AC_MSG_ERROR([mxmlc and pre-built Flash not found])
+         fi
+      else
+         AC_MSG_ERROR([mxmlc not found, try --with-mxmlc])
+      fi
    fi
-   AC_SUBST(MXMLC)
 fi
+
+AC_SUBST(MXMLC)
 
 dnl ----------------- mxmlc debug -----------------
 
@@ -145,11 +168,11 @@ echo -e "\n--------- Forge Build Environment -----------"
 echo "Forge Version     : $PACKAGE_NAME $PACKAGE_DATE_VERSION"
 
 if test "x$BUILD_FLASH" = "xyes" ; then
-   echo "Adobe Flash       : enabled"
+   echo "Adobe Flash       : Flash building enabled"
    echo "MXMLC             : $MXMLC"
    echo "MXMLC Debug flags : $MXMLC_DEBUG_MODE"
 else
-   echo "Adobe Flash       : disabled (use --enable-flash to enable)"
+   echo "Adobe Flash       : using pre-built Flash"
 fi
 
 if test "x$BUILD_PYTHON_MODULES" = "xyes" ; then

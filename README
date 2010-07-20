@@ -77,13 +77,15 @@ Getting Started
 ### Requirements
 
 * General:
-  * GNU autotools for the build infrastructure
+  * GNU autotools for the build infrastructure.
 * Flash
-  * Adobe Flex SDK to build the Flash socket code.
+  * Optional: A pre-built SocketPool.swf is included.
+  * Adobe Flex 3 SDK to build the Flash socket code.
   * http://opensource.adobe.com/wiki/display/flexsdk/
 * Testing
-  * Python development packages to build a special SSL module with session
-    cache support. (optional)
+  * Optional: Only needed for fast session cache during testing.
+  * Python development environment to build a special SSL module with session
+    cache support.
   * http://www.python.org/dev/
 
 ### Building
@@ -94,16 +96,19 @@ To build the whole project, run the following:
  $ make
 
 This will create the SWF, symlink all the JavaScript files, and build a Python
-SSL module for testing.
+SSL module for testing. To see configure options, run "./configure --help".
 
 ### Testing
 
 A test server is provided which can be run in TLS mode and non-TLS mode. Use
 the --help option to get help for configuring ports. The server will print out
-the local URL you can vist to run tests. Some of the simplier tests can be run
-without TLS mode, but TLS mode is required for the more advanced tests.
+the local URL you can vist to run tests.
 
-Run the test server with the following, and load the URL is prints:
+Some of the simplier tests should be run with just the non-TLS server:
+
+ $ ./tests/server.py
+
+More advanced tests need TLS enabled:
 
  $ ./tests/server.py --tls
 

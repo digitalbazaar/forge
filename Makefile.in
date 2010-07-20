@@ -5,8 +5,13 @@ BUILD_DIR=@FORGE_DIR@/build
 TOP_DIST_DIR=@FORGE_DIR@/dist
 DIST_DIR=$(TOP_DIST_DIR)/forge
 
+_FLASH := $(DIST_DIR)/SocketPool.swf
 ifeq (@BUILD_FLASH@,yes)
-FLASH := $(DIST_DIR)/SocketPool.swf
+FLASH := $(_FLASH)
+else
+ifeq (@USE_PRE_BUILT_FLASH@,yes)
+FLASH := $(_FLASH)
+endif
 endif
 JS_SOURCES := $(wildcard js/*.js)
 JS_DIST := $(JS_SOURCES:js/%.js=$(DIST_DIR)/%.js)
@@ -57,6 +62,12 @@ $(DIST_DIR)/SocketPool.swf: flash/SocketPool.as flash/PooledSocket.as flash/Sock
 	$(PCMD) @MXMLC@ $(FLASH_FLAGS) \
 		-load-config+=build-flash.xml \
 		-output=$@ $<
+else
+ifeq (@USE_PRE_BUILT_FLASH@,yes)
+$(DIST_DIR)/SocketPool.swf: @FORGE_DIR@/swf/SocketPool.swf
+	@echo "Copying pre-built $(@F)..."
+	$(PCMD) cp $< $@
+endif
 endif
 
 $(DIST_DIR)/%.js: js/%.js
