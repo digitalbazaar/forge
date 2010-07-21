@@ -1502,7 +1502,7 @@
             record = tls.createRecord(
             {
                type: tls.ContentType.handshake,
-               data: tls.createCertificate([])
+               data: tls.createCertificate(c)
             });
             tls.queue(c, record);
          }
@@ -1515,46 +1515,64 @@
          });
          tls.queue(c, record);
          
-         if(c.handshakeState.certificateRequest !== null)
+         // expect no messages until the following callback has been called
+         c.expect = ERR;
+         
+         // create callback to handle client signature (for client-certs)
+         var cb = function(c, signature)
          {
-            /* TODO: client certs not yet implemented
-            // create certificate verify message
+            var record = null;
+            
+            if(c.handshakeState.certificateRequest !== null)
+            {
+               // create certificate verify message
+               record = tls.createRecord(
+               {
+                  type: tls.ContentType.handshake,
+                  data: tls.createCertificateVerify(c, signature)
+               });
+               tls.queue(c, record);
+            }
+            
+            // create change cipher spec message
+            record = tls.createRecord(
+            {
+               type: tls.ContentType.change_cipher_spec,
+               data: tls.createChangeCipherSpec()
+            });
+            tls.queue(c, record);
+            
+            // create pending state
+            c.state.pending = tls.createConnectionState(c);
+            
+            // change current write state to pending write state
+            c.state.current.write = c.state.pending.write;
+            
+            // create finished message
             record = tls.createRecord(
             {
                type: tls.ContentType.handshake,
-               data: tls.createCertificateVerify(c)
+               data: tls.createFinished(c)
             });
             tls.queue(c, record);
-            */
+            
+            // send records
+            tls.flush(c);
+            
+            // expect a server ChangeCipherSpec message next
+            c.expect = SCC;
+         };
+         
+         // if there is no certificate request, do callback immediately
+         if(c.handshakeState.certificateRequest === null)
+         {
+            cb(c, null);
          }
-         
-         // create change cipher spec message
-         record = tls.createRecord(
+         // otherwise get the client signature
+         else
          {
-            type: tls.ContentType.change_cipher_spec,
-            data: tls.createChangeCipherSpec()
-         });
-         tls.queue(c, record);
-         
-         // create pending state
-         c.state.pending = tls.createConnectionState(c);
-         
-         // change current write state to pending write state
-         c.state.current.write = c.state.pending.write;
-         
-         // create finished message
-         record = tls.createRecord(
-         {
-            type: tls.ContentType.handshake,
-            data: tls.createFinished(c)
-         });
-         tls.queue(c, record);
-         
-         // send records
-         tls.flush(c);
-         
-         // expect a server ChangeCipherSpec message next
-         c.expect = SCC;
+            tls.getClientSignature(c, cb);
+         }
       }
    };
   
@@ -1964,6 +1982,7 @@
    var SCC = 5; // rcv change cipher spec
    var SFI = 6; // rcv finished
    var SAD = 7; // rcv application data
+   var ERR = 8; // not expecting any messages at this point
    
    // map current expect state and content type to function
    var __ = tls.handleUnexpected;
@@ -1980,7 +1999,8 @@
    /*SHD*/[__,F1,F2,__],
    /*SCC*/[F0,F1,__,__],
    /*SFI*/[__,F1,F2,__],
-   /*SAD*/[__,F1,F2,F3]
+   /*SAD*/[__,F1,F2,F3],
+   /*ERR*/[__,F1,F2,__]
    ];
    
    // map current expect state and handshake type to function
@@ -2001,7 +2021,8 @@
    /*SHD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,F9,__,__,__,__,__,__],
    /*SCC*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
    /*SFI*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FB],
-   /*SAD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
+   /*SAD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+   /*ERR*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
    ];
    
    /**
@@ -2648,12 +2669,16 @@
     *     ASN.1Cert certificate_list<0..2^24-1>;
     * } Certificate;
     * 
-    * @param certs the certificates to use.
+    * @param c the connection.
     * 
     * @return the Certificate byte buffer.
     */
-   tls.createCertificate = function(certs)
+   tls.createCertificate = function(c)
    {
+      // TODO: get what the server will accept from
+      // c.handshakeState.certificateRequest
+      // get appropriate client certs from connection
+      
       var certBuffer = forge.util.createBuffer();
       // TODO: fill buffer with certs to support client side certs
       
@@ -2663,7 +2688,7 @@
       // build record fragment
       var rval = forge.util.createBuffer();
       rval.putByte(tls.HandshakeType.certificate);
-      rval.putInt24(length);               // handshake length
+      rval.putInt24(length);
       writeVector(rval, 3, certBuffer);
       return rval;
    };
@@ -2714,8 +2739,7 @@
     *    public-key-encrypted PreMasterSecret pre_master_secret;
     * } EncryptedPreMasterSecret;
     * 
-    * A public-key-encrypted element is encoded as a vector <0..2^16-1>. In
-    * other words.
+    * A public-key-encrypted element is encoded as a vector <0..2^16-1>.
     * 
     * @param c the connection.
     * 
@@ -2763,6 +2787,33 @@
    };
    
    /**
+    * Gets the signed data used to verify a client-side certificate. See
+    * tls.createCertificateVerify() for details.
+    * 
+    * @param c the connection.
+    * @param cb the callback to call once the signed data is ready.
+    */
+   tls.getClientSignature = function(c, cb)
+   {
+      // generate data to RSA encrypt
+      var b = forge.util.createBuffer();
+      b.putBuffer(c.handshakeState.md5.digest());
+      b.putBuffer(c.handshakeState.sha1.digest());
+      b = b.getBytes();
+      
+      // create default signing function as necessary
+      c.getClientSignature = c.getClientSignature || function(c, b, cb)
+      {
+         // do rsa encryption, call callback
+         b = forge.pki.rsa.encrypt(b, c.privateKey, 0x01);
+         cb(c, b);
+      };
+      
+      // get client signature
+      c.getClientSignature(c, b, cb);
+   };
+   
+   /**
     * Creates a CertificateVerify message.
     * 
     * Meaning of this message:
@@ -2794,15 +2845,55 @@
     * message, including the type and length fields of the handshake
     * messages.
     * 
+    * select(SignatureAlgorithm) {
+    *    case anonymous: struct { };
+    *    case rsa:
+    *       digitally-signed struct {
+    *          opaque md5_hash[16];
+    *          opaque sha_hash[20];
+    *       };
+    *    case dsa:
+    *       digitally-signed struct {
+    *          opaque sha_hash[20];
+    *       };
+    * } Signature;
+    * 
+    * In digital signing, one-way hash functions are used as input for a
+    * signing algorithm. A digitally-signed element is encoded as an opaque
+    * vector <0..2^16-1>, where the length is specified by the signing
+    * algorithm and key.
+    *
+    * In RSA signing, a 36-byte structure of two hashes (one SHA and one
+    * MD5) is signed (encrypted with the private key). It is encoded with
+    * PKCS #1 block type 0 or type 1 as described in [PKCS1].
+    * 
+    * In DSS, the 20 bytes of the SHA hash are run directly through the
+    * Digital Signing Algorithm with no additional hashing.
+    * 
     * @param c the connection.
+    * @param signature the signature to include in the message.
     * 
     * @return the CertificateVerify byte buffer.
     */
-   tls.createCertificateVerify = function(c)
+   tls.createCertificateVerify = function(c, signature)
    {
-      // TODO: not used because client-side certificates not implemented
-      // TODO: combine c.handshakeState.md5.digest() and
-      // c.handshakeState.sha1.digest() to produce signature
+      /* Note: The signature will be stored in as digitally-signed opaque
+         vector that has the length prefixed using 2 bytes, so include those
+         2 bytes in the handshake message length. This is done as a minor
+         optimization instead of calling writeVector().
+       */
+      
+      // determine length of the handshake message
+      var length = signature.length + 2;
+      
+      // build record fragment
+      var rval = forge.util.createBuffer();
+      rval.putByte(tls.HandshakeType.certificate_verify);
+      rval.putInt24(length);
+      // add vector length bytes
+      rval.putInt16(signature.length);
+      rval.putBytes(signature);
+      return rval;
    };
    
    /**
