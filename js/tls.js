@@ -2529,15 +2529,14 @@
     */
    tls.createClientHello = function(c, sessionId, random)
    {
-      // create supported cipher suites, only 2 at present
-      // TLS_RSA_WITH_AES_128_CBC_SHA = { 0x00,0x2F }
-      // TLS_RSA_WITH_AES_128_CBC_SHA = { 0x00,0x35 }
-      // TODO: enable user preference
+      // create supported cipher suites
       var cipherSuites = forge.util.createBuffer();
-      cipherSuites.putByte(0x00);
-      cipherSuites.putByte(0x2F);
-      cipherSuites.putByte(0x00);
-      cipherSuites.putByte(0x35);
+      for(var i = 0; i < c.cipherSuites.length; ++i)
+      {
+         var cs = c.cipherSuites[i];
+         cipherSuites.putByte(cs[0]);
+         cipherSuites.putByte(cs[1]);
+      }
       var cSuites = cipherSuites.length();
       
       // create supported compression methods, null always supported, but
@@ -3376,12 +3375,22 @@
          caStore = forge.pki.createCaStore();
       }
       
+      // setup default cipher suites
+      var cipherSuites = options.cipherSuites || null;
+      if(cipherSuites === null)
+      {
+         cipherSuites = [];
+         cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA);
+         cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA);
+      }
+      
       // create TLS connection
       var c =
       {
          sessionId: options.sessionId,
          caStore: caStore,
          sessionCache: options.sessionCache,
+         cipherSuites: cipherSuites,
          connected: options.connected,
          virtualHost: options.virtualHost || null,
          verify: options.verify || function(cn,vfd,dpth,cts){return vfd;},
@@ -3788,6 +3797,8 @@
     *    sessionId: a session ID to reuse, null for a new connection.
     *    caStore: an array of certificates to trust.
     *    sessionCache: a session cache to use.
+    *    cipherSuites: an optional array of cipher suites to use,
+    *       see tls.CipherSuites.
     *    connected: function(conn) called when the first handshake completes.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
@@ -3818,8 +3829,10 @@
     * @param options:
     *    sessionId: a session ID to reuse, null for a new connection if no
     *       session cache is provided or it is empty.
-    *    sessionCache: a session cache to use.
     *    caStore: an array of certificates to trust.
+    *    sessionCache: a session cache to use.
+    *    cipherSuites: an optional array of cipher suites to use,
+    *       see tls.CipherSuites.
     *    socket: the socket to wrap.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
@@ -3851,6 +3864,7 @@
          sessionId: options.sessionId || null,
          caStore: options.caStore || [],
          sessionCache: options.sessionCache || null,
+         cipherSuites: options.cipherSuites || null,
          virtualHost: options.virtualHost,
          verify: options.verify,
          deflate: options.deflate,

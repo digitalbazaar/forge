@@ -323,6 +323,7 @@
             sessionId: null,
             sessionCache: {},
             caStore: tlsOptions.caStore,
+            cipherSuites: tlsOptions.cipherSuites,
             socket: socket,
             virtualHost: tlsOptions.virtualHost,
             verify: tlsOptions.verify,
@@ -459,6 +460,8 @@
     *           connections: number of connections to use to handle requests.
     *           caCerts: an array of certificates to trust for TLS, certs may
     *              be PEM-formatted or cert objects produced via forge.pki.
+    *           cipherSuites: an optional array of cipher suites to use,
+    *              see forge.tls.CipherSuites.
     *           virtualHost: the virtual server name to use in a TLS SNI
     *              extension, if not provided the url host will be used.
     *           verify: a custom TLS certificate verify callback to use.
@@ -532,6 +535,7 @@
          tlsOptions =
          {
             caStore: caStore,
+            cipherSuites: options.cipherSuites || null,
             virtualHost: options.virtualHost || url.host,
             verify: options.verify || http.defaultCertificateVerify,
             prime: options.primeTlsSockets || false
