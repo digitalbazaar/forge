@@ -91,14 +91,20 @@ def create_http_server(options, script_dir):
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
-        if not have_ssl_sessions:
+
+        # setup session args if we session support
+        sess_args = {}
+        if have_ssl_sessions:
+            sess_args["sess_id_ctx"] = "forgetest"
+        else:
             print "Forge SSL with session cache not available, using standard version."
+
         httpd.socket = ssl.wrap_socket(
             httpd.socket,
             keyfile="server.key",
             certfile="server.crt",
             server_side=True,
-            sess_id_ctx="forgetest")
+            **sess_args)
 
     print "Serving from \"%s\"." % (script_dir)
     print "%s://%s:%d/" % \
