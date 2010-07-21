@@ -98,6 +98,8 @@
     *           msie: true if browser is internet explorer, false if not.
     *           connections: the maximum number of concurrent connections.
     *           caCerts: a list of PEM-formatted certificates to trust.
+    *           cipherSuites: an optional array of cipher suites to use,
+    *              see forge.tls.CipherSuites.
     *           verify: optional TLS certificate verify callback to use (see
     *              forge.tls for details).
     *           persistCookies: true to use persistent cookies via flash local
@@ -128,6 +130,7 @@
          policyPort: _policyPort,
          connections: options.connections || _maxConnections,
          caCerts: options.caCerts,
+         cipherSuites: options.cipherSuites,
          persistCookies: options.persistCookies || true,
          primeTlsSockets: options.primeTlsSockets || false,
          verify: options.verify
@@ -316,6 +319,8 @@
     *        policyPort: the port that provides the server's flash policy.
     *        connections: the maximum number of concurrent connections.
     *        caCerts: a list of PEM-formatted certificates to trust.
+    *        cipherSuites: an optional array of cipher suites to use,
+    *           see forge.tls.CipherSuites.
     *        verify: optional TLS certificate verify callback to use (see
     *           forge.tls for details).
     *        persistCookies: true to use persistent cookies via flash local
@@ -417,6 +422,7 @@
                policyPort: options.policyPort || _policyPort,
                connections: options.connections || _maxConnections,
                caCerts: options.caCerts,
+               cipherSuites: options.cipherSuites,
                persistCookies: options.persistCookies || true,
                primeTlsSockets: options.primeTlsSockets || false,
                verify: options.verify
