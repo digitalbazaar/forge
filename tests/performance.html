@@ -23,6 +23,7 @@
       <script type="text/javascript" src="forge/tls.js"></script>
       
       <script type="text/javascript">
+      //<![CDATA[
 
       var cat = 'performance-test';
 
@@ -433,12 +434,28 @@
          }, 0);
       };
       
+      //]]>
       </script>
    </head>
    <body>
       <div class="nav"><a href="index.html">Forge Tests</a> / Performance</div>
+
+      <div class="header">
+         <h1>Performance Tests</h1>
+      </div>
+
       <div class="content">
-         <p>Use the controls below to test forge stuff. You currently need a javascript console to view the output.</p>
+
+         <fieldset class="section">
+            <ul>
+               <li>Use the controls below to run Forge performance tests.</li>
+               <li>You currently need a JavaScript console to view the output.</li>
+            </ul>
+         </fieldset>
+
+         <fieldset class="section">
+            <legend>Tests</legend>
+
          <div id="random_controls">
             <button id="random" onclick="javascript:return test_random();">paint random</button>
             <button id="clear" onclick="javascript:return canvas_clear();">clear</button>
@@ -460,6 +477,7 @@
             <button id="aes_128" onclick="javascript:return aes_128();">aes-128</button>
             <button id="aes_128_cbc" onclick="javascript:return aes_128_cbc();">aes-128 cbc</button>
          </div>
+         </fieldset>
       </div>
    </body>
 </html>

@@ -20,27 +20,32 @@
    </head>
 <body>
 <div class="nav"><a href="index.html">Forge Tests</a> / Tasks</div>
+
 <div class="header">
    <h1>Task Tests</h1>
 </div>
 
 <div class="content">
 
-<h2>Control</h2>
-<div id="controls">
+<fieldset class="section">
+<legend>Control</legend>
    <button id="start">Start</button>
    <button id="reset">Reset</button>
-</div>
+   <br/>
+   <input id="scroll" type="checkbox" checked="checked">Scroll Tests</button>
+</fieldset>
 
-<h2>Progress</h2>
-<div>
+<fieldset class="section">
+<legend>Progress</legend>
 Status: <span id="status">?</span><br/>
 Pass: <span id="pass">?</span>/<span id="total">?</span><br/>
 Fail: <span id="fail">?</span>
-</div>
+</fieldset>
 
-<h2>Tests</h2>
+<fieldset class="section">
+<legend>Tests</legend>
 <div id="tests"></div>
+</fieldset>
 
 </div>
 

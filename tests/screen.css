@@ -10,6 +10,7 @@ body {
    background: #7FF;
 }
 div.nav {
+   background: white;
    border-bottom: thin solid black;
    padding: .5em;
    padding-top: .2em;
@@ -21,6 +22,7 @@ div.header {
 }
 div.content {
    padding: .5em;
+   background: #DDD;
 }
 div.footer {
    border-top: thin solid black;
@@ -29,4 +31,31 @@ div.footer {
 }
 canvas {
    background: black;
+}
+table, td, th {
+   border: thin solid black;
+   border-collapse: collapse;
+}
+td, th {
+   padding: .2em;
+}
+span.sp-state-on {
+   font-weight: bold;
+}
+table#feedback {
+   width: 100%;
+}
+table#feedback th, table#feedback td {
+   width: 33%;
+}
+fieldset.section {
+   margin: .5em;
+   border: 2px solid black;
+   background: #FFF;
+}
+fieldset.section legend {
+   padding: .2em;
+   border: 2px solid black;
+   background: #DDF;
+   font-weight: bold;
 }

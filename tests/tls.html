@@ -21,8 +21,9 @@
       <script type="text/javascript" src="forge/http.js"></script>
       
       <script type="text/javascript">
+      //<![CDATA[
       swfobject.embedSWF(
-         'forge/SocketPool.swf', 'socketPool', '400', '224', '9.0.0',
+         'forge/SocketPool.swf', 'socketPool', '0', '0', '9.0.0',
          false, {}, {allowscriptaccess: 'always'}, {});
       
       // CA certificate for test server
@@ -188,16 +189,33 @@
          client.clearCookies();
       }
       
+      //]]>
       </script>
    </head>
    <body>
       <div class="nav"><a href="index.html">Forge Tests</a> / TLS</div>
+
+      <div class="header">
+         <h1>TLS Test</h1>
+      </div>
+
       <div class="content">
 
+      <!-- div used to hold the flash socket pool implemenation -->
       <div id="socketPool">
          <p>Could not load the flash SocketPool.</p>
       </div>
-      <p>Use the controls below to test the http client.</p>
+
+      <fieldset class="section">
+         <ul>
+           <li>Use the controls below to test the HTTP client over TLS.</li>
+           <li>You currently need a JavaScript console to view the output.</li>
+           <li>This test connects to a TLS server so you must have one running. The easiest way to run this test is to start the test server with --tls and load this page over HTTPS.</li>
+         </ul>
+      </fieldset>
+
+      <fieldset class="section">
+      <legend>Controls</legend>
       <div id="controls">
          <button id="init" onclick="javascript:return client_init(false);">init</button>
          <button id="init_primed" onclick="javascript:return client_init(true);">init primed</button>
@@ -207,10 +225,15 @@
          <button id="client_cookies" onclick="javascript:return client_cookies();">cookies</button>
          <button id="clear_cookies" onclick="javascript:return client_clear_cookies();">clear cookies</button>
       </div>
+      </fieldset>
+
+      <fieldset class="section">
+      <legend>Feedback</legend>
       <p>Feedback from the flash SocketPool:</p>
       <div id="feedback">
       None
       </div>
+      </fieldset>
 
       </div>
    </body>

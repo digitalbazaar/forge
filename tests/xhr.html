@@ -36,29 +36,43 @@
    </head>
 <body>
 <div class="nav"><a href="index.html">Forge Tests</a> / XHR</div>
-<div class="content">
 
-<h1>XmlHttpRequest Tests</h1>
-
-<h2>Control</h2>
-<div id="controls">
-   <button id="start">Start</button>
-   <button id="reset">Reset</button>
+<div class="header">
+   <h1>XmlHttpRequest Tests</h1>
 </div>
 
-<h2>Progress</h2>
-<div>
+<div class="content">
+
+<!-- div used to hold the flash socket pool implemenation -->
+<div id="socketPool">
+   <p>Could not load the flash SocketPool.</p>
+</div>
+
+<fieldset class="section">
+   <ul>
+     <li>Use the controls below to test the XHR wrapper.</li>
+   </ul>
+</fieldset>
+
+<fieldset class="section">
+<legend>Control</legend>
+   <button id="start">Start</button>
+   <button id="reset">Reset</button>
+   <br/>
+   <input id="scroll" type="checkbox" checked="checked">Scroll Tests</button>
+</fieldset>
+
+<fieldset class="section">
+<legend>Progress</legend>
 Status: <span id="status">?</span><br/>
 Pass: <span id="pass">?</span>/<span id="total">?</span><br/>
 Fail: <span id="fail">?</span>
-</div>
+</fieldset>
 
-<h2>Tests</h2>
+<fieldset class="section">
+<legend>Tests</legend>
 <div id="tests"></div>
-
-<div id="socketPool">
-   <p>Could not load the flash socket pool.</p>
-</div>
+</fieldset>
 
 </div>
 </body>
