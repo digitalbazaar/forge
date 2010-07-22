@@ -84,9 +84,11 @@ Getting Started
   * http://opensource.adobe.com/wiki/display/flexsdk/
 * Testing
   * Optional: Only needed for fast session cache during testing.
-  * Python development environment to build a special SSL module with session
-    cache support.
+  * Python and OpenSSL development environment to build a special SSL module
+    with session cache support.
   * http://www.python.org/dev/
+  * http://www.openssl.org/
+  * Debian users should install python-dev and libssl-dev.
 
 ### Building
 
