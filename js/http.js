@@ -624,10 +624,6 @@
             opts.headerReady = function(){};
             opts.bodyReady = function(){};
             opts.error = function(){};
-            if(opts.request.socket !== null)
-            {
-               opts.request.socket.close();
-            }
          };
          
          // add cookies to request
