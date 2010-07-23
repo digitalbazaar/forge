@@ -964,7 +964,11 @@
       }
       if(request.getField('Connection') === null)
       {
-         request.setField('Connection', 'close');
+         request.setField('Connection', 'keep-alive');
+      }
+      if(request.getField('Keep-Alive') === null)
+      {
+         request.setField('Keep-Alive', '115');
       }
       
       /**
