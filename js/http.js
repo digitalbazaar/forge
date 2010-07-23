@@ -182,7 +182,6 @@
          {
             if(socket.options !== null)
             {
-               socket.options.request.socket = null;
                socket.options = null;
             }
             socket.idle = true;
@@ -658,7 +657,6 @@
                socket = client.idle.pop();
             }
             socket.options = opts;
-            opts.request.socket = socket;
             _doRequest(client, socket);
          }
       };
