@@ -10,6 +10,12 @@
    // define http namespace
    var http = {};
    
+   // add array of clients to debug storage
+   if(forge.debug)
+   {
+      forge.debug.set('forge.http', 'clients', []);
+   }
+   
    // normalizes an http header field name
    var _normalize = function(name)
    {
@@ -200,11 +206,14 @@
     */
    var _initSocket = function(client, socket, tlsOptions)
    {
+      // no socket options yet
+      socket.options = null;
+      
       // set up handlers
       socket.connected = function(e)
       {
          // socket primed by caching TLS session, handle next request
-         if(!socket.options)
+         if(socket.options === null)
          {
             _handleNextRequest(client, socket);
          }
@@ -524,6 +533,12 @@
          persistCookies: (typeof(options.persistCookies) === 'undefined') ?
             true : options.persistCookies 
       };
+      
+      // add client to debug storage
+      if(forge.debug)
+      {
+         forge.debug.get('forge.http', 'clients').push(client);
+      }
       
       // load cookies from disk
       _loadCookies(client);
