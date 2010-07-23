@@ -170,6 +170,21 @@
          return false;
       }
 
+      function client_stress()
+      {
+         for(var i = 0; i < 10; ++i)
+         {
+            setTimeout(function()
+            {
+               for(var i = 0; i < 10; ++i)
+               {
+                  client_send();
+               }
+            }, 0);
+         }
+         return false;
+      }
+
       function client_cookies()
       {
          var cookie =
@@ -222,6 +237,7 @@
          <button id="cleanup" onclick="javascript:return client_cleanup();">cleanup</button>
          <button id="send" onclick="javascript:return client_send();">send</button>
          <button id="send10" onclick="javascript:return client_send_10();">send 10</button>
+         <button id="stress" onclick="javascript:return client_stress();">stress</button>
          <button id="client_cookies" onclick="javascript:return client_cookies();">cookies</button>
          <button id="clear_cookies" onclick="javascript:return client_clear_cookies();">clear cookies</button>
       </div>
