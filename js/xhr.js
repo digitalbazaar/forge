@@ -112,8 +112,9 @@
    {
       forge.log.debug(cat, 'initializing', options);
       
-      // update default policy port
+      // update default policy port and max connections
       _policyPort = options.policyPort || _policyPort;
+      _maxConnections = options.connections || _maxConnections;
       
       // create the flash socket pool
       _sp = net.createSocketPool({
