@@ -162,7 +162,8 @@
       {
          socket.connect({
             host: $('#host').val(),
-            port: parseInt($('#port').val())
+            port: parseInt($('#port').val()),
+            policyPort: parseInt($('#policyPort').val())
          });
          addFeedback(USER, 'Request socket connect');
          setState('connected');
@@ -249,9 +250,9 @@
                      <td><button id="connect" disabled="disabled" class="sp-control sp-created"
                         onclick="javascript:return sp_connect();">connect</button></td>
                      <td>Connect the socket to
-                        host: <input id="host" class="sp-control sp-not-connected" value="localhost"/>
-                        port: <input id="port" class="sp-control sp-not-connected" value="19400"/>
-                        policy port: <input id="policyPort" class="sp-control sp-not-initialized" value="19945"/>
+                        host: <input id="host" value="localhost"/>
+                        port: <input id="port" value="19400"/>
+                        policy port: <input id="policyPort" value="19945"/>
                      </td>
                   </tr>
                   <tr>
