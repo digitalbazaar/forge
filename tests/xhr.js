@@ -135,7 +135,7 @@ jQuery(function($)
                   },
                   error: function(xhr, textStatus, errorThrown)
                   {
-                     console.log('xhr connection failed', arguments);
+                     console.error('xhr connection failed', arguments);
                   },
                   xhr: forge.xhr.create
                });
