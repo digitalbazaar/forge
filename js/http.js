@@ -977,24 +977,6 @@
          }
       }
       
-      // set default headers
-      if(request.getField('User-Agent') === null)
-      {
-         request.setField('User-Agent', 'javascript forge.http 1.0');
-      }
-      if(request.getField('Accept') === null)
-      {
-         request.setField('Accept', '*/*');
-      }
-      if(request.getField('Connection') === null)
-      {
-         request.setField('Connection', 'keep-alive');
-      }
-      if(request.getField('Keep-Alive') === null)
-      {
-         request.setField('Keep-Alive', '115');
-      }
-      
       /**
        * Adds a cookie to the request 'Cookie' header.
        * 
@@ -1034,6 +1016,21 @@
           Accept: image/gif, text/html
           User-Agent: Mozilla 4.0
           */
+         
+         // set default headers
+         if(request.getField('User-Agent') === null)
+         {
+            request.setField('User-Agent', 'javascript forge.http 1.0');
+         }
+         if(request.getField('Accept') === null)
+         {
+            request.setField('Accept', '*/*');
+         }
+         if(request.getField('Connection') === null)
+         {
+            request.setField('Connection', 'keep-alive');
+            request.setField('Keep-Alive', '115');
+         }
          
          // add Accept-Encoding if not specified
          if(request.flashApi !== null &&
