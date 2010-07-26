@@ -4038,7 +4038,7 @@
             tlsSocket.error({
                id: socket.id,
                type: 'ioError',
-               message: 'Remote end closed connection during handshake.',
+               message: 'Connection closed during handshake.',
                bytesAvailable: 0
             });
          }
