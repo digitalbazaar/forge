@@ -118,32 +118,35 @@ jQuery(function($)
    });
    
    $('#stress').click(function() {
-      for(var i = 0; i < 10; ++i)
+      for(var i = 1; i <= 100; ++i)
       {
-         setTimeout(function()
+         (function(seqnum)
          {
-            for(var i = 0; i < 10; ++i)
+            setTimeout(function()
             {
                $.ajax(
                {
                   type: 'GET',
-                  url: '/',
+                  url: '/result.txt?seq=' + seqnum,
                   beforeSend: function(xhr)
                   {
                      xhr.setRequestHeader('Connection', 'close');
                   },
                   success: function(data, textStatus, xhr)
                   {
-                     console.log('xhr connection completed');
+                     console.log('xhr connection completed' +
+                        ' seq:' + seqnum +
+                        ' datalen:' + data.length);
                   },
                   error: function(xhr, textStatus, errorThrown)
                   {
-                     console.error('xhr connection failed', arguments);
+                     console.error('xhr connection failed' +
+                        ' seq:' + seqnum, arguments);
                   },
                   xhr: forge.xhr.create
                });
-            }
-         }, 0);
+            }, 0);
+         })(i);
       }
       return false;
    });
