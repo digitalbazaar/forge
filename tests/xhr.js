@@ -117,6 +117,18 @@ jQuery(function($)
       init();
    });
    
+   var stressStats = 
+   {
+      sent: 0,
+      success: 0,
+      error: 0
+   };
+   var stressStatsMessage = function()
+   {
+      return 'received:' + (stressStats.success + stressStats.error) + '/' +
+         stressStats.sent + ' errors:' + stressStats.error;
+   };
+   
    $('#stress').click(function() {
       for(var i = 1; i <= 100; ++i)
       {
@@ -130,18 +142,23 @@ jQuery(function($)
                   url: '/result.txt?seq=' + seqnum,
                   beforeSend: function(xhr)
                   {
+                     ++stressStats.sent;
                      xhr.setRequestHeader('Connection', 'close');
                   },
                   success: function(data, textStatus, xhr)
                   {
+                     ++stressStats.success;
                      console.log('xhr connection completed' +
                         ' seq:' + seqnum +
-                        ' datalen:' + data.length);
+                        ' datalen:' + data.length + ' ' +
+                        stressStatsMessage());
                   },
                   error: function(xhr, textStatus, errorThrown)
                   {
+                     ++stressStats.error;
                      console.error('xhr connection failed' +
-                        ' seq:' + seqnum, arguments);
+                        ' seq:' + seqnum + ' ' +
+                        stressStatsMessage(), arguments);
                   },
                   xhr: forge.xhr.create
                });
