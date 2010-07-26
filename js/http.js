@@ -316,8 +316,11 @@
                      response: response,
                      socket: socket
                   });
+                  // close connection if requested or by default on http/1.0
                   var value = response.getField('Connection') || '';
-                  if(value.indexOf('close') != -1)
+                  if(value.indexOf('close') != -1 ||
+                     (response.version === 'HTTP/1.0' &&
+                      response.getField('Keep-Alive') === null))
                   {
                      socket.close();
                   }
