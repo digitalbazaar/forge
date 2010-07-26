@@ -757,14 +757,17 @@
       xhr.getAllResponseHeaders = function()
       {
          var rval = '';
-         var fields = _state.response.fields;
-         $.each(fields, function(name, array)
+         if(_state.response !== null)
          {
-            $.each(array, function(i, value)
+            var fields = _state.response.fields;
+            $.each(fields, function(name, array)
             {
-               rval += name + ': ' + value + '\r\n';
+               $.each(array, function(i, value)
+               {
+                  rval += name + ': ' + value + '\r\n';
+               });
             });
-         });
+         }
          return rval;
       };
       
@@ -778,12 +781,15 @@
       xhr.getResponseHeader = function(header)
       {
          var rval = null;
-         if(header in _state.response.fields)
+         if(_state.response !== null)
          {
-            rval = _state.response.fields[header];
-            if(rval.constructor == Array)
+            if(header in _state.response.fields)
             {
-               rval = rval.join();
+               rval = _state.response.fields[header];
+               if(rval.constructor == Array)
+               {
+                  rval = rval.join();
+               }
             }
          }
          return rval;
