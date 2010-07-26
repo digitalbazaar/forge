@@ -535,7 +535,8 @@ jQuery(function($)
       });
    });
    
-   addTest('TLS xhr (10 parallel) (slow due to single threaded python server)',
+   addTest('TLS xhr (10 parallel) ' +
+      '(hit "Reset" then "Start" to speed up - uses SSL session cache)',
       function(task, test)
    {
       var N = 10;
