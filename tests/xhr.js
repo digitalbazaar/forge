@@ -124,7 +124,6 @@ jQuery(function($)
          {
             for(var i = 0; i < 10; ++i)
             {
-               try{
                $.ajax(
                {
                   type: 'GET',
@@ -139,7 +138,7 @@ jQuery(function($)
                      console.log('xhr connection failed', arguments);
                   },
                   xhr: forge.xhr.create
-               });}catch(ex){console.log(ex);}
+               });
             }
          }, 0);
       }
