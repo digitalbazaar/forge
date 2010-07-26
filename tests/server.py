@@ -15,7 +15,7 @@
 #   $ python -m SimpleHTTPServer 19400
 #
 
-from threading import Thread
+from multiprocessing import Process
 import SimpleHTTPServer
 import SocketServer
 from optparse import OptionParser
@@ -84,10 +84,15 @@ def create_policy_server(options):
     return policyd
 
 
+class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+    pass
+
+
 def create_http_server(options, script_dir):
     """Start a static file server"""
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-    httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
+#    httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
+    httpd = ThreadedTCPServer(("localhost", options.port), Handler)
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
@@ -115,7 +120,10 @@ def create_http_server(options, script_dir):
 
 
 def serve(server):
-    server.serve_forever()
+    try:
+       server.serve_forever()
+    except KeyboardInterrupt:
+       return
 
 
 def main():
@@ -141,24 +149,26 @@ def main():
     policyd = create_policy_server(options)
 
     # start servers
-    server_t = Thread(target=serve, args=(httpd,))
-    policy_t = Thread(target=serve, args=(policyd,))
-    server_t.start()
-    policy_t.start()
+    server_p = Process(target=serve, args=(httpd,))
+    policy_p = Process(target=serve, args=(policyd,))
+    server_p.start()
+    policy_p.start()
 
-    threads = [server_t, policy_t]
+    processes = [server_p, policy_p]
 
-    while len(threads) > 0:
+    while len(processes) > 0:
         try:
-            for t in threads:
-               if t.isAlive():
-                  t.join(1)
+            for p in processes:
+               if p.is_alive():
+                  p.join(1)
                else:
-                  threads.remove(t)
+                  processes.remove(p)
         except KeyboardInterrupt:
-            print '\nStopping test server...'
-            httpd.shutdown();
-            policyd.shutdown();
+            print "\nStopping test server..."
+            # processes each receive interrupt
+            # so no need to shutdown
+            #httpd.shutdown();
+            #policyd.shutdown();
 
 
 if __name__ == "__main__":

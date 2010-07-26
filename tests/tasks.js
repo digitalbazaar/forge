@@ -26,12 +26,12 @@ jQuery(function($)
       $('.expect').empty();
       $('.result').empty();
       $('.time').empty();
-      $('#start').attr('disabled', '');
+      $('#start').removeAttr('disabled');
    };
 
    var start = function()
    {
-      $('#start').attr('disabled', 'true');
+      $('#start').attr('disabled', 'disabled');
       // meta! use tasks to run the task tests
       forge.task.start({
          type: 'test',

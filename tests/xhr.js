@@ -53,12 +53,12 @@ jQuery(function($)
       $('.result').empty();
       $('.time').empty();
       $('.timePer').empty();
-      $('#start').attr('disabled', '');
+      $('#start').removeAttr('disabled');
    };
 
    var start = function()
    {
-      $('#start').attr('disabled', 'true');
+      $('#start').attr('disabled', 'disabled');
       // meta! use tasks to run the task tests
       forge.task.start({
          type: 'test',
@@ -128,10 +128,13 @@ jQuery(function($)
                {
                   type: 'GET',
                   url: '/',
+                  beforeSend: function(xhr)
+                  {
+                     xhr.setRequestHeader('Connection', 'close');
+                  },
                   success: function(data, textStatus, xhr)
                   {
                      console.log('xhr connection completed');
-                     xhr.abort();
                   },
                   error: function(xhr, textStatus, errorThrown)
                   {
