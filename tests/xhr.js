@@ -117,6 +117,35 @@ jQuery(function($)
       init();
    });
    
+   $('#stress').click(function() {
+      for(var i = 0; i < 10; ++i)
+      {
+         setTimeout(function()
+         {
+            for(var i = 0; i < 10; ++i)
+            {
+               try{
+               $.ajax(
+               {
+                  type: 'GET',
+                  url: '/',
+                  success: function(data, textStatus, xhr)
+                  {
+                     console.log('xhr connection completed');
+                     xhr.abort();
+                  },
+                  error: function(xhr, textStatus, errorThrown)
+                  {
+                     console.log('xhr connection failed', arguments);
+                  },
+                  xhr: forge.xhr.create
+               });}catch(ex){console.log(ex);}
+            }
+         }, 0);
+      }
+      return false;
+   });
+   
    /**
     * Creates a simple XMLHttpRequest wrapper. For testing.
     */
