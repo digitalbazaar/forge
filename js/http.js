@@ -129,9 +129,6 @@
     */
    var _doRequest = function(client, socket)
    {
-      // socket no longer idle
-      socket.idle = false;
-      
       if(socket.isConnected())
       {
          // already connected
@@ -161,38 +158,36 @@
     */
    var _handleNextRequest = function(client, socket)
    {
-      if(!socket.idle)
+      // clear buffer
+      socket.buffer.clear();
+      
+      // get pending request
+      var pending = null;
+      while(pending === null && client.requests.length > 0)
       {
-         // clear buffer
-         socket.buffer.clear();
-         
-         // get pending request
-         var pending = null;
-         while(pending === null && client.requests.length > 0)
+         pending = client.requests.shift();
+         if(pending.request.aborted)
          {
-            pending = client.requests.shift();
-            if(pending.request.aborted)
-            {
-               pending = null;
-            }
+            pending = null;
          }
-         
-         // mark socket idle if no pending requests
-         if(pending === null)
+      }
+      
+      // mark socket idle if no pending requests
+      if(pending === null)
+      {
+         if(socket.options !== null)
          {
-            if(socket.options !== null)
-            {
-               socket.options = null;
-            }
-            socket.idle = true;
-            client.idle.push(socket);
+            socket.options = null;
          }
-         // handle pending request
-         else
-         {
-            socket.options = pending;
-            _doRequest(client, socket);
-         }
+         client.idle.push(socket);
+      }
+      // handle pending request
+      else
+      {
+         // allow 1 retry
+         socket.retries = 1;
+         socket.options = pending;
+         _doRequest(client, socket);
       }
    };
    
@@ -226,7 +221,6 @@
             if(request.aborted)
             {
                socket.close();
-               _handleNextRequest(client, socket);
             }
             else
             {
@@ -239,33 +233,56 @@
                socket.send(out);
                request.time = +new Date() - request.time;
                socket.options.response.time = +new Date();
+               socket.sending = true;
             }
          }
       };
       socket.closed = function(e)
       {
-         // handle unspecified content-length transfer
-         var response = socket.options.response;
-         if(response.readBodyUntilClose)
+         if(socket.sending)
          {
-            response.time = +new Date() - response.time;
-            response.bodyReceived = true;
-            socket.options.bodyReady({
-               request: socket.options.request,
-               response: response,
-               socket: socket
-            });
+            socket.sending = false;
+            if(socket.retries > 0)
+            {
+               --socket.retries;
+               _doRequest(client, socket);
+            }
+            else
+            {
+               // error, closed during send
+               socket.error({
+                  id: socket.id,
+                  type: 'ioError',
+                  message: 'Connection closed during send. Broken pipe.',
+                  bytesAvailable: 0
+               });
+            }
          }
-         socket.options.closed(e);
-         _handleNextRequest(client, socket);
+         else
+         {
+            // handle unspecified content-length transfer
+            var response = socket.options.response;
+            if(response.readBodyUntilClose)
+            {
+               response.time = +new Date() - response.time;
+               response.bodyReceived = true;
+               socket.options.bodyReady({
+                  request: socket.options.request,
+                  response: response,
+                  socket: socket
+               });
+            }
+            socket.options.closed(e);
+            _handleNextRequest(client, socket);
+         }
       };
       socket.data = function(e)
       {
+         socket.sending = false;
          var request = socket.options.request;
          if(request.aborted)
          {
             socket.close();
-            _handleNextRequest(client, socket);
          }
          else
          {
@@ -302,10 +319,12 @@
                   var value = response.getField('Connection') || '';
                   if(value.indexOf('close') != -1)
                   {
-                     // close socket
                      socket.close();
                   }
-                  _handleNextRequest(client, socket);
+                  else
+                  {
+                     _handleNextRequest(client, socket);
+                  }
                }
             }
          }
@@ -321,7 +340,6 @@
             socket: socket
          });
          socket.close();
-         _handleNextRequest(client, socket);
       };
       
       // wrap socket for TLS
@@ -339,14 +357,12 @@
             inflate: tlsOptions.inflate || null
          });
          
-         socket.idle = true;
          socket.buffer = forge.util.createBuffer();
          client.sockets.push(socket);
          if(tlsOptions.prime)
          {
             // prime socket by connecting and caching TLS session, will do
             // next request from there
-            socket.idle = false;
             socket.connect({
                host: client.url.host,
                port: client.url.port,
@@ -362,7 +378,6 @@
       else
       {
          // no need to prime non-TLS sockets
-         socket.idle = true;
          socket.buffer = forge.util.createBuffer();
          client.sockets.push(socket);
          client.idle.push(socket);

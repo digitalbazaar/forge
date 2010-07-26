@@ -190,6 +190,11 @@
          socket.close = function()
          {
             api.close(id);
+            socket.closed({
+               id: socket.id,
+               type: 'close',
+               bytesAvailable: 0
+            });
          };
          
          /**
