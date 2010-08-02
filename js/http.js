@@ -1023,7 +1023,7 @@
          // set default headers
          if(request.getField('User-Agent') === null)
          {
-            request.setField('User-Agent', 'javascript forge.http 1.0');
+            request.setField('User-Agent', 'forge.http 1.0');
          }
          if(request.getField('Accept') === null)
          {
