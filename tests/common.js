@@ -101,9 +101,9 @@ jQuery(function($)
       console.log('generating ' + bits + '-bit RSA key-pair...');
       setTimeout(function()
       {
-         console.log('private key:');
+         console.log('private key:', keys.privateKey);
          console.log(forge.pki.privateKeyToPem(keys.privateKey));
-         console.log('public key:');
+         console.log('public key:', keys.publicKey);
          console.log(forge.pki.publicKeyToPem(keys.publicKey));
       }, 0);
    });
