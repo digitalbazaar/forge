@@ -1167,10 +1167,44 @@
       var n = forge.util.createBuffer(capture.publicKeyModulus).toHex();
       var e = forge.util.createBuffer(capture.publicKeyExponent).toHex();
       
-      // create public key
-      return pki.createRsaPublicKey(
+      // set public key
+      return pki.setRsaPublicKey(
          new BigInteger(n, 16),
          new BigInteger(e, 16));
+   };
+   
+   /**
+    * Converts a public key to an ASN.1 object.
+    * 
+    * @param key the public key.
+    * 
+    * @return the asn1 representation of a SubjectPublicKeyInfo.
+    */
+   pki.publicKeyToAsn1 = function(key)
+   {
+      // SubjectPublicKeyInfo
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // AlgorithmIdentifier
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // algorithm
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(forge.oids['rsaEncryption']).getBytes()),
+            // parameters (null)
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+         ]),
+         // subjectPublicKey
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
+            // RSAPublicKey
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               // modulus (n)
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                  forge.util.hexToBytes(key.n.toString(16))),
+               // publicExponent (e)
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                  forge.util.hexToBytes(key.e.toString(16)))
+            ])
+         ])
+      ]);
    };
    
    /**
@@ -1207,8 +1241,8 @@
       dQ = forge.util.createBuffer(capture.privateKeyExponent2).toHex();
       qInv = forge.util.createBuffer(capture.privateKeyCoefficient).toHex();
       
-      // create private key
-      return pki.createRsaPrivateKey(
+      // set private key
+      return pki.setRsaPrivateKey(
          new BigInteger(n, 16),
          new BigInteger(e, 16),
          new BigInteger(d, 16),
@@ -1220,14 +1254,55 @@
    };
    
    /**
-    * Creates an RSA public key from BigIntegers modulus and exponent.
+    * Converts a private key to an ASN.1 object.
+    * 
+    * @param key the private key.
+    * 
+    * @return the asn1 representation of an RSAPrivateKey.
+    */
+   pki.privateKeyToAsn1 = function(key)
+   {
+      // RSAPrivateKey
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // version (0 = only 2 primes, 1 multiple primes)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(0x00)),
+         // modulus (n)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.n.toString(16))),
+         // publicExponent (e)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.e.toString(16))),
+         // privateExponent (d)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.d.toString(16))),
+         // privateKeyPrime1 (p)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.p.toString(16))),
+         // privateKeyPrime2 (q)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.q.toString(16))),
+         // privateKeyExponent1 (dP)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.dP.toString(16))),
+         // privateKeyExponent2 (dQ)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.dQ.toString(16))),
+         // coefficient (qInv)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(key.qInv.toString(16)))
+      ]);
+   };
+   
+   /**
+    * Sets an RSA public key from BigIntegers modulus and exponent.
     * 
     * @param n the modulus.
     * @param e the exponent.
     * 
     * @return the public key.
     */
-   pki.createRsaPublicKey = function(n, e)
+   pki.setRsaPublicKey = function(n, e)
    {
       var key =
       {
@@ -1281,7 +1356,7 @@
    };
    
    /**
-    * Creates an RSA private key from BigIntegers modulus, exponent, primes,
+    * Sets an RSA private key from BigIntegers modulus, exponent, primes,
     * prime exponents, and modular multiplicative inverse.
     * 
     * @param n the modulus.
@@ -1295,7 +1370,7 @@
     * 
     * @return the private key.
     */
-   pki.createRsaPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
+   pki.setRsaPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
    {
       var key =
       {
@@ -1739,6 +1814,86 @@
       
       // return message
       return eb.getBytes();
+   };
+   
+   /**
+    * Generates an RSA public-private key pair.
+    * 
+    * @param bits the size for the private key in bits, defaults to 1024.
+    * @param e the public exponent to use, defaults to 65537.
+    * 
+    * @return an object with privateKey and publicKey properties.
+    */
+   pki.rsa.generateKeyPair = function(bits, e)
+   {
+      var rval = null;
+      
+      // set default bits
+      bits = bits || 1024;
+      
+      // create prng with api that matches BigInteger secure random
+      var rng =
+      {
+         // x is an array to fill with bytes
+         nextBytes: function(x)
+         {
+            var b = forge.random.getBytes(x.length);
+            for(var i = 0; i < x.length; ++i)
+            {
+               x[i] = b.charCodeAt(i);
+            }
+         }
+      };
+      
+      // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
+      var qs = bits >> 1;
+      e = new BigInteger(e || 65537, 10);
+      var p, q, t, n, d;
+      while(rval === null)
+      {
+         // find a suitable p
+         do
+         {
+            p = new BigInteger(bits - qs, 1, rng);
+         }
+         while(p.subtract(BigInteger.ONE).gcd(e)
+            .compareTo(BigInteger.ONE) == 0 && p.isProbablePrime(10));
+         
+         // find a suitable q
+         do
+         {
+            q = new BigInteger(qs, 1, rng);
+         }
+         while(p.subtract(BigInteger.ONE).gcd(e)
+            .compareTo(BigInteger.ONE) == 0 && p.isProbablePrime(10));
+         
+         // ensure p is larger than q (swap them if not)
+         if(p.compareTo(q) < 0)
+         {
+            t = p;
+            p = q;
+            q = t;
+         }
+         
+         // compute phi: (p - 1)(q - 1) (Euler's totient function)
+         var p1 = p.subtract(BigInteger.ONE);
+         var q1 = q.subtract(BigInteger.ONE);
+         var phi = p1.multiply(q1);
+         
+         // ensure e and phi are coprime
+         if(phi.gcd(e).compareTo(BigInteger.ONE) == 0)
+         {
+            n = p.multiply(q);
+            d = e.modInverse(phi);
+            
+            rval = {};
+            rval.privateKey = pki.setRsaPrivateKey(
+               n, e, d, p, q, d.mod(p1), d.mod(p1), q.modInverse(p));
+            rval.publicKey = pki.setRsaPublicKey(n, e);
+         }
+      }
+      
+      return rval;
    };
    
    /**
