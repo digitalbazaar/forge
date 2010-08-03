@@ -852,13 +852,19 @@ jQuery(function($)
          '672813d9e6f4818f29b9becbb29da2032c5e422da97e0c39bfb7a2e7d568615a' +
          '5073af0337ff215a8e1b2332d668691f4fb731440055420c24ac451dd3c913f4';
       
-      addTest('private key from pem', function(task, test)
+      addTest('private key from pem/to pem', function(task, test)
       {
          try
          {
+            // convert from pem
             var key = forge.pki.privateKeyFromPem(_privateKey);
             forge.log.debug(cat, 'privateKey', key);
-            test.pass();
+            
+            // convert back to pem
+            var pem = forge.pki.privateKeyToPem(key);
+            test.expect.html(_privateKey);
+            test.result.html(pem);
+            test.check();
          }
          catch(ex)
          {
@@ -867,13 +873,19 @@ jQuery(function($)
          }
       });
       
-      addTest('public key from pem', function(task, test)
+      addTest('public key from pem/to pem', function(task, test)
       {
          try
          {
+            // convert from pem
             var key = forge.pki.publicKeyFromPem(_publicKey);
             forge.log.debug(cat, 'publicKey', key);
-            test.pass();
+            
+            // convert back to pem
+            var pem = forge.pki.publicKeyToPem(key);
+            test.expect.html(_publicKey);
+            test.result.html(pem);
+            test.check();
          }
          catch(ex)
          {
