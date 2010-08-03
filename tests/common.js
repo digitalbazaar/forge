@@ -95,6 +95,19 @@ jQuery(function($)
       init();
    });
    
+   $('#keygen').click(function() {
+      var bits = $('#bits')[0].value;
+      var keys = forge.pki.rsa.generateKeyPair(bits);
+      console.log('generating ' + bits + '-bit RSA key-pair...');
+      setTimeout(function()
+      {
+         console.log('private key:');
+         console.log(forge.pki.privateKeyToPem(keys.privateKey));
+         console.log('public key:');
+         console.log(forge.pki.publicKeyToPem(keys.publicKey));
+      }, 0);
+   });
+   
    var addTest = function(name, run)
    {
       var container = $('<ul><li>Test ' + name + '</li><ul/></ul>');

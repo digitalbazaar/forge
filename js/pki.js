@@ -1903,8 +1903,8 @@
       
       // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
       var qs = bits >> 1;
-      e = new BigInteger(e || 65537, 10);
-      var p, q, t, n, d;
+      e = new BigInteger((e || 65537).toString(16), 16);
+      var p, q, t;
       while(rval === null)
       {
          // find a suitable p
@@ -1912,16 +1912,16 @@
          {
             p = new BigInteger(bits - qs, 1, rng);
          }
-         while(p.subtract(BigInteger.ONE).gcd(e)
-            .compareTo(BigInteger.ONE) == 0 && p.isProbablePrime(10));
+         while((p.subtract(BigInteger.ONE).gcd(e)
+            .compareTo(BigInteger.ONE) !== 0) || !p.isProbablePrime(10));
          
          // find a suitable q
          do
          {
             q = new BigInteger(qs, 1, rng);
          }
-         while(p.subtract(BigInteger.ONE).gcd(e)
-            .compareTo(BigInteger.ONE) == 0 && p.isProbablePrime(10));
+         while((q.subtract(BigInteger.ONE).gcd(e)
+            .compareTo(BigInteger.ONE) !== 0) || !q.isProbablePrime(10));
          
          // ensure p is larger than q (swap them if not)
          if(p.compareTo(q) < 0)
@@ -1939,8 +1939,8 @@
          // ensure e and phi are coprime
          if(phi.gcd(e).compareTo(BigInteger.ONE) == 0)
          {
-            n = p.multiply(q);
-            d = e.modInverse(phi);
+            var n = p.multiply(q);
+            var d = e.modInverse(phi);
             
             rval = {};
             rval.privateKey = pki.setRsaPrivateKey(
