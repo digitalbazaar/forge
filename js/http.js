@@ -359,7 +359,7 @@
             verify: tlsOptions.verify,
             getCertificate: tlsOptions.getCertificate,
             getPrivateKey: tlsOptions.getPrivateKey,
-            getClientSignature: tlsOptions.getClientSignature,
+            getSignature: tlsOptions.getSignature,
             deflate: tlsOptions.deflate || null,
             inflate: tlsOptions.inflate || null
          });
@@ -502,7 +502,7 @@
     *              certificate (see forge.tls for details).
     *           getPrivateKey: an optional callback used to get a client-side
     *              private key (see forge.tls for details).
-    *           getClientSignature: an optional callback used to get a
+    *           getSignature: an optional callback used to get a
     *              client-side signature (see forge.tls for details).
     *           persistCookies: true to use persistent cookies via flash local
     *              storage, false to only keep cookies in javascript.
@@ -587,7 +587,7 @@
             verify: options.verify || http.defaultCertificateVerify,
             getCertificate: options.getCertificate || null,
             getPrivateKey: options.getPrivateKey || null,
-            getClientSignature: options.getClientSignature || null,
+            getSignature: options.getSignature || null,
             prime: options.primeTlsSockets || false
          };
          

@@ -109,8 +109,8 @@
     *              certificate (see forge.tls for details).
     *           getPrivateKey: an optional callback used to get a client-side
     *              private key (see forge.tls for details).
-    *           getClientSignature: an optional callback used to get a
-    *              client-side signature (see forge.tls for details).
+    *           getSignature: an optional callback used to get a client-side
+    *              signature (see forge.tls for details).
     *           persistCookies: true to use persistent cookies via flash local
     *              storage, false to only keep cookies in javascript.
     *           primeTlsSockets: true to immediately connect TLS sockets on
@@ -149,7 +149,7 @@
          verify: options.verify,
          getCertificate: options.getCertificate,
          getPrivateKey: options.getPrivateKey,
-         getClientSignature: options.getClientSignature
+         getSignature: options.getSignature
       });
       _clients[_client.url.full] = _client;
       
@@ -345,8 +345,8 @@
     *           certificate.
     *        getPrivateKey: an optional callback used to get a client-side
     *           private key.
-    *        getClientSignature: an optional callback used to get a
-    *           client-side signature.
+    *        getSignature: an optional callback used to get a client-side
+    *           signature.
     *        persistCookies: true to use persistent cookies via flash local
     *           storage, false to only keep cookies in javascript.
     *        primeTlsSockets: true to immediately connect TLS sockets on
@@ -453,7 +453,7 @@
                verify: options.verify,
                getCertificate: options.getCertificate,
                getPrivateKey: options.getPrivateKey,
-               getClientSignature: options.getClientSignature
+               getSignature: options.getSignature
             });
             _clients[url.full] = _state.client;
          }

@@ -978,6 +978,9 @@
          tls.queue(c, record);
          tls.flush(c);
       }
+      
+      // continue
+      c.process();
    };
    
    /**
@@ -1150,6 +1153,9 @@
             
             // set new session ID
             c.handshakeState.sessionId = sid;
+            
+            // continue
+            c.process();
          }
       }
    };
@@ -1262,6 +1268,9 @@
                // expect a ServerKeyExchange message next
                c.expect = SKE;
             }
+            
+            // continue
+            c.process();
          }
       }
    };
@@ -1338,6 +1347,9 @@
       {
          // expect an optional CertificateRequest message next
          c.expect = SCR;
+         
+         // continue
+         c.process();
       }
    };
    
@@ -1372,7 +1384,7 @@
    tls.handleCertificateRequest = function(c, record, length)
    {
       // minimum of 5 bytes in message
-      if(len < 5)
+      if(length < 5)
       {
          c.error(c, {
             message: 'Invalid CertificateRequest. Message too short.',
@@ -1386,11 +1398,11 @@
       }
       else
       {
+         // TODO: TLS 1.1 and 1.2 have different formats
          var b = record.fragment;
          var msg =
          {
             certificate_types: readVector(b, 1),
-            supported_signature_algorithms: readVector(b, 2),
             certificate_authorities: readVector(b, 2)
          };
          
@@ -1399,6 +1411,9 @@
          
          // expect a ServerHelloDone message next
          c.expect = SHD;
+         
+         // continue
+         c.process();
       }
    };
    
@@ -1486,27 +1501,24 @@
             
             // send error
             c.error(c, error);
-         }         
+         }
       }
       
-      if(!c.fail)
+      // create client certificate message if requested
+      if(!c.fail && c.handshakeState.certificateRequest !== null)
       {
-         // create client certificate message if requested
-         if(c.handshakeState.certificateRequest !== null)
+         record = tls.createRecord(
          {
-            var record = tls.createRecord(
-            {
-               type: tls.ContentType.handshake,
-               data: tls.createCertificate(c)
-            });
-            tls.queue(c, record);
-         }
+            type: tls.ContentType.handshake,
+            data: tls.createCertificate(c)
+         });
+         tls.queue(c, record);
       }
       
       if(!c.fail)
       {
          // create client key exchange message
-         var record = tls.createRecord(
+         record = tls.createRecord(
          {
             type: tls.ContentType.handshake,
             data: tls.createClientKeyExchange(c)
@@ -1517,7 +1529,7 @@
          c.expect = ERR;
          
          // create callback to handle client signature (for client-certs)
-         var cb = function(c, signature)
+         var callback = function(c, signature)
          {
             var record = null;
             
@@ -1559,18 +1571,21 @@
             
             // expect a server ChangeCipherSpec message next
             c.expect = SCC;
+            
+            // continue
+            c.process();
          };
          
          // if there is no certificate request, do callback immediately
          if(c.handshakeState.certificateRequest === null)
          {
-            cb(c, null);
+            callback(c, null);
          }
          // otherwise get the client signature
          else
          {
-            tls.getClientSignature(c, cb);
-         }
+            tls.getClientSignature(c, callback);
+         }         
       }
    };
   
@@ -1610,10 +1625,13 @@
          {
             c.state.pending = null;
          }
+         
+         // expect a Finished record next
+         c.expect = SFI;
+         
+         // continue
+         c.process();
       }
-      
-      // expect a Finished record next
-      c.expect = SFI;
    };
    
    /**
@@ -1734,6 +1752,9 @@
          // now connected
          c.isConnected = true;
          c.connected(c);
+         
+         // continue
+         c.process();
       }
    };
    
@@ -1839,6 +1860,9 @@
          origin: 'server',
          alert: alert
       });
+      
+      // continue
+      c.process();
    };
    
    /**
@@ -1857,10 +1881,14 @@
       // see if the record fragment doesn't yet contain the full message
       if(length > b.length())
       {
-         // cache the record and reset the buffer read pointer before
-         // the type and length were read
+         // cache the record, clear its fragment, and reset the buffer read
+         // pointer before the type and length were read
          c.fragmented = record;
+         record.fragment = forge.util.createBuffer();
          b.read -= 4;
+         
+         // continue
+         c.process();
       }
       else
       {
@@ -1870,8 +1898,8 @@
          b.read -= 4;
          
          // save the handshake bytes for digestion after handler is found
-         // (includes type and length of handshake msg)
-         var bytes = b.bytes();
+         // (include type and length of handshake msg)
+         var bytes = b.bytes(length + 4);
          
          // restore read pointer
          b.read += 4;
@@ -1915,6 +1943,9 @@
       // buffer data, notify that its ready
       c.data.putBuffer(record.fragment);
       c.dataReady(c);
+      
+      // continue
+      c.process();
    };
    
    /**
@@ -2674,6 +2705,7 @@
    tls.createCertificate = function(c)
    {
       // TODO: support sending more than 1 certificate?
+      // TODO: check certificate request to ensure types are supported
       
       // get a client-side certificate (a certificate as a PEM string)
       var cert = null;
@@ -2820,9 +2852,9 @@
     * tls.createCertificateVerify() for details.
     * 
     * @param c the connection.
-    * @param cb the callback to call once the signed data is ready.
+    * @param callback the callback to call once the signed data is ready.
     */
-   tls.getClientSignature = function(c, cb)
+   tls.getClientSignature = function(c, callback)
    {
       // generate data to RSA encrypt
       var b = forge.util.createBuffer();
@@ -2831,20 +2863,37 @@
       b = b.getBytes();
       
       // create default signing function as necessary
-      c.getClientSignature = c.getClientSignature || function(c, b, cb)
+      c.getSignature = c.getSignature || function(c, b, callback)
       {
          // do rsa encryption, call callback
          var privateKey = null;
          if(c.getPrivateKey)
          {
-            privateKey = c.getPrivateKey(c, c.handshakeState.certificate);
+            try
+            {
+               privateKey = c.getPrivateKey(c, c.handshakeState.certificate);
+               privateKey = forge.pki.privateKeyFromPem(privateKey);
+            }
+            catch(ex)
+            {
+               c.error(c, {
+                  message: 'Could not get private key.',
+                  cause: ex,
+                  send: true,
+                  origin: 'client',
+                  alert: {
+                     level: tls.Alert.Level.fatal,
+                     description: tls.Alert.Description.internal_error
+                  }
+               });
+            }
          }
          b = forge.pki.rsa.encrypt(b, privateKey, 0x01);
-         cb(c, b);
+         callback(c, b);
       };
       
       // get client signature
-      c.getClientSignature(c, b, cb);
+      c.getSignature(c, b, callback);
    };
    
    /**
@@ -3521,7 +3570,7 @@
          verify: options.verify || function(cn,vfd,dpth,cts){return vfd;},
          getCertificate: options.getCertificate || null,
          getPrivateKey: options.getPrivateKey || null,
-         getClientSignature: options.getClientSignature || null,
+         getSignature: options.getSignature || null,
          input: forge.util.createBuffer(),
          tlsData: forge.util.createBuffer(),
          data: forge.util.createBuffer(),
@@ -3559,15 +3608,12 @@
          inflate: options.inflate || null
       };
       
-      // used while buffering enough data to read an entire record
-      var _record = null;
-      
       /**
        * Resets a closed TLS connection for reuse. Called in c.close().
        */
       c.reset = function()
       {
-         _record = null;
+         c.record = null;
          c.sessionId = null;
          c.session = null;
          c.state =
@@ -3714,95 +3760,120 @@
          
          // buffer data, get input length
          var b = c.input;
-         b.putBytes(data);
+         if(data)
+         {
+            b.putBytes(data);
+         }
          var len = b.length();
          
-         // keep processing data until more is needed
-         while(rval === 0 && b.length() > 0 && !c.fail)
+         // process next record if no failure, process will be called after
+         // each record is handled (since handling can be asynchronous)
+         if(!c.fail)
          {
-            // if there is no pending record and there are at least 5 bytes
-            // for the record, parse the basic record info
-            if(_record === null && len >= 5)
+            // reset record if ready and now empty
+            if(c.record !== null &&
+               c.record.ready && c.record.fragment.isEmpty())
             {
-               _record =
+               c.record = null;
+            }
+            
+            // if there is no pending record
+            if(c.record === null)
+            {
+               if(len < 5)
                {
-                  type: b.getByte(),
-                  version:
+                  // need at least 5 bytes to initialize a record
+                  rval = 5 - len;
+               }
+               else
+               {
+                  // do basic record initialization
+                  c.record =
                   {
-                     major: b.getByte(),
-                     minor: b.getByte()
-                  },
-                  length: b.getInt16(),
-                  fragment: forge.util.createBuffer()
-               };
-               len -= 5;
-               
-               // check record version
-               if(_record.version.major != tls.Version.major ||
-                  _record.version.minor != tls.Version.minor)
-               {
-                  c.error(c, {
-                     message: 'Incompatible TLS version.',
-                     send: true,
-                     origin: 'client',
-                     alert: {
-                        level: tls.Alert.Level.fatal,
-                        description: tls.Alert.Description.protocol_version
-                     }
-                  });
+                     type: b.getByte(),
+                     version:
+                     {
+                        major: b.getByte(),
+                        minor: b.getByte()
+                     },
+                     length: b.getInt16(),
+                     fragment: forge.util.createBuffer(),
+                     ready: false
+                  };
+                  len -= 5;
+                  
+                  // check record version
+                  if(c.record.version.major != tls.Version.major ||
+                     c.record.version.minor != tls.Version.minor)
+                  {
+                     c.error(c, {
+                        message: 'Incompatible TLS version.',
+                        send: true,
+                        origin: 'client',
+                        alert: {
+                           level: tls.Alert.Level.fatal,
+                           description: tls.Alert.Description.protocol_version
+                        }
+                     });
+                  }
                }
             }
             
-            // see if there is enough data to parse the pending record
-            if(_record !== null && len >= _record.length)
+            // handle pending record (record not yet ready)
+            if(!c.fail && c.record !== null && !c.record.ready)
             {
-               // fill record fragment
-               _record.fragment.putBytes(b.getBytes(_record.length));
-               
-               // update record using current read state
-               var s = c.state.current.read;
-               if(s.update(c, _record))
+               if(len < c.record.length)
                {
-                  // if the record type matches a previously fragmented
-                  // record, append the record fragment to it
-                  if(c.fragmented !== null)
-                  {
-                     if(c.fragmented.type === _record.type)
-                     {
-                        // concatenate record fragments
-                        c.fragmented.fragment.putBuffer(_record.fragment);
-                        _record = c.fragmented;
-                     }
-                     else
-                     {
-                        // error, invalid fragmented record
-                        c.error(c, {
-                           message: 'Invalid fragmented record.',
-                           send: true,
-                           origin: 'client',
-                           alert: {
-                              level: tls.Alert.Level.fatal,
-                              description:
-                                 tls.Alert.Description.unexpected_message
-                           }
-                        });
-                     }
-                  }
+                  // not enough data yet, need remainder of record
+                  rval = c.record.length - len;
+               }
+               // there is enough data to parse the pending record
+               else
+               {
+                  // fill record fragment
+                  c.record.fragment.putBytes(b.getBytes(c.record.length));
                   
-                  // update engine state, clear cached record
-                  _update(c, _record);
-                  _record = null;
+                  // update record using current read state
+                  var s = c.state.current.read;
+                  if(s.update(c, c.record))
+                  {
+                     // if the record type matches a previously fragmented
+                     // record, append the record fragment to it
+                     if(c.fragmented !== null)
+                     {
+                        if(c.fragmented.type === c.record.type)
+                        {
+                           // concatenate record fragments
+                           c.fragmented.fragment.putBuffer(c.record.fragment);
+                           c.record = c.fragmented;
+                        }
+                        else
+                        {
+                           // error, invalid fragmented record
+                           c.error(c, {
+                              message: 'Invalid fragmented record.',
+                              send: true,
+                              origin: 'client',
+                              alert: {
+                                 level: tls.Alert.Level.fatal,
+                                 description:
+                                    tls.Alert.Description.unexpected_message
+                              }
+                           });
+                        }
+                     }
+                     
+                     // record is now ready
+                     c.record.ready = true;
+                  }
                }
             }
-            else if(_record === null)
+            
+            // record ready to be handled
+            if(!c.fail && c.record !== null && c.record.ready)
             {
-               // need at least 5 bytes
-               rval = 5 - len;
-            }
-            else
-            {
-               // need remainder of record
-               rval = _record.length - len;
+               // update engine state
+               _update(c, c.record);
             }
          }
          
@@ -3935,7 +4006,7 @@
     *    The second parameter is an forge.pki X.509 certificate object that
     *    is associated with the requested private key. The return value must
     *    be a PEM-formatted private key.
-    * getClientSignature(conn, bytes, callback)
+    * getSignature(conn, bytes, callback)
     *    This callback can be used instead of getPrivateKey if the private key
     *    is not directly accessible in javascript or should not be. For
     *    instance, a secure external web service could provide the signature
@@ -3960,7 +4031,7 @@
     *       certificate.
     *    getPrivateKey: an optional callback used to get a client-side
     *       private key.
-    *    getClientSignature: an optional callback used to get a client-side
+    *    getSignature: an optional callback used to get a client-side
     *       signature.
     *    tlsDataReady: function(conn) called when TLS protocol data has
     *       been prepared and is ready to be used (typically sent over a
@@ -3996,6 +4067,12 @@
     *    socket: the socket to wrap.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
+    *    getCertificate: an optional callback used to get a client-side
+    *       certificate.
+    *    getPrivateKey: an optional callback used to get a client-side
+    *       private key.
+    *    getSignature: an optional callback used to get a client-side
+    *       signature.
     *    deflate: function(inBytes) if provided, will deflate TLS records using
     *       the deflate algorithm if the server supports it.
     *    inflate: function(inBytes) if provided, will inflate TLS records using
@@ -4027,6 +4104,9 @@
          cipherSuites: options.cipherSuites || null,
          virtualHost: options.virtualHost,
          verify: options.verify,
+         getCertificate: options.getCertificate,
+         getPrivateKey: options.getPrivateKey,
+         getSignature: options.getSignature,
          deflate: options.deflate,
          inflate: options.inflate,
          connected: function(c)

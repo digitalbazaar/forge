@@ -36,6 +36,16 @@
    };
    
    /**
+    * Gets whether or not this buffer is empty.
+    * 
+    * @return true if this buffer is empty, false if not.
+    */
+   util.ByteBuffer.prototype.isEmpty = function()
+   {
+      return (this.data.length - this.read) === 0;
+   };
+   
+   /**
     * Puts a byte in this buffer.
     * 
     * @param b the byte to put.
@@ -342,19 +352,22 @@
    };
    
    /**
-    * Gets a string of all the bytes without modifying the read
+    * Gets a string of the bytes in this buffer without modifying the read
     * pointer.
+    * 
+    * @param count the number of bytes to get, omit to get all.
     * 
     * @return an array of bytes.
     */
-   util.ByteBuffer.prototype.bytes = function()
+   util.ByteBuffer.prototype.bytes = function(count)
    {
-      return this.data.slice(this.read);
+      return (typeof(count) === 'undefined' ?
+         this.data.slice(this.read) :
+         this.data.slice(this.read, this.read + count));
    };
    
    /**
-    * Gets a byte at the given index without modifying the read
-    * pointer.
+    * Gets a byte at the given index without modifying the read pointer.
     * 
     * @param i the byte index.
     * 
