@@ -706,6 +706,32 @@
       '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
    
    /**
+    * Converts PEM-formatted data to DER.
+    * 
+    * @param pem the PEM-formatted data.
+    * 
+    * @return the DER-formatted data.
+    */
+   pki.pemToDer = function(pem)
+   {
+      var rval = null;
+      
+      // get matching base64
+      var m = _pemRegex.exec(pem);
+      if(m)
+      {
+         // base64 decode to get DER
+         rval = forge.util.createBuffer(forge.util.decode64(m[1]));
+      }
+      else
+      {
+         throw 'Invalid PEM format';
+      }
+      
+      return rval;
+   };
+   
+   /**
     * Converts PEM-formatted data into an certificate or key.
     * 
     * @param pem the PEM-formatted data.
@@ -717,23 +743,12 @@
    {
       var rval = null;
       
-      // get matching base64
-      var m = _pemRegex.exec(pem);
-      if(m)
-      {
-         // base64 decode to get DER
-         var der = forge.util.createBuffer(forge.util.decode64(m[1]));
-         
-         // parse DER into asn.1 object
-         var obj = asn1.fromDer(der);
-         
-         // convert from asn.1
-         rval = func(obj);
-      }
-      else
-      {
-         throw 'Invalid PEM format';
-      }
+      // parse DER into asn.1 object
+      var der = pki.pemToDer(pem);
+      var obj = asn1.fromDer(der);
+      
+      // convert from asn.1
+      rval = func(obj);
       
       return rval;
    };

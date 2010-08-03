@@ -1491,24 +1491,22 @@
       
       if(!c.fail)
       {
-         // create all of the client response records:
-         record = null;
-         
          // create client certificate message if requested
          if(c.handshakeState.certificateRequest !== null)
          {
-            // TODO: determine cert to send
-            // TODO: client-side certs not implemented yet, so always send none
-            record = tls.createRecord(
+            var record = tls.createRecord(
             {
                type: tls.ContentType.handshake,
                data: tls.createCertificate(c)
             });
             tls.queue(c, record);
          }
-         
+      }
+      
+      if(!c.fail)
+      {
          // create client key exchange message
-         record = tls.createRecord(
+         var record = tls.createRecord(
          {
             type: tls.ContentType.handshake,
             data: tls.createClientKeyExchange(c)
@@ -2675,12 +2673,43 @@
     */
    tls.createCertificate = function(c)
    {
-      // TODO: get what the server will accept from
-      // c.handshakeState.certificateRequest
-      // get appropriate client certs from connection
+      // TODO: support sending more than 1 certificate?
       
+      // get a client-side certificate (a certificate as a PEM string)
+      var cert = null;
+      if(c.getCertificate)
+      {
+         cert = c.getCertificate(c, c.handshakeState.certificateRequest);
+      }
+      
+      // buffer to hold client-side cert
       var certBuffer = forge.util.createBuffer();
-      // TODO: fill buffer with certs to support client side certs
+      if(cert !== null)
+      {
+         try
+         {
+            // certificate entry is itself a vector with 3 length bytes
+            var der = forge.pki.pemToDer(cert);
+            var asn1 = forge.asn1.fromDer(der.bytes());
+            writeVector(certBuffer, 3, der);
+            
+            // save certificate
+            c.handshakeState.certificate = forge.pki.certificateFromAsn1(asn1);
+         }
+         catch(ex)
+         {
+            c.error(c, {
+               message: 'Could not send certificate list.',
+               cause: ex,
+               send: true,
+               origin: 'client',
+               alert: {
+                  level: tls.Alert.Level.fatal,
+                  description: tls.Alert.Description.bad_certificate
+               }
+            });
+         }
+      }
       
       // determine length of the handshake message
       var length = 3 + certBuffer.length(); // cert vector
@@ -2805,7 +2834,12 @@
       c.getClientSignature = c.getClientSignature || function(c, b, cb)
       {
          // do rsa encryption, call callback
-         b = forge.pki.rsa.encrypt(b, c.privateKey, 0x01);
+         var privateKey = null;
+         if(c.getPrivateKey)
+         {
+            privateKey = c.getPrivateKey(c, c.handshakeState.certificate);
+         }
+         b = forge.pki.rsa.encrypt(b, privateKey, 0x01);
          cb(c, b);
       };
       
@@ -3485,6 +3519,9 @@
          connected: options.connected,
          virtualHost: options.virtualHost || null,
          verify: options.verify || function(cn,vfd,dpth,cts){return vfd;},
+         getCertificate: options.getCertificate || null,
+         getPrivateKey: options.getPrivateKey || null,
+         getClientSignature: options.getClientSignature || null,
          input: forge.util.createBuffer(),
          tlsData: forge.util.createBuffer(),
          data: forge.util.createBuffer(),
@@ -3646,6 +3683,7 @@
                session: session,
                serverCertificate: null,
                certificateRequest: null,
+               certificate: null,
                sp: null,
                clientRandom: random.bytes(),
                md5: forge.md.md5.create(),
@@ -3893,6 +3931,9 @@
     *    connected: function(conn) called when the first handshake completes.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
+    *    getCertificate: a callback used to get a client-side certificate.
+    *    getPrivateKey: a callback used to get a client-side private key.
+    *    getClientSignature: a callback used to get a client-side signature.
     *    tlsDataReady: function(conn) called when TLS protocol data has
     *       been prepared and is ready to be used (typically sent over a
     *       socket connection to its destination), read from conn.tlsData
