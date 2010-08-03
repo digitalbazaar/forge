@@ -754,6 +754,24 @@
    };
    
    /**
+    * Converts a positive BigInteger into 2's-complement big-endian bytes.
+    * 
+    * @param b the big integer to convert.
+    * 
+    * @return the bytes.
+    */
+   var _bnToBytes = function(b)
+   {
+      // prepend 0x00 if first byte >= 0x80 
+      var hex = b.toString(16);
+      if(hex[0] >= '8')
+      {
+         hex = '00' + hex;
+      }
+      return forge.util.hexToBytes(hex);
+   };
+   
+   /**
     * Converts an X.509 certificate from PEM format.
     * 
     * Note: If the certificate is to be verified then compute hash should
@@ -787,6 +805,25 @@
    };
    
    /**
+    * Converts an RSA public key to PEM format.
+    * 
+    * @param key the public key.
+    * @param maxline the maximum characters per line, defaults to 64.
+    * 
+    * @return the PEM-formatted public key.
+    */
+   pki.publicKeyToPem = function(key, maxline)
+   {
+      // convert to ASN.1, then DER, then base64-encode
+      var out = asn1.toDer(pki.publicKeyToAsn1(key));
+      out = forge.util.encode64(out.getBytes(), maxline || 64);
+      return (
+         '-----BEGIN PUBLIC KEY-----\r\n' +
+         out +
+         '\r\n-----END PUBLIC KEY-----');
+   };
+   
+   /**
     * Converts an RSA private key from PEM format.
     * 
     * @param pem the PEM-formatted private key.
@@ -796,6 +833,25 @@
    pki.privateKeyFromPem = function(pem)
    {
       return _fromPem(pem, pki.privateKeyFromAsn1);
+   };
+   
+   /**
+    * Converts an RSA private key to PEM format.
+    * 
+    * @param key the private key.
+    * @param maxline the maximum characters per line, defaults to 64.
+    * 
+    * @return the PEM-formatted private key.
+    */
+   pki.privateKeyToPem = function(key, maxline)
+   {
+      // convert to ASN.1, then DER, then base64-encode
+      var out = asn1.toDer(pki.privateKeyToAsn1(key));
+      out = forge.util.encode64(out.getBytes(), maxline || 64);
+      return (
+         '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+         out +
+         '\r\n-----END RSA PRIVATE KEY-----');
    };
    
    /**
@@ -1198,10 +1254,10 @@
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
                // modulus (n)
                asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                  forge.util.hexToBytes(key.n.toString(16))),
+                  _bnToBytes(key.n)),
                // publicExponent (e)
                asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                  forge.util.hexToBytes(key.e.toString(16)))
+                  _bnToBytes(key.e))
             ])
          ])
       ]);
@@ -1269,28 +1325,28 @@
             String.fromCharCode(0x00)),
          // modulus (n)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.n.toString(16))),
+            _bnToBytes(key.n)),
          // publicExponent (e)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.e.toString(16))),
+            _bnToBytes(key.e)),
          // privateExponent (d)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.d.toString(16))),
+            _bnToBytes(key.d)),
          // privateKeyPrime1 (p)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.p.toString(16))),
+            _bnToBytes(key.p)),
          // privateKeyPrime2 (q)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.q.toString(16))),
+            _bnToBytes(key.q)),
          // privateKeyExponent1 (dP)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.dP.toString(16))),
+            _bnToBytes(key.dP)),
          // privateKeyExponent2 (dQ)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.dQ.toString(16))),
+            _bnToBytes(key.dQ)),
          // coefficient (qInv)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(key.qInv.toString(16)))
+            _bnToBytes(key.qInv))
       ]);
    };
    

@@ -600,11 +600,14 @@
     * Base64 encodes a string of bytes.
     * 
     * @param input the string of bytes to encode.
+    * @param maxline the maximum number of encoded bytes per line to use,
+    *           defaults to none.
     * 
     * @return the base64-encoded output.
     */
-   util.encode64 = function(input)
+   util.encode64 = function(input, maxline)
    {
+      var line = '';
       var output = '';
       var chr1, chr2, chr3;
       var i = 0;
@@ -615,18 +618,25 @@
          chr3 = input.charCodeAt(i++);
          
          // encode 4 character group
-         output += _base64.charAt(chr1 >> 2);
-         output += _base64.charAt(((chr1 & 3) << 4) | (chr2 >> 4));
+         line += _base64.charAt(chr1 >> 2);
+         line += _base64.charAt(((chr1 & 3) << 4) | (chr2 >> 4));
          if(isNaN(chr2))
          {
-            output += '==';
+            line += '==';
          }
          else
          {
-            output += _base64.charAt(((chr2 & 15) << 2) | (chr3 >> 6));
-            output += isNaN(chr3) ? '=' : _base64.charAt(chr3 & 63);
+            line += _base64.charAt(((chr2 & 15) << 2) | (chr3 >> 6));
+            line += isNaN(chr3) ? '=' : _base64.charAt(chr3 & 63);
+         }
+         
+         if(maxline && line.length > maxline)
+         {
+            output += line.substr(0, maxline) + '\r\n';
+            line = line.substr(maxline);
          }
       }
+      output += line;
       
       return output;      
    };
