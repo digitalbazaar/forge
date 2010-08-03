@@ -145,7 +145,8 @@
          socket.connect({
             host: client.url.host,
             port: client.url.port,
-            policyPort: client.policyPort
+            policyPort: client.policyPort,
+            policyUrl: client.policyUrl
          });
       }
    };
@@ -369,7 +370,8 @@
             socket.connect({
                host: client.url.host,
                port: client.url.port,
-               policyPort: client.policyPort
+               policyPort: client.policyPort,
+               policyUrl: client.policyUrl
             });
          }
          else
@@ -482,7 +484,9 @@
     *           url: the url to connect to (scheme://host:port).
     *           socketPool: the flash socket pool to use.
     *           policyPort: the flash policy port to use (if other than the
-    *              socket pool default).
+    *              socket pool default), use 0 for flash default.
+    *           policyUrl: the flash policy file URL to use (if provided will
+    *              be used instead of a policy port).
     *           connections: number of connections to use to handle requests.
     *           caCerts: an array of certificates to trust for TLS, certs may
     *              be PEM-formatted or cert objects produced via forge.pki.
@@ -535,6 +539,8 @@
          socketPool: sp,
          // the policy port to use
          policyPort: options.policyPort || null,
+         // policy url to use
+         policyUrl: options.policyUrl || null,
          // queue of requests to service
          requests: [],
          // all sockets

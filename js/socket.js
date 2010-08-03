@@ -19,7 +19,10 @@
     * 
     * @param options:
     *           flashId: the dom ID for the flash object element.
-    *           policyPort: the default policy port for sockets.
+    *           policyPort: the default policy port for sockets, 0 to use
+    *              the flash default.
+    *           policyUrl: the default policy file URL for sockets (if provided
+    *              used instead of a policy port).
     *           msie: true if the browser is msie, false if not.
     * 
     * @return the created socket pool.
@@ -44,7 +47,9 @@
          // map of socket ID to sockets
          sockets: {},
          // default policy port
-         policyPort: options.policyPort || 19845
+         policyPort: options.policyPort || 19845,
+         // default policy URL
+         policyUrl: options.policyUrl || null
       };
       net.socketPools[spId] = sp;
       
@@ -175,13 +180,22 @@
           * @param options:
           *           host: the host to connect to.
           *           port: the port to connect to.
-          *           policyPort: the policy port to use (if non-default). 
+          *           policyPort: the policy port to use (if non-default), 0 to
+          *              use the flash default.
+          *           policyUrl: the policy file URL to use (instead of port). 
           */
          socket.connect = function(options)
          {
-            api.connect(
-               id, options.host, options.port,
-               options.policyPort || sp.policyPort);
+            // give precedence to policy URL over policy port
+            // if no policy URL and passed port isn't 0, use default port,
+            // otherwise use 0 for the port
+            var policyUrl = options.policyUrl || null;
+            var policyPort = 0;
+            if(policyUrl === null && options.policyPort !== 0)
+            {
+               policyPort = options.policyPort || sp.policyPort;
+            }
+            api.connect(id, options.host, options.port, policyPort, policyUrl);
          };
          
          /**

@@ -4120,7 +4120,9 @@
        * @param options:
        *           host: the host to connect to.
        *           port: the port to connect to.
-       *           policyPort: the policy port to use (if non-default). 
+       *           policyPort: the policy port to use (if non-default), 0 to
+       *              use the flash default.
+       *           policyUrl: the policy file URL to use (instead of port). 
        */
       tlsSocket.connect = function(options)
       {

@@ -256,10 +256,12 @@ package
        * @param id the ID of the Socket.
        * @param host the host to connect to.
        * @param port the port to connect to.
-       * @param spPort the security policy port to use.
+       * @param spPort the security policy port to use, 0 to use a url.
+       * @param spUrl the http URL to the policy file to use, null for default.
        */
       private function connect(
-         id:String, host:String, port:uint, spPort:uint):void
+         id:String, host:String, port:uint, spPort:uint,
+         spUrl:String = null):void
       {
          log("connect(" + id + "," + host + "," + port + "," + spPort + ")");
          
@@ -270,7 +272,14 @@ package
             
             // load socket policy file
             // (permits socket access to backend)
-            Security.loadPolicyFile("xmlsocket://" + host + ":" + spPort);
+            if(spPort !== 0)
+            {
+               Security.loadPolicyFile("xmlsocket://" + host + ":" + spPort);
+            }
+            else if(spUrl !== null && typeof(spUrl) !== undefined)
+            {
+               Security.loadPolicyFile(spUrl);
+            }
             
             // connect
             s.connect(host, port);

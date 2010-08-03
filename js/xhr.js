@@ -66,6 +66,7 @@
    // private flash socket pool vars
    var _sp = null;
    var _policyPort = 19845;
+   var _policyUrl = null;
    
    // default client (used if no special URL provided when creating an XHR)
    var _client = null;
@@ -94,7 +95,9 @@
     *           url: the default base URL to connect to if xhr URLs are
     *              relative, ie: https://myserver.com.
     *           flashId: the dom ID of the flash SocketPool.
-    *           policyPort: the port that provides the server's flash policy.
+    *           policyPort: the port that provides the server's flash policy,
+    *              0 to use the flash default.
+    *           policyUrl: the policy file URL to use instead of a policy port.
     *           msie: true if browser is internet explorer, false if not.
     *           connections: the maximum number of concurrent connections.
     *           caCerts: a list of PEM-formatted certificates to trust.
@@ -114,12 +117,14 @@
       
       // update default policy port and max connections
       _policyPort = options.policyPort || _policyPort;
+      _policyUrl = options.policyUrl || _policyUrl;
       _maxConnections = options.connections || _maxConnections;
       
       // create the flash socket pool
       _sp = net.createSocketPool({
          flashId: options.flashId,
          policyPort: _policyPort,
+         policyUrl: _policyUrl,
          msie: options.msie || false
       });
       
@@ -129,6 +134,7 @@
             window.location.protocol + '//' + window.location.host),
          socketPool: _sp,
          policyPort: _policyPort,
+         policyUrl: _policyUrl,
          connections: options.connections || _maxConnections,
          caCerts: options.caCerts,
          cipherSuites: options.cipherSuites,
@@ -317,7 +323,9 @@
     *           relative, ie: https://myserver.com, and note that the
     *           following options will be ignored if the URL is absent or
     *           the same as the default base URL.
-    *        policyPort: the port that provides the server's flash policy.
+    *        policyPort: the port that provides the server's flash policy, 0
+    *           to use the flash default.
+    *        policyUrl: the policy file URL to use instead of a policy port.
     *        connections: the maximum number of concurrent connections.
     *        caCerts: a list of PEM-formatted certificates to trust.
     *        cipherSuites: an optional array of cipher suites to use,
@@ -421,6 +429,7 @@
                url: options.url,
                socketPool: _sp,
                policyPort: options.policyPort || _policyPort,
+               policyUrl: options.policyUrl || _policyUrl,
                connections: options.connections || _maxConnections,
                caCerts: options.caCerts,
                cipherSuites: options.cipherSuites,
