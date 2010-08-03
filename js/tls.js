@@ -3922,6 +3922,31 @@
     * second the preVerify alert description, and lastly the default
     * 'bad_certificate'.
     * 
+    * There are three callbacks that can be used to make use of client-side
+    * certificates where each takes the TLS connection as the first parameter:
+    * 
+    * getCertificate(conn, CertificateRequest)
+    *    The second parameter is the CertificateRequest message from the server
+    *    that is part of the TLS protocol. It can be examined to determine
+    *    what client-side certificate to use (advanced). Most implementations
+    *    will just return a client-side certificate. The return value must be
+    *    a PEM-formatted certificate.
+    * getPrivateKey(conn, certificate)
+    *    The second parameter is an forge.pki X.509 certificate object that
+    *    is associated with the requested private key. The return value must
+    *    be a PEM-formatted private key.
+    * getClientSignature(conn, bytes, callback)
+    *    This callback can be used instead of getPrivateKey if the private key
+    *    is not directly accessible in javascript or should not be. For
+    *    instance, a secure external web service could provide the signature
+    *    in exchange for appropriate credentials. The second parameter is a
+    *    string of bytes to be signed that are part of the TLS protocol. These
+    *    bytes are used to verify that the private key for the previously
+    *    provided client-side certificate is accessible to the client. The
+    *    callback is a function that takes 2 parameters, the TLS connection
+    *    and the RSA encrypted (signed) bytes as a string. This callback must
+    *    be called once the signature is ready.
+    * 
     * @param options the options for this connection:
     *    sessionId: a session ID to reuse, null for a new connection.
     *    caStore: an array of certificates to trust.
@@ -3931,9 +3956,12 @@
     *    connected: function(conn) called when the first handshake completes.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
-    *    getCertificate: a callback used to get a client-side certificate.
-    *    getPrivateKey: a callback used to get a client-side private key.
-    *    getClientSignature: a callback used to get a client-side signature.
+    *    getCertificate: an optional callback used to get a client-side
+    *       certificate.
+    *    getPrivateKey: an optional callback used to get a client-side
+    *       private key.
+    *    getClientSignature: an optional callback used to get a client-side
+    *       signature.
     *    tlsDataReady: function(conn) called when TLS protocol data has
     *       been prepared and is ready to be used (typically sent over a
     *       socket connection to its destination), read from conn.tlsData

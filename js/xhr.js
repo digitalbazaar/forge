@@ -105,6 +105,12 @@
     *              see forge.tls.CipherSuites.
     *           verify: optional TLS certificate verify callback to use (see
     *              forge.tls for details).
+    *           getCertificate: an optional callback used to get a client-side
+    *              certificate (see forge.tls for details).
+    *           getPrivateKey: an optional callback used to get a client-side
+    *              private key (see forge.tls for details).
+    *           getClientSignature: an optional callback used to get a
+    *              client-side signature (see forge.tls for details).
     *           persistCookies: true to use persistent cookies via flash local
     *              storage, false to only keep cookies in javascript.
     *           primeTlsSockets: true to immediately connect TLS sockets on
@@ -140,7 +146,10 @@
          cipherSuites: options.cipherSuites,
          persistCookies: options.persistCookies || true,
          primeTlsSockets: options.primeTlsSockets || false,
-         verify: options.verify
+         verify: options.verify,
+         getCertificate: options.getCertificate,
+         getPrivateKey: options.getPrivateKey,
+         getClientSignature: options.getClientSignature
       });
       _clients[_client.url.full] = _client;
       
@@ -332,6 +341,12 @@
     *           see forge.tls.CipherSuites.
     *        verify: optional TLS certificate verify callback to use (see
     *           forge.tls for details).
+    *        getCertificate: an optional callback used to get a client-side
+    *           certificate.
+    *        getPrivateKey: an optional callback used to get a client-side
+    *           private key.
+    *        getClientSignature: an optional callback used to get a
+    *           client-side signature.
     *        persistCookies: true to use persistent cookies via flash local
     *           storage, false to only keep cookies in javascript.
     *        primeTlsSockets: true to immediately connect TLS sockets on
@@ -435,7 +450,10 @@
                cipherSuites: options.cipherSuites,
                persistCookies: options.persistCookies || true,
                primeTlsSockets: options.primeTlsSockets || false,
-               verify: options.verify
+               verify: options.verify,
+               getCertificate: options.getCertificate,
+               getPrivateKey: options.getPrivateKey,
+               getClientSignature: options.getClientSignature
             });
             _clients[url.full] = _state.client;
          }

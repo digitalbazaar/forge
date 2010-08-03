@@ -357,6 +357,9 @@
             socket: socket,
             virtualHost: tlsOptions.virtualHost,
             verify: tlsOptions.verify,
+            getCertificate: tlsOptions.getCertificate,
+            getPrivateKey: tlsOptions.getPrivateKey,
+            getClientSignature: tlsOptions.getClientSignature,
             deflate: tlsOptions.deflate || null,
             inflate: tlsOptions.inflate || null
          });
@@ -495,6 +498,12 @@
     *           virtualHost: the virtual server name to use in a TLS SNI
     *              extension, if not provided the url host will be used.
     *           verify: a custom TLS certificate verify callback to use.
+    *           getCertificate: an optional callback used to get a client-side
+    *              certificate (see forge.tls for details).
+    *           getPrivateKey: an optional callback used to get a client-side
+    *              private key (see forge.tls for details).
+    *           getClientSignature: an optional callback used to get a
+    *              client-side signature (see forge.tls for details).
     *           persistCookies: true to use persistent cookies via flash local
     *              storage, false to only keep cookies in javascript.
     *           primeTlsSockets: true to immediately connect TLS sockets on
@@ -576,6 +585,9 @@
             cipherSuites: options.cipherSuites || null,
             virtualHost: options.virtualHost || url.host,
             verify: options.verify || http.defaultCertificateVerify,
+            getCertificate: options.getCertificate || null,
+            getPrivateKey: options.getPrivateKey || null,
+            getClientSignature: options.getClientSignature || null,
             prime: options.primeTlsSockets || false
          };
          
