@@ -11,7 +11,6 @@
    window.forge.socketPool = {};
    window.forge.socketPool.ready = function()
    {
-      /*
       // init forge xhr
       forge.xhr.init({
          flashId: 'socketPool',
@@ -24,7 +23,7 @@
             // don't care about cert verification for test
             return true;
          }
-      });*/
+      });
    };
    swfobject.embedSWF(
       'forge/SocketPool.swf', 'socketPool', '0', '0', '9.0.0',
@@ -189,6 +188,67 @@ jQuery(function($)
          forge.util.clearItems(flashApi, 'forge.test.webid');
          $('#webids').html('None');
          console.log('Web IDs retrieved');
+      }
+      catch(ex)
+      {
+         console.log(ex);
+      }
+   });
+   
+   $('#authenticate').click(function()
+   {
+      console.log('doing Web ID authentication...');
+      
+      try
+      {
+         // get flash API
+         var flashApi = document.getElementById('socketPool');
+         
+         // get web ids collection
+         var webids = forge.util.getItem(
+            flashApi, 'forge.test.webid', 'webids');
+         webids = webids || {};
+         
+         var uri = $('#webid')[0].value;
+         var webid = webids[uri];
+         
+         $.ajax(
+         {
+            type: 'GET',
+            url: '/',
+            success: function(data, textStatus, xhr)
+            {
+               if(data !== '')
+               {
+                  console.log('authentication completed');
+               }
+               else
+               {
+                  console.log('authentication failed');
+               }
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+               console.log('authentication failed');
+            },
+            xhr: function()
+            {
+               return forge.xhr.create({
+                  // FIXME: change URL
+                  url: 'https://localhost:4433',
+                  getCertificate: function(c)
+                  {
+                  console.log('using cert', webid.certificate);
+                     return webid.certificate;
+                  },
+                  getPrivateKey: function(c)
+                  {
+                     console.log('using private key', webid.privateKey);
+                     return webid.privateKey;
+                  }
+               });
+            }
+         });      
       }
       catch(ex)
       {
