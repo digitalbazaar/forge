@@ -108,6 +108,22 @@ jQuery(function($)
       }, 0);
    });
    
+   $('#certgen').click(function() {
+      var bits = $('#bits')[0].value;
+      console.log('generating ' + bits +
+         '-bit RSA key-pair and certificate...');
+      var keys = forge.pki.rsa.generateKeyPair(bits);
+      var cert = forge.pki.rsa.createCertificate();
+      // FIXME: add certificate properties, self-sign cert
+      setTimeout(function()
+      {
+         console.log('private key:', keys.privateKey);
+         console.log(forge.pki.privateKeyToPem(keys.privateKey));
+         console.log('public key:', keys.publicKey);
+         console.log(forge.pki.publicKeyToPem(keys.publicKey));
+      }, 0);
+   });
+   
    var addTest = function(name, run)
    {
       var container = $('<ul><li>Test ' + name + '</li><ul/></ul>');
@@ -907,7 +923,7 @@ jQuery(function($)
          }
       });
       
-      addTest('certificate key from pem', function(task, test)
+      addTest('certificate key from pem/to pem', function(task, test)
       {
          try
          {
@@ -920,7 +936,12 @@ jQuery(function($)
                cert.subject.getField({name: 'stateOrProvinceName'}).value);
             forge.log.debug(cat, '2.5.4.7',
                cert.subject.getField({type: '2.5.4.7'}).value);
-            test.pass();
+            
+            // convert back to pem
+            var pem = forge.pki.certificateToPem(cert);
+            test.expect.html(_certificate);
+            test.result.html(pem);
+            test.check();
          }
          catch(ex)
          {

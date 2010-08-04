@@ -151,23 +151,24 @@
     */
    asn1.Type =
    {
-      NONE:         0,
-      BOOLEAN:      1,
-      INTEGER:      2,
-      BITSTRING:    3,
-      OCTETSTRING:  4,
-      NULL:         5,
-      OID:          6,
-      ODESC:        7,
-      EXTERNAL:     8,
-      REAL:         9,
-      ENUMERATED:  10,
-      EMBEDDED:    11,
-      UTF8:        12,
-      ROID:        13,
-      SEQUENCE:    16,
-      SET:         17,
-      UTCTIME:     23
+      NONE:             0,
+      BOOLEAN:          1,
+      INTEGER:          2,
+      BITSTRING:        3,
+      OCTETSTRING:      4,
+      NULL:             5,
+      OID:              6,
+      ODESC:            7,
+      EXTERNAL:         8,
+      REAL:             9,
+      ENUMERATED:      10,
+      EMBEDDED:        11,
+      UTF8:            12,
+      ROID:            13,
+      SEQUENCE:        16,
+      SET:             17,
+      PRINTABLESTRING: 19,
+      UTCTIME:         23
    };
    
    /**
@@ -332,6 +333,8 @@
       }
       else
       {
+         // TODO: do DER to OID conversion and vice-versa in .toDer?
+         
          // asn1 not composed, get raw value
          value = bytes.getBytes(length);
       }
@@ -614,6 +617,44 @@
    };
    
    /**
+    * Converts a date to a UTCTime value.
+    * 
+    * Note: GeneralizedTime has 4 digits for the year and is used for X.509
+    * dates passed 2049. Converting to a GeneralizedTime hasn't been
+    * implemented yet.
+    * 
+    * @param date the date to convert.
+    * 
+    * @return the UTCTime value.
+    */
+   asn1.dateToUtcTime = function(date)
+   {
+      var rval = '';
+      
+      // create format YYMMDDhhmmssZ
+      var format = [];
+      format.push(('' + date.getUTCFullYear()).substr(2));
+      format.push('' + (date.getUTCMonth() + 1));
+      format.push('' + date.getUTCDate());
+      format.push('' + date.getUTCHours());
+      format.push('' + date.getUTCMinutes());
+      format.push('' + date.getUTCSeconds());
+      
+      // ensure 2 digits are used for each format entry
+      for(var i = 0; i < format.length; ++i)
+      {
+         if(format[i].length < 2)
+         {
+            rval += '0';
+         }
+         rval += format[i];
+      }
+      rval += 'Z';
+      
+      return rval;
+   };
+   
+   /**
     * Validates the that given ASN.1 object is at least a super set of the
     * given ASN.1 structure. Only tag classes and types are checked. An
     * optional map may also be provided to capture ASN.1 values while the
@@ -818,6 +859,9 @@
                break;
             case asn1.Type.SET:
                rval += 'Set';
+               break;
+            case asn1.Type.PRINTABLESTRING:
+               rval += 'Printable String';
                break;
             case asn1.Type.UTCTIME:
                rval += 'UTC time';

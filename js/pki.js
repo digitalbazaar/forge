@@ -378,17 +378,29 @@
             name: 'Certificate.TBSCertificate.issuerUniqueID',
             tagClass: asn1.Class.CONTEXT_SPECIFIC,
             type: 1,
-            constructed: false,
-            capture: 'certIssuerUniqueId',
-            optional: true
+            constructed: true,
+            optional: true,
+            value: [{
+               name: 'Certificate.TBSCertificate.issuerUniqueID.id',
+               tagClass: asn1.Class.UNIVERSAL,
+               type: asn1.Type.BIT_STRING,
+               constructed: false,
+               capture: 'certIssuerUniqueId'
+            }]            
          }, {
             // subjectUniqueID (optional)
             name: 'Certificate.TBSCertificate.subjectUniqueID',
             tagClass: asn1.Class.CONTEXT_SPECIFIC,
             type: 2,
-            constructed: false,
-            capture: 'certSubjectUniqueId',
-            optional: true
+            constructed: true,
+            optional: true,
+            value: [{
+               name: 'Certificate.TBSCertificate.subjectUniqueID.id',
+               tagClass: asn1.Class.UNIVERSAL,
+               type: asn1.Type.BIT_STRING,
+               constructed: false,
+               capture: 'certSubjectUniqueId'
+            }]
          }, {
             // Extensions (optional)
             name: 'Certificate.TBSCertificate.extensions',
@@ -775,9 +787,9 @@
     * Converts an X.509 certificate from PEM format.
     * 
     * Note: If the certificate is to be verified then compute hash should
-    * be set to true. There is currently no implementation for converting
-    * a certificate back to ASN.1 so the TBSCertificate part of the ASN.1
-    * object needs to be scanned before the cert object is created.
+    * be set to true. This will scan the TBSCertificate part of the ASN.1
+    * object while it is converted so it doesn't need to be converted back
+    * to ASN.1-DER-encoding later.
     * 
     * @param pem the PEM-formatted certificate.
     * @param computeHash true to compute the hash for verification.
@@ -790,6 +802,25 @@
       {
          return pki.certificateFromAsn1(obj, computeHash);
       });
+   };
+   
+   /**
+    * Converts an X.509 certificate to PEM format.
+    * 
+    * @param cert the certificate.
+    * @param maxline the maximum characters per line, defaults to 64.
+    * 
+    * @return the PEM-formatted certificate.
+    */
+   pki.certificateToPem = function(cert, maxline)
+   {
+      // convert to ASN.1, then DER, then base64-encode
+      var out = asn1.toDer(pki.certificateToAsn1(cert));
+      out = forge.util.encode64(out.getBytes(), maxline || 64);
+      return (
+         '-----BEGIN CERTIFICATE-----\r\n' +
+         out +
+         '\r\n-----END CERTIFICATE-----');
    };
    
    /**
@@ -855,123 +886,251 @@
    };
    
    /**
-    * Converts an X.509v3 RSA certificate from an ASN.1 object.
-    * 
-    * Note: If the certificate is to be verified then compute hash should
-    * be set to true. There is currently no implementation for converting
-    * a certificate back to ASN.1 so the TBSCertificate part of the ASN.1
-    * object needs to be scanned before the cert object is created.
-    * 
-    * @param obj the asn1 representation of an X.509v3 RSA certificate.
-    * @param computeHash true to compute the hash for verification.
+    * Creates an empty X.509v3 RSA certificate.
     * 
     * @return the certificate.
     */
-   pki.certificateFromAsn1 = function(obj, computeHash)
+   pki.createCertificate = function()
    {
-      // validate certificate and capture data
-      var capture = {};
-      var errors = [];
-      if(!asn1.validate(obj, x509CertificateValidator, capture, errors))
-      {
-         throw {
-            message: 'Cannot read X.509 certificate. ' +
-               'ASN.1 object is not an X509v3 Certificate.',
-            errors: errors
-         };
-      }
-      
-      // get oid
-      var oid = asn1.derToOid(capture.publicKeyOid);
-      if(oid !== forge.oids['rsaEncryption'])
-      {
-         throw {
-            message: 'Cannot read public key. OID is not RSA.'
-         };
-      }
-      
-      // start building cert
       var cert = {};
-      cert.version = capture.certVersion ?
-         capture.certVersion.charCodeAt(0) : 0;
-      var serial = forge.util.createBuffer(capture.certSerialNumber);
-      cert.serialNumber = serial.toHex();
-      cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
-      // skip "unused bits" in signature value BITSTRING
-      var signature = forge.util.createBuffer(capture.certSignature);
-      ++signature.read;
-      cert.signature = signature.getBytes();
+      cert.version = 0x02;
+      cert.serialNumber = '00';
+      cert.signatureOid = null;
+      cert.signature = null;
       cert.validity = {};
-      cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
-      cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
+      cert.validity.notBefore = +new Date();
+      cert.validity.notAfter = +new Date();
       
-      if(computeHash)
-      {
-         // check signature OID for supported signature types
-         cert.md = null;
-         if(cert.signatureOid in oids)
-         {
-            var oid = oids[cert.signatureOid];
-            if(oid === 'sha1withRSAEncryption')
-            {
-               cert.md = forge.md.sha1.create();
-            }
-            else if(oid === 'md5withRSAEncryption')
-            {
-               cert.md = forge.md.md5.create();
-            }
-         }
-         if(cert.md === null)
-         {
-            throw {
-               message: 'Could not compute certificate digest. ' +
-                  'Unknown signature OID.',
-               signatureOid: cert.signatureOid
-            };
-         }
-         
-         // produce DER formatted TBSCertificate and digest it
-         var bytes = asn1.toDer(capture.certTbs);
-         cert.md.update(bytes.getBytes());
-      }
-      
-      // handle issuer, build issuer message digest
-      var imd = forge.md.sha1.create();
       cert.issuer = {};
       cert.issuer.getField = function(sn)
       {
          return _getAttribute(cert.issuer, sn);
       };
-      cert.issuer.attributes = _getAttributesAsArray(capture.certIssuer, imd);
-      if(capture.certIssuerUniqueId)
-      {
-         cert.issuer.uniqueId = capture.certIssuerUniqueId;
-      }
-      cert.issuer.hash = imd.digest().toHex();
+      cert.issuer.attributes = [];
+      cert.issuer.hash = null;
       
-      // handle subject, build subject message digest
-      var smd = forge.md.sha1.create();
       cert.subject = {};
       cert.subject.getField = function(sn)
       {
          return _getAttribute(cert.subject, sn);
       };
-      cert.subject.attributes = _getAttributesAsArray(capture.certSubject, smd);
-      if(capture.certSubjectUniqueId)
-      {
-         cert.subject.uniqueId = capture.certSubjectUniqueId;
-      }
-      cert.subject.hash = smd.digest().toHex();
+      cert.subject.attributes = [];
+      cert.subject.hash = null;
       
-      // handle extensions
-      if(capture.certExtensions)
+      cert.extensions = [];
+      cert.publicKey = null;
+      cert.md = null;
+      
+      /**
+       * Fills in missing fields in attributes.
+       * 
+       * @param attrs the attributes to fill missing fields in.
+       */
+      var _fillMissingFields = function(attrs)
       {
-         cert.extensions = _parseExtensions(capture.certExtensions);
-      }
-      else
+         var attr;
+         for(var i = 0; i < attrs; ++i)
+         {
+            attr = attrs[i];
+            
+            // populate missing name
+            if(typeof(attr.name) === 'undefined')
+            {
+               if(attr.type && attr.type in forge.oids)
+               {
+                  attr.name = forge.oids[attr.type];
+               }
+               else if(attr.shortName && attr.shortName in _shortNames)
+               {
+                  attr.name = _shortNames[attr.shortName];
+               }
+            }
+            
+            // populate missing type (OID)
+            if(typeof(attr.type) === 'undefined')
+            {
+               if(attr.name && attr.name in forge.oids)
+               {
+                  attr.type = forge.oids[attr.name];
+               }
+            }
+            
+            // populate missing shortname
+            if(typeof(attr.shortName) === 'undefined')
+            {
+               if(attr.name && attr.name in _shortNames)
+               {
+                  attr.shortName = _shortNames[attr.name];
+               }
+            }
+         }
+      };
+      
+      /**
+       * Sets the subject of this certificate.
+       * 
+       * @param attrs the array of subject attributes to use.
+       * @param uniqueId an optional a unique ID to use.
+       */
+      cert.setSubject = function(attrs, uniqueId)
       {
-         cert.extensions = [];
-      }
+         // set new attributes, clear hash
+         _fillMissingFields(attrs);
+         cert.subject.attributes = attrs;
+         delete cert.subject.uniqueId;
+         if(uniqueId)
+         {
+            cert.subject.uniqueId = uniqueId;
+         }
+         cert.subject.hash = null;
+      };
+      
+      /**
+       * Sets the issuer of this certificate.
+       * 
+       * @param attrs the array of issuer attributes to use.
+       * @param uniqueId an optional a unique ID to use.
+       */
+      cert.setIssuer = function(attrs, uniqueId)
+      {
+         // set new attributes, clear hash
+         _fillMissingFields(attrs);
+         cert.issuer.attributes = attrs;
+         delete cert.issuer.uniqueId;
+         if(uniqueId)
+         {
+            cert.issuer.uniqueId = uniqueId;
+         }
+         cert.issuer.hash = null;
+      };
+      
+      /**
+       * Sets the extensions of this certificate.
+       * 
+       * @param exts the array of extensions to use.
+       */
+      cert.setExtensions = function(exts)
+      {
+         var e;
+         for(var i = 0; i < ext; ++i)
+         {
+            e = exts[i];
+            
+            // populate missing name
+            if(typeof(e.name) === 'undefined')
+            {
+               if(e.id && e.id in forge.oids)
+               {
+                  e.name = forge.oids[e.id];
+               }
+            }
+            
+            // populate missing id
+            if(typeof(e.id) === 'undefined')
+            {
+               if(e.name && e.name in forge.oids)
+               {
+                  e.id = forge.oids[e.name];
+               }
+            }
+            
+            // handle missing value
+            if(typeof(e.value) === 'undefined')
+            {
+               // value is a BIT STRING
+               if(e.name === 'keyUsage')
+               {
+                  // build flags
+                  var unused = 0;
+                  var b2 = 0x00;
+                  var b3 = 0x00;
+                  if(e.digitalSignature)
+                  {
+                     b2 |= 0x80;
+                     unused = 7;
+                  }
+                  if(e.nonRepudiation)
+                  {
+                     b2 |= 0x40;
+                     unused = 6;
+                  }
+                  if(e.keyEncipherment)
+                  {
+                     b2 |= 0x20;
+                     unused = 5;
+                  }
+                  if(e.dataEncipherment)
+                  {
+                     b2 |= 0x10;
+                     unused = 4;
+                  }
+                  if(e.keyAgreement)
+                  {
+                     b2 |= 0x08;
+                     unused = 3;
+                  }
+                  if(e.keyCertSign)
+                  {
+                     b2 |= 0x04;
+                     unused = 2;
+                  }
+                  if(e.cRLSign)
+                  {
+                     b2 |= 0x02;
+                     unused = 1;
+                  }
+                  if(e.encipherOnly)
+                  {
+                     b2 |= 0x01;
+                     unused = 0;
+                  }
+                  if(e.decipherOnly)
+                  {
+                     b3 |= 0x80;
+                     unused = 7;
+                  }
+                  
+                  // create bit string
+                  var value = String.fromCharCode(unused);
+                  if(b3 !== 0)
+                  {
+                     value += (b2 + b3);
+                  }
+                  else if(b2 !== 0)
+                  {
+                     value += b2;
+                  }
+                  e.value = asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
+               }
+               // basicConstraints is a SEQUENCE
+               if(e.name === 'basicConstraints')
+               {
+                  e.value = asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+                  // cA BOOLEAN flag defaults to false
+                  if(e.cA)
+                  {
+                     e.value.value.push(asn1.create(
+                        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+                        String.fromCharCode(0xFF)));
+                  }
+                  if(e.pathLenConstraint)
+                  {
+                     var num = e.pathLenConstraint;
+                     var tmp = forge.util.createBuffer();
+                     tmp.putInt(num, num.toString(2).length)
+                     e.value.value.push(asn1.create(
+                        asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                        tmp.getBytes()));
+                  }
+               }
+            }
+         }
+         
+         // set new extensions
+         cert.extensions = exts;
+      };
       
       /**
        * Gets an extension by its name or id.
@@ -1007,9 +1166,6 @@
          }
          return rval;
       };
-      
-      // convert RSA public key from ASN.1
-      cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
       
       /**
        * Attempts verify the signature on the passed certificate using this
@@ -1075,6 +1231,304 @@
       };
       
       return cert;
+   };
+   
+   /**
+    * Converts an X.509v3 RSA certificate from an ASN.1 object.
+    * 
+    * Note: If the certificate is to be verified then compute hash should
+    * be set to true. There is currently no implementation for converting
+    * a certificate back to ASN.1 so the TBSCertificate part of the ASN.1
+    * object needs to be scanned before the cert object is created.
+    * 
+    * @param obj the asn1 representation of an X.509v3 RSA certificate.
+    * @param computeHash true to compute the hash for verification.
+    * 
+    * @return the certificate.
+    */
+   pki.certificateFromAsn1 = function(obj, computeHash)
+   {
+      // validate certificate and capture data
+      var capture = {};
+      var errors = [];
+      if(!asn1.validate(obj, x509CertificateValidator, capture, errors))
+      {
+         throw {
+            message: 'Cannot read X.509 certificate. ' +
+               'ASN.1 object is not an X509v3 Certificate.',
+            errors: errors
+         };
+      }
+      
+      // get oid
+      var oid = asn1.derToOid(capture.publicKeyOid);
+      if(oid !== forge.oids['rsaEncryption'])
+      {
+         throw {
+            message: 'Cannot read public key. OID is not RSA.'
+         };
+      }
+      
+      // create certificate
+      var cert = pki.createCertificate();
+      cert.version = capture.certVersion ?
+         capture.certVersion.charCodeAt(0) : 0;
+      var serial = forge.util.createBuffer(capture.certSerialNumber);
+      cert.serialNumber = serial.toHex();
+      cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
+      // skip "unused bits" in signature value BITSTRING
+      var signature = forge.util.createBuffer(capture.certSignature);
+      ++signature.read;
+      cert.signature = signature.getBytes();
+      cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
+      cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
+      
+      if(computeHash)
+      {
+         // check signature OID for supported signature types
+         cert.md = null;
+         if(cert.signatureOid in oids)
+         {
+            var oid = oids[cert.signatureOid];
+            if(oid === 'sha1withRSAEncryption')
+            {
+               cert.md = forge.md.sha1.create();
+            }
+            else if(oid === 'md5withRSAEncryption')
+            {
+               cert.md = forge.md.md5.create();
+            }
+         }
+         if(cert.md === null)
+         {
+            throw {
+               message: 'Could not compute certificate digest. ' +
+                  'Unknown signature OID.',
+               signatureOid: cert.signatureOid
+            };
+         }
+         
+         // produce DER formatted TBSCertificate and digest it
+         var bytes = asn1.toDer(capture.certTbs);
+         cert.md.update(bytes.getBytes());
+      }
+      
+      // handle issuer, build issuer message digest
+      var imd = forge.md.sha1.create();
+      cert.issuer.attributes = _getAttributesAsArray(capture.certIssuer, imd);
+      if(capture.certIssuerUniqueId)
+      {
+         cert.issuer.uniqueId = capture.certIssuerUniqueId;
+      }
+      cert.issuer.hash = imd.digest().toHex();
+      
+      // handle subject, build subject message digest
+      var smd = forge.md.sha1.create();
+      cert.subject.attributes = _getAttributesAsArray(capture.certSubject, smd);
+      if(capture.certSubjectUniqueId)
+      {
+         cert.subject.uniqueId = capture.certSubjectUniqueId;
+      }
+      cert.subject.hash = smd.digest().toHex();
+      
+      // handle extensions
+      if(capture.certExtensions)
+      {
+         cert.extensions = _parseExtensions(capture.certExtensions);
+      }
+      else
+      {
+         cert.extensions = [];
+      }
+      
+      // convert RSA public key from ASN.1
+      cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
+      
+      return cert;
+   };
+   
+   /**
+    * Converts an X.509 subject or issuer to an ASN.1 RDNSequence.
+    * 
+    * @param obj the subject or issuer (distinguished name).
+    * 
+    * @return the ASN.1 RDNSequence.
+    */
+   _dnToAsn1 = function(obj)
+   {
+      // create an empty RDNSequence
+      var rval = asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+      
+      // iterate over attributes
+      var attr, set;
+      var attrs = obj.attributes;
+      for(var i = 0; i < attrs.length; ++i)
+      {
+         attr = attrs[i];
+         
+         // create a RelativeDistinguishedName set
+         // each value in the set is an AttributeTypeAndValue first
+         // containing the type (an OID) and second the value
+         set = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               // AttributeType
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(attr.type).getBytes()),
+               // AttributeValue
+               // TODO: make value types more sophisticated
+               asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.PRINTABLESTRING, false,
+                  attr.value)
+            ])
+         ]);
+         rval.value.push(set);
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Converts X.509v3 certificate extensions to ASN.1.
+    * 
+    * @param exts the extensions to convert.
+    * 
+    * @return the extensions in ASN.1 format.
+    */
+   _extensionsToAsn1 = function(exts)
+   {
+      // create top-level extension container
+      var rval = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 3, true, []);
+      
+      // create extension sequence (stores a sequence for each extension)
+      var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+      rval.value.push(seq);
+      
+      var ext, extseq;
+      for(var i = 0; i < exts.length; ++i)
+      {
+         ext = exts[i];
+         
+         // create a sequence for each extension
+         extseq = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+         seq.value.push(extseq);
+         
+         // extnID (OID)
+         extseq.value.push(asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(ext.id).getBytes()));
+         
+         // critical defaults to false
+         if(ext.critical)
+         {
+            // critical BOOLEAN DEFAULT FALSE
+            extseq.value.push(asn1.create(
+               asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+               String.fromCharCode(0xFF)));
+         }
+         
+         // extnValue (OCTET STRING)
+         extseq.value.push(asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            ext.value));
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Converts an X.509v3 RSA certificate to an ASN.1 object.
+    * 
+    * @param cert the certificate.
+    * 
+    * @return the asn1 representation of an X.509v3 RSA certificate.
+    */
+   pki.certificateToAsn1 = function(cert)
+   {
+      // TBSCertificate
+      var tbs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // version
+         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+            // integer
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+               String.fromCharCode(cert.version))
+         ]),
+         // serialNumber
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(cert.serialNumber)),
+         // signature
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // algorithm
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(cert.signatureOid).getBytes()),
+            // parameters (null)
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+         ]),
+         // issuer
+         _dnToAsn1(cert.issuer),
+         // validity
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // notBefore
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+               asn1.dateToUtcTime(cert.validity.notBefore)),
+            // notAfter
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+               asn1.dateToUtcTime(cert.validity.notAfter))
+         ]),
+         // subject
+         _dnToAsn1(cert.subject),
+         // SubjectPublicKeyInfo
+         pki.publicKeyToAsn1(cert.publicKey)
+      ]);
+      
+      if(cert.issuer.uniqueId)
+      {
+         // issuerUniqueID (optional)
+         tbs.value.push(
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+                  String.fromCharCode(0x00) +
+                  cert.issuer.uniqueId
+               )
+            ])
+         );
+      }
+      if(cert.subject.uniqueId)
+      {
+         // subjectUniqueID (optional)
+         tbs.value.push(
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+                  String.fromCharCode(0x00) +
+                  cert.subject.uniqueId
+               )
+            ])
+         );
+      }
+      
+      if(cert.extensions.length > 0)
+      {
+         // extensions (optional)
+         tbs.value.push(_extensionsToAsn1(cert.extensions));
+      }
+      
+      // Certificate
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // TBSCertificate
+         tbs,
+         // AlgorithmIdentifier (signature algorithm)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // algorithm
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(cert.signatureOid).getBytes()),
+            // parameters (null)
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+         ]),
+         // SignatureValue
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+            String.fromCharCode(0x00) + cert.signature)
+      ]);
    };
    
    /**
