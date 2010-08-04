@@ -47,7 +47,7 @@
          // map of socket ID to sockets
          sockets: {},
          // default policy port
-         policyPort: options.policyPort || 19845,
+         policyPort: options.policyPort || 0,
          // default policy URL
          policyUrl: options.policyUrl || null
       };

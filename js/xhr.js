@@ -65,7 +65,7 @@
    
    // private flash socket pool vars
    var _sp = null;
-   var _policyPort = 19845;
+   var _policyPort = 0;
    var _policyUrl = null;
    
    // default client (used if no special URL provided when creating an XHR)

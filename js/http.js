@@ -547,7 +547,7 @@
          // socket pool
          socketPool: sp,
          // the policy port to use
-         policyPort: options.policyPort || null,
+         policyPort: options.policyPort || 0,
          // policy url to use
          policyUrl: options.policyUrl || null,
          // queue of requests to service
@@ -575,6 +575,34 @@
       // load cookies from disk
       _loadCookies(client);
       
+      /**
+       * A default certificate verify function that checks a certificate common
+       * name against the client's URL host.
+       * 
+       * @param c the TLS connection.
+       * @param verified true if cert is verified, otherwise alert number.
+       * @param depth the chain depth.
+       * @param certs the cert chain.
+       * 
+       * @return true if verified and the common name matches the host, error
+       *         otherwise.
+       */
+      var _defaultCertificateVerify = function(c, verified, depth, certs)
+      {
+         if(depth === 0 && verified === true)
+         {
+            // compare common name to url host
+            var cn = certs[depth].subject.getField('CN');
+            if(cn === null || client.url.host !== cn.value)
+            {
+               verified = {
+                  message: 'Certificate common name does not match url host.'
+               };
+            }
+         }
+         return verified;
+      };
+      
       // determine if TLS is used
       var tlsOptions = null;
       if(client.secure)
@@ -584,7 +612,7 @@
             caStore: caStore,
             cipherSuites: options.cipherSuites || null,
             virtualHost: options.virtualHost || url.host,
-            verify: options.verify || http.defaultCertificateVerify,
+            verify: options.verify || _defaultCertificateVerify,
             getCertificate: options.getCertificate || null,
             getPrivateKey: options.getPrivateKey || null,
             getSignature: options.getSignature || null,
@@ -626,6 +654,12 @@
        */
       client.send = function(options)
       {
+         // add host header if not set
+         if(options.request.getField('Host') === null)
+         {
+            options.request.setField('Host', client.url.fullHost);
+         }
+         
          // set default dummy handlers
          var opts = {};
          opts.request = options.request;
@@ -1492,16 +1526,16 @@
       };
       if(url)
       {
-         url.full = url.scheme + '://' + url.host;
+         url.fullHost = url.host;
          if(url.port)
          {
             if(url.port !== 80 && url.scheme === 'http') 
             {
-               url.full += ':' + url.port;
+               url.fullHost += ':' + url.port;
             }
             else if(url.port !== 443 && url.scheme === 'https')
             {
-               url.full += ':' + url.port;
+               url.fullHost += ':' + url.port;
             }
          }
          else if(url.scheme === 'http')
@@ -1512,6 +1546,7 @@
          {
             url.port = 443;
          }
+         url.full = url.scheme + '://' + url.fullHost;
       }
       return url;
    };
@@ -1543,34 +1578,6 @@
       }
       
       return rval;
-   };
-   
-   /**
-    * A default certificate verify function that checks a certificate common
-    * name against the client's URL host.
-    * 
-    * @param c the TLS connection.
-    * @param verified true if cert is verified, otherwise alert number.
-    * @param depth the chain depth.
-    * @param certs the cert chain.
-    * 
-    * @return true if verified and the common name matches the host, error
-    *         otherwise.
-    */
-   http.defaultCertificateVerify = function(c, verified, depth, certs)
-   {
-      if(depth === 0 && verified === true)
-      {
-         // compare common name to url host
-         var cn = certs[depth].subject.getField('CN');
-         if(cn === null || client.url.host !== cn.value)
-         {
-            verified = {
-               message: 'Certificate common name does not match url host.'
-            };
-         }
-      }
-      return verified;
    };
    
    // public access to http namespace
