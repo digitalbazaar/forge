@@ -168,6 +168,7 @@
       SEQUENCE:        16,
       SET:             17,
       PRINTABLESTRING: 19,
+      IA5STRING:       22,
       UTCTIME:         23
    };
    
@@ -862,6 +863,9 @@
                break;
             case asn1.Type.PRINTABLESTRING:
                rval += 'Printable String';
+               break;
+            case asn1.Type.IA5String:
+               rval += 'IA5String (ASCII)';
                break;
             case asn1.Type.UTCTIME:
                rval += 'UTC time';

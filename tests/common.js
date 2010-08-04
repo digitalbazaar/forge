@@ -169,6 +169,12 @@ jQuery(function($)
             }, {
                name: 'keyUsage',
                keyCertSign: true
+            }, {
+               name: 'subjectAltName',
+               altNames: [{
+                  type: 6, // URI
+                  value: 'http://localhost/dataspace/person/myname#this'
+               }]
             }]);
             // FIXME: add subjectKeyIdentifier extension
             // FIXME: add authorityKeyIdentifier extension

@@ -621,6 +621,32 @@
     *    pathLenConstraint       INTEGER (0..MAX) OPTIONAL
     * }
     * 
+    * subjectAltName EXTENSION ::= {
+    *    SYNTAX GeneralNames
+    *    IDENTIFIED BY id-ce-subjectAltName
+    * }
+    * 
+    * GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+    * 
+    * GeneralName ::= CHOICE {
+    *    otherName      [0] INSTANCE OF OTHER-NAME,
+    *    rfc822Name     [1] IA5String,
+    *    dNSName        [2] IA5String,
+    *    x400Address    [3] ORAddress,
+    *    directoryName  [4] Name,
+    *    ediPartyName   [5] EDIPartyName,
+    *    uniformResourceIdentifier [6] IA5String,
+    *    IPAddress      [7] OCTET STRING,
+    *    registeredID   [8] OBJECT IDENTIFIER
+    * }
+    * 
+    * OTHER-NAME ::= TYPE-IDENTIFIER
+    * 
+    * EDIPartyName ::= SEQUENCE {
+    *    nameAssigner [0] DirectoryString {ub-name} OPTIONAL,
+    *    partyName    [1] DirectoryString {ub-name}
+    * }
+    * 
     * @param exts the extensions ASN.1 with extension sequences to parse.
     * 
     * @return the array.
@@ -685,7 +711,7 @@
                   e.decipherOnly = (b3 & 0x80) == 0x80;
                }
                // handle basic constraints
-               if(e.name === 'basicConstraints')
+               else if(e.name === 'basicConstraints')
                {
                   // get value as SEQUENCE
                   var ev = asn1.fromDer(e.value);
@@ -703,6 +729,50 @@
                   {
                      var tmp = forge.util.createBuffer(ev.value[1].value);
                      e.pathLenConstraint = tmp.getInt(tmp.length() << 3);
+                  }
+               }
+               // handle subjectAltName/issuerAltName
+               else if(
+                  e.name === 'subjectAltName' ||
+                  e.name === 'subjectAltName')
+               {
+                  e.altNames = [];
+                  
+                  // ev is a SYNTAX SEQUENCE
+                  var gn, altname;
+                  var ev = asn1.fromDer(e.value);
+                  for(var n = 0; n < ev.value.values.length; ++n)
+                  {
+                     // get GeneralName
+                     gn = ev.value.values[n];
+                     
+                     altName = {
+                        type: gn.type,
+                        value: gn.value
+                     };
+                     e.altNames.push(altName);
+                     
+                     // Note: Support for types 1,2,6,7,8
+                     switch(gn.type)
+                     {
+                        // rfc822Name
+                        case 1:
+                        // dNSName
+                        case 2:
+                        // uniformResourceIdentifier (URI)
+                        case 6:
+                           break;
+                        // IPAddress
+                        case 7:
+                           // FIXME: convert to IPv4 dotted string/IPv6
+                           break;
+                        // registeredID
+                        case 8:
+                           altName.oid = asn1.derToOid(gn.value);
+                           break;
+                        default:
+                           // unsupported
+                     }
                   }
                }
             }
@@ -1147,8 +1217,32 @@
                         tmp.getBytes()));
                   }
                }
-               // cannot create value, unknown type
-               else
+               else if(
+                  e.name === 'subjectAltName' ||
+                  e.name === 'issuerAltName')
+               {
+                  // SYNTAX SEQUENCE
+                  e.value = asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+                  
+                  var altName;
+                  for(var n = 0; n < e.altNames.length; ++n)
+                  {
+                     altName = e.altNames[n];
+                     var value = altName.value;
+                     // handle OID
+                     if(altName.type === 8)
+                     {
+                        value = asn1.oidToDer(value);
+                     }
+                     e.value.value.push(asn1.create(
+                        asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
+                        value));
+                  }
+               }
+               
+               // ensure value has been defined by now
+               if(typeof(e.value) === 'undefined')
                {
                   throw {
                      message: 'Extension value not specified.',
