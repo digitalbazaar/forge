@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+   <head>
+      <title>Web ID Login</title>
+      <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+      <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+      <script type="text/javascript" src="forge/debug.js"></script>
+      <script type="text/javascript" src="forge/util.js"></script>
+      <script type="text/javascript" src="forge/log.js"></script>
+      <script type="text/javascript" src="forge/task.js"></script>
+      <script type="text/javascript" src="forge/socket.js"></script>
+      <script type="text/javascript" src="forge/md5.js"></script>
+      <script type="text/javascript" src="forge/sha1.js"></script>
+      <script type="text/javascript" src="forge/hmac.js"></script>
+      <script type="text/javascript" src="forge/aes.js"></script>
+      <script type="text/javascript" src="forge/asn1.js"></script>
+      <script type="text/javascript" src="forge/jsbn.js"></script>
+      <script type="text/javascript" src="forge/jsbn2.js"></script>
+      <script type="text/javascript" src="forge/prng.js"></script>
+      <script type="text/javascript" src="forge/random.js"></script>
+      <script type="text/javascript" src="forge/pki.js"></script>
+      <script type="text/javascript" src="forge/tls.js"></script>
+      <script type="text/javascript" src="forge/http.js"></script>
+      <script type="text/javascript" src="forge/xhr.js"></script>
+      <script type="text/javascript" src="loginDemo.js"></script>
+      
+      <link type="text/css" rel="stylesheet" media="all" href="screen.css" />
+   </head>
+<body>
+
+<div class="header">
+   <h1>Web ID Login</h1>
+</div>
+
+<div class="content">
+
+<!-- div used to hold the flash socket pool implemenation -->
+<div id="socketPool">
+   <p>Could not load the flash SocketPool.</p>
+</div>
+
+<fieldset class="section">
+<legend>Pick a Web ID to login with:</legend>
+   <div id="webids"></div>
+</fieldset>
+
+</div>
+</body>
+</html>
