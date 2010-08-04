@@ -164,7 +164,7 @@
    oids['2.5.4.7'] = 'localityName';
    oids['localityName'] = '2.5.4.7';
    oids['2.5.4.8'] = 'stateOrProvinceName';
-   oids['stateOrProvinceName'] = '2.5.4.9';
+   oids['stateOrProvinceName'] = '2.5.4.8';
    oids['2.5.4.10'] = 'organizationName';
    oids['organizationName'] = '2.5.4.10';
    oids['2.5.4.11'] = 'organizationalUnitName';
@@ -942,7 +942,7 @@
                }
                else if(attr.shortName && attr.shortName in _shortNames)
                {
-                  attr.name = _shortNames[attr.shortName];
+                  attr.name = forge.oids[_shortNames[attr.shortName]];
                }
             }
             
@@ -1116,11 +1116,11 @@
                   var value = String.fromCharCode(unused);
                   if(b3 !== 0)
                   {
-                     value += (b2 + b3);
+                     value += String.fromCharCode(b2) + String.fromCharCode(b3);
                   }
                   else if(b2 !== 0)
                   {
-                     value += b2;
+                     value += String.fromCharCode(b2);
                   }
                   e.value = asn1.create(
                      asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
@@ -1477,10 +1477,17 @@
                String.fromCharCode(0xFF)));
          }
          
+         var value = ext.value;
+         if(ext.name === 'keyUsage' ||
+            ext.name === 'basicConstraints')
+         {
+            // value is asn.1
+            value = asn1.toDer(value).getBytes();
+         }
+         
          // extnValue (OCTET STRING)
          extseq.value.push(asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-            ext.value));
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
       }
       
       return rval;
@@ -2400,6 +2407,10 @@
       var rval = null;
       
       // set default bits
+      if(typeof(bits) === 'string')
+      {
+         bits = parseInt(bits, 10);
+      }
       bits = bits || 1024;
       
       // create prng with api that matches BigInteger secure random
@@ -2455,12 +2466,17 @@
          if(phi.gcd(e).compareTo(BigInteger.ONE) === 0)
          {
             var n = p.multiply(q);
-            var d = e.modInverse(phi);
             
-            rval = {};
-            rval.privateKey = pki.setRsaPrivateKey(
-               n, e, d, p, q, d.mod(p1), d.mod(q1), q.modInverse(p));
-            rval.publicKey = pki.setRsaPublicKey(n, e);
+            // ensure n is right number of bits
+            if(n.bitLength() === bits)
+            {
+               var d = e.modInverse(phi);
+               
+               rval = {};
+               rval.privateKey = pki.setRsaPrivateKey(
+                  n, e, d, p, q, d.mod(p1), d.mod(q1), q.modInverse(p));
+               rval.publicKey = pki.setRsaPublicKey(n, e);
+            }
          }
       }
       

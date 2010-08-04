@@ -145,13 +145,33 @@ jQuery(function($)
             var attrs = [{
                name: 'commonName',
                value: 'mycert'
+            }, {
+               name: 'countryName',
+               value: 'US'
+            }, {
+               shortName: 'ST',
+               value: 'Virginia'
+            }, {
+               name: 'localityName',
+               value: 'Blacksburg'
+            }, {
+               name: 'organizationName',
+               value: 'Test'
+            }, {
+               shortName: 'OU',
+               value: 'Test'
             }];
             cert.setSubject(attrs);
             cert.setIssuer(attrs);
             cert.setExtensions([{
                name: 'basicConstraints',
                cA: true
+            }, {
+               name: 'keyUsage',
+               keyCertSign: true
             }]);
+            // FIXME: add subjectKeyIdentifier extension
+            // FIXME: add authorityKeyIdentifier extension
             cert.publicKey = keys.publicKey;
             
             // self-sign certificate
