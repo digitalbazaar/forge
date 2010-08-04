@@ -1478,8 +1478,7 @@
          }
          
          var value = ext.value;
-         if(ext.name === 'keyUsage' ||
-            ext.name === 'basicConstraints')
+         if(ext.value.constructor != String)
          {
             // value is asn.1
             value = asn1.toDer(value).getBytes();
