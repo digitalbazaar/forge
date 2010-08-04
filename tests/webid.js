@@ -80,7 +80,11 @@ jQuery(function($)
                cA: true
             }, {
                name: 'keyUsage',
-               keyCertSign: true
+               keyCertSign: true,
+               digitalSignature: true,
+               nonRepudiation: true,
+               keyEncipherment: true,
+               dataEncipherment: true
             }, {
                name: 'subjectAltName',
                altNames: [{
@@ -236,14 +240,21 @@ jQuery(function($)
                return forge.xhr.create({
                   // FIXME: change URL
                   url: 'https://localhost:4433',
+                  connections: 10,
+                  caCerts: [],
+                  verify: function(c, verified, depth, certs)
+                  {
+                     // don't care about cert verification for test
+                     return true;
+                  },
                   getCertificate: function(c)
                   {
-                  console.log('using cert', webid.certificate);
+                     //console.log('using cert', webid.certificate);
                      return webid.certificate;
                   },
                   getPrivateKey: function(c)
                   {
-                     console.log('using private key', webid.privateKey);
+                     //console.log('using private key', webid.privateKey);
                      return webid.privateKey;
                   }
                });

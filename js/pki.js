@@ -734,17 +734,17 @@
                // handle subjectAltName/issuerAltName
                else if(
                   e.name === 'subjectAltName' ||
-                  e.name === 'subjectAltName')
+                  e.name === 'issuerAltName')
                {
                   e.altNames = [];
                   
                   // ev is a SYNTAX SEQUENCE
                   var gn, altname;
                   var ev = asn1.fromDer(e.value);
-                  for(var n = 0; n < ev.value.values.length; ++n)
+                  for(var n = 0; n < ev.value.length; ++n)
                   {
                      // get GeneralName
-                     gn = ev.value.values[n];
+                     gn = ev.value[n];
                      
                      altName = {
                         type: gn.type,
