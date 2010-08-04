@@ -898,8 +898,8 @@
       cert.signatureOid = null;
       cert.signature = null;
       cert.validity = {};
-      cert.validity.notBefore = +new Date();
-      cert.validity.notAfter = +new Date();
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
       
       cert.issuer = {};
       cert.issuer.getField = function(sn)
@@ -929,7 +929,7 @@
       var _fillMissingFields = function(attrs)
       {
          var attr;
-         for(var i = 0; i < attrs; ++i)
+         for(var i = 0; i < attrs.length; ++i)
          {
             attr = attrs[i];
             
@@ -953,6 +953,13 @@
                {
                   attr.type = forge.oids[attr.name];
                }
+               else
+               {
+                  throw {
+                     message: 'Attribute type not specified.',
+                     attribute: attr
+                  };
+               }
             }
             
             // populate missing shortname
@@ -962,6 +969,14 @@
                {
                   attr.shortName = _shortNames[attr.name];
                }
+            }
+            
+            if(typeof(attr.value) === 'undefined')
+            {
+               throw {
+                  message: 'Attribute value not specified.',
+                  attribute: attr
+               };
             }
          }
       };
@@ -1012,7 +1027,7 @@
       cert.setExtensions = function(exts)
       {
          var e;
-         for(var i = 0; i < ext; ++i)
+         for(var i = 0; i < exts.length; ++i)
          {
             e = exts[i];
             
@@ -1031,6 +1046,13 @@
                if(e.name && e.name in forge.oids)
                {
                   e.id = forge.oids[e.name];
+               }
+               else
+               {
+                  throw {
+                     message: 'Extension ID not specified.',
+                     extension: e
+                  };
                }
             }
             
@@ -1104,7 +1126,7 @@
                      asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
                }
                // basicConstraints is a SEQUENCE
-               if(e.name === 'basicConstraints')
+               else if(e.name === 'basicConstraints')
                {
                   e.value = asn1.create(
                      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
@@ -1124,6 +1146,14 @@
                         asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
                         tmp.getBytes()));
                   }
+               }
+               // cannot create value, unknown type
+               else
+               {
+                  throw {
+                     message: 'Extension value not specified.',
+                     extension: e
+                  };
                }
             }
          }
@@ -1165,6 +1195,25 @@
             }
          }
          return rval;
+      };
+      
+      /**
+       * Signs this certificate using the given private key.
+       * 
+       * @param key the private key to sign with.
+       */
+      cert.sign = function(key)
+      {
+         // TODO: get signature OID from private key
+         cert.signatureOid = oids['sha1withRSAEncryption'];
+         cert.md = forge.md.sha1.create();
+         
+         // get TBSCertificate, convert to DER
+         var bytes = asn1.toDer(pki.getTBSCertificate(cert));
+         
+         // digest and sign
+         cert.md.update(bytes.getBytes());
+         cert.signature = key.sign(cert.md);
       };
       
       /**
@@ -1438,13 +1487,13 @@
    };
    
    /**
-    * Converts an X.509v3 RSA certificate to an ASN.1 object.
+    * Gets the ASN.1 TBSCertificate part of an X.509v3 certificate.
     * 
     * @param cert the certificate.
     * 
-    * @return the asn1 representation of an X.509v3 RSA certificate.
+    * @return the asn1 TBSCertificate.
     */
-   pki.certificateToAsn1 = function(cert)
+   pki.getTBSCertificate = function(cert)
    {
       // TBSCertificate
       var tbs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -1513,10 +1562,22 @@
          tbs.value.push(_extensionsToAsn1(cert.extensions));
       }
       
+      return tbs;
+   };
+   
+   /**
+    * Converts an X.509v3 RSA certificate to an ASN.1 object.
+    * 
+    * @param cert the certificate.
+    * 
+    * @return the asn1 representation of an X.509v3 RSA certificate.
+    */
+   pki.certificateToAsn1 = function(cert)
+   {
       // Certificate
       return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
          // TBSCertificate
-         tbs,
+         pki.getTBSCertificate(cert),
          // AlgorithmIdentifier (signature algorithm)
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // algorithm
@@ -2119,7 +2180,7 @@
       // get the length of the modulus in bytes
       var k = key.n.bitLength() >>> 3;
       
-      if(m.length > k - 11)
+      if(m.length > (k - 11))
       {
          throw {
             message: 'Message is too long to encrypt.',
@@ -2361,7 +2422,7 @@
       var p, q, t;
       while(rval === null)
       {
-         // find a suitable p
+         // find a suitable p (p - 1 must be coprime with e)
          do
          {
             p = new BigInteger(bits - qs, 1, rng);
@@ -2369,7 +2430,7 @@
          while((p.subtract(BigInteger.ONE).gcd(e)
             .compareTo(BigInteger.ONE) !== 0) || !p.isProbablePrime(10));
          
-         // find a suitable q
+         // find a suitable q (q - 1 must be coprime with e)
          do
          {
             q = new BigInteger(qs, 1, rng);
@@ -2391,14 +2452,14 @@
          var phi = p1.multiply(q1);
          
          // ensure e and phi are coprime
-         if(phi.gcd(e).compareTo(BigInteger.ONE) == 0)
+         if(phi.gcd(e).compareTo(BigInteger.ONE) === 0)
          {
             var n = p.multiply(q);
             var d = e.modInverse(phi);
             
             rval = {};
             rval.privateKey = pki.setRsaPrivateKey(
-               n, e, d, p, q, d.mod(p1), d.mod(p1), q.modInverse(p));
+               n, e, d, p, q, d.mod(p1), d.mod(q1), q.modInverse(p));
             rval.publicKey = pki.setRsaPublicKey(n, e);
          }
       }
