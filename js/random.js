@@ -73,7 +73,7 @@
    var _navBytes = '';
    for(var key in navigator)
    {
-      if(navigator[key].constructor == String)
+      if(typeof(navigator[key]) == 'string')
       {
          _navBytes += navigator[key];
       }
