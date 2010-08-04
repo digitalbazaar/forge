@@ -105,6 +105,25 @@ jQuery(function($)
          console.log(forge.pki.privateKeyToPem(keys.privateKey));
          console.log('public key:', keys.publicKey);
          console.log(forge.pki.publicKeyToPem(keys.publicKey));
+         
+         console.log('testing sign/verify...');
+         setTimeout(function()
+         {
+            // do sign/verify test
+            try
+            {
+               var md = forge.md.sha1.create();
+               md.update('foo');
+               var signature = keys.privateKey.sign(md);
+               keys.publicKey.verify(md.digest().getBytes(), signature);
+               console.log('sign/verify success');
+            }
+            catch(ex)
+            {
+               console.log('sign/verify failure');
+               console.log(ex);
+            }
+         }, 0);
       }, 0);
    });
    
@@ -112,15 +131,44 @@ jQuery(function($)
       var bits = $('#bits')[0].value;
       console.log('generating ' + bits +
          '-bit RSA key-pair and certificate...');
-      var keys = forge.pki.rsa.generateKeyPair(bits);
-      var cert = forge.pki.rsa.createCertificate();
-      // FIXME: add certificate properties, self-sign cert
       setTimeout(function()
       {
-         console.log('private key:', keys.privateKey);
-         console.log(forge.pki.privateKeyToPem(keys.privateKey));
-         console.log('public key:', keys.publicKey);
-         console.log(forge.pki.publicKeyToPem(keys.publicKey));
+         try
+         {
+            var keys = forge.pki.rsa.generateKeyPair(bits);
+            var cert = forge.pki.createCertificate();
+            cert.serialNumber = '01';
+            cert.validity.notBefore = new Date();
+            cert.validity.notAfter = new Date();
+            cert.validity.notAfter.setFullYear(
+               cert.validity.notBefore.getFullYear() + 1);
+            var attrs = [{
+               name: 'commonName',
+               value: 'mycert'
+            }];
+            cert.setSubject(attrs);
+            cert.setIssuer(attrs);
+            cert.setExtensions([{
+               name: 'basicConstraints',
+               cA: true
+            }]);
+            cert.publicKey = keys.publicKey;
+            
+            // self-sign certificate
+            cert.sign(keys.privateKey);
+            
+            console.log('certificate:', cert);
+            //console.log(
+            //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
+            console.log(forge.pki.certificateToPem(cert));
+            
+            // verify certificate
+            console.log('verified', cert.verify(cert));
+         }
+         catch(ex)
+         {
+            console.error(ex, ex.message ? ex.message : '');
+         }
       }, 0);
    });
    
