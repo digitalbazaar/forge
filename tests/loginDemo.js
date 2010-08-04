@@ -49,6 +49,9 @@ var init = function($)
       redirect = 'https://' + domain + '/' + redirect;
       //console.log('domain', domain);
       //console.log('redirect', redirect);
+      $('#domain').html(
+         '<p>The domain "' + domain + '" is requesting your identity. If ' +
+         'you want to login to the domain choose a Web ID.</p>');
       
       // get flash API
       var flashApi = document.getElementById('socketPool');
