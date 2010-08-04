@@ -3766,6 +3766,11 @@
          }
          var len = b.length();
          
+         // TODO: this function and c.record/c.fragment usage in general have
+         // become messy due to redesigns (including going from procedural
+         // loop to handle records to asynchronous functional record
+         // processing), needs clean up and simplification
+         
          // process next record if no failure, process will be called after
          // each record is handled (since handling can be asynchronous)
          if(!c.fail)
