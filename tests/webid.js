@@ -39,8 +39,9 @@ jQuery(function($)
 
    $('#create').click(function()
    {
-      var uri = $('#uri')[0].value;
       var bits = $('#bits')[0].value;
+      var uri = $('#uri')[0].value;
+      var commonName = $('#commonName')[0].value;
       console.log('generating ' + bits +
          '-bit RSA key-pair and certificate...');
       setTimeout(function()
@@ -56,7 +57,7 @@ jQuery(function($)
                cert.validity.notBefore.getFullYear() + 1);
             var attrs = [{
                name: 'commonName',
-               value: 'mycert'
+               value: commonName
             }, {
                name: 'countryName',
                value: 'US'
@@ -129,6 +130,7 @@ jQuery(function($)
                   flashApi, 'forge.test.webid', 'webids', webids);
                
                console.log('certificate and private key stored');
+               $('#show').click();
             }
             catch(ex)
             {
@@ -156,12 +158,22 @@ jQuery(function($)
          webids = webids || {};
          
          var html = '<ul>';
-         var webid;
+         var webid, cert;
          for(var key in webids)
          {
             webid = webids[key];
-            html +=
-               '<li><p>' + key + '</p><p>' + webid.certificate + '</p></li>';
+            cert = forge.pki.certificateFromPem(webid.certificate);
+            html += '<li><p>' + key + '</p>';
+            
+            var attr;
+            for(var n = 0; n < cert.subject.attributes.length; ++n)
+            {
+               attr = cert.subject.attributes[n];
+               html += attr.name + ': ' + attr.value + '<br/>';
+            }
+            
+            //html += '<p>' + webid.certificate + '</p></li>';
+            html += '</li>';
          }
          if(html === '<ul>')
          {
@@ -225,6 +237,7 @@ jQuery(function($)
                if(data !== '')
                {
                   console.log('authentication completed');
+                  console.log(data);
                }
                else
                {
