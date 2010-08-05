@@ -80,7 +80,7 @@ class PolicyHandler(SocketServer.BaseRequestHandler):
 def create_policy_server(options):
     """Start a policy server"""
     print "Policy serving from %d." % (options.policy_port)
-    policyd = SocketServer.TCPServer(("0.0.0.0", options.policy_port), PolicyHandler)
+    policyd = SocketServer.TCPServer(("localhost", options.policy_port), PolicyHandler)
     return policyd
 
 
@@ -92,7 +92,7 @@ def create_http_server(options, script_dir):
     """Start a static file server"""
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 #    httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
-    httpd = ThreadedTCPServer(("0.0.0.0", options.port), Handler)
+    httpd = ThreadedTCPServer(("localhost", options.port), Handler)
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
