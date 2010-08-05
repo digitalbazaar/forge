@@ -7,9 +7,9 @@
 # - Sever performs basic static file serving.
 # - Starts Flash cross domain policy file server.
 # - Defaults to HTTP/HTTPS port 19400.
-# - Defaults to Flash cross domain policy port 19945.
+# - Defaults to Flash socket policy port 19945.
 #
-#   $ ./server.py [-p PORT] [--ssl]
+#   $ ./server.py [options]
 #
 # If you just need a simple HTTP server, also consider:
 #   $ python -m SimpleHTTPServer 19400
@@ -80,19 +80,24 @@ class PolicyHandler(SocketServer.BaseRequestHandler):
 def create_policy_server(options):
     """Start a policy server"""
     print "Policy serving from %d." % (options.policy_port)
-    policyd = SocketServer.TCPServer(("localhost", options.policy_port), PolicyHandler)
+    policyd = SocketServer.TCPServer((options.host, options.policy_port), PolicyHandler)
     return policyd
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    pass
+    def serve_forever(self):
+        """Handle one request at a time until shutdown or keyboard interrupt."""
+        try:
+           SocketServer.BaseServer.serve_forever(self)
+        except KeyboardInterrupt:
+           return
 
 
 def create_http_server(options, script_dir):
     """Start a static file server"""
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
-#    httpd = SocketServer.TCPServer(("localhost", options.port), Handler)
-    httpd = ThreadedTCPServer(("localhost", options.port), Handler)
+#    httpd = SocketServer.TCPServer((options.host, options.port), Handler)
+    httpd = ThreadedTCPServer((options.host, options.port), Handler)
     if options.tls:
         if not have_ssl:
             raise Exception("SSL support from Python 2.6 or later is required.")
@@ -119,17 +124,12 @@ def create_http_server(options, script_dir):
     return httpd
 
 
-def serve(server):
-    try:
-       server.serve_forever()
-    except KeyboardInterrupt:
-       return
-
-
 def main():
     """Start static file and policy servers"""
     usage = "Usage: %prog [options]"
     parser = OptionParser(usage=usage)
+    parser.add_option("", "--host", dest="host", metavar="HOST",
+            default="localhost", help="bind to HOST")
     parser.add_option("-p", "--port", dest="port", type="int",
             help="serve on PORT", metavar="PORT", default=19400)
     parser.add_option("-P", "--policy-port", dest="policy_port", type="int",
@@ -149,8 +149,8 @@ def main():
     policyd = create_policy_server(options)
 
     # start servers
-    server_p = Process(target=serve, args=(httpd,))
-    policy_p = Process(target=serve, args=(policyd,))
+    server_p = Process(target=httpd.serve_forever)
+    policy_p = Process(target=policyd.serve_forever)
     server_p.start()
     policy_p.start()
 
