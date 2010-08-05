@@ -263,7 +263,8 @@ package
          id:String, host:String, port:uint, spPort:uint,
          spUrl:String = null):void
       {
-         log("connect(" + id + "," + host + "," + port + "," + spPort + ")");
+         log("connect(" +
+            id + "," + host + "," + port + "," + spPort + "," + spUrl + ")");
          
          if(id in mSocketMap)
          {
