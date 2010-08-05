@@ -11,20 +11,6 @@
    window.forge.socketPool = {};
    window.forge.socketPool.ready = function()
    {
-      // init forge xhr
-      forge.xhr.init({
-         flashId: 'socketPool',
-         policyPort: 19945,
-         msie: $.browser.msie,
-         connections: 1,
-         caCerts: [],
-         verify: function(c, verified, depth, certs)
-         {
-            // don't care about cert verification for test
-            return true;
-         }
-      });
-      
       // init page
       init($);
    };
@@ -39,19 +25,50 @@ var init = function($)
    
    // local alias
    var forge = window.forge;
-   
    try
    {
       // get query variables
       var query = forge.util.getQueryVariables();
       var domain = query.domain || '';
+      var auth = query.auth || '';
       var redirect = query.redirect || '';
       redirect = 'https://' + domain + '/' + redirect;
+      // TODO: allow flash policy port or url to be specified via params
       //console.log('domain', domain);
       //console.log('redirect', redirect);
-      $('#domain').html(
-         '<p>The domain "' + domain + '" is requesting your identity. If ' +
-         'you want to login to the domain choose a Web ID.</p>');
+      if(domain)
+      {
+         $('#domain').html('`' + domain + '`');
+      } 
+      
+      // for chosen webid
+      var chosen = null;
+      
+      // init forge xhr
+      forge.xhr.init({
+         flashId: 'socketPool',
+         msie: $.browser.msie,
+         url: 'https://' + domain,
+         //'http://' + domain + '/crossdomain.xml',
+         policyPort: 19945,
+         connections: 1,
+         caCerts: [],
+         verify: function(c, verified, depth, certs)
+         {
+            // don't care about cert verification for test
+            return true;
+         },
+         getCertificate: function(c)
+         {
+            console.log('using cert', chosen.certificate);
+            return chosen.certificate;
+         },
+         getPrivateKey: function(c)
+         {
+            //console.log('using private key', chosen.privateKey);
+            return chosen.privateKey;
+         }
+      });
       
       // get flash API
       var flashApi = document.getElementById('socketPool');
@@ -76,21 +93,25 @@ var init = function($)
             {
                button.attr('disabled', 'disabled');
                
+               // set chosen webid
+               chosen = webid;
+               
+               // do webid call
                $.ajax(
                {
                   type: 'GET',
-                  url: '/',
+                  url: '/' + auth,
                   success: function(data, textStatus, xhr)
                   {
                      if(data !== '')
                      {
-                        //console.log('authentication completed');
-                        //console.log(data);
+                        console.log('authentication completed');
+                        console.log(data);
                         window.name = data;
                      }
                      else
                      {
-                        //console.log('authentication failed');
+                        console.log('authentication failed');
                         window.name = '';
                      }
                      window.location = redirect;
@@ -99,29 +120,7 @@ var init = function($)
                   {
                      console.log('authentication failed');
                   },
-                  xhr: function()
-                  {
-                     return forge.xhr.create({
-                        url: 'https://' + domain,
-                        connections: 1,
-                        caCerts: [],
-                        verify: function(c, verified, depth, certs)
-                        {
-                           // don't care about cert verification for test
-                           return true;
-                        },
-                        getCertificate: function(c)
-                        {
-                           //console.log('using cert', webid.certificate);
-                           return webid.certificate;
-                        },
-                        getPrivateKey: function(c)
-                        {
-                           //console.log('using private key', webid.privateKey);
-                           return webid.privateKey;
-                        }
-                     });
-                  }
+                  xhr: forge.xhr.create
                });
             });
             item.append(button);

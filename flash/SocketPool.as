@@ -263,7 +263,8 @@ package
          id:String, host:String, port:uint, spPort:uint,
          spUrl:String = null):void
       {
-         log("connect(" + id + "," + host + "," + port + "," + spPort + ")");
+         log("connect(" +
+            id + "," + host + "," + port + "," + spPort + "," + spUrl + ")");
          
          if(id in mSocketMap)
          {
@@ -274,11 +275,18 @@ package
             // (permits socket access to backend)
             if(spPort !== 0)
             {
-               Security.loadPolicyFile("xmlsocket://" + host + ":" + spPort);
+               spUrl = "xmlsocket://" + host + ":" + spPort;
+               log("using cross-domain url: " + spUrl);
+               Security.loadPolicyFile(spUrl);
             }
             else if(spUrl !== null && typeof(spUrl) !== undefined)
             {
+               log("using cross-domain url: " + spUrl);
                Security.loadPolicyFile(spUrl);
+            }
+            else
+            {
+               log("not loading any cross-domain url");
             }
             
             // connect

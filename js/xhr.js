@@ -65,7 +65,7 @@
    
    // private flash socket pool vars
    var _sp = null;
-   var _policyPort = 19845;
+   var _policyPort = 0;
    var _policyUrl = null;
    
    // default client (used if no special URL provided when creating an XHR)
@@ -92,30 +92,30 @@
     * Initializes flash XHR support.
     * 
     * @param options:
-    *           url: the default base URL to connect to if xhr URLs are
-    *              relative, ie: https://myserver.com.
-    *           flashId: the dom ID of the flash SocketPool.
-    *           policyPort: the port that provides the server's flash policy,
-    *              0 to use the flash default.
-    *           policyUrl: the policy file URL to use instead of a policy port.
-    *           msie: true if browser is internet explorer, false if not.
-    *           connections: the maximum number of concurrent connections.
-    *           caCerts: a list of PEM-formatted certificates to trust.
-    *           cipherSuites: an optional array of cipher suites to use,
-    *              see forge.tls.CipherSuites.
-    *           verify: optional TLS certificate verify callback to use (see
-    *              forge.tls for details).
-    *           getCertificate: an optional callback used to get a client-side
-    *              certificate (see forge.tls for details).
-    *           getPrivateKey: an optional callback used to get a client-side
-    *              private key (see forge.tls for details).
-    *           getSignature: an optional callback used to get a client-side
-    *              signature (see forge.tls for details).
-    *           persistCookies: true to use persistent cookies via flash local
-    *              storage, false to only keep cookies in javascript.
-    *           primeTlsSockets: true to immediately connect TLS sockets on
-    *              their creation so that they will cache TLS sessions for
-    *              reuse.
+    *    url: the default base URL to connect to if xhr URLs are
+    *       relative, ie: https://myserver.com.
+    *    flashId: the dom ID of the flash SocketPool.
+    *    policyPort: the port that provides the server's flash policy,
+    *       0 to use the flash default.
+    *    policyUrl: the policy file URL to use instead of a policy port.
+    *    msie: true if browser is internet explorer, false if not.
+    *    connections: the maximum number of concurrent connections.
+    *    caCerts: a list of PEM-formatted certificates to trust.
+    *    cipherSuites: an optional array of cipher suites to use,
+    *       see forge.tls.CipherSuites.
+    *    verify: optional TLS certificate verify callback to use (see
+    *       forge.tls for details).
+    *    getCertificate: an optional callback used to get a client-side
+    *       certificate (see forge.tls for details).
+    *    getPrivateKey: an optional callback used to get a client-side
+    *       private key (see forge.tls for details).
+    *    getSignature: an optional callback used to get a client-side
+    *       signature (see forge.tls for details).
+    *    persistCookies: true to use persistent cookies via flash local
+    *       storage, false to only keep cookies in javascript.
+    *    primeTlsSockets: true to immediately connect TLS sockets on
+    *       their creation so that they will cache TLS sessions for
+    *       reuse.
     */
    xhrApi.init = function(options)
    {
@@ -314,44 +314,44 @@
     * cross-domain URL.
     * 
     * @param options:
-    *        logWarningOnError: If true and an HTTP error status code is
-    *           received then log a warning, otherwise log a verbose
-    *           message.
-    *        verbose: If true be very verbose in the output including
-    *           the response event and response body, otherwise only include
-    *           status, timing, and data size.
-    *        logError: a multi-var log function for warnings that takes
-    *           the log category as the first var.
-    *        logWarning: a multi-var log function for warnings that takes
-    *           the log category as the first var.
-    *        logDebug: a multi-var log function for warnings that takes
-    *           the log category as the first var.
-    *        logVerbose: a multi-var log function for warnings that takes
-    *           the log category as the first var.
-    *        url: the default base URL to connect to if xhr URLs are
-    *           relative, ie: https://myserver.com, and note that the
-    *           following options will be ignored if the URL is absent or
-    *           the same as the default base URL.
-    *        policyPort: the port that provides the server's flash policy, 0
-    *           to use the flash default.
-    *        policyUrl: the policy file URL to use instead of a policy port.
-    *        connections: the maximum number of concurrent connections.
-    *        caCerts: a list of PEM-formatted certificates to trust.
-    *        cipherSuites: an optional array of cipher suites to use,
-    *           see forge.tls.CipherSuites.
-    *        verify: optional TLS certificate verify callback to use (see
-    *           forge.tls for details).
-    *        getCertificate: an optional callback used to get a client-side
-    *           certificate.
-    *        getPrivateKey: an optional callback used to get a client-side
-    *           private key.
-    *        getSignature: an optional callback used to get a client-side
-    *           signature.
-    *        persistCookies: true to use persistent cookies via flash local
-    *           storage, false to only keep cookies in javascript.
-    *        primeTlsSockets: true to immediately connect TLS sockets on
-    *           their creation so that they will cache TLS sessions for
-    *           reuse.
+    *    logWarningOnError: If true and an HTTP error status code is
+    *       received then log a warning, otherwise log a verbose
+    *       message.
+    *    verbose: If true be very verbose in the output including
+    *       the response event and response body, otherwise only include
+    *       status, timing, and data size.
+    *    logError: a multi-var log function for warnings that takes
+    *       the log category as the first var.
+    *    logWarning: a multi-var log function for warnings that takes
+    *       the log category as the first var.
+    *    logDebug: a multi-var log function for warnings that takes
+    *       the log category as the first var.
+    *    logVerbose: a multi-var log function for warnings that takes
+    *       the log category as the first var.
+    *    url: the default base URL to connect to if xhr URLs are
+    *       relative, ie: https://myserver.com, and note that the
+    *       following options will be ignored if the URL is absent or
+    *       the same as the default base URL.
+    *    policyPort: the port that provides the server's flash policy, 0
+    *       to use the flash default.
+    *    policyUrl: the policy file URL to use instead of a policy port.
+    *    connections: the maximum number of concurrent connections.
+    *    caCerts: a list of PEM-formatted certificates to trust.
+    *    cipherSuites: an optional array of cipher suites to use,
+    *       see forge.tls.CipherSuites.
+    *    verify: optional TLS certificate verify callback to use (see
+    *       forge.tls for details).
+    *    getCertificate: an optional callback used to get a client-side
+    *       certificate.
+    *    getPrivateKey: an optional callback used to get a client-side
+    *       private key.
+    *    getSignature: an optional callback used to get a client-side
+    *       signature.
+    *    persistCookies: true to use persistent cookies via flash local
+    *       storage, false to only keep cookies in javascript.
+    *    primeTlsSockets: true to immediately connect TLS sockets on
+    *       their creation so that they will cache TLS sessions for
+    *       reuse.
     * 
     * @return the XmlHttpRequest.
     */
