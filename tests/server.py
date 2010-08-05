@@ -1,27 +1,28 @@
 #!/usr/bin/env python
-#
-# SSL server for Forge tests.
-#
-# - The server changes to the directory of the server script.
-# - SSL uses "server.key" and "server.crt".
-# - Sever performs basic static file serving.
-# - Starts Flash cross domain policy file server.
-# - Defaults to HTTP/HTTPS port 19400.
-# - Defaults to Flash socket policy port 19945.
-#
-#   $ ./server.py [options]
-#
-# If you just need a simple HTTP server, also consider:
-#   $ python -m SimpleHTTPServer 19400
-#
+
+"""
+SSL server for Forge tests.
+
+- The server changes to the directory of the server script.
+- SSL uses "server.key" and "server.crt".
+- Sever performs basic static file serving.
+- Starts Flash cross domain policy file server.
+- Defaults to HTTP/HTTPS port 19400.
+- Defaults to Flash socket policy port 19945.
+
+  $ ./server.py [options]
+
+If you just need a simple HTTP server, also consider:
+  $ python -m SimpleHTTPServer 19400
+"""
 
 from multiprocessing import Process
+from optparse import OptionParser
 import SimpleHTTPServer
 import SocketServer
-from optparse import OptionParser
 import os
-import time
 import sys
+import time
 
 # Try to import special Forge SSL module with session cache support
 # Using the built directory directly
