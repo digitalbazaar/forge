@@ -26,30 +26,26 @@
       <script type="text/javascript" src="forge/xhr.js"></script>
       <script type="text/javascript" src="loginDemo.js"></script>
       
-      <link type="text/css" rel="stylesheet" media="all" href="screen.css" />
+      <link type="text/css" rel="stylesheet" media="all" href="login.css" />
    </head>
 <body>
 
-<div class="header">
+<div id="header">
    <h1>Web ID Login</h1>
 </div>
 
-<div class="content">
+<div id="content">
+   <p>Please select a Web ID to log in to <span id="domain">this website</span>.</p>
 
-<!-- div used to hold the flash socket pool implemenation -->
-<div id="socketPool">
-   <p>Could not load the flash SocketPool.</p>
-</div>
-
-<fieldset class="section">
-   <div id="domain"></div>
-</fieldset>
-
-<fieldset class="section">
-<legend>Pick a Web ID to login with:</legend>
    <div id="webids"></div>
-</fieldset>
 
+   <p>Do not select an identity if you do not trust this website.</p>
+
+   <!-- div used to hold the flash socket pool implemenation -->
+   <div id="socketPool">
+      <p>Could not load the flash SocketPool.</p>
+   </div>
 </div>
+
 </body>
 </html>

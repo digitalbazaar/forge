@@ -36,9 +36,10 @@ var init = function($)
       // TODO: allow flash policy port or url to be specified via params
       //console.log('domain', domain);
       //console.log('redirect', redirect);
-      $('#domain').html(
-         '<p>The domain "' + domain + '" is requesting your identity. If ' +
-         'you want to login to the domain choose a Web ID.</p>');
+      if(domain)
+      {
+         $('#domain').html('`' + domain + '`');
+      } 
       
       // for chosen webid
       var chosen = null;
