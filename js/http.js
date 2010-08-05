@@ -484,31 +484,30 @@
     * forge.tls for security.
     * 
     * @param options:
-    *           url: the url to connect to (scheme://host:port).
-    *           socketPool: the flash socket pool to use.
-    *           policyPort: the flash policy port to use (if other than the
-    *              socket pool default), use 0 for flash default.
-    *           policyUrl: the flash policy file URL to use (if provided will
-    *              be used instead of a policy port).
-    *           connections: number of connections to use to handle requests.
-    *           caCerts: an array of certificates to trust for TLS, certs may
-    *              be PEM-formatted or cert objects produced via forge.pki.
-    *           cipherSuites: an optional array of cipher suites to use,
-    *              see forge.tls.CipherSuites.
-    *           virtualHost: the virtual server name to use in a TLS SNI
-    *              extension, if not provided the url host will be used.
-    *           verify: a custom TLS certificate verify callback to use.
-    *           getCertificate: an optional callback used to get a client-side
-    *              certificate (see forge.tls for details).
-    *           getPrivateKey: an optional callback used to get a client-side
-    *              private key (see forge.tls for details).
-    *           getSignature: an optional callback used to get a
-    *              client-side signature (see forge.tls for details).
-    *           persistCookies: true to use persistent cookies via flash local
-    *              storage, false to only keep cookies in javascript.
-    *           primeTlsSockets: true to immediately connect TLS sockets on
-    *              their creation so that they will cache TLS sessions for
-    *              reuse.
+    *    url: the url to connect to (scheme://host:port).
+    *       socketPool: the flash socket pool to use.
+    *    policyPort: the flash policy port to use (if other than the
+    *       socket pool default), use 0 for flash default.
+    *    policyUrl: the flash policy file URL to use (if provided will
+    *       be used instead of a policy port).
+    *    connections: number of connections to use to handle requests.
+    *    caCerts: an array of certificates to trust for TLS, certs may
+    *       be PEM-formatted or cert objects produced via forge.pki.
+    *    cipherSuites: an optional array of cipher suites to use,
+    *       see forge.tls.CipherSuites.
+    *    virtualHost: the virtual server name to use in a TLS SNI
+    *       extension, if not provided the url host will be used.
+    *    verify: a custom TLS certificate verify callback to use.
+    *    getCertificate: an optional callback used to get a client-side
+    *       certificate (see forge.tls for details).
+    *    getPrivateKey: an optional callback used to get a client-side
+    *       private key (see forge.tls for details).
+    *    getSignature: an optional callback used to get a client-side
+    *       signature (see forge.tls for details).
+    *    persistCookies: true to use persistent cookies via flash local
+    *       storage, false to only keep cookies in javascript.
+    *    primeTlsSockets: true to immediately connect TLS sockets on
+    *       their creation so that they will cache TLS sessions for reuse.
     * 
     * @return the client.
     */
