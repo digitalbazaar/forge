@@ -86,12 +86,7 @@ def create_policy_server(options):
 
 
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    def serve_forever(self):
-        """Handle one request at a time until shutdown or keyboard interrupt."""
-        try:
-           SocketServer.BaseServer.serve_forever(self)
-        except KeyboardInterrupt:
-           return
+    pass
 
 
 def create_http_server(options, script_dir):
@@ -125,6 +120,14 @@ def create_http_server(options, script_dir):
     return httpd
 
 
+def serve_forever(server):
+    """Serve until shutdown or keyboard interrupt."""
+    try:
+       server.serve_forever()
+    except KeyboardInterrupt:
+       return
+
+
 def main():
     """Start static file and policy servers"""
     usage = "Usage: %prog [options]"
@@ -150,8 +153,8 @@ def main():
     policyd = create_policy_server(options)
 
     # start servers
-    server_p = Process(target=httpd.serve_forever)
-    policy_p = Process(target=policyd.serve_forever)
+    server_p = Process(target=serve_forever, args=(httpd,))
+    policy_p = Process(target=serve_forever, args=(policyd,))
     server_p.start()
     policy_p.start()
 
