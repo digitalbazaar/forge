@@ -100,10 +100,11 @@ def main():
     policy_p = Process(target=policyd.serve_forever)
     policy_p.start()
 
-    try:
-        policy_p.join()
-    except KeyboardInterrupt:
-        logging.info("Stopping test server...")
+    while policy_p.is_alive():
+        try:
+            policy_p.join(1)
+        except KeyboardInterrupt:
+            logging.info("Stopping test server...")
 
 
 if __name__ == "__main__":
