@@ -32,10 +32,8 @@ var init = function($)
       var domain = query.domain || '';
       var auth = query.auth || '';
       var redirect = query.redirect || '';
+      var pport = query.pport || 843;
       redirect = 'https://' + domain + '/' + redirect;
-      // TODO: allow flash policy port or url to be specified via params
-      //console.log('domain', domain);
-      //console.log('redirect', redirect);
       if(domain)
       {
          $('#domain').html('`' + domain + '`');
@@ -49,8 +47,7 @@ var init = function($)
          flashId: 'socketPool',
          msie: $.browser.msie,
          url: 'https://' + domain,
-         //'http://' + domain + '/crossdomain.xml',
-         policyPort: 19945,
+         policyPort: pport,
          connections: 1,
          caCerts: [],
          verify: function(c, verified, depth, certs)
