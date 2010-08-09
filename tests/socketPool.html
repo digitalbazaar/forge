@@ -7,9 +7,13 @@
       <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
       <script type="text/javascript" src="forge/util.js"></script>
       <script type="text/javascript" src="forge/socket.js"></script>
+      <script type="text/javascript" src="forge/log.js"></script>
       
       <script type="text/javascript">
       //<![CDATA[
+      // logging category
+      var cat = 'forge.tests.socketPool';
+
       // feedback types
       var ERROR = '';
       var USER = 'user';
@@ -34,9 +38,12 @@
                 row.children().eq(2).html(text);
                 break;
              default:
-                row.children().eq(1).html('ERROR: bad feedback type:' + type);
+                var msg = 'ERROR: bad feedback type:' + type;
+                row.children().eq(1).html(msg);
+                forge.log.error(cat, msg);
           }
           $('#feedback').append(row);
+          forge.log.debug(cat, '[' + type + ']', text);
       };
 
       function _setState(stateSel)
@@ -72,7 +79,6 @@
       {
          ready: function()
          {
-            console.log('SocketPool ready.');
             $(document).ready(function() {
                addFeedback(SOCKETPOOL, 'Ready');
                setState('ready');
@@ -120,28 +126,28 @@
             flashId: 'socketPool',
             connected: function(e)
             {
-               console.log('connected', e);
+               forge.log.debug(cat, 'connected', e);
                addFeedback(SOCKET, 'Connected');
             },
             closed: function(e)
             {
-               console.log('closed', e);
+               forge.log.debug(cat, 'closed', e);
                addFeedback(SOCKET, 'Closed. Type: ' + e.type);
                setState('created');
             },
             data: function(e)
             {
-               console.log('data received', e);
-               console.log('bytes available', socket.bytesAvailable());
+               forge.log.debug(cat, 'data received', e);
+               forge.log.debug(cat, 'bytes available', socket.bytesAvailable());
                addFeedback(SOCKET,
                   'Data available: ' +
                   socket.bytesAvailable() +' bytes');
                var bytes = socket.receive(e.bytesAvailable);
-               console.log(bytes);
+               forge.log.debug(cat, 'bytes received', bytes);
             },
             error: function(e)
             {
-               console.log('error', e);
+               forge.log.error(cat, 'error', e);
                addFeedback(SOCKET, 'Error: ' + e);
             }
          });

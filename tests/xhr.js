@@ -33,7 +33,7 @@
 
 jQuery(function($)
 {
-   var cat = 'xhr-test';
+   var cat = 'forge.tests.xhr';
 
    var tests = [];
    var passed = 0;
@@ -148,7 +148,7 @@ jQuery(function($)
                   success: function(data, textStatus, xhr)
                   {
                      ++stressStats.success;
-                     console.log('xhr connection completed' +
+                     forge.log.debug(cat, 'xhr connection completed' +
                         ' seq:' + seqnum +
                         ' datalen:' + data.length + ' ' +
                         stressStatsMessage());
@@ -156,7 +156,7 @@ jQuery(function($)
                   error: function(xhr, textStatus, errorThrown)
                   {
                      ++stressStats.error;
-                     console.error('xhr connection failed' +
+                     forge.log.error(cat, 'xhr connection failed' +
                         ' seq:' + seqnum + ' ' +
                         stressStatsMessage(), arguments);
                   },
@@ -249,7 +249,7 @@ jQuery(function($)
          
          if(xhr.onreadystatechange)
          {
-            //console.log('wrapper orsc', toWrap);
+            //forge.log.debug(cat, 'wrapper orsc', toWrap);
             xhr.onreadystatechange();
          }
       };

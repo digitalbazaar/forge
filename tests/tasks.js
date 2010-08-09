@@ -7,7 +7,7 @@
  */
 jQuery(function($)
 {
-   var cat = 'tasks-test';
+   var cat = 'forge.tests.tasks';
 
    var tests = [];
    var passed = 0;

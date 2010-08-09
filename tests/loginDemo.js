@@ -21,7 +21,8 @@
 
 var init = function($)
 {
-   var cat = 'web-id-login';
+   // logging category
+   var cat = 'forge.tests.loginDemo';
    
    // local alias
    var forge = window.forge;
@@ -57,12 +58,12 @@ var init = function($)
          },
          getCertificate: function(c)
          {
-            console.log('using cert', chosen.certificate);
+            forge.log.debug(cat, 'using cert', chosen.certificate);
             return chosen.certificate;
          },
          getPrivateKey: function(c)
          {
-            //console.log('using private key', chosen.privateKey);
+            //forge.log.debug(cat, 'using private key', chosen.privateKey);
             return chosen.privateKey;
          }
       });
@@ -102,20 +103,20 @@ var init = function($)
                   {
                      if(data !== '')
                      {
-                        console.log('authentication completed');
-                        console.log(data);
+                        forge.log.debug(cat, 'authentication completed');
+                        forge.log.debug(cat, data);
                         window.name = data;
                      }
                      else
                      {
-                        console.log('authentication failed');
+                        forge.log.debug(cat, 'authentication failed');
                         window.name = '';
                      }
                      window.location = redirect;
                   },
                   error: function(xhr, textStatus, errorThrown)
                   {
-                     console.log('authentication failed');
+                     forge.log.error(cat, 'authentication failed');
                   },
                   xhr: forge.xhr.create
                });
@@ -143,6 +144,6 @@ var init = function($)
    }
    catch(ex)
    {
-      console.log(ex);
+      forge.log.error(cat, ex);
    }
 };

@@ -5,14 +5,18 @@
       <script type="text/javascript" src="forge/util.js"></script>
       <script type="text/javascript" src="forge/socket.js"></script>
       <script type="text/javascript" src="forge/http.js"></script>
+      <script type="text/javascript" src="forge/log.js"></script>
       
       <script type="text/javascript">
       //<![CDATA[
+      // logging category
+      var cat = 'forge.tests.http';
+
       window.forge.socketPool =
       {
          ready: function()
          {
-            console.log('SocketPool ready.');
+            forge.log.debug(cat, 'SocketPool ready.');
          }
       };
 
@@ -31,23 +35,23 @@
       {
          try
          {
-	         var sp = net.createSocketPool({
-	            flashId: 'socketPool',
-	            policyPort: 19945,
-	            msie: false
-	         });
-	         client = http.createClient({
-	            //url: 'http://' + window.location.host,
-	            socketPool: sp,
-	            connections: 10
-	         });
-	         
-	         document.getElementById('feedback').innerHTML =
-	            'HTTP client created';
+            var sp = net.createSocketPool({
+               flashId: 'socketPool',
+               policyPort: 19945,
+               msie: false
+            });
+            client = http.createClient({
+               //url: 'http://' + window.location.host,
+               socketPool: sp,
+               connections: 10
+            });
+            
+            document.getElementById('feedback').innerHTML =
+               'HTTP client created';
          }
          catch(ex)
          {
-            console.log(ex);
+            forge.log.error(cat, ex);
          }
          return false;
       }
@@ -75,19 +79,19 @@
             request: request,
             connected: function(e)
             {
-               console.log('connected', e);
+               forge.log.debug(cat, 'connected', e);
             },
             headerReady: function(e)
             {
-               console.log('header ready', e);
+               forge.log.debug(cat, 'header ready', e);
             },
             bodyReady: function(e)
             {
-               console.log('body ready', e);
+               forge.log.debug(cat, 'body ready', e);
             },
             error: function(e)
             {
-               console.log('error', e);
+               forge.log.error(cat, 'error', e);
             }
          });
          document.getElementById('feedback').innerHTML =
@@ -130,7 +134,7 @@
             path: '/'
          };
          client.setCookie(cookie);
-         console.log('cookie', client.getCookie('test-cookie'));
+         forge.log.debug(cat, 'cookie', client.getCookie('test-cookie'));
       }
 
       function client_clear_cookies()
@@ -162,7 +166,7 @@
          });
          request.addCookie(cookie1);
          request.addCookie(cookie2);
-         console.log('request', request.toString());
+         forge.log.debug(cat, 'request', request.toString());
       }
 
       function response_get_cookies()
@@ -174,7 +178,7 @@
             'test-cookie2=test-value2; ' +
             'expires=Thu, 21-Aug-2008 23:47:25 GMT; path=/');
          var cookies = response.getCookies();
-         console.log('cookies', cookies);
+         forge.log.debug(cat, 'cookies', cookies);
       }
       
       //]]>
