@@ -32,7 +32,7 @@
 
 jQuery(function($)
 {
-   var cat = 'web-id-test';
+   var cat = 'forge.tests.webid';
    
    // local alias
    var forge = window.forge;
@@ -42,7 +42,7 @@ jQuery(function($)
       var bits = $('#bits')[0].value;
       var uri = $('#uri')[0].value;
       var commonName = $('#commonName')[0].value;
-      console.log('generating ' + bits +
+      forge.log.debug(cat, 'generating ' + bits +
          '-bit RSA key-pair and certificate...');
       
       // function to create cert
@@ -102,17 +102,17 @@ jQuery(function($)
             cert.sign(keys.privateKey);
             
             // verify certificate
-            console.log('verified', cert.verify(cert));
+            forge.log.debug('verified', cert.verify(cert));
             
-            console.log('certificate:', cert);
-            //console.log(
+            forge.log.debug(cat, 'certificate:', cert);
+            //forge.log.debug(cat, 
             //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
             var keyPem = forge.pki.privateKeyToPem(keys.privateKey);
             var certPem = forge.pki.certificateToPem(cert);
-            console.log(keyPem);
-            console.log(certPem);
+            forge.log.debug(cat, keyPem);
+            forge.log.debug(cat, certPem);
             
-            console.log('storing certificate and private key...');
+            forge.log.debug(cat, 'storing certificate and private key...');
             try
             {
                // get flash API
@@ -133,17 +133,17 @@ jQuery(function($)
                forge.util.setItem(
                   flashApi, 'forge.test.webid', 'webids', webids);
                
-               console.log('certificate and private key stored');
+               forge.log.debug(cat, 'certificate and private key stored');
                $('#show').click();
             }
             catch(ex)
             {
-               console.log(ex);
+               forge.log.error(cat, ex);
             }
          }
          catch(ex)
          {
-            console.error(ex, ex.message ? ex.message : '');
+            forge.log.error(cat, ex, ex.message ? ex.message : '');
          }
       };
       
@@ -173,7 +173,7 @@ jQuery(function($)
 
    $('#show').click(function()
    {  
-      console.log('get stored web IDs...');
+      forge.log.debug(cat, 'get stored web IDs...');
       try
       {
          // get flash API
@@ -213,34 +213,34 @@ jQuery(function($)
          
          $('#webids').html(html);
          
-         console.log('Web IDs retrieved');
+         forge.log.debug(cat, 'Web IDs retrieved');
       }
       catch(ex)
       {
-         console.log(ex);
+         forge.log.error(cat, ex);
       }
    });
    
    $('#clear').click(function()
    {  
-      console.log('clearing all web IDs...');
+      forge.log.debug(cat, 'clearing all web IDs...');
       try
       {
          // get flash API
          var flashApi = document.getElementById('socketPool');
          forge.util.clearItems(flashApi, 'forge.test.webid');
          $('#webids').html('None');
-         console.log('Web IDs retrieved');
+         forge.log.debug(cat, 'Web IDs cleared');
       }
       catch(ex)
       {
-         console.log(ex);
+         forge.log.error(cat, ex);
       }
    });
    
    $('#authenticate').click(function()
    {
-      console.log('doing Web ID authentication...');
+      forge.log.debug(cat, 'doing Web ID authentication...');
       
       try
       {
@@ -263,17 +263,17 @@ jQuery(function($)
             {
                if(data !== '')
                {
-                  console.log('authentication completed');
-                  console.log(data);
+                  forge.log.debug(cat, 'authentication completed');
+                  forge.log.debug(cat, data);
                }
                else
                {
-                  console.log('authentication failed');
+                  forge.log.error(cat, 'authentication failed');
                }
             },
             error: function(xhr, textStatus, errorThrown)
             {
-               console.log('authentication failed');
+               forge.log.error(cat, 'authentication failed');
             },
             xhr: function()
             {
@@ -289,12 +289,13 @@ jQuery(function($)
                   },
                   getCertificate: function(c)
                   {
-                     //console.log('using cert', webid.certificate);
+                     //forge.log.debug(cat, 'using cert', webid.certificate);
                      return webid.certificate;
                   },
                   getPrivateKey: function(c)
                   {
-                     //console.log('using private key', webid.privateKey);
+                     //forge.log.debug(cat,
+                     //   'using private key', webid.privateKey);
                      return webid.privateKey;
                   }
                });
@@ -303,7 +304,7 @@ jQuery(function($)
       }
       catch(ex)
       {
-         console.log(ex);
+         forge.log.error(cat, ex);
       }
    });
 });

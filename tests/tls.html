@@ -22,6 +22,9 @@
       
       <script type="text/javascript">
       //<![CDATA[
+      // logging category
+      var cat = 'forge.tests.tls';
+
       swfobject.embedSWF(
          'forge/SocketPool.swf', 'socketPool', '0', '0', '9.0.0',
          false, {}, {allowscriptaccess: 'always'}, {});
@@ -67,42 +70,43 @@
       {
          try
          {
-	         var sp = net.createSocketPool({
-	            flashId: 'socketPool',
-	            policyPort: 19945,
-	            msie: false
-	         });
-	         client = http.createClient({
-	            //url: 'https://localhost:4433',
-	            url: 'https://' + window.location.host,
-	            socketPool: sp,
-	            connections: 10,
-	            caCerts: [certificatePem],
-	            // optional cipher suites in order of preference
-	            cipherSuites: [
-	               tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
-	               tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
-	            verify: function(c, verified, depth, certs)
-	            {
-	               console.log(
-	   	            'TLS certificate ' + depth + ' verified', verified);
-	               // Note: change to always true to test verifying without cert
-	               //return verified;
-	               // FIXME: temporarily accept any cert to allow hitting any bpe
-	               if(verified !== true)
-	               {
-	                  console.log('Certificate NOT verified. Ignored for test.');
-	               }
-	               return true;
-	            },
-	            primeTlsSockets: primed
-	         });
-	         document.getElementById('feedback').innerHTML =
-		         'http client created';
+            var sp = net.createSocketPool({
+               flashId: 'socketPool',
+               policyPort: 19945,
+               msie: false
+            });
+            client = http.createClient({
+               //url: 'https://localhost:4433',
+               url: 'https://' + window.location.host,
+               socketPool: sp,
+               connections: 10,
+               caCerts: [certificatePem],
+               // optional cipher suites in order of preference
+               cipherSuites: [
+                  tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+                  tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+               verify: function(c, verified, depth, certs)
+               {
+                  forge.log.debug(cat,
+                     'TLS certificate ' + depth + ' verified', verified);
+                  // Note: change to always true to test verifying without cert
+                  //return verified;
+                  // FIXME: temporarily accept any cert to allow hitting any bpe
+                  if(verified !== true)
+                  {
+                     forge.log.warning(cat, 
+                        'Certificate NOT verified. Ignored for test.');
+                  }
+                  return true;
+               },
+               primeTlsSockets: primed
+            });
+            document.getElementById('feedback').innerHTML =
+               'http client created';
          }
          catch(ex)
          {
-            console.log(ex);
+            forge.log.error(cat, ex);
          }
          
          return false;
@@ -137,15 +141,15 @@
             request: request,
             connected: function(e)
             {
-               console.log('connected', e);
+               forge.log.debug(cat, 'connected', e);
             },
             headerReady: function(e)
             {
-               console.log('header ready', e);
+               forge.log.debug(cat, 'header ready', e);
             },
             bodyReady: function(e)
             {
-               console.log('body ready', e);
+               forge.log.debug(cat, 'body ready', e);
 
                // FIXME: current test server doesn't seem to handle keep-alive
                // correctly, so close connection 
@@ -153,7 +157,7 @@
             },
             error: function(e)
             {
-               console.log('error', e);
+               forge.log.error(cat, 'error', e);
             }
          });
          document.getElementById('feedback').innerHTML =
@@ -196,7 +200,7 @@
             path: '/'
          };
          client.setCookie(cookie);
-         console.log('cookie', client.getCookie('test-cookie'));
+         forge.log.debug(cat, 'cookie', client.getCookie('test-cookie'));
       }
 
       function client_clear_cookies()

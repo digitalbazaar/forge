@@ -7,7 +7,8 @@
  */
 jQuery(function($)
 {
-   var cat = 'common-test';
+   // logging category
+   var cat = 'forge.tests.common';
    
    // local alias
    var forge = window.forge;
@@ -98,15 +99,15 @@ jQuery(function($)
    $('#keygen').click(function() {
       var bits = $('#bits')[0].value;
       var keys = forge.pki.rsa.generateKeyPair(bits);
-      console.log('generating ' + bits + '-bit RSA key-pair...');
+      forge.log.debug(cat, 'generating ' + bits + '-bit RSA key-pair...');
       setTimeout(function()
       {
-         console.log('private key:', keys.privateKey);
-         console.log(forge.pki.privateKeyToPem(keys.privateKey));
-         console.log('public key:', keys.publicKey);
-         console.log(forge.pki.publicKeyToPem(keys.publicKey));
+         forge.log.debug(cat, 'private key:', keys.privateKey);
+         forge.log.debug(cat, forge.pki.privateKeyToPem(keys.privateKey));
+         forge.log.debug(cat, 'public key:', keys.publicKey);
+         forge.log.debug(cat, forge.pki.publicKeyToPem(keys.publicKey));
          
-         console.log('testing sign/verify...');
+         forge.log.debug(cat, 'testing sign/verify...');
          setTimeout(function()
          {
             // do sign/verify test
@@ -116,12 +117,11 @@ jQuery(function($)
                md.update('foo');
                var signature = keys.privateKey.sign(md);
                keys.publicKey.verify(md.digest().getBytes(), signature);
-               console.log('sign/verify success');
+               forge.log.debug(cat, 'sign/verify success');
             }
             catch(ex)
             {
-               console.log('sign/verify failure');
-               console.log(ex);
+               forge.log.error(cat, 'sign/verify failure', ex);
             }
          }, 0);
       }, 0);
@@ -129,7 +129,7 @@ jQuery(function($)
    
    $('#certgen').click(function() {
       var bits = $('#bits')[0].value;
-      console.log('generating ' + bits +
+      forge.log.debug(cat, 'generating ' + bits +
          '-bit RSA key-pair and certificate...');
       setTimeout(function()
       {
@@ -183,17 +183,17 @@ jQuery(function($)
             // self-sign certificate
             cert.sign(keys.privateKey);
             
-            console.log('certificate:', cert);
-            //console.log(
+            forge.log.debug(cat, 'certificate:', cert);
+            //forge.log.debug(cat,
             //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
-            console.log(forge.pki.certificateToPem(cert));
+            forge.log.debug(cat, forge.pki.certificateToPem(cert));
             
             // verify certificate
-            console.log('verified', cert.verify(cert));
+            forge.log.debug(cat, 'verified', cert.verify(cert));
          }
          catch(ex)
          {
-            console.error(ex, ex.message ? ex.message : '');
+            forge.log.error(cat, ex, ex.message ? ex.message : '');
          }
       }, 0);
    });

@@ -9,6 +9,9 @@
 {
    // define http namespace
    var http = {};
+
+   // logging category
+   var cat = 'forge.http';
    
    // add array of clients to debug storage
    if(forge.debug)
@@ -62,7 +65,7 @@
             // no flash storage available, just silently fail
             // TODO: i assume we want this logged somewhere or
             // should it actually generate an error
-            //console.log(ex);
+            //forge.log.error(cat, ex);
          }
       }
    };
@@ -87,7 +90,7 @@
             // no flash storage available, just silently fail
             // TODO: i assume we want this logged somewhere or
             // should it actually generate an error
-            //console.log(ex);
+            //forge.log.error(cat, ex);
          }
       }
       
@@ -116,7 +119,7 @@
             // no flash storage available, just silently fail
             // TODO: i assume we want this logged somewhere or
             // should it actually generate an error
-            //console.log(ex);
+            //forge.log.error(cat, ex);
          }
       }
    };
