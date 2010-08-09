@@ -546,9 +546,9 @@
          // socket pool
          socketPool: sp,
          // the policy port to use
-         policyPort: options.policyPort || 0,
+         policyPort: options.policyPort,
          // policy url to use
-         policyUrl: options.policyUrl || null,
+         policyUrl: options.policyUrl,
          // queue of requests to service
          requests: [],
          // all sockets
