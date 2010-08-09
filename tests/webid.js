@@ -151,6 +151,7 @@ jQuery(function($)
       var progress = $('#progress');
       progress.html('Generating ' + bits + '-bit key-pair.');
       var state = forge.pki.rsa.createKeyPairGenerationState(bits);
+      var kgTime = +new Date();
       var step = function()
       {
          // step key-generation
@@ -162,6 +163,7 @@ jQuery(function($)
          // key-generation complete
          else
          {
+            console.log('Total key-gen time', (+new Date() - kgTime) + 'ms');
             createCert(state.keys);
             progress.empty();
          }

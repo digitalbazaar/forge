@@ -2526,7 +2526,7 @@
       {
          state: 0,
          itrs: 0,
-         maxItrs: bits >> 2,
+         maxItrs: 100,
          bits: bits,
          rng: rng,
          e: new BigInteger((e || 65537).toString(16), 16),
@@ -2536,8 +2536,11 @@
          pBits: bits - (bits >> 1),
          pqState: 0,
          num: null,
+         six: new BigInteger(null),
+         addNext: 2,
          keys: null
       };
+      rval.six.fromInt(6);
       
       return rval;
    }
@@ -2574,23 +2577,48 @@
             {
                state.itrs = 0;
                state.num = new BigInteger(bits, state.rng);
+               state.r = null;
+               // force number to be odd
+               if(state.num.isEven())
+               {
+                  state.num.dAddOffset(1, 0);
+               }
                // force MSB set
                if(!state.num.testBit(bits1))
                {
                   state.num.bitwiseTo(
                      BigInteger.ONE.shiftLeft(bits1),
                      op_or, state.num);
-                  // force number to be odd
-                  if(state.num.isEven())
-                  {
-                     state.num.dAddOffset(1, 0);
-                  }
                }
                ++state.pqState;
             }
             // try to make the number a prime
             else if(state.pqState === 1)
             {
+               /* Note: All primes are of the form 6k +/- 1. So to find
+                * a probable prime we first align the number at a possible
+                * prime. Then each time the number is determined not to be
+                * prime we add 2 if the number was at 6k - 1 or we add 4 if
+                * the number was at 6k + 1.
+                */
+               // FIXME: need to use a faster strategy than this ... 
+               // this is the bottleneck
+               if(state.addNext === null)
+               {
+                  // r will be 1, 3, or 5 since num is odd
+                  var r = state.num.mod(state.six).byteValue();
+                  // if we are at 3, advance to 5
+                  if(r === 3)
+                  {
+                     state.num.mod.dAddOffset(2);
+                     r = 5;
+                  }
+                  
+                  // set add next
+                  state.addNext = (r === 1) ? 2 : 4;
+               }
+               
+               // do primality test
                var pp = state.num.isProbablePrime(1);
                if(pp)
                {
@@ -2599,14 +2627,17 @@
                // do max iterations before trying a new number
                else if(state.itrs < state.maxItrs)
                {
-                  // FIXME: from jsb2.js (need to use a faster strategy
-                  // than this ... this is the bottleneck)
-                  // fiddle with bits to attempt to make prime
-                  state.num.dAddOffset(2, 0);
+                  // add addNext to get to next potential odd number
+                  state.num.dAddOffset(state.addNext, 0);
                   if(state.num.bitLength() > bits)
                   {
+                     state.addNext = null;
                      state.num.subTo(
                         BigInteger.ONE.shiftLeft(bits1), state.num);
+                  }
+                  else
+                  {
+                     state.addNext = (state.addNext === 4) ? 2 : 4; 
                   }
                   ++state.itrs;
                }
@@ -2624,24 +2655,27 @@
                   .compareTo(BigInteger.ONE) === 0) ? 3 : 0;
             }
             // ensure number is a probable prime
-            else if(state.num.isProbablePrime(10))
+            else if(state.pqState === 3)
             {
                state.pqState = 0;
-               if(state.p === null)
+               if(state.num.isProbablePrime(10))
                {
-                  state.p = state.num;
-               }
-               else
-               {
-                  state.q = state.num;
+                  if(state.p === null)
+                  {
+                     state.p = state.num;
+                  }
+                  else
+                  {
+                     state.q = state.num;
+                  }
+                  
+                  // advance state if both p and q are ready
+                  if(state.p !== null && state.q !== null)
+                  {
+                     ++state.state;
+                  }
                }
                state.num = null;
-               
-               // advance state if both p and q are ready
-               if(state.p !== null && state.q !== null)
-               {
-                  ++state.state;
-               }
             }
          }
          // ensure p is larger than q (swap them if not)
@@ -2692,8 +2726,7 @@
             }
             else
             {
-               // failed, restart
-               state.p = null;
+               // failed, get new q
                state.q = null;
                state.state = 0;
             }
