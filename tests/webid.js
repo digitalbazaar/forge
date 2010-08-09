@@ -44,11 +44,12 @@ jQuery(function($)
       var commonName = $('#commonName')[0].value;
       console.log('generating ' + bits +
          '-bit RSA key-pair and certificate...');
-      setTimeout(function()
+      
+      // function to create cert
+      var createCert = function(keys)
       {
          try
          {
-            var keys = forge.pki.rsa.generateKeyPair(bits);
             var cert = forge.pki.createCertificate();
             cert.serialNumber = '01';
             cert.validity.notBefore = new Date();
@@ -100,6 +101,9 @@ jQuery(function($)
             // self-sign certificate
             cert.sign(keys.privateKey);
             
+            // verify certificate
+            console.log('verified', cert.verify(cert));
+            
             console.log('certificate:', cert);
             //console.log(
             //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
@@ -141,7 +145,30 @@ jQuery(function($)
          {
             console.error(ex, ex.message ? ex.message : '');
          }
-      }, 0);
+      };
+      
+      // create key-generation state and function to step algorithm
+      var progress = $('#progress');
+      progress.html('Generating ' + bits + '-bit key-pair.');
+      var state = forge.pki.rsa.createKeyPairGenerationState(bits);
+      var step = function()
+      {
+         // step key-generation
+         if(!forge.pki.rsa.stepKeyPairGenerationState(state, 1000))
+         {
+            progress.html(progress.html() + '.');
+            setTimeout(step, 1);
+         }
+         // key-generation complete
+         else
+         {
+            createCert(state.keys);
+            progress.empty();
+         }
+      };
+      
+      // run key-gen algorithm
+      setTimeout(step, 0);
    });
 
    $('#show').click(function()

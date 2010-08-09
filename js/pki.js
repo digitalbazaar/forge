@@ -2488,17 +2488,17 @@
    };
    
    /**
-    * Generates an RSA public-private key pair.
+    * Creates an RSA key-pair generation state object. It is used to allow
+    * key-generation to be performed in steps. It also allows for a UI to
+    * display progress updates.
     * 
     * @param bits the size for the private key in bits, defaults to 1024.
     * @param e the public exponent to use, defaults to 65537.
     * 
-    * @return an object with privateKey and publicKey properties.
+    * @return the state object to use to generate the key-pair.
     */
-   pki.rsa.generateKeyPair = function(bits, e)
+   pki.rsa.createKeyPairGenerationState = function(bits, e)
    {
-      var rval = null;
-      
       // set default bits
       if(typeof(bits) === 'string')
       {
@@ -2512,68 +2512,231 @@
          // x is an array to fill with bytes
          nextBytes: function(x)
          {
+            var tmp1 = +new Date();
             var b = forge.random.getBytes(x.length);
             for(var i = 0; i < x.length; ++i)
             {
                x[i] = b.charCodeAt(i);
             }
+            var tmp2 = +new Date();
          }
       };
       
-      // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
-      var qs = bits >> 1;
-      e = new BigInteger((e || 65537).toString(16), 16);
-      var p, q, t;
-      while(rval === null)
+      var rval =
       {
-         // find a suitable p (p - 1 must be coprime with e)
-         do
-         {
-            p = new BigInteger(bits - qs, 1, rng);
-         }
-         while((p.subtract(BigInteger.ONE).gcd(e)
-            .compareTo(BigInteger.ONE) !== 0) || !p.isProbablePrime(10));
-         
-         // find a suitable q (q - 1 must be coprime with e)
-         do
-         {
-            q = new BigInteger(qs, 1, rng);
-         }
-         while((q.subtract(BigInteger.ONE).gcd(e)
-            .compareTo(BigInteger.ONE) !== 0) || !q.isProbablePrime(10));
-         
-         // ensure p is larger than q (swap them if not)
-         if(p.compareTo(q) < 0)
-         {
-            t = p;
-            p = q;
-            q = t;
-         }
-         
-         // compute phi: (p - 1)(q - 1) (Euler's totient function)
-         var p1 = p.subtract(BigInteger.ONE);
-         var q1 = q.subtract(BigInteger.ONE);
-         var phi = p1.multiply(q1);
-         
-         // ensure e and phi are coprime
-         if(phi.gcd(e).compareTo(BigInteger.ONE) === 0)
-         {
-            var n = p.multiply(q);
-            
-            // ensure n is right number of bits
-            if(n.bitLength() === bits)
-            {
-               var d = e.modInverse(phi);
-               
-               rval = {};
-               rval.privateKey = pki.setRsaPrivateKey(
-                  n, e, d, p, q, d.mod(p1), d.mod(q1), q.modInverse(p));
-               rval.publicKey = pki.setRsaPublicKey(n, e);
-            }
-         }
-      }
+         state: 0,
+         itrs: 0,
+         maxItrs: bits >> 2,
+         bits: bits,
+         rng: rng,
+         e: new BigInteger((e || 65537).toString(16), 16),
+         p: null,
+         q: null,
+         qBits: bits >> 1,
+         pBits: bits - (bits >> 1),
+         pqState: 0,
+         num: null,
+         keys: null
+      };
       
       return rval;
+   }
+   
+   /**
+    * Attempts to runs the key-generation algorithm for at most n seconds
+    * (approximately) using the given state. When key-generation has completed,
+    * the keys will be stored in state.keys.
+    * 
+    * @param state the state to use.
+    * @param n the maximum number of milliseconds to run the algorithm for, 0
+    *           to run the algorithm to completion.
+    * 
+    * @return true if the key-generation completed, false if not.
+    */
+   pki.rsa.stepKeyPairGenerationState = function(state, n)
+   {
+      // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
+      
+      // keep stepping until time limit is reached or done
+      var t1 = +new Date();
+      var t2;
+      var total = 0;
+      while(state.keys === null && (n <= 0 || total < n))
+      {
+         // generate p or q
+         if(state.state === 0)
+         {
+            var bits = (state.p === null) ? state.pBits : state.qBits;
+            var bits1 = bits - 1;
+            
+            // get a random number
+            if(state.pqState === 0)
+            {
+               state.itrs = 0;
+               state.num = new BigInteger(bits, state.rng);
+               // force MSB set
+               if(!state.num.testBit(bits1))
+               {
+                  state.num.bitwiseTo(
+                     BigInteger.ONE.shiftLeft(bits1),
+                     op_or, state.num);
+                  // force number to be odd
+                  if(state.num.isEven())
+                  {
+                     state.num.dAddOffset(1, 0);
+                  }
+               }
+               ++state.pqState;
+            }
+            // try to make the number a prime
+            else if(state.pqState === 1)
+            {
+               var pp = state.num.isProbablePrime(1);
+               if(pp)
+               {
+                  ++state.pqState;
+               }
+               // do max iterations before trying a new number
+               else if(state.itrs < state.maxItrs)
+               {
+                  // FIXME: from jsb2.js (need to use a faster strategy
+                  // than this ... this is the bottleneck)
+                  // fiddle with bits to attempt to make prime
+                  state.num.dAddOffset(2, 0);
+                  if(state.num.bitLength() > bits)
+                  {
+                     state.num.subTo(
+                        BigInteger.ONE.shiftLeft(bits1), state.num);
+                  }
+                  ++state.itrs;
+               }
+               else
+               {
+                  // too many iterations, try again
+                  state.pqState = 0;
+               }
+            }
+            // ensure number is coprime with e
+            else if(state.pqState === 2)
+            {
+               state.pqState =
+                  (state.num.subtract(BigInteger.ONE).gcd(state.e)
+                  .compareTo(BigInteger.ONE) === 0) ? 3 : 0;
+            }
+            // ensure number is a probable prime
+            else if(state.num.isProbablePrime(10))
+            {
+               state.pqState = 0;
+               if(state.p === null)
+               {
+                  state.p = state.num;
+               }
+               else
+               {
+                  state.q = state.num;
+               }
+               state.num = null;
+               
+               // advance state if both p and q are ready
+               if(state.p !== null && state.q !== null)
+               {
+                  ++state.state;
+               }
+            }
+         }
+         // ensure p is larger than q (swap them if not)
+         else if(state.state === 1)
+         {
+            if(state.p.compareTo(state.q) < 0)
+            {
+               state.num = state.p;
+               state.p = state.q;
+               state.q = state.num;
+            }
+            ++state.state;
+         }
+         // compute phi: (p - 1)(q - 1) (Euler's totient function) 
+         else if(state.state === 2)
+         {
+            state.p1 = state.p.subtract(BigInteger.ONE);
+            state.q1 = state.q.subtract(BigInteger.ONE);
+            state.phi = state.p1.multiply(state.q1);
+            ++state.state;
+         }
+         // ensure e and phi are coprime
+         else if(state.state === 3)
+         {
+            if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) === 0)
+            {
+               // phi and e are coprime, advance
+               ++state.state;
+            }
+            else
+            {
+               // phi and e aren't coprime, so generate a new p and q
+               state.p = null;
+               state.q = null;
+               state.state = 0;
+            }
+         }
+         // create n, ensure n is has the right number of bits
+         else if(state.state === 4)
+         {
+            state.n = state.p.multiply(state.q);
+            
+            // ensure n is right number of bits
+            if(state.n.bitLength() === state.bits)
+            {
+               // success, advance
+               ++state.state;
+            }
+            else
+            {
+               // failed, restart
+               state.p = null;
+               state.q = null;
+               state.state = 0;
+            }
+         }
+         // set keys
+         else if(state.state === 5)
+         {
+            var d = state.e.modInverse(state.phi);
+            state.keys =
+            {
+               privateKey: pki.setRsaPrivateKey(
+                  state.n, state.e, d, state.p, state.q,
+                  d.mod(state.p1), d.mod(state.q1),
+                  state.q.modInverse(state.p)),
+               publicKey: pki.setRsaPublicKey(state.n, state.e)
+            };
+         }
+         
+         // update timing
+         t2 = +new Date();
+         total += t2 - t1;
+         t1 = t2;
+      }
+      
+      return state.keys !== null;
+   };
+   
+   /**
+    * Generates an RSA public-private key pair in a single call. To generate
+    * a key-pair in steps (to allow for progress updates and to prevent
+    * blocking or warnings in slow browsers) then use the key-pair generation
+    * state functions.
+    * 
+    * @param bits the size for the private key in bits, defaults to 1024.
+    * @param e the public exponent to use, defaults to 65537.
+    * 
+    * @return an object with privateKey and publicKey properties.
+    */
+   pki.rsa.generateKeyPair = function(bits, e)
+   {
+      var state = pki.rsa.createKeyPairGenerationState(bits, e);
+      pki.rsa.stepKeyPairGenerationState(state, 0);
+      return state.keys;
    };
    
    /**
