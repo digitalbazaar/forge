@@ -98,6 +98,8 @@
 
       $(document).ready(function() {
          addFeedback(USER, 'Ready');
+         $('#host').val(window.location.hostname);
+         $('#port').val(window.location.port);
       });
 
       function sp_init()
@@ -256,8 +258,8 @@
                      <td><button id="connect" disabled="disabled" class="sp-control sp-created"
                         onclick="javascript:return sp_connect();">connect</button></td>
                      <td>Connect the socket to
-                        host: <input id="host" value="localhost"/>
-                        port: <input id="port" value="19400"/>
+                        host: <input id="host"/>
+                        port: <input id="port"/>
                         policy port: <input id="policyPort" value="19945"/>
                      </td>
                   </tr>
