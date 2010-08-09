@@ -163,10 +163,10 @@ jQuery(function($)
          // key-generation complete
          else
          {
-            forge.log.debug(cat,
-               'Total key-gen time', (+new Date() - kgTime) + 'ms');
+            kgTime = +new Date() - kgTime;
+            forge.log.debug(cat, 'Total key-gen time', kgTime + 'ms');
             createCert(state.keys);
-            progress.empty();
+            progress.html(progress.html() + 'done. Time=' + kgTime + 'ms');
          }
       };
       
