@@ -20,7 +20,7 @@ this writing, available on debian in the package:
 
 apache2-threaded-dev
 
-To both compile mod_fsp you would run the following command:
+To compile mod_fsp you would run the following command:
 
 apxs2 -c mod_fsp.c
 
