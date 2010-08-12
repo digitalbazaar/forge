@@ -358,14 +358,15 @@ static const char* fsp_set_policy_file(
                // read file
                else
                {
-                  char* buf = (char*)apr_palloc(pool, length);
+                  char* buf = (char*)apr_palloc(pool, length + 1);
+                  buf[length] = '\0';
                   rv = apr_file_read_full(fd, buf, length, NULL);
                   if(rv == APR_SUCCESS)
                   {
                      // TODO: validate file
                      // save policy string
                      cfg->policy = buf;
-                     cfg->policy_length = length;
+                     cfg->policy_length = length + 1;
                   }
                }
 
