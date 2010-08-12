@@ -10,9 +10,9 @@ If a flash application sends a policy file request to an Apache server
 that has enabled and configured the mod_fsp module over its HTTP port,
 then the configured cross-domain policy will be returned as the response.
 
-=======================
-Building and Installing
-=======================
+========
+Building
+========
 
 To build the mod_fsp source code you can use Apache2's module
 build and installation tool: 'apxs2' which is, at the time of
@@ -20,16 +20,21 @@ this writing, available on debian in the package:
 
 apache2-threaded-dev
 
-To both compile and install mod_fsp you would run the following
-command:
+To both compile mod_fsp you would run the following command:
 
-apxs2 -c -i -a mod_fsp.c
+apxs2 -c mod_fsp.c
+
+============
+Installation
+============
+
+To install mod_fsp you the following command as root:
+
+apxs2 -i -a mod_fsp.c
 
 You must then restart your apache2 process, typically like so:
 
 /etc/init.d/apache2 restart
-
-You will need root access to install the module and restart apache.
 
 ===================
 Manual Installation
