@@ -108,3 +108,12 @@ And example of the most permissive cross-domain policy file for flash:
 <allow-access-from domain="*" to-ports="*"/>
 <allow-http-request-headers-from domain="*" headers="*"/>
 </cross-domain-policy>
+
+==================
+Note about SSL/TLS
+==================
+
+Flash currently has no built-in SSL/TLS support so there is no
+reason to specify an 'FSPPolicyFile' option for SSL servers. The
+Flash player cannot directly communicate with them when doing
+internal look ups of policy files.
