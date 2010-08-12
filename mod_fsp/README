@@ -30,7 +30,7 @@ Installation
 
 To install mod_fsp you the following command as root:
 
-apxs2 -i -a mod_fsp.c
+apxs2 -c -i -a mod_fsp.c
 
 You must then restart your apache2 process, typically like so:
 
