@@ -90,6 +90,10 @@ can be provided on a per-port basis. Each port can use a different
 one, but VirtualServers on a single port will use the same one. This
 is a limitation of the design by Adobe.
 
+Note: The cross-domain policy may fail to be served if the configuration
+option isn't added in the first VirtualHost entry (for a given port) read
+by Apache.
+
 An example of this configuration in use:
 
 <VirtualHost *:80>
