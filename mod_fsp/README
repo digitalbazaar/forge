@@ -29,6 +29,8 @@ You must then restart your apache2 process, typically like so:
 
 /etc/init.d/apache2 restart
 
+You will need root access to install the module and restart apache.
+
 ===================
 Manual Installation
 ===================
