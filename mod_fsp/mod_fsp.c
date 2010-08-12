@@ -267,12 +267,11 @@ static int fsp_output_filter(ap_filter_t* f, apr_bucket_brigade* bb)
    filter_state* state = f->ctx;
    if(state->found)
    {
-      // FIXME: copy should be unnecessary
       // found policy-file-request, add response bucket
-      // bucket is transient to copy locally allocated data
-      apr_bucket* head = apr_bucket_transient_create(
+      // bucket is immortal because the data is stored in the configuration
+      // and doesn't need to be copied
+      apr_bucket* head = apr_bucket_immortal_create(
          state->cfg->policy, state->cfg->policy_length, bb->bucket_alloc);
-      apr_bucket_setaside(head, f->c->pool);
       APR_BRIGADE_INSERT_HEAD(bb, head);
    }
 
