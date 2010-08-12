@@ -41,7 +41,7 @@ Manual Installation
 ===================
 
 To manually enable mod_dsp on your Apache2 server, you must copy the
-module and its load file to the appropriate directories.
+module file to the appropriate directory and create a load file.
 
 The module file:
 
@@ -56,10 +56,18 @@ The load file:
 
 fsp.load
 
-Must be copied to Apache2's 'mods-available' directory, typically
+Must be created in Apache2's 'mods-available' directory, typically
 located (on a debian system):
 
 /etc/apache2/mods-available
+
+The load file should contain:
+
+LoadModule fsp_module         /usr/lib/apache2/modules/mod_fsp.so
+
+If your Apache module installation directory is different from
+the one listed above, you will need to set the correct one in the
+fsp.load file.
 
 To actually enable the module you must create a symbolic link in
 Apache's 'mods-enabled' directory, typically located (on debian):
@@ -70,10 +78,6 @@ By typing (from that directory):
 
 ln -s ../mods-available/fsp.load fsp.load
 
-If your Apache module installation directory is different from
-the one listed above, you will need to set the correct one in the
-fsp.load file.
-
 =============
 Configuration
 =============
@@ -82,8 +86,9 @@ Once mod_fsp is installed, it must be configured. There is currently
 only one configuration option for mod_fsp: 'FSPPolicyFile'. This
 configuration option will set the file that mod_fsp will look in
 on apache startup for the cross-domain policy to serve. This option
-can be provided on a per-server basis (ie: each VirtualServer/port
-can use a different one).
+can be provided on a per-port basis. Each port can use a different
+one, but VirtualServers on a single port will use the same one. This
+is a limitation of the design by Adobe.
 
 An example of this configuration in use:
 
