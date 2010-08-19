@@ -652,6 +652,16 @@ jQuery(function($)
       test.check();
    });
    
+   addTest('pbkdf2 hmac-sha-1 c=5 keylen=8', function(task, test)
+   {
+      var expect = 'd1daa78615f287e6';
+      var salt = forge.util.hexToBytes('1234567878563412');
+      var dk = forge.pkcs5.pbkdf2('password', salt, 5, 8);
+      test.expect.html(expect);
+      test.result.html(forge.util.bytesToHex(dk));
+      test.check();
+   });
+   
    // other browsers too slow for this test
    if($.browser.webkit)
    {
