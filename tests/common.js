@@ -625,6 +625,56 @@ jQuery(function($)
       test.check();
    });
    
+   addTest('pbkdf2 hmac-sha-1 c=1', function(task, test)
+   {
+      var expect = '0c60c80f961f0e71f3a9b524af6012062fe037a6';
+      var dk = forge.pkcs5.pbkdf2('password', 'salt', 1, 20);
+      test.expect.html(expect);
+      test.result.html(forge.util.bytesToHex(dk));
+      test.check();
+   });
+   
+   addTest('pbkdf2 hmac-sha-1 c=2', function(task, test)
+   {
+      var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
+      var dk = forge.pkcs5.pbkdf2('password', 'salt', 2, 20);
+      test.expect.html(expect);
+      test.result.html(forge.util.bytesToHex(dk));
+      test.check();
+   });
+   
+   addTest('pbkdf2 hmac-sha-1 c=2', function(task, test)
+   {
+      var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
+      var dk = forge.pkcs5.pbkdf2('password', 'salt', 2, 20);
+      test.expect.html(expect);
+      test.result.html(forge.util.bytesToHex(dk));
+      test.check();
+   });
+   
+   // other browsers too slow for this test
+   if($.browser.webkit)
+   {
+      addTest('pbkdf2 hmac-sha-1 c=4096', function(task, test)
+      {
+         var expect = '4b007901b765489abead49d926f721d065a429c1';
+         var dk = forge.pkcs5.pbkdf2('password', 'salt', 4096, 20);
+         test.expect.html(expect);
+         test.result.html(forge.util.bytesToHex(dk));
+         test.check();
+      });
+   }
+   
+   /* too slow for javascript
+   addTest('pbkdf2 hmac-sha-1 c=16777216', function(task, test)
+   {
+      var expect = 'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984';
+      var dk = forge.pkcs5.pbkdf2('password', 'salt', 16777216, 20);
+      test.expect.html(expect);
+      test.result.html(forge.util.bytesToHex(dk));
+      test.check();
+   });*/
+   
    addTest('aes-128 encrypt', function(task, test)
    {
       var block = [];
@@ -1022,7 +1072,7 @@ jQuery(function($)
          {
             // convert from pem
             var key = forge.pki.privateKeyFromPem(_privateKey);
-            forge.log.debug(cat, 'privateKey', key);
+            //forge.log.debug(cat, 'privateKey', key);
             
             // convert back to pem
             var pem = forge.pki.privateKeyToPem(key);
@@ -1043,7 +1093,7 @@ jQuery(function($)
          {
             // convert from pem
             var key = forge.pki.publicKeyFromPem(_publicKey);
-            forge.log.debug(cat, 'publicKey', key);
+            //forge.log.debug(cat, 'publicKey', key);
             
             // convert back to pem
             var pem = forge.pki.publicKeyToPem(key);
@@ -1063,6 +1113,7 @@ jQuery(function($)
          try
          {
             var cert = forge.pki.certificateFromPem(_certificate);
+            /*
             forge.log.debug(cat, 'cert', cert);
             forge.log.debug(cat, 'CN', cert.subject.getField('CN').value);
             forge.log.debug(cat, 'C',
@@ -1071,7 +1122,7 @@ jQuery(function($)
                cert.subject.getField({name: 'stateOrProvinceName'}).value);
             forge.log.debug(cat, '2.5.4.7',
                cert.subject.getField({type: '2.5.4.7'}).value);
-            
+            */
             // convert back to pem
             var pem = forge.pki.certificateToPem(cert);
             test.expect.html(_certificate);
@@ -1123,13 +1174,13 @@ jQuery(function($)
             var st = +new Date();
             var signature = privateKey.sign(md);
             var et = +new Date();
-            forge.log.debug(cat, 'sign time', (et - st) + 'ms');
+            //forge.log.debug(cat, 'sign time', (et - st) + 'ms');
 
             // do verify
             st = +new Date();
             var success = publicKey.verify(md.digest().getBytes(), signature);
             et = +new Date();
-            forge.log.debug(cat, 'verify time', (et - st) + 'ms');
+            //forge.log.debug(cat, 'verify time', (et - st) + 'ms');
             if(success)
             {
                test.pass();
@@ -1151,7 +1202,7 @@ jQuery(function($)
          try
          {
             var cert = forge.pki.certificateFromPem(_certificate, true);
-            forge.log.debug(cat, 'cert', cert);
+            //forge.log.debug(cat, 'cert', cert);
             var success = cert.verify(cert);
             if(success)
             {

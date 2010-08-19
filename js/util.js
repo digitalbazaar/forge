@@ -563,6 +563,22 @@
       return util.createBuffer(bytes).toHex();
    };
    
+   /**
+    * Converts an 32-bit integer to 4-big-endian byte string.
+    * 
+    * @param i the integer.
+    * 
+    * @return the byte string.
+    */
+   util.int32ToBytes = function(i)
+   {
+      return (
+         String.fromCharCode(i >> 24 & 0xFF) +
+         String.fromCharCode(i >> 16 & 0xFF) +
+         String.fromCharCode(i >> 8 & 0xFF) +
+         String.fromCharCode(i & 0xFF));
+   };
+   
    // base64 characters, reverse mapping
    var _base64 =
       'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
