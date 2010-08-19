@@ -272,5 +272,7 @@
    
    // expose md5 interface in forge library
    forge.md = forge.md || {};
+   forge.md.algorithms = forge.md.algorithms || {};
+   forge.md.algorithms['md5'] = md5;
    forge.md.md5 = md5;
 })();

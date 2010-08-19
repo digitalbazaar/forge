@@ -363,7 +363,7 @@ jQuery(function($)
       test.check();
    });
    
-   addTest('md5 long input',
+   addTest('md5 long message',
    function(task, test)
    {
       var input = forge.util.createBuffer();
@@ -479,6 +479,67 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
+   
+   // other browsers too slow for this test
+   if($.browser.webkit)
+   {
+      addTest('sha-1 long message',
+      function(task, test)
+      {
+         var expect = '34aa973cd4c4daa4f61eeb2bdbad27316534016f';
+         test.expect.html(expect);
+         var md = forge.md.sha1.create();
+         md.start();
+         md.update(forge.util.fillString('a', 1000000));
+         // do twice to check continuing digest
+         test.result.html(md.digest().toHex());
+         test.result.html(md.digest().toHex());
+         test.check();
+      });
+   }
+   
+   addTest('sha-256 "abc"', function(task, test)
+   {
+      var expect =
+         'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad';
+      test.expect.html(expect);
+      var md = forge.md.sha256.create();
+      md.update('abc');
+      test.result.html(md.digest().toHex());
+      test.check();
+   });
+   
+   addTest('sha-256 "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"',
+   function(task, test)
+   {
+      var expect =
+         '248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1';
+      test.expect.html(expect);
+      var md = forge.md.sha256.create();
+      md.start();
+      md.update('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq');
+      test.result.html(md.digest().toHex());
+      test.check();
+   });
+   
+   // other browsers too slow for this test
+   if($.browser.webkit)
+   {
+      addTest('sha-256 long message',
+      function(task, test)
+      {
+         var expect =
+            'cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0';
+         test.expect.html(expect);
+         var md = forge.md.sha256.create();
+         md.start();
+         md.update(forge.util.fillString('a', 1000000));
+         // do twice to check continuing digest
+         test.result.html(md.digest().toHex());
+         test.result.html(md.digest().toHex());
+         test.check();
+      });
+   }
    
    addTest('hmac md5 "Hi There", 16-byte key', function(task, test)
    {

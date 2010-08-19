@@ -12,6 +12,7 @@
       <script type="text/javascript" src="forge/task.js"></script>
       <script type="text/javascript" src="forge/md5.js"></script>
       <script type="text/javascript" src="forge/sha1.js"></script>
+      <script type="text/javascript" src="forge/sha256.js"></script>
       <script type="text/javascript" src="forge/hmac.js"></script>
       <script type="text/javascript" src="forge/aes.js"></script>
       <script type="text/javascript" src="forge/asn1.js"></script>
@@ -324,6 +325,66 @@
          }
       };
 
+      var test_sha256 = function()
+      {
+         // create input data
+         var input = ['0123456789abcdef', '', '', '', ''];
+         for(var i = 0; i < 4; ++i)
+         {
+            input[1] += input[0];
+         }
+         for(var i = 0; i < 4; ++i)
+         {
+            input[2] += input[1];
+         }
+         for(var i = 0; i < 4; ++i)
+         {
+            input[3] += input[2];
+         }
+         for(var i = 0; i < 8; ++i)
+         {
+            input[4] += input[3];
+         }
+         
+         var md = forge.md.sha256.create();
+
+         forge.log.debug(cat, 'sha-256 times in 1000s of bytes/sec processed:');
+
+         var st, et;
+         var output =
+            ['  16 bytes: ',
+             '  64 bytes: ',
+             ' 256 bytes: ',
+             '1024 bytes: ',
+             '8192 bytes: '];
+         var s = [16, 64, 256, 1024, 8192];
+         var t = [0, 0, 0, 0, 0];
+         for(var n = 0; n < 5; ++n)
+         {
+            var f = function(n)
+            {
+               setTimeout(function()
+               {
+                  // run for 2 seconds each
+                  var count = 0;
+                  while(t[n] < 2000)
+                  {
+                     md.start();
+                     st = +new Date();
+                     md.update(input[n]);
+                     md.digest();
+                     et = +new Date();
+                     t[n] = t[n] + (et - st);
+                     ++count;
+                  }
+                  t[n] /= 1000;
+                  forge.log.debug(cat,
+                     output[n], (count*s[n]/t[n]/1000) + 'k/sec');
+               }, 0);
+            }(n);
+         }
+      };
+
       // TODO: follow the same format as the hash tests
       var aes_128 = function()
       {
@@ -472,6 +533,7 @@
          <div id="hash_controls">
             <button id="md5" onclick="javascript:return test_md5();">md5</button>
             <button id="sha1" onclick="javascript:return test_sha1();">sha1</button>
+            <button id="sha256" onclick="javascript:return test_sha256();">sha256</button>
          </div>
          <div id="aes_controls">
             <button id="aes_128" onclick="javascript:return aes_128();">aes-128</button>

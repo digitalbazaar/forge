@@ -41,7 +41,7 @@
        * Starts or restarts the HMAC with the given key and message digest.
        * 
        * @param md the message digest to use, null to reuse the previous one,
-       *           a string to use builtin 'sha1' or 'md5'.
+       *           a string to use builtin 'sha1', 'md5', 'sha256'.
        * @param key the key to use as a string, array of bytes, byte buffer,
        *           or null to reuse the previous key.
        */
@@ -53,13 +53,9 @@
             {
                // create builtin message digest
                md = md.toLowerCase();
-               if(md == 'md5')
+               if(md in forge.md.algorithms)
                {
-                  _md = forge.md.md5.create();
-               }
-               else if(md == 'sha1' || md == 'sha-1')
-               {
-                  _md = forge.md.sha1.create();
+                  _md = forge.md.algorithms[md].create();
                }
                else
                {
