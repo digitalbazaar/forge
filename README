@@ -31,7 +31,7 @@ forge.task:
    Provides queuing and synchronizing tasks in a web application.
 
 forge.aes:
-   Provides basic AES encryption and encryption in CBC mode.
+   Provides basic AES encryption and decryption in CBC mode.
 
 forge.md.md5:
    Provides MD5 message digests.
@@ -39,8 +39,14 @@ forge.md.md5:
 forge.md.sha1:
    Provides SHA-1 message digests.
 
+forge.md.sha256:
+   Provides SHA-256 message digests.
+
 forge.hmac:
    Provides HMAC w/any supported message digest algorithm.
+
+forge.pkcs5.pbkdf2:
+   Provides the password-based key-derivation function from PKCS#5.
 
 forge.prng:
    Provides a Fortuna-based cryptographically-secure pseudo-random number
