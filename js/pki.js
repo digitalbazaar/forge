@@ -104,6 +104,26 @@
  *    publicExponent     INTEGER     -- e
  * }
  * 
+ * PrivateKeyInfo ::= SEQUENCE {
+ *    version                   Version,
+ *    privateKeyAlgorithm       PrivateKeyAlgorithmIdentifier,
+ *    privateKey                PrivateKey,
+ *    attributes           [0]  IMPLICIT Attributes OPTIONAL
+ * }
+ *
+ * Version ::= INTEGER
+ * PrivateKeyAlgorithmIdentifier ::= AlgorithmIdentifier
+ * PrivateKey ::= OCTET STRING
+ * Attributes ::= SET OF Attribute
+ * 
+ * EncryptedPrivateKeyInfo ::= SEQUENCE {
+ *    encryptionAlgorithm  EncryptionAlgorithmIdentifier,
+ *    encryptedData        EncryptedData
+ * }
+ *
+ * EncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
+ * EncryptedData ::= OCTET STRING
+ * 
  * An RSA private key as the following structure:
  * 
  * RSAPrivateKey ::= SEQUENCE {
@@ -121,6 +141,70 @@
  * Version ::= INTEGER
  * 
  * The OID for the RSA key algorithm is: 1.2.840.113549.1.1.1
+ * 
+ * PFX ::= SEQUENCE {
+ *    version  INTEGER {v3(3)}(v3,...),
+ *    authSafe ContentInfo,
+ *    macData  MacData OPTIONAL
+ * }
+ * 
+ * MacData ::= SEQUENCE {
+ *    mac DigestInfo,
+ *    macSalt OCTET STRING,
+ *    iterations INTEGER DEFAULT 1
+ * }
+ * Note: The iterations default is for historical reasons and its use is
+ * deprecated. A higher value, like 1024, is recommended.
+ * 
+ * ContentInfo ::= SEQUENCE {
+ *    contentType ContentType,
+ *    content     [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL
+ * }
+ *
+ * ContentType ::= OBJECT IDENTIFIER
+ * 
+ * AuthenticatedSafe ::= SEQUENCE OF ContentInfo
+ * -- Data if unencrypted
+ * -- EncryptedData if password-encrypted
+ * -- EnvelopedData if public key-encrypted
+ * 
+ * 
+ * SafeContents ::= SEQUENCE OF SafeBag
+ * 
+ * SafeBag ::= SEQUENCE {
+ *    bagId     BAG-TYPE.&id ({PKCS12BagSet})
+ *    bagValue  [0] EXPLICIT BAG-TYPE.&Type({PKCS12BagSet}{@bagId}),
+ *    bagAttributes SET OF PKCS12Attribute OPTIONAL
+ * }
+ * 
+ * PKCS12Attribute ::= SEQUENCE {
+ *    attrId ATTRIBUTE.&id ({PKCS12AttrSet}),
+ *    attrValues SET OF ATTRIBUTE.&Type ({PKCS12AttrSet}{@attrId})
+ * } -- This type is compatible with the X.500 type ’Attribute’
+ * 
+ * PKCS12AttrSet ATTRIBUTE ::= {
+ *    friendlyName | -- from PKCS #9
+ *    localKeyId, -- from PKCS #9
+ *    ... -- Other attributes are allowed
+ * }
+ * 
+ * CertBag ::= SEQUENCE {
+ *    certId    BAG-TYPE.&id   ({CertTypes}),
+ *    certValue [0] EXPLICIT BAG-TYPE.&Type ({CertTypes}{@certId})
+ * }
+ * 
+ * x509Certificate BAG-TYPE ::= {OCTET STRING IDENTIFIED BY {certTypes 1}}
+ *    -- DER-encoded X.509 certificate stored in OCTET STRING
+ * 
+ * sdsiCertificate BAG-TYPE ::= {IA5String IDENTIFIED BY {certTypes 2}}
+ * -- Base64-encoded SDSI certificate stored in IA5String
+ * 
+ * CertTypes BAG-TYPE ::= {
+ *    x509Certificate |
+ *    sdsiCertificate,
+ *    ... -- For future extensions
+ * }
+ * 
  */
 (function()
 {
@@ -153,6 +237,42 @@
    oids['sha1'] = '1.3.14.3.2.26';
    oids['1.2.840.113549.2.5'] = 'md5';
    oids['md5'] = '1.2.840.113549.2.5';
+   
+   // pkcs#7 content types
+   oids['1.2.840.113549.1.7.1'] = 'data';
+   oids['data'] = '1.2.840.113549.1.7.1';
+   oids['1.2.840.113549.1.7.2'] = 'signedData';
+   oids['signedData'] = '1.2.840.113549.1.7.2';
+   oids['1.2.840.113549.1.7.3'] = 'envelopedData';
+   oids['envelopedData'] = '1.2.840.113549.1.7.3';
+   oids['1.2.840.113549.1.7.4'] = 'signedAndEnvelopedData';
+   oids['signedAndEnvelopedData'] = '1.2.840.113549.1.7.4';
+   oids['1.2.840.113549.1.7.5'] = 'digestedData';
+   oids['digestedData'] = '1.2.840.113549.1.7.5';
+   oids['1.2.840.113549.1.7.6'] = 'encryptedData';
+   oids['encryptedData'] = '1.2.840.113549.1.7.6';
+   
+   // pkcs#9 oids
+   oids['1.2.840.113549.1.9.20'] = 'friendlyName';
+   oids['friendlyName'] = '1.2.840.113549.1.9.20';
+   oids['1.2.840.113549.1.9.21'] = 'localKeyId';
+   oids['localKeyId'] = '1.2.840.113549.1.9.21';
+   oids['1.2.840.113549.1.9.22.1'] = 'x509Certificate';
+   oids['x509Certificate'] = '1.2.840.113549.1.9.22.1';
+   
+   // pkcs#12 safe bags
+   oids['1.2.840.113549.1.12.10.1.1'] = 'keyBag';
+   oids['keyBag'] = '1.2.840.113549.1.12.10.1.1';
+   oids['1.2.840.113549.1.12.10.1.2'] = 'pkcs8ShroudedKeyBag';
+   oids['pkcs8ShroudedKeyBag'] = '1.2.840.113549.1.12.10.1.2';
+   oids['1.2.840.113549.1.12.10.1.3'] = 'certBag';
+   oids['certBag'] = '1.2.840.113549.1.12.10.1.3';
+   oids['1.2.840.113549.1.12.10.1.4'] = 'crlBag';
+   oids['crlBag'] = '1.2.840.113549.1.12.10.1.4';
+   oids['1.2.840.113549.1.12.10.1.5'] = 'secretBag';
+   oids['secretBag'] = '1.2.840.113549.1.12.10.1.5';
+   oids['1.2.840.113549.1.12.10.1.6'] = 'safeContentsBag';
+   oids['safeContentsBag'] = '1.2.840.113549.1.12.10.1.6';
    
    // certificate issuer/subject OIDs
    oids['2.5.4.3'] = 'commonName';
@@ -1925,11 +2045,11 @@
    };
    
    /**
-    * Converts a private key to an ASN.1 object.
+    * Converts a private key to an ASN.1 RsaPrivateKey object.
     * 
     * @param key the private key.
     * 
-    * @return the asn1 representation of an RSAPrivateKey.
+    * @return the ASN.1 representation of an RSAPrivateKey.
     */
    pki.privateKeyToAsn1 = function(key)
    {
@@ -1963,6 +2083,128 @@
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
             _bnToBytes(key.qInv))
       ]);
+   };
+   
+   /**
+    * Wraps an RSAPrivateKey ASN.1 object in an ASN.1 PrivateKeyInfo object.
+    * 
+    * @param rsaKey the ASN.1 RSAPrivateKey.
+    * 
+    * @return the ASN.1 PrivateKeyInfo.
+    */
+   pki.wrapRsaPrivateKey = function(rsaKey)
+   {
+      // get the oid for the algorithm
+      var oid = oids['rsaEncryption'];
+      var oidBytes = asn1.oidToDer(oid).getBytes();
+      
+      // create the algorithm identifier
+      var algorithm = asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+      algorithm.value.push(asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+      algorithm.value.push(asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+      
+      // PrivateKeyInfo
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // version (0)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(0x00)),
+         // privateKeyAlgorithm
+         algorithm,
+         // PrivateKey
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            asn1.toDer(rsaKey).getBytes())
+         ]);
+   };
+   
+   /**
+    * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
+    * password is provided then the private key will be encrypted.
+    * 
+    * @param key the private key.
+    * @param cert the certificate.
+    * @param password the password to use.
+    * 
+    * @return the PKCS#12 PFX ASN.1 object.
+    */
+   pki.toPkcs12Asn1 = function(key, cert, password)
+   {
+      // TODO: tests (pkcs12-related code is untested)
+      // TODO: implement password support
+      // TODO: use 'pkcs8ShroudedKeyBag' when using a password
+      
+      // get the private key and certificate as ASN.1 objects 
+      var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
+      var certAsn1 = pki.certificateToAsn1(cert);
+      
+      // create safe bag for private key
+      var keySafeBag =
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // bagId
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(oids['keyBag']).getBytes()),
+            // bagValue
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+               // PrivateKeyInfo
+               asn1.toDer(
+                  pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key))).getBytes())
+            // bagAttributes (OPTIONAL)
+         ]);
+      
+      // create safe bag for certificate
+      var certSafeBag =
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // bagId
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(oids['certBag']).getBytes()),
+            // bagValue
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+               // CertBag
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+                  // certId
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                     asn1.oidToDer(oids['x509Certificate']).getBytes()),
+                  // certValue (x509Certificate)
+                  asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+                     asn1.toDer(pki.certificateToAsn1(cert)).getBytes())
+                  ]))
+            // bagAttributes (OPTIONAL)
+         ]);
+      
+      // create SafeContents
+      var safeContents =
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+            [keySafeBag, certSafeBag]);
+      
+      // create AuthenticatedSafe
+      var safe = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // PKCS#7 ContentInfo
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // contentType
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               // OID for the content type is 'data'
+               asn1.oidToDer(oids['data']).getBytes()),
+            // content
+            asn1.toDer(safeContents).getBytes()])
+         ]);
+      
+      // PFX
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // version (3)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(0x03)),
+         // PKCS#7 ContentInfo
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // contentType
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               // OID for the content type is 'data'
+               asn1.oidToDer(oids['data']).getBytes()),
+            // content
+            pki.toDer(safe).getBytes()])
+         ]);
    };
    
    /**
@@ -2099,7 +2341,7 @@
                algorithm: md.algorithm
             };
          }
-         oidBytes = asn1.oidToDer(oid).getBytes();
+         var oidBytes = asn1.oidToDer(oid).getBytes();
          
          // create the digest info
          var digestInfo = asn1.create(
@@ -2543,7 +2785,7 @@
       rval.six.fromInt(6);
       
       return rval;
-   }
+   };
    
    /**
     * Attempts to runs the key-generation algorithm for at most n seconds
