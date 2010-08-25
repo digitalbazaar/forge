@@ -289,6 +289,8 @@
    oids['organizationName'] = '2.5.4.10';
    oids['2.5.4.11'] = 'organizationalUnitName';
    oids['organizationalUnitName'] = '2.5.4.11';
+   oids['1.2.840.113549.1.9.1'] = 'emailAddress';
+   oids['emailAddress'] = '1.2.840.113549.1.9.1';
    
    // short name OID mappings
    var _shortNames = {};
@@ -304,6 +306,8 @@
    _shortNames['organizationName'] = 'O';
    _shortNames['OU'] = oids['organizationalUnitName'];
    _shortNames['organizationalUnitName'] = 'OU';
+   _shortNames['E'] = oids['emailAddress'];
+   _shortNames['emailAddress'] = 'E';
    
    // X.509 extension OIDs
    oids['2.5.29.1'] = 'authorityKeyIdentifier'; // deprecated, use .35
