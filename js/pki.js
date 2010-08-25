@@ -1400,7 +1400,7 @@
          
          var rval = null;
          var ext;
-         for(var i = 0; rval === null && i < cert.extensions; ++i)
+         for(var i = 0; rval === null && i < cert.extensions.length; ++i)
          {
             ext = cert.extensions[i];
             if(options.id && ext.id === options.id)
