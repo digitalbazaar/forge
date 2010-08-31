@@ -747,28 +747,57 @@
    };
    
    /**
-    * Stores an item on local disk using a flash interface.
+    * Stores an item on local disk. If the browser supports WebStorage it will
+    * be used. If a flash interface is provided, it will be used. If both
+    * WebStorage and a flash interface are available, both will be used.
     * 
-    * @param api the flash interface.
+    * @param api the flash interface, null to use only WebStorage.
     * @param id the storage ID to use.
     * @param key the key for the item.
     * @param data the data for the item (any javascript object/primitive).
     */
    util.setItem = function(api, id, key, data)
    {
-      // json-encode and then store data
-      var d = JSON.stringify(data);
-      var rval = api.setItem(id, key, util.encode64(d));
-      if(rval.rval !== true)
+      // flash storage
+      if(api)
       {
-         throw rval.error;
+         // json-encode and base64-encode data
+         var d = util.encode64(JSON.stringify(data));
+         var rval = api.setItem(id, key, d);
+         if(rval.rval !== true)
+         {
+            throw rval.error;
+         }
+      }
+      // WebStorage
+      if(localStorage)
+      {
+         // get the existing entry
+         var tmp = localStorage.getItem(id);
+         if(tmp === null)
+         {
+            // create a new entry
+            tmp = { key: data };
+         }
+         else
+         {
+            // base64-decode and json-decode data
+            tmp = JSON.parse(util.decode64(tmp));
+            tmp[key] = data;
+         }
+         
+         // json-encode and base64-encode entry
+         tmp = util.encode64(JSON.stringify(tmp));
+         localStorage.setItem(id, tmp);
       }
    };
    
    /**
-    * Gets an item on local disk using a flash interface.
+    * Gets an item on local disk. If the browser supports WebStorage it will
+    * be used. If a flash interface is provided, it will be used. If both
+    * WebStorage and a flash interface are available, both will be used.
     * 
-    * @param api the flash interface.
+    * @param api the flash interface, null to use only WebStorage.
     * @param id the storage ID to use.
     * @param key the key for the item.
     * 
@@ -776,29 +805,52 @@
     */
    util.getItem = function(api, id, key)
    {
-      // get the base64-encoded data
-      var rval = api.getItem(id, key);
-      if(rval.rval === null && rval.error)
-      {
-         throw rval.error;
-      }
+      var rval = null;
       
-      if(rval.rval === null)
+      // flash storage
+      if(api)
       {
-         // no error, but no item
-         rval = null;
+         // get the base64-encoded data
+         rval = api.getItem(id, key);
+         if(rval.rval === null && rval.error)
+         {
+            throw rval.error;
+         }
+         
+         if(rval.rval === null)
+         {
+            // no error, but no item
+            rval = null;
+         }
+         else
+         {
+            // base64-decode and return json-decoded data
+            rval = JSON.parse(util.decode64(rval.rval));
+         }
       }
-      else
+      // WebStorage
+      if(localStorage)
       {
-         // base64-decode and return json-decoded data
-         rval = JSON.parse(util.decode64(rval.rval));
+         // get the existing entry
+         var tmp = localStorage.getItem(id);
+         if(tmp !== null)
+         {
+            // base64-decode and json-decode data
+            tmp = JSON.parse(util.decode64(tmp));
+            if(key in tmp)
+            {
+               rval = tmp[key];
+            }
+         }
       }
       
       return rval;
    };
    
    /**
-    * Removes an item on local disk using a flash interface.
+    * Removes an item on local disk. If the browser supports WebStorage it will
+    * be used. If a flash interface is provided, it will be used. If both
+    * WebStorage and a flash interface are available, both will be used.
     * 
     * @param api the flash interface.
     * @param id the storage ID to use.
@@ -806,26 +858,58 @@
     */
    util.removeItem = function(api, id, key)
    {
-      var rval = api.removeItem(id, key);
-      if(rval.rval !== true && rval.error)
+      // flash storage
+      if(api)
       {
-         throw rval.error;
+         var rval = api.removeItem(id, key);
+         if(rval.rval !== true && rval.error)
+         {
+            throw rval.error;
+         }
+      }
+      // WebStorage
+      if(localStorage)
+      {
+         var tmp = localStorage.getItem(id);
+         if(tmp !== null)
+         {
+            // base64-decode and json-decode data
+            tmp = JSON.parse(util.decode64(tmp));
+            if(key in tmp)
+            {
+               // remove key, json-encode, and base64-encode entry
+               delete tmp[key];
+               tmp = util.encode64(JSON.stringify(tmp));
+               localStorage.setItem(id, tmp);
+            }
+         }
       }
    };
    
    /**
-    * Clears the local disk storage identified by the given ID using a
-    * flash interface.
+    * Clears the local disk storage identified by the given ID. If the
+    * browser supports WebStorage it will be used. If a flash interface is
+    * provided, it will be used. If both WebStorage and a flash interface are
+    * available, both will be used.
     * 
     * @param api the flash interface.
     * @param id the storage ID to use.
     */
    util.clearItems = function(api, id)
    {
-      var rval = api.clearItems(id);
-      if(rval.rval !== true)
+      // flash storage
+      if(api)
       {
-         throw rval.error;
+         var rval = api.clearItems(id);
+         if(rval.rval !== true)
+         {
+            throw rval.error;
+         }
+      }
+      // WebStorage
+      if(localStorage)
+      {
+         localStorage.removeItem(id);
       }
    };
    
