@@ -76,6 +76,11 @@ forge.http:
 forge.xhr:
    Provides an XmlHttpRequest implementation using forge.http as a backend.
 
+mod_fsp:
+   Provides an Apache module that can serve up a Flash Socket Policy. See the
+   README in mod_fsp/ for more details. This module makes it easy to modify an
+   Apache server to allow cross domain requests to be made to it.
+
 
 Getting Started
 ---------------
