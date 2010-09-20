@@ -3320,7 +3320,7 @@
                }
                catch(ex)
                {
-                  // failure to verify
+                  // failure to verify, don't care why, just fail
                }
             }
             // get parent from CA store
@@ -3355,7 +3355,14 @@
                   while(!verified && parents.length > 0)
                   {
                      parent = parents.shift();
-                     verified = parent.verify(cert);
+                     try
+                     {
+                        verified = parent.verify(cert);
+                     }
+                     catch(ex)
+                     {
+                        // failure to verify, try next one
+                     }
                   }
                }
             }
