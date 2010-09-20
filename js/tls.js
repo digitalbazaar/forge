@@ -3314,7 +3314,14 @@
             {
                // verify using parent
                parent = chain[0];
-               verified = parent.verify(cert);
+               try
+               {
+                  verified = parent.verify(cert);
+               }
+               catch(ex)
+               {
+                  // failure to verify
+               }
             }
             // get parent from CA store
             else
