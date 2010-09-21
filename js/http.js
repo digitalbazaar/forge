@@ -1575,16 +1575,18 @@
       // ensure domain starts with a '.'
       else if(domain.charAt(0) === '.')
       {
-         // remove '.', parse URL as necessary
-         domain = domain.substr(1);
+         // parse URL as necessary
          if(url.constructor == String)
          {
             url = http.parseUrl(url);
          }
+         
+         // add '.' to front of URL host to match against domain
+         var host = '.' + url.host;
 
-         // if the url host ends with domain then it falls within it
-         var idx = url.host.lastIndexOf(domain);
-         if(idx !== -1 && (idx + domain.length === url.host.length))
+         // if the host ends with domain then it falls within it
+         var idx = host.lastIndexOf(domain);
+         if(idx !== -1 && (idx + domain.length === host.length))
          {
             rval = true;
          }
