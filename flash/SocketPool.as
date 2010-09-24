@@ -611,14 +611,15 @@ package
        * Stores an item with a key and arbitrary base64-encoded data on local
        * disk.
        * 
-       * @param storeId the private storage ID to use.
        * @param key the key for the item.
        * @param data the base64-encoded item data.
+       * @param storeId the storage ID to use, defaults to "forge.storage".
        * 
        * @return an object with rval set to true on success, false on failure
        *         with error included.
        */
-      private function setItem(storeId:String, key:String, data:String):Object
+      private function setItem(
+         key:String, data:String, storeId:String = "forge.storage"):Object
       {
          var rval:Object = {rval: false};
          try
@@ -647,13 +648,14 @@ package
       /**
        * Gets an item from the local disk.
        * 
-       * @param storeId the storage ID to use.
        * @param key the key for the item.
+       * @param storeId the storage ID to use, defaults to "forge.storage".
        * 
        * @return an object with rval set to the item data (which may be null),
        *         check for error object if null.
        */
-      private function getItem(storeId:String, key:String):Object
+      private function getItem(
+         key:String, storeId:String = "forge.storage"):Object
       {
          var rval:Object = {rval: null};
          try
@@ -679,12 +681,13 @@ package
       /**
        * Removes an item from the local disk.
        * 
-       * @param storeId the storage ID to use.
        * @param key the key for the item.
+       * @param storeId the storage ID to use, defaults to "forge.storage".
        * 
        * @return an object with rval set to true if removed, false if not.
        */
-      private function removeItem(storeId:String, key:String):Object
+      private function removeItem(
+         key:String, storeId:String = "forge.storage"):Object
       {
          var rval:Object = {rval: false};
          try
@@ -693,6 +696,18 @@ package
             if('keys' in store.data && key in store.data.keys)
             {
                delete store.data.keys[key];
+               
+               // clean up storage entirely if empty
+               var empty:Boolean = true;
+               for(var prop:String in store.data.keys)
+               {
+                  empty = false;
+                  break;
+               }
+               if(empty)
+               {
+                  store.clear();
+               }
                rval.rval = true;
             }
          }
@@ -711,11 +726,11 @@ package
       /**
        * Clears an entire store of all of its items.
        * 
-       * @param storeId the storage ID to use.
+       * @param storeId the storage ID to use, defaults to "forge.storage".
        * 
        * @return an object with rval set to true if cleared, false if not.
        */
-      private function clearItems(storeId:String):Object
+      private function clearItems(storeId:String = "forge.storage"):Object
       {
          var rval:Object = {rval: false};
          try
