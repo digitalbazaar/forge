@@ -755,7 +755,6 @@
     */
    var _setStorageObject = function(api, id, obj)
    {
-      api = api || localStorage;
       if(!api)
       {
          throw {
@@ -792,7 +791,6 @@
     */
    var _getStorageObject = function(api, id)
    {
-      api = api || localStorage;
       if(!api)
       {
          throw {
@@ -803,8 +801,13 @@
       // get the existing entry
       var rval = api.getItem(id);
       
+      /* Note: We check api.init because we can't do (api == localStorage)
+         on IE because of "Class doesn't support Automation" exception. Only
+         the flash api has an init method so this works too, but we need a
+         better solution in the future. */
+      
       // flash returns item wrapped in an object, handle special case
-      if(api !== localStorage)
+      if(api.init)
       {
          if(rval.rval === null)
          {
