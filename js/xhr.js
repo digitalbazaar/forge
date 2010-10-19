@@ -621,6 +621,12 @@
          options.request = _state.request;
          options.headerReady = function(e)
          {
+            // make cookies available for ease of use/iteration
+            xhr.cookies = _state.client.cookies;
+            
+            // TODO: update document.cookie with any cookies where the
+            // script's domain matches
+            
             // headers received
             xhr.readyState = HEADERS_RECEIVED;
             xhr.status = e.response.code;

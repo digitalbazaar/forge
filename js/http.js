@@ -1567,16 +1567,29 @@
       var domain = (cookie === null || cookie.constructor == String) ?
          cookie : cookie.domain;
       
-      if(url.constructor == String)
-      {
-         url = http.parseUrl(url);
-      }
-      
-      if(domain === null ||
-         ('.' + url.host).indexOf(domain) ===
-         (url.host.length - domain.length))
+      // any domain will do
+      if(domain === null)
       {
          rval = true;
+      }
+      // ensure domain starts with a '.'
+      else if(domain.charAt(0) === '.')
+      {
+         // parse URL as necessary
+         if(url.constructor == String)
+         {
+            url = http.parseUrl(url);
+         }
+         
+         // add '.' to front of URL host to match against domain
+         var host = '.' + url.host;
+
+         // if the host ends with domain then it falls within it
+         var idx = host.lastIndexOf(domain);
+         if(idx !== -1 && (idx + domain.length === host.length))
+         {
+            rval = true;
+         }
       }
       
       return rval;

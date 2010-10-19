@@ -3293,7 +3293,7 @@
          if(now < cert.validity.notBefore || now > cert.validity.notAfter)
          {
             error = {
-               message: 'Certificate not valid yet or has expired.',
+               message: 'Certificate is not valid yet or has expired.',
                send: true,
                origin: 'client',
                alert: {
@@ -3314,7 +3314,14 @@
             {
                // verify using parent
                parent = chain[0];
-               verified = parent.verify(cert);
+               try
+               {
+                  verified = parent.verify(cert);
+               }
+               catch(ex)
+               {
+                  // failure to verify, don't care why, just fail
+               }
             }
             // get parent from CA store
             else
@@ -3328,7 +3335,7 @@
                {
                   // no parent issuer, so certificate not trusted
                   error = {
-                     message: 'Untrusted certificate.',
+                     message: 'Certificate is not trusted.',
                      send: true,
                      origin: 'client',
                      alert: {
@@ -3348,14 +3355,21 @@
                   while(!verified && parents.length > 0)
                   {
                      parent = parents.shift();
-                     verified = parent.verify(cert);
+                     try
+                     {
+                        verified = parent.verify(cert);
+                     }
+                     catch(ex)
+                     {
+                        // failure to verify, try next one
+                     }
                   }
                }
             }
             if(error === null && !verified)
             {
                error = {
-                  message: 'Certificate signature invalid.',
+                  message: 'Certificate signature is invalid.',
                   send: true,
                   origin: 'client',
                   alert: {
@@ -3373,7 +3387,7 @@
          {
             // parent is not issuer
             error = {
-               message: 'Certificate issuer invalid.',
+               message: 'Certificate issuer is invalid.',
                send: true,
                origin: 'client',
                alert: {
@@ -3401,7 +3415,8 @@
                if(ext.critical && !(ext.name in se))
                {
                   error = {
-                     message: 'Certificate has unsupported critical extension.',
+                     message:
+                        'Certificate has an unsupported critical extension.',
                      send: true,
                      origin: 'client',
                      alert: {
@@ -3414,8 +3429,8 @@
             }
          }
          
-         // 8. check for CA if not first or only certificate, first for
-         // keyUsage extension and then for basic constraints
+         // 8. check for CA if cert is not first or is the only certificate
+         // in chain, first check keyUsage extension and then basic constraints
          if(!first || chain.length === 0)
          {
             var bcExt = cert.getExtension('basicConstraints');
@@ -3429,8 +3444,11 @@
                   // bad certificate
                   error = {
                      message:
-                        'Certificate keyUsage or basicConstraints ' +
-                        'conflict or indicate certificate is not a CA.',
+                        'Certificate keyUsage or basicConstraints conflict ' +
+                        'or indicate that the certificate is not a CA. ' +
+                        'If the certificate is the only one in the chain or ' +
+                        'isn\'t the first then the certificate must be a ' +
+                        'valid CA.',
                      send: true,
                      origin: 'client',
                      alert: {
@@ -3442,12 +3460,12 @@
                }
             }
             // basic constraints cA flag must be set
-            if(error === null && bcExt !== null)
+            if(error === null && bcExt !== null && !bcExt.cA)
             {
                // bad certificate
                error = {
                   message:
-                     'Certificate basicConstraints indicates certificate ' +
+                     'Certificate basicConstraints indicates the certificate ' +
                      'is not a CA.',
                   send: true,
                   origin: 'client',
@@ -3474,7 +3492,7 @@
             if(vfd === true)
             {
                error = {
-                  message: 'Application rejected certificate.',
+                  message: 'The application rejected the certificate.',
                   send: true,
                   origin: 'client',
                   alert: {
@@ -4165,8 +4183,7 @@
          },
          error: function(c, e)
          {
-            // close socket, send error
-            socket.close();
+            // send error, close socket
             tlsSocket.error({
                id: socket.id,
                type: 'tlsError',
@@ -4174,6 +4191,7 @@
                bytesAvailable: 0,
                error: e
             });
+            socket.close();
          }
       });
       

@@ -747,170 +747,328 @@
    };
    
    /**
-    * Stores an item on local disk. If the browser supports WebStorage it will
-    * be used. If a flash interface is provided, it will be used. If both
-    * WebStorage and a flash interface are available, both will be used.
+    * Sets a storage object.
     * 
-    * @param api the flash interface, null to use only WebStorage.
+    * @param api the storage interface.
     * @param id the storage ID to use.
-    * @param key the key for the item.
-    * @param data the data for the item (any javascript object/primitive).
+    * @param obj the storage object, null to remove.
     */
-   util.setItem = function(api, id, key, data)
+   var _setStorageObject = function(api, id, obj)
    {
-      // flash storage
-      if(api)
+      if(!api)
       {
-         // json-encode and base64-encode data
-         var d = util.encode64(JSON.stringify(data));
-         var rval = api.setItem(id, key, d);
-         if(rval.rval !== true)
-         {
-            throw rval.error;
-         }
+         throw {
+            message: 'WebStorage not available.'
+         };
       }
-      // WebStorage
-      if(localStorage)
+      
+      var rval;
+      if(obj === null)
       {
-         // get the existing entry
-         var tmp = localStorage.getItem(id);
-         if(tmp === null)
-         {
-            // create a new entry
-            tmp = { key: data };
-         }
-         else
-         {
-            // base64-decode and json-decode data
-            tmp = JSON.parse(util.decode64(tmp));
-            tmp[key] = data;
-         }
-         
-         // json-encode and base64-encode entry
-         tmp = util.encode64(JSON.stringify(tmp));
-         localStorage.setItem(id, tmp);
+         rval = api.removeItem(id);
+      }
+      else
+      {
+         // json-encode and base64-encode object
+         obj = util.encode64(JSON.stringify(obj));
+         rval = api.setItem(id, obj);
+      }
+      
+      // handle potential flash error
+      if(typeof(rval) !== 'undefined' && rval.rval !== true)
+      {
+         throw rval.error;
       }
    };
    
    /**
-    * Gets an item on local disk. If the browser supports WebStorage it will
-    * be used. If a flash interface is provided, it will be used. If both
-    * WebStorage and a flash interface are available, both will be used.
+    * Gets a storage object.
     * 
-    * @param api the flash interface, null to use only WebStorage.
+    * @param api the storage interface.
     * @param id the storage ID to use.
-    * @param key the key for the item.
     * 
-    * @return the item.
+    * @return the storage object entry or null if none exists.
     */
-   util.getItem = function(api, id, key)
+   var _getStorageObject = function(api, id)
    {
-      var rval = null;
-      
-      // flash storage
-      if(api)
+      if(!api)
       {
-         // get the base64-encoded data
-         rval = api.getItem(id, key);
-         if(rval.rval === null && rval.error)
-         {
-            throw rval.error;
-         }
-         
+         throw {
+            message: 'WebStorage not available.'
+         };
+      }
+      
+      // get the existing entry
+      var rval = api.getItem(id);
+      
+      /* Note: We check api.init because we can't do (api == localStorage)
+         on IE because of "Class doesn't support Automation" exception. Only
+         the flash api has an init method so this works too, but we need a
+         better solution in the future. */
+      
+      // flash returns item wrapped in an object, handle special case
+      if(api.init)
+      {
          if(rval.rval === null)
          {
-            // no error, but no item
+            if(rval.error)
+            {
+               throw rval.error;
+            }
+            // no error, but also no item
             rval = null;
          }
          else
          {
-            // base64-decode and return json-decoded data
-            rval = JSON.parse(util.decode64(rval.rval));
+            rval = rval.rval;
          }
       }
-      // WebStorage
-      if(localStorage)
+      
+      // handle decoding
+      if(rval !== null)
       {
-         // get the existing entry
-         var tmp = localStorage.getItem(id);
-         if(tmp !== null)
-         {
-            // base64-decode and json-decode data
-            tmp = JSON.parse(util.decode64(tmp));
-            if(key in tmp)
-            {
-               rval = tmp[key];
-            }
-         }
+         // base64-decode and json-decode data
+         rval = JSON.parse(util.decode64(rval));
       }
       
       return rval;
    };
    
    /**
-    * Removes an item on local disk. If the browser supports WebStorage it will
-    * be used. If a flash interface is provided, it will be used. If both
-    * WebStorage and a flash interface are available, both will be used.
+    * Stores an item in local storage.
     * 
-    * @param api the flash interface.
+    * @param api the storage interface.
+    * @param id the storage ID to use.
+    * @param key the key for the item.
+    * @param data the data for the item (any javascript object/primitive).
+    */
+   var _setItem = function(api, id, key, data)
+   {
+      // get storage object
+      var obj = _getStorageObject(api, id);
+      if(obj === null)
+      {
+         // create a new storage object
+         obj = {};
+      }
+      // update key
+      obj[key] = data;
+      
+      // set storage object
+      _setStorageObject(api, id, obj);
+   };
+   
+   /**
+    * Gets an item from local storage.
+    * 
+    * @param api the storage interface.
+    * @param id the storage ID to use.
+    * @param key the key for the item.
+    * 
+    * @return the item.
+    */
+   var _getItem = function(api, id, key)
+   {
+      // get storage object
+      var rval = _getStorageObject(api, id);
+      if(rval !== null)
+      {
+         // return data at key
+         rval = (key in rval) ? rval[key] : null;
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Removes an item from local storage.
+    * 
+    * @param api the storage interface.
     * @param id the storage ID to use.
     * @param key the key for the item.
     */
-   util.removeItem = function(api, id, key)
+   var _removeItem = function(api, id, key)
    {
-      // flash storage
-      if(api)
+      // get storage object
+      var obj = _getStorageObject(api, id);
+      if(obj !== null && key in obj)
       {
-         var rval = api.removeItem(id, key);
-         if(rval.rval !== true && rval.error)
+         // remove key
+         delete obj[key];
+         
+         // see if entry has no keys remaining
+         var empty = true;
+         for(var prop in tmp)
          {
-            throw rval.error;
+            empty = false;
+            break;
          }
-      }
-      // WebStorage
-      if(localStorage)
-      {
-         var tmp = localStorage.getItem(id);
-         if(tmp !== null)
+         if(empty)
          {
-            // base64-decode and json-decode data
-            tmp = JSON.parse(util.decode64(tmp));
-            if(key in tmp)
-            {
-               // remove key, json-encode, and base64-encode entry
-               delete tmp[key];
-               tmp = util.encode64(JSON.stringify(tmp));
-               localStorage.setItem(id, tmp);
-            }
+            // remove entry entirely if no keys are left
+            obj = null;
          }
+         
+         // set storage object
+         _setStorageObject(api, id, obj);
       }
    };
    
    /**
-    * Clears the local disk storage identified by the given ID. If the
-    * browser supports WebStorage it will be used. If a flash interface is
-    * provided, it will be used. If both WebStorage and a flash interface are
-    * available, both will be used.
+    * Clears the local disk storage identified by the given ID.
+    * 
+    * @param api the storage interface.
+    * @param id the storage ID to use.
+    */
+   var _clearItems = function(api, id)
+   {
+      _setStorageObject(api, id, null);
+   };
+   
+   /**
+    * Calls a storage function.
+    * 
+    * @param func the function to call.
+    * @param args the arguments for the function.
+    * @param location the location argument.
+    * 
+    * @return the return value from the function.
+    */
+   var _callStorageFunction = function(func, args, location)
+   {
+      var rval = null;
+      
+      // default storage types
+      if(typeof(location) === 'undefined')
+      {
+         location = ['web', 'flash'];
+      }
+      
+      // apply storage types in order of preference
+      var type;
+      var done = false;
+      var exception = null;
+      for(var idx in location)
+      {
+         type = location[idx];
+         try
+         {
+            if(type === 'flash' || type === 'both')
+            {
+               if(args[0] === null)
+               {
+                  throw {
+                     message: 'Flash local storage not available.'
+                  };
+               }
+               else
+               {
+                  rval = func.apply(this, args);
+                  done = (type === 'flash');
+               }
+            }
+            if(type === 'web' || type === 'both')
+            {
+               args[0] = localStorage;
+               rval = func.apply(this, args);
+               done = true;
+            }
+         }
+         catch(ex)
+         {
+            exception = ex;
+         }
+         if(done)
+         {
+            break;
+         }
+      }
+      
+      if(!done)
+      {
+         throw exception;
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Stores an item on local disk.
+    * 
+    * The available types of local storage include 'flash', 'web', and 'both'.
+    * 
+    * The type 'flash' refers to flash local storage (SharedObject). In order
+    * to use flash local storage, the 'api' parameter must be valid. The type
+    * 'web' refers to WebStorage, if supported by the browser. The type 'both'
+    * refers to storing using both 'flash' and 'web', not just one or the
+    * other.
+    * 
+    * The location array should list the storage types to use in order of
+    * preference:
+    * 
+    * ['flash']: flash only storage
+    * ['web']: web only storage
+    * ['both']: try to store in both
+    * ['flash','web']: store in flash first, but if not available, 'web'
+    * ['web','flash']: store in web first, but if not available, 'flash'
+    * 
+    * The location array defaults to: ['web', 'flash']
+    *  
+    * @param api the flash interface, null to use only WebStorage.
+    * @param id the storage ID to use.
+    * @param key the key for the item.
+    * @param data the data for the item (any javascript object/primitive).
+    * @param location an array with the preferred types of storage to use.
+    */
+   util.setItem = function(api, id, key, data, location)
+   {
+      _callStorageFunction(_setItem, arguments, location);
+   };
+   
+   /**
+    * Gets an item on local disk.
+    * 
+    * Set setItem() for details on storage types.
+    * 
+    * @param api the flash interface, null to use only WebStorage.
+    * @param id the storage ID to use.
+    * @param key the key for the item.
+    * @param location an array with the preferred types of storage to use.
+    * 
+    * @return the item.
+    */
+   util.getItem = function(api, id, key, location)
+   {
+      return _callStorageFunction(_getItem, arguments, location);
+   };
+   
+   /**
+    * Removes an item on local disk.
+    * 
+    * Set setItem() for details on storage types.
     * 
     * @param api the flash interface.
     * @param id the storage ID to use.
+    * @param key the key for the item.
+    * @param location an array with the preferred types of storage to use.
     */
-   util.clearItems = function(api, id)
+   util.removeItem = function(api, id, key, location)
    {
-      // flash storage
-      if(api)
-      {
-         var rval = api.clearItems(id);
-         if(rval.rval !== true)
-         {
-            throw rval.error;
-         }
-      }
-      // WebStorage
-      if(localStorage)
-      {
-         localStorage.removeItem(id);
-      }
+      _callStorageFunction(_removeItem, arguments, location);
+   };
+   
+   /**
+    * Clears the local disk storage identified by the given ID.
+    * 
+    * Set setItem() for details on storage types.
+    * 
+    * @param api the flash interface if flash is available.
+    * @param id the storage ID to use.
+    * @param location an array with the preferred types of storage to use.
+    */
+   util.clearItems = function(api, id, location)
+   {
+      _callStorageFunction(_clearItems, arguments, location);
    };
    
    /* Storage for query variables */
