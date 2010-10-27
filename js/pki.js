@@ -2795,6 +2795,28 @@
     * Attempts to runs the key-generation algorithm for at most n seconds
     * (approximately) using the given state. When key-generation has completed,
     * the keys will be stored in state.keys.
+    *
+    * To use this function to update a UI while generating a key or to prevent
+    * causing browser lockups/warnings, set "n" to a value other than 0. A
+    * simple pattern for generating a key and showing a progress indicator is:
+    *
+    * var state = pki.rsa.createKeyPairGenerationState(2048);
+    * var step = function()
+    * {
+    *    // step key-generation, run algorithm for 100 ms, repeat
+    *    if(!forge.pki.rsa.stepKeyPairGenerationState(state, 100))
+    *    {
+    *       setTimeout(step, 1);
+    *    }
+    *    // key-generation complete
+    *    else
+    *    {
+    *       // TODO: turn off progress indicator here
+    *       // TODO: use the generated key-pair in "state.keys"
+    *    }
+    * };
+    * // TODO: turn on progress indicator here
+    * setTimeout(step, 0);
     * 
     * @param state the state to use.
     * @param n the maximum number of milliseconds to run the algorithm for, 0
