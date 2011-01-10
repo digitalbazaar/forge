@@ -1560,7 +1560,7 @@
    };
    
    /**
-    * The crypto namespace and util API.
+    * The forge namespace and util API.
     */
    window.forge = window.forge || {};
    window.forge.util = util;
