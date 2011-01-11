@@ -34,7 +34,6 @@
       var matches;
       while(matches = _regex.exec(name))
       {
-         console.log('matches', matches);
          if(matches[1].length > 0)
          {
             rval.push(matches[1]);
@@ -46,7 +45,6 @@
       }
       if(rval.length === 0)
       {
-         console.log('no matches for name: ' + name);
          rval.push(name);
       }
       
@@ -69,7 +67,6 @@
          tmp = tmp.concat(_parseName(name));
       });
       names = tmp;
-      console.log('names', JSON.stringify(names));
       
       // iterate over object property names until value is set
       $.each(names, function(n, name)
@@ -125,9 +122,9 @@
       
       // add all fields in the form to the object
       separator = separator || '.';
-      input.find('input, textarea, select, checkbox, radio').each(function()
+      $.each(input.serializeArray(), function()
       {
-         _addField(rval, $(this).attr('name').split(separator), $(this).val());
+         _addField(rval, this.name.split(separator), this.value || '');
       });
       
       return rval;

@@ -35,6 +35,7 @@
          <input name="text2.sub3[0]" type="text" value="value5" />
          <input name="text2.sub4[0][0]" type="text" value="value6" />
          <input name="text2.sub4[0][]" type="text" value="value7" />
+         <input name="text2.sub5[foo][]" type="text" value="value8" />
       </p>
 
       <p>
@@ -123,7 +124,11 @@
          <button name="button1" type="submit" value="submit">Submit Form</button>
          <button name="button2" type="reset" value="reset">Reset Form</button>
       </p>
+   </fieldset>
 
+   <fieldset>
+      <legend>Input Buttons</legend>
+      
       <p>
          <input name="submit" type="submit" value="Submit Form" />
          <input name="reset" type="reset" value="Reset Form" />
