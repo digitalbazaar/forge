@@ -38,7 +38,7 @@
          {
             rval.push(matches[1]);
          }
-         if(matches[2])
+         if(matches.length >= 2)
          {
             rval.push(matches[2]);
          }
@@ -93,13 +93,18 @@
       $.each(names, function(n, name)
       {
          // do dictionary name replacement
-         if(dict && name in dict)
+         if(dict && name.length != 0 && name in dict)
          {
             name = dict[name];
          }
          
+         // blank name indicates appending to an array
+         if(name.length == 0)
+         {
+            obj.push(value);
+         }
          // value already exists, append value
-         if(obj[name])
+         else if(obj[name])
          {
             // last name in the field
             if(n == names.length - 1)
@@ -125,10 +130,18 @@
          // new value, not last name, go deeper
          else
          {
-            // if next name is a number create an array, otherwise a map
+            // get next name, if blank, then create an array
             var next = names[n + 1];
-            var isNum = ((next - 0) == next && next.length > 0);
-            obj[name] = isNum ? [] : {};
+            if(next.length == 0)
+            {
+               obj[name] = [];
+            }
+            // if next name is a number create an array, otherwise a map
+            else
+            {
+               var isNum = ((next - 0) == next && next.length > 0);
+               obj[name] = isNum ? [] : {};
+            }
             obj = obj[name];
          }
       });
