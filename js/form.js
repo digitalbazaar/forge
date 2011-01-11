@@ -17,7 +17,7 @@
    /**
     * Regex for parsing a single name property (handles array brackets).
     */
-   var _regex = /([^[]*)\[([^]]*)?\]/g;
+   var _regex = /(.*?)\[(.*?)\]/g;
    
    /**
     * Parses a single name property into an array with the name and any
@@ -34,6 +34,7 @@
       var matches;
       while(matches = _regex.exec(name))
       {
+         console.log('matches', matches);
          if(matches[1].length > 0)
          {
             rval.push(matches[1]);
@@ -45,6 +46,7 @@
       }
       if(rval.length === 0)
       {
+         console.log('no matches for name: ' + name);
          rval.push(name);
       }
       
@@ -67,6 +69,7 @@
          tmp = tmp.concat(_parseName(name));
       });
       names = tmp;
+      console.log('names', JSON.stringify(names));
       
       // iterate over object property names until value is set
       $.each(names, function(n, name)
