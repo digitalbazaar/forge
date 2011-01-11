@@ -16,14 +16,18 @@ $(document).ready(function()
    
    $('form.ajax').each(function(i, form)
    {
-      // FIXME: setup form here
-      forge.log.debug(cat, 'setting up');
-      
       $(form).submit(function()
       {
-         var f = forge.form.serialize($(this));
-         forge.log.debug(cat, 'result:', f);
-         $('#result').html(JSON.stringify(f));
+         try
+         {
+            var f = forge.form.serialize($(this));
+            forge.log.debug(cat, 'result:', JSON.stringify(f));
+            $('#result').html(JSON.stringify(f));
+         }
+         catch(e)
+         {
+            console.log('exception', e.stack);
+         }
          return false;
       });
    });

@@ -24,7 +24,13 @@
 <div class="content">
 
 <form id="form-1" class="ajax standard" method="post" action="">
-   <input name="foo" type="text" value="" />
+   <input name="bar" type="text" value="value1" />
+   <input name="foo.bar" type="text" value="value2" />
+   <input name="foo.baz[]" type="text" value="value3" />
+   <input name="foo.baz[]" type="text" value="value4" />
+   <input name="foo.baf[0]" type="text" value="value5" />
+   <input name="foo.bax[0][0]" type="text" value="value6" />
+   <input name="foo.bax[0][]" type="text" value="value7" />
    <input name="submit" type="submit" value="submit" />
 </form>
 
