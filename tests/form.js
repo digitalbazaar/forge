@@ -23,6 +23,11 @@ $(document).ready(function()
             var f = forge.form.serialize($(this));
             forge.log.debug(cat, 'result:', JSON.stringify(f));
             $('#result').html(JSON.stringify(f));
+            
+            /* dictionary test
+            var f = forge.form.serialize($(this), '.', {'username':'user'});
+            forge.log.debug(cat, 'result:', JSON.stringify(f));
+            */
          }
          catch(e)
          {

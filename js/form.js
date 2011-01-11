@@ -32,7 +32,7 @@
       var rval = [];
       
       var matches;
-      while(matches = _regex.exec(name))
+      while(!!(matches = _regex.exec(name)))
       {
          if(matches[1].length > 0)
          {
@@ -57,9 +57,30 @@
     * @param obj the object.
     * @param names the field as an array of object property names.
     * @param value the value of the field.
+    * @param dict a dictionary of names to replace.
     */
-   var _addField = function(obj, names, value)
+   var _addField = function(obj, names, value, dict)
    {
+      // combine array names that fall within square brackets
+      var tmp = [];
+      for(var i = 0; i < names.length; ++i)
+      {
+         var name = names[i];
+         if(name.indexOf('[') !== -1)
+         {
+            for(; ++i < names.length && names[i].indexOf[']'] === -1;)
+            {
+               name += '.' + names[i];
+            }
+            if(i < names.length)
+            {
+               name += '.' + names[i];
+            }
+         }
+         tmp.push(name);
+      }
+      names = tmp;
+      
       // split out array indexes
       var tmp = [];
       $.each(names, function(n, name)
@@ -71,6 +92,12 @@
       // iterate over object property names until value is set
       $.each(names, function(n, name)
       {
+         // do dictionary name replacement
+         if(dict && name in dict)
+         {
+            name = dict[name];
+         }
+         
          // value already exists, append value
          if(obj[name])
          {
@@ -78,7 +105,7 @@
             if(n == names.length - 1)
             {
                // more than one value, so convert into an array
-               if(!$.isArray(obj))
+               if(!$.isArray(obj[name]))
                {
                   obj[name] = [obj[name]];
                }
@@ -112,19 +139,20 @@
     * using the given separator (defaults to '.') and by square brackets.
     *
     * @param input the jquery form to serialize.
-    * @param separator the object-property separator (defaults to '.').
+    * @param sep the object-property separator (defaults to '.').
+    * @param dict a dictionary of names to replace (name=replace).
     * 
     * @return the JSON-serialized form.
     */
-   form.serialize = function(input, separator)
+   form.serialize = function(input, sep, dict)
    {
       var rval = {};
       
       // add all fields in the form to the object
-      separator = separator || '.';
+      sep = sep || '.';
       $.each(input.serializeArray(), function()
       {
-         _addField(rval, this.name.split(separator), this.value || '');
+         _addField(rval, this.name.split(sep), this.value || '', dict);
       });
       
       return rval;
