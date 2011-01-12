@@ -65,17 +65,16 @@
       var tmp = [];
       for(var i = 0; i < names.length; ++i)
       {
+         // check name for starting square bracket but no ending one
          var name = names[i];
-         if(name.indexOf('[') !== -1)
+         if(name.indexOf('[') !== -1 && name.indexOf(']') === -1 &&
+            i < names.length - 1)
          {
-            for(; ++i < names.length && names[i].indexOf[']'] === -1;)
+            do
             {
-               name += '.' + names[i];
+               name += '.' + names[++i];
             }
-            if(i < names.length)
-            {
-               name += '.' + names[i];
-            }
+            while(i < names.length - 1 && names[i].indexOf(']') === -1);
          }
          tmp.push(name);
       }
@@ -98,13 +97,15 @@
             name = dict[name];
          }
          
-         // blank name indicates appending to an array
+         // blank name indicates appending to an array, set name to
+         // new last index of array
          if(name.length == 0)
          {
-            obj.push(value);
+            name = obj.length;
          }
+         
          // value already exists, append value
-         else if(obj[name])
+         if(obj[name])
          {
             // last name in the field
             if(n == names.length - 1)
@@ -130,8 +131,10 @@
          // new value, not last name, go deeper
          else
          {
-            // get next name, if blank, then create an array
+            // get next name
             var next = names[n + 1];
+            
+            // blank next value indicates array-appending, so create array
             if(next.length == 0)
             {
                obj[name] = [];
