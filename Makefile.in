@@ -50,6 +50,7 @@ FLASH_FLAGS = \
 endif
 
 all: $(BUILD_DIR) $(DIST_DIR) $(FLASH) $(JS_DIST) $(TESTS_FORGE_LINK) $(SSL_SESSIONS_FILES)
+	@echo "forge build complete."
 
 $(BUILD_DIR):
 	$(PCMD) mkdir -p $@
