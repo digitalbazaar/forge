@@ -34,7 +34,7 @@ else
 PCMD=@
 endif
 
-.PHONY: all project project-build-setup verbose clean verbose-commands
+.PHONY: all build-all update-all verbose clean verbose-commands
 
 # debug flags for flash build
 ifeq (@MXMLC_DEBUG_MODE@,yes)
@@ -52,10 +52,10 @@ endif
 all: $(BUILD_DIR) $(DIST_DIR) $(FLASH) $(JS_DIST) $(TESTS_FORGE_LINK) $(SSL_SESSIONS_FILES)
 	@echo "forge build complete."
 
-project: all
+build-all: all
 
-project-build-setup:
-	@git pull && ./build-setup
+update-all:
+	@git pull && ./build-setup && make all
 
 $(BUILD_DIR):
 	$(PCMD) mkdir -p $@
