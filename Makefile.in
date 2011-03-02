@@ -56,7 +56,6 @@ build-all: all
 
 update-all:
 	@git pull && ./build-setup && make all
-	@echo "forge build complete."
 
 $(BUILD_DIR):
 	$(PCMD) mkdir -p $@
