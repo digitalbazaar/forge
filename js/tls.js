@@ -3679,6 +3679,64 @@
       };
       
       /**
+       * Reads the record header and initializes a record on the given
+       * connection.
+       * 
+       * @param c the TLS connection.
+       * 
+       * @return 0 if the data could be processed, otherwise the
+       *         number of bytes required for data to be processed.
+       */
+      var _readRecordHeader = function(c)
+      {
+         var rval = 0;
+         
+         // get input buffer and its length
+         var b = c.input;
+         var len = b.length();
+         
+         // need at least 5 bytes to initialize a record
+         if(len < 5)
+         {
+            rval = 5 - len;
+         }
+         // enough bytes for header
+         else
+         {
+            // initialize record
+            c.record =
+            {
+               type: b.getByte(),
+               version:
+               {
+                  major: b.getByte(),
+                  minor: b.getByte()
+               },
+               length: b.getInt16(),
+               fragment: forge.util.createBuffer(),
+               ready: false
+            };
+            
+            // check record version
+            if(c.record.version.major != tls.Version.major ||
+               c.record.version.minor != tls.Version.minor)
+            {
+               c.error(c, {
+                  message: 'Incompatible TLS version.',
+                  send: true,
+                  origin: 'client',
+                  alert: {
+                     level: tls.Alert.Level.fatal,
+                     description: tls.Alert.Description.protocol_version
+                  }
+               });
+            }
+         }
+         
+         return rval;
+      };
+      
+      /**
        * Performs a handshake using the TLS Handshake Protocol.
        * 
        * @param sessionId the session ID to use, null to start a new one.
@@ -3776,13 +3834,12 @@
       {
          var rval = 0;
          
-         // buffer data, get input length
+         // buffer data
          var b = c.input;
          if(data)
          {
             b.putBytes(data);
          }
-         var len = b.length();
          
          // TODO: this function and c.record/c.fragment usage in general have
          // become messy due to redesigns (including going from procedural
@@ -3800,54 +3857,19 @@
                c.record = null;
             }
             
-            // if there is no pending record
+            // if there is no pending record, try to read record header
             if(c.record === null)
             {
-               if(len < 5)
-               {
-                  // need at least 5 bytes to initialize a record
-                  rval = 5 - len;
-               }
-               else
-               {
-                  // do basic record initialization
-                  c.record =
-                  {
-                     type: b.getByte(),
-                     version:
-                     {
-                        major: b.getByte(),
-                        minor: b.getByte()
-                     },
-                     length: b.getInt16(),
-                     fragment: forge.util.createBuffer(),
-                     ready: false
-                  };
-                  len -= 5;
-                  
-                  // check record version
-                  if(c.record.version.major != tls.Version.major ||
-                     c.record.version.minor != tls.Version.minor)
-                  {
-                     c.error(c, {
-                        message: 'Incompatible TLS version.',
-                        send: true,
-                        origin: 'client',
-                        alert: {
-                           level: tls.Alert.Level.fatal,
-                           description: tls.Alert.Description.protocol_version
-                        }
-                     });
-                  }
-               }
+               rval = _readRecordHeader(c);
             }
             
             // handle pending record (record not yet ready)
             if(!c.fail && c.record !== null && !c.record.ready)
             {
+               // ensure there is enough input data to get the entire record
+               var len = b.length();
                if(len < c.record.length)
                {
-                  // not enough data yet, need remainder of record
                   rval = c.record.length - len;
                }
                // there is enough data to parse the pending record
@@ -3967,7 +3989,7 @@
    };
    
    /**
-    * The crypto namespace and tls API.
+    * The forge namespace and tls API.
     */
    forge.tls = {};
    
