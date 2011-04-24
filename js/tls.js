@@ -3679,12 +3679,12 @@
       };
       
       /**
-       * Reads the record header and initializes a record on the given
+       * Reads the record header and initializes the next record on the given
        * connection.
        * 
-       * @param c the TLS connection.
+       * @param c the TLS connection with the next record.
        * 
-       * @return 0 if the data could be processed, otherwise the
+       * @return 0 if the input data could be processed, otherwise the
        *         number of bytes required for data to be processed.
        */
       var _readRecordHeader = function(c)
@@ -3730,6 +3730,73 @@
                      description: tls.Alert.Description.protocol_version
                   }
                });
+            }
+         }
+         
+         return rval;
+      };
+      
+      /**
+       * Reads the next record's contents and appends its message to any
+       * previously fragmented message.
+       * 
+       * @param c the TLS connection with the next record.
+       * 
+       * @return 0 if the input data could be processed, otherwise the
+       *         number of bytes required for data to be processed.
+       */
+      var _readRecord = function(c)
+      {
+         var rval = 0;
+         
+         // ensure there is enough input data to get the entire record
+         var b = c.input;
+         var len = b.length();
+         if(len < c.record.length)
+         {
+            // not enough data yet, return how much is required
+            rval = c.record.length - len;
+         }
+         // there is enough data to parse the pending record
+         else
+         {
+            // fill record fragment
+            c.record.fragment.putBytes(b.getBytes(c.record.length));
+            
+            // update record using current read state
+            var s = c.state.current.read;
+            if(s.update(c, c.record))
+            {
+               // see if there is a previously fragmented message that the
+               // new record's message fragment should be appended to
+               if(c.fragmented !== null)
+               {
+                  // if the record type matches a previously fragmented
+                  // record, append the record fragment to it
+                  if(c.fragmented.type === c.record.type)
+                  {
+                     // concatenate record fragments
+                     c.fragmented.fragment.putBuffer(c.record.fragment);
+                     c.record = c.fragmented;
+                  }
+                  else
+                  {
+                     // error, invalid fragmented record
+                     c.error(c, {
+                        message: 'Invalid fragmented record.',
+                        send: true,
+                        origin: 'client',
+                        alert: {
+                           level: tls.Alert.Level.fatal,
+                           description:
+                              tls.Alert.Description.unexpected_message
+                        }
+                     });
+                  }
+               }
+               
+               // record is now ready
+               c.record.ready = true;
             }
          }
          
@@ -3834,11 +3901,10 @@
       {
          var rval = 0;
          
-         // buffer data
-         var b = c.input;
+         // buffer input data
          if(data)
          {
-            b.putBytes(data);
+            c.input.putBytes(data);
          }
          
          // TODO: this function and c.record/c.fragment usage in general have
@@ -3863,61 +3929,15 @@
                rval = _readRecordHeader(c);
             }
             
-            // handle pending record (record not yet ready)
+            // read the next record (if record not yet ready)
             if(!c.fail && c.record !== null && !c.record.ready)
             {
-               // ensure there is enough input data to get the entire record
-               var len = b.length();
-               if(len < c.record.length)
-               {
-                  rval = c.record.length - len;
-               }
-               // there is enough data to parse the pending record
-               else
-               {
-                  // fill record fragment
-                  c.record.fragment.putBytes(b.getBytes(c.record.length));
-                  
-                  // update record using current read state
-                  var s = c.state.current.read;
-                  if(s.update(c, c.record))
-                  {
-                     // if the record type matches a previously fragmented
-                     // record, append the record fragment to it
-                     if(c.fragmented !== null)
-                     {
-                        if(c.fragmented.type === c.record.type)
-                        {
-                           // concatenate record fragments
-                           c.fragmented.fragment.putBuffer(c.record.fragment);
-                           c.record = c.fragmented;
-                        }
-                        else
-                        {
-                           // error, invalid fragmented record
-                           c.error(c, {
-                              message: 'Invalid fragmented record.',
-                              send: true,
-                              origin: 'client',
-                              alert: {
-                                 level: tls.Alert.Level.fatal,
-                                 description:
-                                    tls.Alert.Description.unexpected_message
-                              }
-                           });
-                        }
-                     }
-                     
-                     // record is now ready
-                     c.record.ready = true;
-                  }
-               }
+               rval = _readRecord(c);
             }
             
-            // record ready to be handled
+            // record ready to be handled, update engine state
             if(!c.fail && c.record !== null && c.record.ready)
             {
-               // update engine state
                _update(c, c.record);
             }
          }
