@@ -1526,7 +1526,7 @@
          tls.queue(c, record);
          
          // expect no messages until the following callback has been called
-         c.expect = ERR;
+         c.expect = SER;
          
          // create callback to handle client signature (for client-certs)
          var callback = function(c, signature)
@@ -1905,7 +1905,7 @@
          b.read += 4;
          
          // handle expected message
-         if(type in hsTable[c.expect])
+         if(type in hsTable[c.entity][c.expect])
          {
             /* Update handshake messages digest. The Finished message is not
                digested here it couldn't have been digested as part of the
@@ -1922,7 +1922,7 @@
             }
             
             // handle specific handshake type record
-            hsTable[c.expect][type](c, record, length);
+            hsTable[c.entity][c.expect][type](c, record, length);
          }
          else
          {
@@ -2002,7 +2002,7 @@
     * Finished                      -------->
     * Application Data              <------->     Application Data   
     */
-   // expect states (indicate which records are expected to be received)
+   // client expect states (indicate which records are expected to be received)
    var SHE = 0; // rcv server hello
    var SCE = 1; // rcv server certificate
    var SKE = 2; // rcv server key exchange
@@ -2011,15 +2011,26 @@
    var SCC = 5; // rcv change cipher spec
    var SFI = 6; // rcv finished
    var SAD = 7; // rcv application data
-   var ERR = 8; // not expecting any messages at this point
+   var SER = 8; // not expecting any messages at this point
    
-   // map current expect state and content type to function
+   // server expect states
+   var CHE = 0; // rcv client hello
+   var CCE = 1; // rcv client certificate
+   var CKE = 2; // rcv client key exchange
+   var CCV = 3; // rcv certificate verify
+   var CCC = 4; // rcv change cipher spec
+   var CFI = 5; // rcv finished
+   var CAD = 6; // rcv application data
+   var CER = 7; // not expecting any messages at this point
+   
+   // map client current expect state and content type to function
    var __ = tls.handleUnexpected;
    var F0 = tls.handleChangeCipherSpec;
    var F1 = tls.handleAlert;
    var F2 = tls.handleHandshake;
    var F3 = tls.handleApplicationData;
-   var ctTable = [
+   var ctTable = [];
+   ctTable[tls.ConnectionEnd.client] = [
    //      CC,AL,HS,AD
    /*SHE*/[__,__,F2,__],
    /*SCE*/[__,F1,F2,__],
@@ -2029,29 +2040,59 @@
    /*SCC*/[F0,F1,__,__],
    /*SFI*/[__,F1,F2,__],
    /*SAD*/[__,F1,F2,F3],
-   /*ERR*/[__,F1,F2,__]
+   /*SER*/[__,F1,F2,__]
    ];
    
-   // map current expect state and handshake type to function
+   // map server current expect state and content type to function
+   ctTable[tls.ConnectionEnd.server] = [
+   //      CC,AL,HS,AD
+   /*CHE*/[__,__,F2,__],
+   /*CCE*/[__,F1,F2,__],
+   /*CKE*/[__,F1,F2,__],
+   /*CCV*/[__,F1,F2,__],
+   /*CCC*/[F0,F1,__,__],
+   /*CFI*/[__,F1,F2,__],
+   /*CAD*/[__,F1,F2,F3],
+   /*CER*/[__,F1,F2,__]
+   ];
+   
+   // map client current expect state and handshake type to function
    var F4 = tls.handleHelloRequest;
    var F5 = tls.handleServerHello;
    var F6 = tls.handleCertificate;
    var F7 = tls.handleServerKeyExchange;
    var F8 = tls.handleCertificateRequest;
    var F9 = tls.handleServerHelloDone;
-   var FA = tls.handleCertificateVerify;
-   var FB = tls.handleFinished;
-   var hsTable = [
-   //      HR,01,SH,03,04,05,06,07,08,09,10,SC,SK,CR,HD,CV,CK,17,18,19,FI
+   var FA = tls.handleFinished;
+   var hsTable = [];
+   hsTable[tls.ConnectionEnd.client] = [
+   //      HR,01,SH,03,04,05,06,07,08,09,10,SC,SK,CR,HD,15,CK,17,18,19,FI
    /*SHE*/[__,__,F5,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
    /*SCE*/[F4,__,__,__,__,__,__,__,__,__,__,F6,F7,F8,F9,__,__,__,__,__,__],
    /*SKE*/[F4,__,__,__,__,__,__,__,__,__,__,__,F7,F8,F9,__,__,__,__,__,__],
    /*SCR*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,F8,F9,__,__,__,__,__,__],
    /*SHD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,F9,__,__,__,__,__,__],
    /*SCC*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-   /*SFI*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FB],
+   /*SFI*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FA],
    /*SAD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-   /*ERR*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
+   /*SER*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
+   ];
+   
+   // map server current expect state and handshake type to function
+   var FB = tls.handleClientHello;
+   var FC = tls.handleClientCertificate;
+   var FD = tls.handleClientKeyExchange;
+   var FE = tls.handleCertificateVerify;
+   hsTable[tls.ConnectionEnd.server] = [
+   //      01,CH,02,03,04,05,06,07,08,09,10,CC,12,13,14,CV,CK,17,18,19,FI
+   /*CHE*/[__,FB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+   /*CCE*/[__,__,__,__,__,__,__,__,__,__,__,FC,__,__,__,__,FD,__,__,__,__],
+   /*CKE*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FD,__,__,__,__],
+   /*CCV*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FE,__,__,__,__,__],
+   /*CCC*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+   /*CFI*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FA],
+   /*CAD*/[__,FB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+   /*CER*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
    ];
    
    /**
@@ -3578,10 +3619,14 @@
          cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA);
       }
       
+      // set default entity
+      var entity = (options.server || false) ?
+         tls.ConnectionEnd.server : tls.ConnectionEnd.client;
+      
       // create TLS connection
       var c =
       {
-         server: options.server || false,
+         entity: entity,
          sessionId: options.sessionId,
          caStore: caStore,
          sessionCache: options.sessionCache,
@@ -3669,7 +3714,7 @@
       {
          // get record handler (align type in table by subtracting lowest)
          var aligned = record.type - tls.ContentType.change_cipher_spec;
-         var handlers = ctTable[c.expect];
+         var handlers = ctTable[c.entity][c.expect];
          if(aligned in handlers)
          {
             handlers[aligned](c, record);
@@ -3816,7 +3861,7 @@
       c.handshake = function(sessionId)
       {
          // error to call this in non-client mode
-         if(c.server)
+         if(c.entity !== tls.ConnectionEnd.client)
          {
             // not fatal error
             c.error(c, {
