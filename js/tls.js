@@ -1262,7 +1262,7 @@
             // check certificate chain
             else if(tls.verifyCertificateChain(c, certs))
             {
-               // save server certificate handshake state
+               // save server certificate in handshake state
                c.handshakeState.serverCertificate = certs[0];
                
                // expect a ServerKeyExchange message next
@@ -2726,7 +2726,8 @@
             writeVector(certBuffer, 3, der);
             
             // save certificate
-            c.handshakeState.certificate = forge.pki.certificateFromAsn1(asn1);
+            c.handshakeState.clientCertificate =
+               forge.pki.certificateFromAsn1(asn1);
          }
          catch(ex)
          {
@@ -2871,7 +2872,8 @@
          {
             try
             {
-               privateKey = c.getPrivateKey(c, c.handshakeState.certificate);
+               privateKey = c.getPrivateKey(
+                  c, c.handshakeState.clientCertificate);
                privateKey = forge.pki.privateKeyFromPem(privateKey);
             }
             catch(ex)
@@ -3579,6 +3581,7 @@
       // create TLS connection
       var c =
       {
+         server: options.server || false,
          sessionId: options.sessionId,
          caStore: caStore,
          sessionCache: options.sessionCache,
@@ -3804,14 +3807,25 @@
       };
       
       /**
-       * Performs a handshake using the TLS Handshake Protocol.
+       * Performs a handshake using the TLS Handshake Protocol, as a client.
+       * 
+       * This method should only be called if the connection is in client mode.
        * 
        * @param sessionId the session ID to use, null to start a new one.
        */
       c.handshake = function(sessionId)
       {
+         // error to call this in non-client mode
+         if(c.server)
+         {
+            // not fatal error
+            c.error(c, {
+               message: 'Cannot initiate handshake as a server.',
+               fatal: false
+            });
+         }
          // if a handshake is already in progress, fail
-         if(c.handshakeState)
+         else if(c.handshakeState)
          {
             // not fatal error
             c.error(c, {
@@ -3821,6 +3835,11 @@
          }
          else
          {
+            // FIXME: getting a session ID from the cache should become
+            // a method on the cache? it will need to be called on the
+            // server side as well ... and there should probably be
+            // a limit to the size of the cache if its used server-side
+            
             // default to blank (new session)
             sessionId = sessionId || '';
             
@@ -3872,7 +3891,7 @@
                session: session,
                serverCertificate: null,
                certificateRequest: null,
-               certificate: null,
+               clientCertificate: null,
                sp: null,
                clientRandom: random.bytes(),
                md5: forge.md.md5.create(),
@@ -3906,11 +3925,6 @@
          {
             c.input.putBytes(data);
          }
-         
-         // TODO: this function and c.record/c.fragment usage in general have
-         // become messy due to redesigns (including going from procedural
-         // loop to handle records to asynchronous functional record
-         // processing), needs clean up and simplification
          
          // process next record if no failure, process will be called after
          // each record is handled (since handling can be asynchronous)
@@ -4084,6 +4098,7 @@
     *    be called once the signature is ready.
     * 
     * @param options the options for this connection:
+    *    server: true if the connection is server-side, false for client.
     *    sessionId: a session ID to reuse, null for a new connection.
     *    caStore: an array of certificates to trust.
     *    sessionCache: a session cache to use.
@@ -4163,6 +4178,7 @@
       
       // create TLS connection
       var c = forge.tls.createConnection({
+         server: false,
          sessionId: options.sessionId || null,
          caStore: options.caStore || [],
          sessionCache: options.sessionCache || null,
