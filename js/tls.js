@@ -970,11 +970,10 @@
       if(!c.handshaking && c.handshakes > 0)
       {
          // send alert warning
-         var record = tls.createAlert({
+         tls.queue(c, tls.createAlert({
             level: tls.Alert.Level.warning,
             description: tls.Alert.Description.no_renegotiation
-         });
-         tls.queue(c, record);
+         }));
          tls.flush(c);
       }
       
@@ -1273,11 +1272,24 @@
          
          if(c.session.resuming)
          {
-            // queue change cipher spec
+            // queue change cipher spec message
+            tls.queue(c, tls.createRecord(
+            {
+               type: tls.ContentType.change_cipher_spec,
+               data: tls.createChangeCipherSpec()
+            }));
+            
+            // create pending state
+            c.state.pending = tls.createConnectionState(c);
+            
+            // change current write state to pending write state
+            c.state.current.write = c.state.pending.write;
+            
+            // queue finished
             tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.handshake,
-               data: tls.createServerKeyExchange(c)
+               data: tls.createFinished(c)
             }));
          }
          else
@@ -1687,26 +1699,22 @@
          // create callback to handle client signature (for client-certs)
          var callback = function(c, signature)
          {
-            var record = null;
-            
             if(c.session.certificateRequest !== null)
             {
                // create certificate verify message
-               record = tls.createRecord(
+               tls.queue(c, tls.createRecord(
                {
                   type: tls.ContentType.handshake,
                   data: tls.createCertificateVerify(c, signature)
-               });
-               tls.queue(c, record);
+               }));
             }
             
             // create change cipher spec message
-            record = tls.createRecord(
+            tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.change_cipher_spec,
                data: tls.createChangeCipherSpec()
-            });
-            tls.queue(c, record);
+            }));
             
             // create pending state
             c.state.pending = tls.createConnectionState(c);
@@ -1715,12 +1723,11 @@
             c.state.current.write = c.state.pending.write;
             
             // create finished message
-            record = tls.createRecord(
+            tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.handshake,
                data: tls.createFinished(c)
-            });
-            tls.queue(c, record);
+            }));
             
             // send records
             tls.flush(c);
@@ -1746,7 +1753,7 @@
    };
   
    /**
-    * Called when the client receives a ChangeCipherSpec record.
+    * Called when a ChangeCipherSpec record is received.
     * 
     * @param c the connection.
     * @param record the record.
@@ -1766,8 +1773,11 @@
       }
       else
       {
-         // create pending state if resuming session
-         if(c.session.resuming)
+         // create pending state if:
+         // 1. Resuming session in client mode OR
+         // 2. NOT resuming session in server mode
+         var client = (c.entity === tls.ConnectionEnd.client); 
+         if((c.session.resuming && client) || (!c.session.resuming && !client))
          {
             c.state.pending = tls.createConnectionState(c);
          }
@@ -1775,8 +1785,10 @@
          // change current read state to pending read state
          c.state.current.read = c.state.pending.read;
          
-         // clear pending state if not resuming session
-         if(!c.session.resuming)
+         // clear pending state if:
+         // 1. NOT resuming session in client mode OR
+         // 2. resuming a session in server mode
+         if((!c.session.resuming && client) || (c.session.resuming && !client))
          {
             c.state.pending = null;
          }
@@ -1872,29 +1884,22 @@
          if(c.session.resuming)
          {
             // create change cipher spec message
-            record = tls.createRecord(
+            tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.change_cipher_spec,
                data: tls.createChangeCipherSpec()
-            });
-            tls.queue(c, record);
+            }));
             
-            // change current write state to pending write state
+            // change current write state to pending write state, clear pending
             c.state.current.write = c.state.pending.write;
-            
-            // clear pending state if resuming
-            if(c.session.resuming)
-            {
-               c.state.pending = null;
-            }
+            c.state.pending = null;
             
             // create finished message
-            record = tls.createRecord(
+            tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.handshake,
                data: tls.createFinished(c)
-            });
-            tls.queue(c, record);
+            }));
             
             // send records
             tls.flush(c);
@@ -3963,8 +3968,7 @@
             // send TLS alert
             if(ex.send)
             {
-               var record = tls.createAlert(ex.alert);
-               tls.queue(c, record);
+               tls.queue(c, tls.createAlert(ex.alert));
                tls.flush(c);
             }
             
@@ -4312,12 +4316,11 @@
        */
       c.prepare = function(data)
       {
-         var record = tls.createRecord(
+         tls.queue(c, tls.createRecord(
          {
             type: tls.ContentType.application_data,
             data: forge.util.createBuffer(data)
-         });
-         tls.queue(c, record);
+         }));
          return tls.flush(c);
       };
       
@@ -4340,12 +4343,11 @@
             if(c.isConnected)
             {
                // send close_notify alert
-               var record = tls.createAlert(
+               tls.queue(c, tls.createAlert(
                {
                   level: tls.Alert.Level.warning,
                   description: tls.Alert.Description.close_notify
-               });
-               tls.queue(c, record);
+               }));
                tls.flush(c);
                
                // no longer connected
