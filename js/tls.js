@@ -1858,11 +1858,15 @@
       b.putBuffer(c.session.md5.digest());
       b.putBuffer(c.session.sha1.digest());
       
+      // set label based on entity type
+      var client = (c.entity === tls.ConnectionEnd.client);
+      var label = client ? 'server finished' : 'client finished';
+      
       // TODO: determine prf function and verify length for TLS 1.2
       var sp = c.session.sp;
       var vdl = 12;
       var prf = prf_TLS1;
-      b = prf(sp.master_secret, 'server finished', b.getBytes(), vdl);
+      b = prf(sp.master_secret, label, b.getBytes(), vdl);
       if(b.getBytes() !== vd)
       {
          c.error(c, {
@@ -1880,8 +1884,8 @@
          c.session.md5.update(msgBytes);
          c.session.sha1.update(msgBytes);
          
-         // resuming a session
-         if(c.session.resuming)
+         // resuming session as client or NOT resuming session as server
+         if((c.session.resuming && client) || (!c.session.resuming && !client))
          {
             // create change cipher spec message
             tls.queue(c, tls.createRecord(
@@ -1905,8 +1909,8 @@
             tls.flush(c);
          }
          
-         // expect server application data next
-         c.expect = SAD;
+         // expect application data next
+         c.expect = client ? SAD : CAD;
          
          // handshake complete
          c.handshaking = false;
