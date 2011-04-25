@@ -4326,13 +4326,10 @@
        */
       c.close = function()
       {
-         // FIXME: close is called twice by tlsSocket
-         
          // save session if connection didn't fail
          if(!c.fail && c.sessionCache && c.session)
          {
             c.sessionCache.setSession(c.session.id, c.session);
-            c.session = null;
          }
          
          if(c.open)
@@ -4595,7 +4592,6 @@
                bytesAvailable: 0
             });
          }
-         c.isConnected = false;
          c.close();
          
          // call socket handler
