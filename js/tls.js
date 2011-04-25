@@ -949,7 +949,6 @@
       c.error(c, {
          message: 'Unexpected message. Received TLS record out of order.',
          send: true,
-         origin: 'client',
          alert: {
             level: tls.Alert.Level.fatal,
             description: tls.Alert.Description.unexpected_message
@@ -967,8 +966,8 @@
    tls.handleHelloRequest = function(c, record, length)
    {
       // ignore renegotiation requests from the server during a handshake,
-      // otherwise send a warning alert
-      if(!c.handshakeState)
+      // but if handshaking, send a warning alert that renegotation is denied
+      if(!c.handshaking && c.handshakes > 0)
       {
          // send alert warning
          var record = tls.createAlert({
@@ -995,7 +994,6 @@
       var msg = null;
       
       var client = (c.entity == tls.ConnectionEnd.client);
-      var origin = client ? 'client' : 'server';
       
       // minimum of 38 bytes in message
       if(length < 38)
@@ -1005,7 +1003,6 @@
                'Invalid ServerHello message. Message too short.' :
                'Invalid ClientHello message. Message too short.',
             send: true,
-            origin: origin,
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.illegal_parameter
@@ -1043,7 +1040,6 @@
             c.error(c, {
                message: 'Incompatible TLS version.',
                send: true,
-               origin: origin,
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.protocol_version
@@ -1061,7 +1057,6 @@
             c.error(c, {
                message: 'Cipher suite not supported.',
                send: true,
-               origin: origin,
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.handshake_failure
@@ -1102,8 +1097,14 @@
             break;
       }
       
+      // get client and server randoms
+      var client = (c.entity === tls.ConnectionEnd.client);
+      var msgRandom = msg.random.bytes();
+      var cRandom = client ? c.session.sp.client_random : msgRandom;
+      var sRandom = client ? msgRandom : tls.createRandom().getBytes();
+      
       // create new security parameters
-      c.handshakeState.sp =
+      c.session.sp =
       {
          entity: c.entity,
          prf_algorithm: tls.PRFAlgorithm.tls_prf_sha256,
@@ -1119,8 +1120,8 @@
          compression_algorithm: msg.compression_method,
          pre_master_secret: null,
          master_secret: null,
-         client_random: null,
-         server_random: null
+         client_random: cRandom,
+         server_random: sRandom
       };
    };
    
@@ -1158,39 +1159,30 @@
       if(!c.fail)
       {
          // get the session ID from the message
-         var sid = forge.util.createBuffer(msg.session_id.bytes());
-         sid = sid.getBytes();
+         var sessionId = msg.session_id.bytes();
          
          // if the session ID matches the cached one, resume the session
-         if(sid.length > 0 && sid === c.handshakeState.sessionId)
+         if(sessionId === c.session.id)
          {
             // resuming session, expect a ChangeCipherSpec next
             c.expect = SCC;
-            c.handshakeState.resuming = true;
+            c.session.resuming = true;
             
-            // get security parameters from session
-            c.handshakeState.sp = c.handshakeState.session.sp;
+            // get new server random
+            c.session.sp.server_random = msg.random.bytes();
          }
          else
          {
             // not resuming, expect a server Certificate message next
             c.expect = SCE;
-            c.handshakeState.resuming = false;
+            c.session.resuming = false;
             
             // create new security parameters
             tls.createSecurityParameters(c, msg);
          }
          
-         // clear old session
-         c.handshakeState.session = null;
-         
-         // save client and server randoms
-         c.handshakeState.sp.server_random = msg.random.bytes();
-         c.handshakeState.sp.client_random = c.handshakeState.clientRandom;
-         c.handshakeState.clientRandom = null;
-         
          // set new session ID
-         c.handshakeState.sessionId = sid;
+         c.session.id = sessionId;
          
          // continue
          c.process();
@@ -1217,14 +1209,13 @@
       if(!c.fail)
       {
          // get the session ID from the message
-         var sessionId = forge.util.createBuffer(msg.session_id.bytes());
-         sessionId = sessionId.getBytes();
+         var sessionId = msg.session_id.bytes();
          
          // see if the given session ID is in the cache
          var session = null;
          if(c.sessionCache)
          {
-            session = c.sessionCache.getSession(sid);
+            session = c.sessionCache.getSession(sessionId);
             if(session === null)
             {
                // session ID not found
@@ -1238,52 +1229,37 @@
             sessionId = forge.random.getBytes(32);
          }
          
-         // FIXME: clean up handshake state/session implementation, various
-         // data members are stored in multiple places, design isn't clean
-         
-         // create new handshake state
-         c.handshakeState =
+         // set up session
+         c.session =
          {
-            sessionId: sessionId,
-            session: session,
+            id: sessionId,
             serverCertificate: null,
             certificateRequest: null,
             clientCertificate: null,
-            sp: null,
-            serverRandom: tls.createRandom().getBytes(),
-            clientRandom: msg.random.bytes(),
+            sp: session ? session.sp : {},
             md5: forge.md.md5.create(),
             sha1: forge.md.sha1.create()
          };
          
          // if a session is set, resume it
-         if(c.handshakeState.session !== null)
+         if(session !== null)
          {
             // resuming session, expect a ChangeCipherSpec next
             c.expect = CCC;
-            c.handshakeState.resuming = true;
+            c.session.resuming = true;
             
-            // get security parameters from session
-            c.handshakeState.sp = c.handshakeState.session.sp;
-            c.handshakeState.session = null;
+            // get new client random
+            c.session.sp.client_random = msg.random.bytes();
          }
          else
          {
             // not resuming, expect a Certificate or ClientKeyExchange
             c.expect = c.verifyClient ? CCE : CKE;
-            c.handshakeState.resuming = false;
+            c.session.resuming = false;
             
             // create new security parameters
             tls.createSecurityParameters(c, msg);
          }
-         
-         // clear old session
-         c.handshakeState.session = null;
-         
-         // save client and server randoms
-         c.handshakeState.sp.server_random = c.handshakeState.serverRandom;
-         c.handshakeState.sp.client_random = msg.random.bytes();
-         c.handshakeState.serverRandom = null;
          
          // connection now open
          c.open = true;
@@ -1295,7 +1271,7 @@
             data: tls.createServerHello(c)
          }));
          
-         if(c.handshakeState.resuming)
+         if(c.session.resuming)
          {
             // queue change cipher spec
             tls.queue(c, tls.createRecord(
@@ -1381,7 +1357,6 @@
          c.error(c, {
             message: 'Invalid Certificate message. Message too short.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.illegal_parameter
@@ -1422,7 +1397,6 @@
                message: 'Could not parse certificate list.',
                cause: ex,
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.bad_certificate
@@ -1439,7 +1413,6 @@
                c.error(c, {
                   message: 'No server certificate provided.',
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description: tls.Alert.Description.illegal_parameter
@@ -1449,8 +1422,8 @@
             // check certificate chain
             else if(tls.verifyCertificateChain(c, certs))
             {
-               // save server certificate in handshake state
-               c.handshakeState.serverCertificate = certs[0];
+               // save server certificate in session
+               c.session.serverCertificate = certs[0];
                
                // expect a ServerKeyExchange message next
                c.expect = SKE;
@@ -1523,7 +1496,6 @@
          c.error(c, {
             message: 'Invalid key parameters. Only RSA is supported.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.unsupported_certificate
@@ -1576,7 +1548,6 @@
          c.error(c, {
             message: 'Invalid CertificateRequest. Message too short.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.illegal_parameter
@@ -1593,8 +1564,8 @@
             certificate_authorities: readVector(b, 2)
          };
          
-         // save certificate request
-         c.handshakeState.certificateRequest = msg;
+         // save certificate request in session
+         c.session.certificateRequest = msg;
          
          // expect a ServerHelloDone message next
          c.expect = SHD;
@@ -1635,7 +1606,6 @@
          c.error(c, {
             message: 'Invalid ServerHelloDone message. Invalid length.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.record_overflow
@@ -1648,7 +1618,6 @@
          var error = {
             message: 'No server certificate provided. Not enough security.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.insufficient_security
@@ -1692,7 +1661,7 @@
       }
       
       // create client certificate message if requested
-      if(!c.fail && c.handshakeState.certificateRequest !== null)
+      if(!c.fail && c.session.certificateRequest !== null)
       {
          record = tls.createRecord(
          {
@@ -1720,7 +1689,7 @@
          {
             var record = null;
             
-            if(c.handshakeState.certificateRequest !== null)
+            if(c.session.certificateRequest !== null)
             {
                // create certificate verify message
                record = tls.createRecord(
@@ -1764,7 +1733,7 @@
          };
          
          // if there is no certificate request, do callback immediately
-         if(c.handshakeState.certificateRequest === null)
+         if(c.session.certificateRequest === null)
          {
             callback(c, null);
          }
@@ -1789,7 +1758,6 @@
          c.error(c, {
             message: 'Invalid ChangeCipherSpec message received.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.illegal_parameter
@@ -1799,7 +1767,7 @@
       else
       {
          // create pending state if resuming session
-         if(c.handshakeState.resuming)
+         if(c.session.resuming)
          {
             c.state.pending = tls.createConnectionState(c);
          }
@@ -1808,7 +1776,7 @@
          c.state.current.read = c.state.pending.read;
          
          // clear pending state if not resuming session
-         if(!c.handshakeState.resuming)
+         if(!c.session.resuming)
          {
             c.state.pending = null;
          }
@@ -1875,11 +1843,11 @@
       
       // ensure verify data is correct
       b = forge.util.createBuffer();
-      b.putBuffer(c.handshakeState.md5.digest());
-      b.putBuffer(c.handshakeState.sha1.digest());
+      b.putBuffer(c.session.md5.digest());
+      b.putBuffer(c.session.sha1.digest());
       
       // TODO: determine prf function and verify length for TLS 1.2
-      var sp = c.handshakeState.sp;
+      var sp = c.session.sp;
       var vdl = 12;
       var prf = prf_TLS1;
       b = prf(sp.master_secret, 'server finished', b.getBytes(), vdl);
@@ -1888,7 +1856,6 @@
          c.error(c, {
             message: 'Invalid verify_data in Finished message.',
             send: true,
-            origin: 'client',
             alert: {
                level: tls.Alert.Level.fatal,
                description: tls.Alert.Description.decrypt_error
@@ -1898,11 +1865,11 @@
       else
       {
          // digest finished message now that it has been handled
-         c.handshakeState.md5.update(msgBytes);
-         c.handshakeState.sha1.update(msgBytes);
+         c.session.md5.update(msgBytes);
+         c.session.sha1.update(msgBytes);
          
          // resuming a session
-         if(c.handshakeState.resuming)
+         if(c.session.resuming)
          {
             // create change cipher spec message
             record = tls.createRecord(
@@ -1916,7 +1883,7 @@
             c.state.current.write = c.state.pending.write;
             
             // clear pending state if resuming
-            if(c.handshakeState.resuming)
+            if(c.session.resuming)
             {
                c.state.pending = null;
             }
@@ -1935,6 +1902,27 @@
          
          // expect server application data next
          c.expect = SAD;
+         
+         // handshake complete
+         c.handshaking = false;
+         ++c.handshakes;
+         
+         // preserve session if using session cache (it will be cached
+         // if the connection is successfully shutdown later)
+         if(c.sessionCache)
+         {
+            // only need to preserve session ID and security params
+            c.session =
+            {
+               id: c.session.id,
+               sp: c.session.sp
+            };
+            c.session.sp.keys = null;
+         }
+         else
+         {
+            c.session = null;
+         }
          
          // now connected
          c.isConnected = true;
@@ -2044,7 +2032,8 @@
       c.error(c, {
          message: msg,
          send: false,
-         origin: 'server',
+         // origin is the opposite end
+         origin: (c.entity === tls.ConnectionEnd.client) ? 'server' : 'client',
          alert: alert
       });
       
@@ -2104,8 +2093,8 @@
             if(type !== tls.HandshakeType.hello_request &&
                type !== tls.HandshakeType.finished)
             {
-               c.handshakeState.md5.update(bytes);
-               c.handshakeState.sha1.update(bytes);
+               c.session.md5.update(bytes);
+               c.session.sha1.update(bytes);
             }
             
             // handle specific handshake type record
@@ -2391,7 +2380,7 @@
       var random = sp.client_random + sp.server_random;
       
       // only create master secret if session is new
-      if(!c.handshakeState.resuming)
+      if(!c.session.resuming)
       {
          // create master secret, clean up pre-master secret
          sp.master_secret =
@@ -2420,7 +2409,7 @@
       var random = sp.client_random + sp.server_random;
       
       // only create master secret if session is new
-      if(!c.handshakeState.resuming)
+      if(!c.session.resuming)
       {
          // create master secret, clean up pre-master secret
          sp.master_secret =
@@ -2522,7 +2511,6 @@
             c.error(c, {
                message: 'Could not decrypt record or bad MAC.',
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   // doesn't matter if decryption failed or MAC was
@@ -2537,7 +2525,6 @@
             c.error(c, {
                message: 'Could not decompress record.',
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.decompression_failure
@@ -2557,7 +2544,6 @@
             c.error(c, {
                message: 'Could not compress record.',
                send: false,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.internal_error
@@ -2571,7 +2557,6 @@
             c.error(c, {
                message: 'Could not encrypt record.',
                send: false,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.internal_error
@@ -2582,10 +2567,10 @@
       };
       
       // handle security parameters
-      if(c.handshakeState)
+      if(c.session)
       {
          // generate keys
-         var sp = c.handshakeState.sp;
+         var sp = c.session.sp;
          sp.keys = tls.generateKeys(c, sp);
          
          // mac setup
@@ -2881,7 +2866,7 @@
       // determine length of the handshake message
       // cipher suites and compression methods size will need to be
       // updated if more get added to the list
-      var sessionId = c.handshakeState.sessionId;
+      var sessionId = c.session.id;
       var length =
          sessionId.length + 1 + // session ID vector
          2 +                    // version (major + minor)
@@ -2893,10 +2878,10 @@
       // build record fragment
       var rval = forge.util.createBuffer();
       rval.putByte(tls.HandshakeType.client_hello);
-      rval.putInt24(length);                        // handshake length
-      rval.putByte(tls.Version.major);              // major version
-      rval.putByte(tls.Version.minor);              // minor version
-      rval.putBytes(c.handshakeState.clientRandom); // random time + bytes
+      rval.putInt24(length);                     // handshake length
+      rval.putByte(tls.Version.major);           // major version
+      rval.putByte(tls.Version.minor);           // minor version
+      rval.putBytes(c.session.sp.client_random); // random time + bytes
       writeVector(rval, 1, forge.util.createBuffer(sessionId));
       writeVector(rval, 2, cipherSuites);
       writeVector(rval, 1, compressionMethods);
@@ -2943,7 +2928,7 @@
       // determine length of the handshake message
       // cipher suites and compression methods size will need to be
       // updated if more get added to the list
-      var sessionId = c.handshakeState.sessionId;
+      var sessionId = c.session.id;
       var length =
          sessionId.length + 1 + // session ID vector
          2 +                    // version (major + minor)
@@ -2954,10 +2939,10 @@
       // build record fragment
       var rval = forge.util.createBuffer();
       rval.putByte(tls.HandshakeType.server_hello);
-      rval.putInt24(length);                        // handshake length
-      rval.putByte(tls.Version.major);              // major version
-      rval.putByte(tls.Version.minor);              // minor version
-      rval.putBytes(c.handshakeState.serverRandom); // random time + bytes
+      rval.putInt24(length);                     // handshake length
+      rval.putByte(tls.Version.major);           // major version
+      rval.putByte(tls.Version.minor);           // minor version
+      rval.putBytes(c.session.sp.server_random); // random time + bytes
       writeVector(rval, 1, forge.util.createBuffer(sessionId));
       writeVector(rval, 2, cipherSuites);
       writeVector(rval, 1, compressionMethods);
@@ -2995,7 +2980,7 @@
       var cert = null;
       if(c.getCertificate)
       {
-         cert = c.getCertificate(c, c.handshakeState.certificateRequest);
+         cert = c.getCertificate(c, c.session.certificateRequest);
       }
       
       // buffer to hold client-side cert
@@ -3010,8 +2995,7 @@
             writeVector(certBuffer, 3, der);
             
             // save certificate
-            c.handshakeState.clientCertificate =
-               forge.pki.certificateFromAsn1(asn1);
+            c.session.clientCertificate = forge.pki.certificateFromAsn1(asn1);
          }
          catch(ex)
          {
@@ -3019,7 +3003,6 @@
                message: 'Could not send certificate list.',
                cause: ex,
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.bad_certificate
@@ -3105,11 +3088,11 @@
       b.putBytes(forge.random.getBytes(46));
       
       // save pre-master secret
-      var sp = c.handshakeState.sp;
+      var sp = c.session.sp;
       sp.pre_master_secret = b.getBytes();
       
       // RSA-encrypt the pre-master secret
-      var key = c.handshakeState.serverCertificate.publicKey;
+      var key = c.session.serverCertificate.publicKey;
       b = key.encrypt(sp.pre_master_secret);
       
       /* Note: The encrypted pre-master secret will be stored in a
@@ -3142,8 +3125,8 @@
    {
       // generate data to RSA encrypt
       var b = forge.util.createBuffer();
-      b.putBuffer(c.handshakeState.md5.digest());
-      b.putBuffer(c.handshakeState.sha1.digest());
+      b.putBuffer(c.session.md5.digest());
+      b.putBuffer(c.session.sha1.digest());
       b = b.getBytes();
       
       // create default signing function as necessary
@@ -3155,8 +3138,7 @@
          {
             try
             {
-               privateKey = c.getPrivateKey(
-                  c, c.handshakeState.clientCertificate);
+               privateKey = c.getPrivateKey(c, c.session.clientCertificate);
                privateKey = forge.pki.privateKeyFromPem(privateKey);
             }
             catch(ex)
@@ -3165,7 +3147,6 @@
                   message: 'Could not get private key.',
                   cause: ex,
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description: tls.Alert.Description.internal_error
@@ -3315,11 +3296,11 @@
    {
       // generate verify_data
       var b = forge.util.createBuffer();
-      b.putBuffer(c.handshakeState.md5.digest());
-      b.putBuffer(c.handshakeState.sha1.digest());
+      b.putBuffer(c.session.md5.digest());
+      b.putBuffer(c.session.sha1.digest());
       
       // TODO: determine prf function and verify length for TLS 1.2
-      var sp = c.handshakeState.sp;
+      var sp = c.session.sp;
       var vdl = 12;
       var prf = prf_TLS1;
       b = prf(sp.master_secret, 'client finished', b.getBytes(), vdl);
@@ -3344,8 +3325,8 @@
       if(record.type === tls.ContentType.handshake)
       {
          var bytes = record.fragment.bytes();
-         c.handshakeState.md5.update(bytes);
-         c.handshakeState.sha1.update(bytes);
+         c.session.md5.update(bytes);
+         c.session.sha1.update(bytes);
          bytes = null;
       }
       
@@ -3579,7 +3560,6 @@
             error = {
                message: 'Certificate is not valid yet or has expired.',
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.certificate_expired
@@ -3621,7 +3601,6 @@
                   error = {
                      message: 'Certificate is not trusted.',
                      send: true,
-                     origin: 'client',
                      alert: {
                         level: tls.Alert.Level.fatal,
                         description: tls.Alert.Description.unknown_ca
@@ -3655,7 +3634,6 @@
                error = {
                   message: 'Certificate signature is invalid.',
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description: tls.Alert.Description.bad_certificate
@@ -3673,7 +3651,6 @@
             error = {
                message: 'Certificate issuer is invalid.',
                send: true,
-               origin: 'client',
                alert: {
                   level: tls.Alert.Level.fatal,
                   description: tls.Alert.Description.bad_certificate
@@ -3702,7 +3679,6 @@
                      message:
                         'Certificate has an unsupported critical extension.',
                      send: true,
-                     origin: 'client',
                      alert: {
                         level: tls.Alert.Level.fatal,
                         description:
@@ -3734,7 +3710,6 @@
                         'isn\'t the first then the certificate must be a ' +
                         'valid CA.',
                      send: true,
-                     origin: 'client',
                      alert: {
                         level: tls.Alert.Level.fatal,
                         description:
@@ -3752,7 +3727,6 @@
                      'Certificate basicConstraints indicates the certificate ' +
                      'is not a CA.',
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description:
@@ -3778,7 +3752,6 @@
                error = {
                   message: 'The application rejected the certificate.',
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description: tls.Alert.Description.bad_certificate
@@ -3983,6 +3956,10 @@
          closed: options.closed,
          error: function(c, ex)
          {
+            // set origin if not set
+            ex.origin = ex.origin ||
+               ((c.entity === tls.ConnectionEnd.client) ? 'client' : 'server');
+            
             // send TLS alert
             if(ex.send)
             {
@@ -4018,7 +3995,6 @@
       c.reset = function()
       {
          c.record = null;
-         c.sessionId = null;
          c.session = null;
          c.state =
          {
@@ -4029,8 +4005,8 @@
          c.fragmented = null;
          c.records = [];
          c.open = false;
-         c.firstHandshake = false;
-         c.handshakeState = null;
+         c.handshakes = 0;
+         c.handshaking = false;
          c.isConnected = false;
          c.fail = false;
          c.input.clear();
@@ -4110,7 +4086,6 @@
                c.error(c, {
                   message: 'Incompatible TLS version.',
                   send: true,
-                  origin: 'client',
                   alert: {
                      level: tls.Alert.Level.fatal,
                      description: tls.Alert.Description.protocol_version
@@ -4171,7 +4146,6 @@
                      c.error(c, {
                         message: 'Invalid fragmented record.',
                         send: true,
-                        origin: 'client',
                         alert: {
                            level: tls.Alert.Level.fatal,
                            description:
@@ -4208,7 +4182,7 @@
             });
          }
          // if a handshake is already in progress, fail
-         else if(c.handshakeState)
+         else if(c.handshaking)
          {
             // not fatal error
             c.error(c, {
@@ -4221,7 +4195,7 @@
             // default to blank (new session)
             sessionId = sessionId || '';
             
-            // if a session ID was specified, find it in the cache
+            // if a session ID was specified, try to find it in the cache
             var session = null;
             if(sessionId.length > 0)
             {
@@ -4230,7 +4204,7 @@
                   session = c.sessionCache.getSession(sessionId);
                }
                
-               // session ID not cached, clear it
+               // matching session not found in cache, clear session ID
                if(session === null)
                {
                   sessionId = '';
@@ -4247,20 +4221,20 @@
                }
             }
             
-            // create new handshake state
-            c.handshakeState =
+            // set up session
+            c.session =
             {
-               sessionId: sessionId,
-               session: session,
+               id: sessionId,
                serverCertificate: null,
                certificateRequest: null,
                clientCertificate: null,
-               sp: null,
-               serverRandom: null,
-               clientRandom: tls.createRandom().getBytes(),
+               sp: session ? session.sp : {},
                md5: forge.md.md5.create(),
                sha1: forge.md.sha1.create()
             };
+            
+            // generate new client random
+            c.session.sp.client_random = tls.createRandom().getBytes();
             
             // connection now open
             c.open = true;
@@ -4352,10 +4326,13 @@
        */
       c.close = function()
       {
+         // FIXME: close is called twice by tlsSocket
+         
          // save session if connection didn't fail
          if(!c.fail && c.sessionCache && c.session)
          {
-            c.sessionCache.setSession(c.sessionId, c.session);
+            c.sessionCache.setSession(c.session.id, c.session);
+            c.session = null;
          }
          
          if(c.open)
@@ -4556,27 +4533,9 @@
          inflate: options.inflate,
          connected: function(c)
          {
-            // update session ID
-            c.sessionId = c.handshakeState.sessionId;
-            
-            // save session if caching
-            if(c.sessionCache)
-            {
-               c.session =
-               {
-                  id: c.sessionId,
-                  sp: c.handshakeState.sp
-               };
-               c.session.sp.keys = null;
-            }
-            
-            // clean up handshake state
-            c.handshakeState = null;
-            
             // first handshake complete, call handler
-            if(!c.firstHandshake)
+            if(c.handshakes === 1)
             {
-               c.firstHandshake = true;
                tlsSocket.connected({
                   id: socket.id,
                   type: 'connect',
@@ -4626,7 +4585,7 @@
       // handle closing TLS connection
       socket.closed = function(e)
       {
-         if(c.open && c.handshakeState)
+         if(c.open && c.handshaking)
          {
             // error
             tlsSocket.error({
