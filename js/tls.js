@@ -1217,8 +1217,8 @@
       if(!c.fail)
       {
          // get the session ID from the message
-         var sid = forge.util.createBuffer(msg.session_id.bytes());
-         sid = sid.getBytes();
+         var sessionId = forge.util.createBuffer(msg.session_id.bytes());
+         sessionId = sessionId.getBytes();
          
          // see if the given session ID is in the cache
          var session = null;
@@ -1228,33 +1228,29 @@
             if(session === null)
             {
                // session ID not found
-               sid = '';
+               sessionId = '';
             }
          }
          
          // no session found to resume, generate a new session ID
-         if(sid === '')
+         if(sessionId === '')
          {
-            sid = forge.random.getBytes(32);
+            sessionId = forge.random.getBytes(32);
          }
          
-         // create random
-         var random = tls.createRandom();
-         
          // FIXME: clean up handshake state/session implementation, various
-         // data members are stored in multiple places, design isn't clean...
-         // might also mean not having to store "random" as a var above, etc.
+         // data members are stored in multiple places, design isn't clean
          
          // create new handshake state
          c.handshakeState =
          {
-            sessionId: sid,
+            sessionId: sessionId,
             session: session,
             serverCertificate: null,
             certificateRequest: null,
             clientCertificate: null,
             sp: null,
-            serverRandom: random.bytes(),
+            serverRandom: tls.createRandom().getBytes(),
             clientRandom: msg.random.bytes(),
             md5: forge.md.md5.create(),
             sha1: forge.md.sha1.create()
@@ -1296,7 +1292,7 @@
          tls.queue(c, tls.createRecord(
          {
             type: tls.ContentType.handshake,
-            data: tls.createServerHello(c, sid, random)
+            data: tls.createServerHello(c)
          }));
          
          if(c.handshakeState.resuming)
@@ -2804,12 +2800,10 @@
     * } ExtensionType;
     * 
     * @param c the connection.
-    * @param sessionId the session ID to use.
-    * @param random the client random structure to use.
     * 
     * @return the ClientHello byte buffer.
     */
-   tls.createClientHello = function(c, sessionId, random)
+   tls.createClientHello = function(c)
    {
       // create supported cipher suites
       var cipherSuites = forge.util.createBuffer();
@@ -2887,6 +2881,7 @@
       // determine length of the handshake message
       // cipher suites and compression methods size will need to be
       // updated if more get added to the list
+      var sessionId = c.handshakeState.sessionId;
       var length =
          sessionId.length + 1 + // session ID vector
          2 +                    // version (major + minor)
@@ -2898,10 +2893,10 @@
       // build record fragment
       var rval = forge.util.createBuffer();
       rval.putByte(tls.HandshakeType.client_hello);
-      rval.putInt24(length);               // handshake length
-      rval.putByte(tls.Version.major);     // major version
-      rval.putByte(tls.Version.minor);     // minor version
-      rval.putBytes(random.bytes());       // random time + bytes
+      rval.putInt24(length);                        // handshake length
+      rval.putByte(tls.Version.major);              // major version
+      rval.putByte(tls.Version.minor);              // minor version
+      rval.putBytes(c.handshakeState.clientRandom); // random time + bytes
       writeVector(rval, 1, forge.util.createBuffer(sessionId));
       writeVector(rval, 2, cipherSuites);
       writeVector(rval, 1, compressionMethods);
@@ -2916,12 +2911,10 @@
     * Creates a ServerHello message.
     * 
     * @param c the connection.
-    * @param sessionId the session ID to use.
-    * @param random the server random structure to use.
     * 
     * @return the ServerHello byte buffer.
     */
-   tls.createServerHello = function(c, sessionId, random)
+   tls.createServerHello = function(c)
    {
       // create supported cipher suites
       var cipherSuites = forge.util.createBuffer();
@@ -2950,6 +2943,7 @@
       // determine length of the handshake message
       // cipher suites and compression methods size will need to be
       // updated if more get added to the list
+      var sessionId = c.handshakeState.sessionId;
       var length =
          sessionId.length + 1 + // session ID vector
          2 +                    // version (major + minor)
@@ -2960,10 +2954,10 @@
       // build record fragment
       var rval = forge.util.createBuffer();
       rval.putByte(tls.HandshakeType.server_hello);
-      rval.putInt24(length);               // handshake length
-      rval.putByte(tls.Version.major);     // major version
-      rval.putByte(tls.Version.minor);     // minor version
-      rval.putBytes(random.bytes());       // random time + bytes
+      rval.putInt24(length);                        // handshake length
+      rval.putByte(tls.Version.major);              // major version
+      rval.putByte(tls.Version.minor);              // minor version
+      rval.putBytes(c.handshakeState.serverRandom); // random time + bytes
       writeVector(rval, 1, forge.util.createBuffer(sessionId));
       writeVector(rval, 2, cipherSuites);
       writeVector(rval, 1, compressionMethods);
@@ -3122,8 +3116,7 @@
          public-key-encrypted opaque vector that has the length prefixed
          using 2 bytes, so include those 2 bytes in the handshake message
          length. This is done as a minor optimization instead of calling
-         writeVector().
-       */
+         writeVector(). */
       
       // determine length of the handshake message
       var length = b.length + 2;
@@ -4254,16 +4247,6 @@
                }
             }
             
-            // create random
-            var random = tls.createRandom();
-            
-            // create client hello
-            record = tls.createRecord(
-            {
-               type: tls.ContentType.handshake,
-               data: tls.createClientHello(c, sessionId, random)
-            });
-            
             // create new handshake state
             c.handshakeState =
             {
@@ -4274,7 +4257,7 @@
                clientCertificate: null,
                sp: null,
                serverRandom: null,
-               clientRandom: random.bytes(),
+               clientRandom: tls.createRandom().getBytes(),
                md5: forge.md.md5.create(),
                sha1: forge.md.sha1.create()
             };
@@ -4283,7 +4266,11 @@
             c.open = true;
             
             // send hello
-            tls.queue(c, record);
+            tls.queue(c, tls.createRecord(
+            {
+               type: tls.ContentType.handshake,
+               data: tls.createClientHello(c)
+            }));
             tls.flush(c);
          }
       };
@@ -4457,10 +4444,11 @@
     * 
     * getCertificate(conn, CertificateRequest)
     *    The second parameter is the CertificateRequest message from the server
-    *    that is part of the TLS protocol. It can be examined to determine
-    *    what client-side certificate to use (advanced). Most implementations
-    *    will just return a client-side certificate. The return value must be
-    *    a PEM-formatted certificate.
+    *    that is part of the TLS protocol. It will only be included if the
+    *    connection is in client-mode, not server-mode. It can be examined to
+    *    determine what client-side certificate to use (advanced). Most
+    *    implementations will just return a certificate. The return value must
+    *    be a PEM-formatted certificate.
     * getPrivateKey(conn, certificate)
     *    The second parameter is an forge.pki X.509 certificate object that
     *    is associated with the requested private key. The return value must
@@ -4489,12 +4477,9 @@
     *    verifyClient: true to request a client certificate in server
     *       mode, false not to (default: false).
     *    verify: a handler used to custom verify certificates in the chain.
-    *    getCertificate: an optional callback used to get a client-side
-    *       certificate.
-    *    getPrivateKey: an optional callback used to get a client-side
-    *       private key.
-    *    getSignature: an optional callback used to get a client-side
-    *       signature.
+    *    getCertificate: an optional callback used to get a certificate.
+    *    getPrivateKey: an optional callback used to get a private key.
+    *    getSignature: an optional callback used to get a signature.
     *    tlsDataReady: function(conn) called when TLS protocol data has
     *       been prepared and is ready to be used (typically sent over a
     *       socket connection to its destination), read from conn.tlsData
@@ -4529,12 +4514,9 @@
     *    socket: the socket to wrap.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
     *    verify: a handler used to custom verify certificates in the chain.
-    *    getCertificate: an optional callback used to get a client-side
-    *       certificate.
-    *    getPrivateKey: an optional callback used to get a client-side
-    *       private key.
-    *    getSignature: an optional callback used to get a client-side
-    *       signature.
+    *    getCertificate: an optional callback used to get a certificate.
+    *    getPrivateKey: an optional callback used to get a private key.
+    *    getSignature: an optional callback used to get a signature.
     *    deflate: function(inBytes) if provided, will deflate TLS records using
     *       the deflate algorithm if the server supports it.
     *    inflate: function(inBytes) if provided, will inflate TLS records using
