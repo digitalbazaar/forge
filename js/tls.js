@@ -957,7 +957,7 @@
    };
    
    /**
-    * Called when the client receives a HelloRequest record.
+    * Called when a client receives a HelloRequest record.
     * 
     * @param c the connection.
     * @param record the record.
@@ -1232,6 +1232,7 @@
          c.session =
          {
             id: sessionId,
+            clientHelloVersion: msg.version,
             serverCertificate: null,
             certificateRequest: null,
             clientCertificate: null,
@@ -1336,7 +1337,7 @@
    };
    
    /**
-    * Called when the client receives a Certificate record.
+    * Called when a client receives a Certificate record.
     * 
     * When this message will be sent:
     *    The server must send a certificate whenever the agreed-upon key
@@ -1448,7 +1449,7 @@
    };
    
    /**
-    * Called when the client receives a ServerKeyExchange record.
+    * Called when a client receives a ServerKeyExchange record.
     * 
     * When this message will be sent:
     *    This message will be sent immediately after the server
@@ -1525,7 +1526,129 @@
    };
    
    /**
-    * Called when the client receives a CertificateRequest record.
+    * Called when a client receives a ClientKeyExchange record.
+    * 
+    * @param c the connection.
+    * @param record the record.
+    * @param length the length of the handshake message.
+    */
+   tls.handleClientKeyExchange = function(c, record, length)
+   {
+      // this implementation only supports RSA, no Diffie-Hellman support
+      // so any length != 50 is invalid
+      if(length != 50)
+      {
+         c.error(c, {
+            message: 'Invalid key parameters. Only RSA is supported.',
+            send: true,
+            alert: {
+               level: tls.Alert.Level.fatal,
+               description: tls.Alert.Description.unsupported_certificate
+            }
+         });
+      }
+      else
+      {
+         var b = record.fragment;
+         msg =
+         {
+            version:
+            {
+               major: b.getByte(),
+               minor: b.getByte()
+            },
+            enc_pre_master_secret: readVector(b, 2).getBytes()
+         };
+         
+         // do rsa decryption
+         var privateKey = null;
+         if(c.getPrivateKey)
+         {
+            try
+            {
+               privateKey = c.getPrivateKey(c, c.session.serverCertificate);
+               privateKey = forge.pki.privateKeyFromPem(privateKey);
+            }
+            catch(ex)
+            {
+               c.error(c, {
+                  message: 'Could not get private key.',
+                  cause: ex,
+                  send: true,
+                  alert: {
+                     level: tls.Alert.Level.fatal,
+                     description: tls.Alert.Description.internal_error
+                  }
+               });
+            }
+         }
+         if(privateKey === null)
+         {
+            c.error(c, {
+               message: 'No private key set.',
+               send: true,
+               alert: {
+                  level: tls.Alert.Level.fatal,
+                  description: tls.Alert.Description.internal_error
+               }
+            });
+         }
+         else
+         {
+            try
+            {
+               // decrypt 48-byte pre-master secret
+               var sp = c.session.sp;
+               sp.pre_master_secret = forge.pki.rsa.decrypt(
+                  msg.enc_pre_master_secret, privateKey, 48);
+               
+               // ensure client hello version matches first 2 bytes
+               if(msg.version.major !== sp.pre_master_secret[0] ||
+                  msg.version.minor !== sp.pre_master_secret[1])
+               {
+                  // error, do not send alert (see BLEI attack below)
+                  throw {message: 'TLS version rollback attack detected.'};
+               }
+            }
+            catch(ex)
+            {
+               /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
+                  TLS server which is using PKCS#1 encoded RSA, so instead of
+                  failing here, we generate 48 random bytes and use that as
+                  the pre-master secret. */
+               sp.pre_master_secret = forge.random.getBytes(48);
+            };
+         }
+      }   
+      
+      if(!c.fail)
+      {
+         // expect a CertificateVerify message if a Certificate was received
+         // that has not been marked as having no signing capability, otherwise
+         // expect ChangeCipherSpec
+         c.expect = CCC;
+         if(c.session.clientCertificate !== null)
+         {
+            c.expect = CCV;
+            
+            // if there is no keyUsage extension, assume certificate can sign
+            var ext = c.session.clientCertificate.getExtension(
+               {name: 'keyUsage'});
+            if(ext !== null && ext.digitalSignature !== true)
+            {
+               // extension exists and digitalSignature is not on, do not
+               // expect CertificateVerify, skip to ChangeCipherSpec
+               c.expect = CCC;
+            }
+         }
+         
+         // continue
+         c.process();
+      }
+   };
+   
+   /**
+    * Called when a client receives a CertificateRequest record.
     * 
     * When this message will be sent:
     *    A non-anonymous server can optionally request a certificate from
@@ -1588,7 +1711,7 @@
    };
    
    /**
-    * Called when the client receives a ServerHelloDone record.
+    * Called when a client receives a ServerHelloDone record.
     * 
     * When this message will be sent:
     *    The server hello done message is sent by the server to indicate
@@ -1699,7 +1822,8 @@
          // create callback to handle client signature (for client-certs)
          var callback = function(c, signature)
          {
-            if(c.session.certificateRequest !== null)
+            if(c.session.certificateRequest !== null &&
+               c.session.clientCertificate !== null)
             {
                // create certificate verify message
                tls.queue(c, tls.createRecord(
@@ -1794,7 +1918,7 @@
          }
          
          // expect a Finished record next
-         c.expect = SFI;
+         c.expect = client ? SFI : CFI;
          
          // continue
          c.process();
@@ -2051,7 +2175,7 @@
    };
    
    /**
-    * Called when the client receives a Handshake record.
+    * Called when a client receives a Handshake record.
     * 
     * @param c the connection.
     * @param record the record.
@@ -2118,7 +2242,7 @@
    };
    
    /**
-    * Called when the client receives an ApplicationData record.
+    * Called when a client receives an ApplicationData record.
     * 
     * @param c the connection.
     * @param record the record.
@@ -3163,7 +3287,21 @@
                });
             }
          }
-         b = forge.pki.rsa.encrypt(b, privateKey, 0x01);
+         if(privateKey === null)
+         {
+            c.error(c, {
+               message: 'No private key set.',
+               send: true,
+               alert: {
+                  level: tls.Alert.Level.fatal,
+                  description: tls.Alert.Description.internal_error
+               }
+            });
+         }
+         else
+         {
+            b = forge.pki.rsa.encrypt(b, privateKey, 0x01);
+         }
          callback(c, b);
       };
       

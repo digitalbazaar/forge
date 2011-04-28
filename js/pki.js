@@ -2614,7 +2614,7 @@
     * @param pub true for a public key operation, false for private.
     * @param ml the message length, if known.
     * 
-    * @return the decrypted message in as a byte string.
+    * @return the decrypted message as a byte string.
     */
    pki.rsa.decrypt = function(ed, key, pub, ml)
    {
