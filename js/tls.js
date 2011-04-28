@@ -1607,7 +1607,9 @@
                   msg.version.minor !== sp.pre_master_secret[1])
                {
                   // error, do not send alert (see BLEI attack below)
-                  throw {message: 'TLS version rollback attack detected.'};
+                  throw {
+                     message: 'TLS version rollback attack detected.'
+                  };
                }
             }
             catch(ex)
@@ -1624,22 +1626,14 @@
       if(!c.fail)
       {
          // expect a CertificateVerify message if a Certificate was received
-         // that has not been marked as having no signing capability, otherwise
+         // that does not have fixed Diffie-Hellman params, otherwise
          // expect ChangeCipherSpec
          c.expect = CCC;
          if(c.session.clientCertificate !== null)
          {
+            // only RSA support, so expect CertificateVerify 
+            // TODO: support Diffie-Helman?
             c.expect = CCV;
-            
-            // if there is no keyUsage extension, assume certificate can sign
-            var ext = c.session.clientCertificate.getExtension(
-               {name: 'keyUsage'});
-            if(ext !== null && ext.digitalSignature !== true)
-            {
-               // extension exists and digitalSignature is not on, do not
-               // expect CertificateVerify, skip to ChangeCipherSpec
-               c.expect = CCC;
-            }
          }
          
          // continue
@@ -1707,6 +1701,76 @@
          
          // continue
          c.process();
+      }
+   };
+   
+   /**
+    * Called when a server receives a CertificateVerify record.
+    * 
+    * @param c the connection.
+    * @param record the record.
+    * @param length the length of the handshake message.
+    */
+   tls.handleCertificateVerify = function(c, record, length)
+   {
+      if(length < 2)
+      {
+         c.error(c, {
+            message: 'Invalid CertificateVerify. Message too short.',
+            send: true,
+            alert: {
+               level: tls.Alert.Level.fatal,
+               description: tls.Alert.Description.illegal_parameter
+            }
+         });
+      }
+      else
+      {
+         var b = record.fragment;
+         msg =
+         {
+            signature: readVector(b, 2).getBytes()
+         };
+         
+         // TODO: add support for DSA
+         
+         // generate data to verify
+         var verify = forge.util.createBuffer();
+         verify.putBuffer(c.session.md5.digest());
+         verify.putBuffer(c.session.sha1.digest());
+         verify = b.getBytes();
+         
+         try
+         {
+            var cert = c.session.clientCertificate;
+            b = forge.pki.rsa.decrypt(msg.signature, cert.publicKey, b.length);
+            if(b !== verify)
+            {
+               throw {
+                  message: 'CertificateVerify signature does not match.'
+               };
+            }
+         }
+         catch(ex)
+         {
+            c.error(c, {
+               message: 'Bad signature in CertificateVerify.',
+               send: true,
+               alert: {
+                  level: tls.Alert.Level.fatal,
+                  description: tls.Alert.Description.handshake_failure
+               }
+            });
+         }
+         
+         if(!c.fail)
+         {
+            // expect ChangeCipherSpec
+            c.expect = CCC;
+            
+            // continue
+            c.process();
+         }
       }
    };
    
@@ -3373,7 +3437,7 @@
     */
    tls.createCertificateVerify = function(c, signature)
    {
-      /* Note: The signature will be stored in as digitally-signed opaque
+      /* Note: The signature will be stored in a "digitally-signed" opaque
          vector that has the length prefixed using 2 bytes, so include those
          2 bytes in the handshake message length. This is done as a minor
          optimization instead of calling writeVector(). */
