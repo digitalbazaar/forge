@@ -1262,5 +1262,265 @@ jQuery(function($)
       test.check();
    });
    
+   // function to create certificate
+   var createCert = function(keys, cn, data)
+   {
+      var cert = forge.pki.createCertificate();
+      cert.serialNumber = '01';
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+         cert.validity.notBefore.getFullYear() + 1);
+      var attrs = [{
+         name: 'commonName',
+         value: cn
+      }, {
+         name: 'countryName',
+         value: 'US'
+      }, {
+         shortName: 'ST',
+         value: 'Virginia'
+      }, {
+         name: 'localityName',
+         value: 'Blacksburg'
+      }, {
+         name: 'organizationName',
+         value: 'Test'
+      }, {
+         shortName: 'OU',
+         value: 'Test'
+      }];
+      cert.setSubject(attrs);
+      cert.setIssuer(attrs);
+      cert.setExtensions([{
+         name: 'basicConstraints',
+         cA: true
+      }, {
+         name: 'keyUsage',
+         keyCertSign: true,
+         digitalSignature: true,
+         nonRepudiation: true,
+         keyEncipherment: true,
+         dataEncipherment: true
+      }, {
+         name: 'subjectAltName',
+         altNames: [{
+            type: 6, // URI
+            value: 'http://myuri.com/webid#me'
+         }]
+      }]);
+      // FIXME: add subjectKeyIdentifier extension
+      // FIXME: add authorityKeyIdentifier extension
+      cert.publicKey = keys.publicKey;
+      
+      // self-sign certificate
+      cert.sign(keys.privateKey);
+      
+      // save data
+      data[cn] = {
+         cert: forge.pki.certificateToPem(cert),
+         privateKey: forge.pki.privateKeyToPem(keys.privateKey)
+      };
+   };
+   
+   var generateCert = function(task, test, cn, data)
+   {
+      task.block();
+      
+      // create key-generation state and function to step algorithm
+      test.result.html(
+         'Generating 512-bit key-pair and certificate for \"' + cn + '\".');
+      var state = forge.pki.rsa.createKeyPairGenerationState(512);
+      var kgTime = +new Date();
+      var step = function()
+      {
+         // step key-generation
+         if(!forge.pki.rsa.stepKeyPairGenerationState(state, 1000))
+         {
+            test.result.html(test.result.html() + '.');
+            setTimeout(step, 1);
+         }
+         // key-generation complete
+         else
+         {
+            kgTime = +new Date() - kgTime;
+            forge.log.debug(cat, 'Total key-gen time', kgTime + 'ms');
+            try
+            {
+               createCert(state.keys, cn, data);
+               test.result.html(
+                  test.result.html() + 'done. Time=' + kgTime + 'ms. ');
+               task.unblock();
+            }
+            catch(ex)
+            {
+               forge.log.error(cat, ex, ex.message ? ex.message : '');
+               test.result.html(ex.message);
+               test.fail();
+               task.fail();
+            }
+         }
+      };
+      
+      // run key-gen algorithm
+      setTimeout(step, 0);
+   };
+   
+   // FIXME: remove me
+   $('#tests').empty();
+   tests = [];
+   
+   var clientSessionCache = forge.tls.createSessionCache();
+   var serverSessionCache = forge.tls.createSessionCache();
+   
+   addTest('TLS connection, no client certificate', function(task, test)
+   {
+      var data = {};
+      
+      task.next('generate server certifcate', function(task)
+      {
+         generateCert(task, test, 'server', data);
+      });
+      
+      task.next('starttls', function(task)
+      {
+         test.result.html(test.result.html() + 'Starting TLS...');
+         
+         var end =
+         {
+            client: null,
+            server: null
+         };
+         var success = false;
+         
+         // create client
+         end.client = forge.tls.createConnection(
+         {
+            server: false,
+            caStore: [data.server.cert],
+            sessionCache: clientSessionCache,
+            // optional cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            virtualHost: 'server',
+            verify: function(c, verified, depth, certs)
+            {
+               test.result.html(test.result.html() +
+                  'Client: Verify TLS certificate ' + depth +
+                  ' verified: ' + verified + '...');
+               if(verified !== true)
+               {
+                  test.fail();
+                  task.fail();
+               }
+               return verified;
+            },
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Client connected...');
+               
+               // send message to server
+               setTimeout(function()
+               {
+                  c.prepare('Hello Server');
+               }, 1);
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to server
+               end.server.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               var response = c.data.getBytes();
+               test.result.html(test.result.html() +
+                  'Client received \"' + response + '\"');
+               success = (response === 'Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Client disconnected.');
+               test.result.html(success ? 'Success' : 'Failure');
+               if(success)
+               {
+                  test.expect.html('Success');
+                  task.unblock();
+                  test.pass();
+               }
+               else
+               {
+                  console.log('closed fail');
+                  test.fail();
+                  task.fail();
+               }
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // create server
+         end.server = forge.tls.createConnection(
+         {
+            server: true,
+            sessionCache: serverSessionCache,
+            // optional cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Server connected...');
+            },
+            getCertificate: function(c, hint)
+            {
+               test.result.html(test.result.html() +
+                  'Server getting certificate for \"' + hint[0] + '\"...');
+               return data.server.cert;
+            },
+            getPrivateKey: function(c, cert)
+            {
+               return data.server.privateKey;
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to client
+               end.client.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               test.result.html(test.result.html() +
+                  'Server received \"' + c.data.getBytes() + '\"');
+               
+               // send response
+               c.prepare('Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Server disconnected.');
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               console.log(error);
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // start handshake
+         task.block();
+         end.client.handshake();
+      });
+   });
+   
    init();
 });
