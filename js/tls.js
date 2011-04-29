@@ -1326,7 +1326,7 @@
          else
          {
             // not resuming, expect a Certificate or ClientKeyExchange
-            c.expect = c.verifyClient ? CCE : CKE;
+            c.expect = (c.verifyClient !== false) ? CCE : CKE;
             c.session.resuming = false;
             
             // create new security parameters
@@ -1382,7 +1382,7 @@
             }));
             
             // request client certificate if set
-            if(c.verifyClient)
+            if(c.verifyClient !== false)
             {
                // queue certificate request
                tls.queue(c, tls.createRecord(
@@ -1491,12 +1491,17 @@
          
          if(!c.fail)
          {
-            // ensure at least 1 certificate was provided
-            if(certs.length === 0)
+            // ensure at least 1 certificate was provided if in client-mode
+            // or if verifyClient was set to true to require a certificate
+            // (as opposed to 'optional')
+            var client = (c.entity === tls.ConnectionEnd.client);
+            if((client || c.verifyClient === true) && certs.length === 0)
             {
-               // error, no server certificate
+               // error, no certificate
                c.error(c, {
-                  message: 'No server certificate provided.',
+                  message: client ?
+                     'No server certificate provided.' :
+                     'No client certificate provided.',
                   send: true,
                   alert: {
                      level: tls.Alert.Level.fatal,
@@ -1507,11 +1512,18 @@
             // check certificate chain
             else if(tls.verifyCertificateChain(c, certs))
             {
-               // save server certificate in session
-               c.session.serverCertificate = certs[0];
+               // save certificate in session
+               if(client)
+               {
+                  c.session.serverCertificate = certs[0];
+               }
+               else
+               {
+                  c.session.clientCertificate = certs[0];
+               }
                
-               // expect a ServerKeyExchange message next
-               c.expect = SKE;
+               // expect a ServerKeyExchange or ClientKeyExchange message next
+               c.expect = client ? SKE : CKE;
             }
             
             // continue
@@ -1794,7 +1806,14 @@
       }
       else
       {
+         // rewind to get full bytes for message so it can be manually
+         // digested below (special case for CertificateVerify messages because
+         // they must be digested *after* handling as opposed to all others)
          var b = record.fragment;
+         b.read -= 4;
+         var msgBytes = b.bytes();
+         b.read += 4;
+         
          msg =
          {
             signature: readVector(b, 2).getBytes()
@@ -1806,18 +1825,23 @@
          var verify = forge.util.createBuffer();
          verify.putBuffer(c.session.md5.digest());
          verify.putBuffer(c.session.sha1.digest());
-         verify = b.getBytes();
+         verify = verify.getBytes();
          
          try
          {
             var cert = c.session.clientCertificate;
-            b = forge.pki.rsa.decrypt(msg.signature, cert.publicKey, b.length);
+            b = forge.pki.rsa.decrypt(
+               msg.signature, cert.publicKey, true, verify.length);
             if(b !== verify)
             {
                throw {
                   message: 'CertificateVerify signature does not match.'
                };
             }
+            
+            // digest message now that it has been handled
+            c.session.md5.update(msgBytes);
+            c.session.sha1.update(msgBytes);
          }
          catch(ex)
          {
@@ -2373,13 +2397,14 @@
                };
             }
             
-            /* Update handshake messages digest. The Finished message is not
-               digested here. It couldn't have been digested as part of the
-               verify_data that is itself included in the Finished message.
-               The message is manually digested in the Finished message
-               handler. HelloRequest messages are simply never included in
-               the handshake message digest according to spec. */
+            /* Update handshake messages digest. The Finished and
+               CertificateVerify messages are not digested here. They can't
+               be digested as part of the verify_data that they contain.
+               These messages are manually digested in their handlers.
+               HelloRequest messages are simply never included in the
+               handshake message digest according to spec. */
             if(type !== tls.HandshakeType.hello_request &&
+               type !== tls.HandshakeType.certificate_verify &&
                type !== tls.HandshakeType.finished)
             {
                c.session.md5.update(bytes);
@@ -2546,15 +2571,14 @@
    // map server current expect state and handshake type to function
    // Note: CAD[CH] does not map to FB because renegotation is prohibited
    var FB = tls.handleClientHello;
-   var FC = tls.handleClientCertificate;
-   var FD = tls.handleClientKeyExchange;
-   var FE = tls.handleCertificateVerify;
+   var FC = tls.handleClientKeyExchange;
+   var FD = tls.handleCertificateVerify;
    hsTable[tls.ConnectionEnd.server] = [
    //      01,CH,02,03,04,05,06,07,08,09,10,CC,12,13,14,CV,CK,17,18,19,FI
    /*CHE*/[__,FB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-   /*CCE*/[__,__,__,__,__,__,__,__,__,__,__,FC,__,__,__,__,__,__,__,__,__],
-   /*CKE*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FD,__,__,__,__],
-   /*CCV*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FE,__,__,__,__,__],
+   /*CCE*/[__,__,__,__,__,__,__,__,__,__,__,F6,__,__,__,__,__,__,__,__,__],
+   /*CKE*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FC,__,__,__,__],
+   /*CCV*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FD,__,__,__,__,__],
    /*CCC*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
    /*CFI*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FA],
    /*CAD*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
@@ -3578,8 +3602,9 @@
       // TODO: verify that this data format is correct
       // add distinguished names from CA store
       var cAs = forge.util.createBuffer();
-      for(var key in caStore.certs)
+      for(var key in c.caStore.certs)
       {
+         var cert = c.caStore.certs[key];
          var dn = forge.pki.distinguishedNameToAsn1(cert.subject);
          cAs.putBuffer(forge.asn1.toDer(dn));
       }
@@ -4840,8 +4865,8 @@
     *       see tls.CipherSuites.
     *    connected: function(conn) called when the first handshake completes.
     *    virtualHost: the virtual server name to use in a TLS SNI extension.
-    *    verifyClient: true to request a client certificate in server
-    *       mode, false not to (default: false).
+    *    verifyClient: true to require a client certificate in server
+    *       mode, 'optional' to request one, false not to (default: false).
     *    verify: a handler used to custom verify certificates in the chain.
     *    getCertificate: an optional callback used to get a certificate.
     *    getPrivateKey: an optional callback used to get a private key.
