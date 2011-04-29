@@ -442,8 +442,7 @@
    util.ByteBuffer.prototype.toHex = function()
    {
       var rval = '';
-      var len = this.length();
-      for(var i = this.read; i < len; ++i)
+      for(var i = this.read; i < this.data.length; ++i)
       {
          var b = this.data.charCodeAt(i);
          if(b < 16)
