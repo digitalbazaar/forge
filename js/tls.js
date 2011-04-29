@@ -1022,8 +1022,7 @@
             },
             random: forge.util.createBuffer(b.getBytes(32)),
             session_id: readVector(b, 1),
-            extensions: [],
-            cSuite: null
+            extensions: []
          };
          if(client)
          {
@@ -1100,7 +1099,8 @@
          // get the chosen (ServerHello) cipher suite
          if(client)
          {
-            msg.cSuite = tls.getCipherSuite(msg.cipher_suite);
+            // FIXME: should be checking configured acceptable cipher suites
+            c.session.cipherSuite = tls.getCipherSuite(msg.cipher_suite);
          }
          // get a supported preferred (ClientHello) cipher suite
          else
@@ -1109,9 +1109,10 @@
             var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
             while(tmp.length() > 0)
             {
+               // FIXME: should be checking configured acceptable suites
                // cipher suites take up 2 bytes
-               msg.cSuite = tls.getCipherSuite(tmp.getBytes(2));
-               if(msg.cSuite !== null)
+               c.session.cipherSuite = tls.getCipherSuite(tmp.getBytes(2));
+               if(c.session.cipherSuite !== null)
                {
                   break;
                }
@@ -1119,7 +1120,7 @@
          }
          
          // cipher suite not supported
-         if(msg.cSuite === null)
+         if(c.session.cipherSuite === null)
          {
             c.error(c, {
                message: 'No cipher suites in common.',
@@ -1133,6 +1134,15 @@
          }
          
          // TODO: handle compression methods
+         if(client)
+         {
+            c.session.compressionMethod = msg.compression_method;
+         }
+         else
+         {
+            // no compression
+            c.session.compressionMethod = 0x00;
+         }
       }
       
       return msg;
@@ -1156,7 +1166,7 @@
       // only AES CBC is presently supported, so just change the key
       // length based on the chosen cipher suite
       var keyLength;
-      switch(msg.cSuite)
+      switch(c.session.cipherSuite)
       {
          case tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA:
             keyLength = 16;
@@ -2349,6 +2359,8 @@
                c.session =
                {
                   serverNameList: [],
+                  cipherSuite: null,
+                  compressionMethod: null,
                   serverCertificate: null,
                   clientCertificate: null,
                   md5: forge.md.md5.create(),
@@ -3173,40 +3185,14 @@
     */
    tls.createServerHello = function(c)
    {
-      // create supported cipher suites
-      var cipherSuites = forge.util.createBuffer();
-      for(var i = 0; i < c.cipherSuites.length; ++i)
-      {
-         var cs = c.cipherSuites[i];
-         cipherSuites.putByte(cs[0]);
-         cipherSuites.putByte(cs[1]);
-      }
-      var cSuites = cipherSuites.length();
-      
-      // create supported compression methods, null always supported, but
-      // also support deflate if connection has inflate and deflate methods
-      var compressionMethods = forge.util.createBuffer();
-      compressionMethods.putByte(0x00); // null method
-      // FIXME: deflate support disabled until issues with raw deflate data
-      // without zlib headers are resolved
-      /*
-      if(c.inflate !== null && c.deflate !== null)
-      {
-         compressionMethods.putByte(0x01); // deflate method
-      }
-      */
-      var cMethods = compressionMethods.length();
-      
       // determine length of the handshake message
-      // cipher suites and compression methods size will need to be
-      // updated if more get added to the list
       var sessionId = c.session.id;
       var length =
          sessionId.length + 1 + // session ID vector
          2 +                    // version (major + minor)
          4 + 28 +               // random time and random bytes
-         2 + cSuites +          // cipher suites vector
-         1 + cMethods;          // compression methods vector
+         2 +                    // chosen cipher suite
+         1;                     // chosen compression method
       
       // build record fragment
       var rval = forge.util.createBuffer();
@@ -3215,9 +3201,9 @@
       rval.putByte(tls.Version.major);           // major version
       rval.putByte(tls.Version.minor);           // minor version
       rval.putBytes(c.session.sp.server_random); // random time + bytes
-      writeVector(rval, 1, forge.util.createBuffer(sessionId));
-      writeVector(rval, 2, cipherSuites);
-      writeVector(rval, 1, compressionMethods);
+      rval.putByte(c.session.cipherSuite[0]);    // cipher suite
+      rval.putByte(c.session.cipherSuite[1]);
+      rval.putByte(c.session.compressionMethod); // compression method
       return rval;
    };
    
@@ -4603,6 +4589,8 @@
             c.session =
             {
                id: sessionId,
+               cipherSuite: null,
+               compressionMethod: null,
                serverCertificate: null,
                certificateRequest: null,
                clientCertificate: null,
