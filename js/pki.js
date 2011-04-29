@@ -4,7 +4,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  * 
  * The ASN.1 representation of an X.509v3 certificate is as follows
  * (see RFC 2459):
@@ -1790,6 +1790,18 @@
    };
    
    /**
+    * Converts a DistinguishedName (subject or issuer) to an ASN.1 object.
+    * 
+    * @param dn the DistinguishedName.
+    * 
+    * @return the asn1 representation of a DistinguishedName.
+    */
+   pki.distinguishedNameToAsn1 = function(dn)
+   {
+      return _dnToAsn1(dn);
+   };
+   
+   /**
     * Converts an X.509v3 RSA certificate to an ASN.1 object.
     * 
     * @param cert the certificate.
@@ -1826,11 +1838,12 @@
     */
    pki.createCaStore = function(certs)
    {
-      // stored certificates
-      var _certs = {};
-      
       // create CA store
-      var caStore = {};
+      var caStore =
+      {
+         // stored certificates
+         certs: {}
+      };
       
       /**
        * Gets the certificate that issued the passed certificate or its
@@ -1847,9 +1860,9 @@
          // TODO: produce issuer hash if it doesn't exist
          
          // get the entry using the cert's issuer hash
-         if(cert.issuer.hash in _certs)
+         if(cert.issuer.hash in caStore.certs)
          {
-            rval = _certs[cert.issuer.hash];
+            rval = caStore.certs[cert.issuer.hash];
             
             // see if there are multiple matches
             if(rval.constructor == Array)
@@ -1876,10 +1889,10 @@
       caStore.addCertificate = function(cert)
       {
          // TODO: produce subject hash if it doesn't exist
-         if(cert.subject.hash in _certs)
+         if(cert.subject.hash in caStore.certs)
          {
             // subject hash already exists, append to array
-            var tmp = _certs[cert.subject.hash];
+            var tmp = caStore.certs[cert.subject.hash];
             if(tmp.constructor != Array)
             {
                tmp = [tmp];
@@ -1888,7 +1901,7 @@
          }
          else
          {
-            _certs[cert.subject.hash] = cert;
+            caStore.certs[cert.subject.hash] = cert;
          }
       };
       

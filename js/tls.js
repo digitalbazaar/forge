@@ -3391,6 +3391,28 @@
    };
    
    /**
+    * Creates a ServerKeyExchange message.
+    * 
+    * @param c the connection.
+    * 
+    * @return the ServerKeyExchange byte buffer.
+    */
+   tls.createServerKeyExchange = function(c)
+   {
+      // this implementation only supports RSA, no Diffie-Hellman support,
+      // so this record is empty
+      
+      // determine length of the handshake message
+      var length = 0;
+      
+      // build record fragment
+      var rval = forge.util.createBuffer();
+      rval.putByte(tls.HandshakeType.server_key_exchange);
+      rval.putInt24(length);
+      return rval;
+   };
+   
+   /**
     * Gets the signed data used to verify a client-side certificate. See
     * tls.createCertificateVerify() for details.
     * 
@@ -3531,6 +3553,62 @@
       // add vector length bytes
       rval.putInt16(signature.length);
       rval.putBytes(signature);
+      return rval;
+   };
+   
+   /**
+    * Creates a CertificateRequest message.
+    * 
+    * @param c the connection.
+    * 
+    * @return the CertificateRequest byte buffer.
+    */
+   tls.createCertificateRequest = function(c)
+   {
+      // TODO: support other certificate types
+      var certTypes = forge.util.createBuffer();
+      
+      // common RSA certificate type
+      certTypes.putByte(0x01);
+      
+      // TODO: verify that this data format is correct
+      // add distinguished names from CA store
+      var cAs = forge.util.createBuffer();
+      for(var key in caStore.certs)
+      {
+         var dn = forge.pki.distinguishedNameToAsn1(cert.subject);
+         cAs.putBuffer(forge.asn1.toDer(dn));
+      }
+      
+      // TODO: TLS 1.1 and 1.2 have different formats
+      
+      // determine length of the handshake message
+      var length =
+         1 + certTypes.length() +
+         2 + cAs.length();
+      
+      // build record fragment
+      var rval = forge.util.createBuffer();
+      rval.putByte(tls.HandshakeType.certificate_request);
+      rval.putInt24(length);
+      writeVector(rval, 1, certTypes);
+      writeVector(rval, 2, cAs);
+      return rval;
+   };
+   
+   /**
+    * Creates a ServerHelloDone message.
+    * 
+    * @param c the connection.
+    * 
+    * @return the ServerHelloDone byte buffer.
+    */
+   tls.createServerHelloDone = function(c)
+   {
+      // build record fragment
+      var rval = forge.util.createBuffer();
+      rval.putByte(tls.HandshakeType.server_hello_done);
+      rval.putInt24(0);
       return rval;
    };
    
@@ -4270,8 +4348,8 @@
             
             if(fatal)
             {
-               // fatal error, close connection
-               c.close();
+               // fatal error, close connection, do not clear fail
+               c.close(false);
             }
          },
          deflate: options.deflate || null,
@@ -4280,8 +4358,10 @@
       
       /**
        * Resets a closed TLS connection for reuse. Called in c.close().
+       * 
+       * @param clearFail true to clear the fail flag (default: true).
        */
-      c.reset = function()
+      c.reset = function(clearFail)
       {
          c.record = null;
          c.session = null;
@@ -4297,7 +4377,7 @@
          c.handshakes = 0;
          c.handshaking = false;
          c.isConnected = false;
-         c.fail = false;
+         c.fail = !(clearFail || typeof(clearFail) === 'undefined');
          c.input.clear();
          c.tlsData.clear();
          c.data.clear();
@@ -4481,6 +4561,12 @@
          }
          else
          {
+            // clear fail flag on reuse
+            if(c.fail && !c.open && c.handshakes === 0)
+            {
+               c.fail = false;
+            }
+            
             // now handshaking
             c.handshaking = true;
             
@@ -4614,8 +4700,10 @@
       
       /**
        * Closes the connection (sends a close_notify alert).
+       * 
+       * @param clearFail true to clear the fail flag (default: true).
        */
-      c.close = function()
+      c.close = function(clearFail)
       {
          // save session if connection didn't fail
          if(!c.fail && c.sessionCache && c.session)
@@ -4646,8 +4734,8 @@
             }
          }
          
-         // reset TLS connection
-         c.reset();
+         // reset TLS connection, do not clear fail flag
+         c.reset(clearFail);
       };
       
       return c;
