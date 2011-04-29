@@ -2293,17 +2293,26 @@
             break;
       }
       
-      // call error handler
-      c.error(c, {
-         message: msg,
-         send: false,
-         // origin is the opposite end
-         origin: (c.entity === tls.ConnectionEnd.client) ? 'server' : 'client',
-         alert: alert
-      });
-      
-      // continue
-      c.process();
+      // close connection on close_notify, not an error
+      if(alert.description === tls.Alert.Description.close_notify)
+      {
+         c.close();
+      }
+      else
+      {
+         // call error handler
+         c.error(c, {
+            message: msg,
+            send: false,
+            // origin is the opposite end
+            origin: (c.entity === tls.ConnectionEnd.client) ?
+               'server' : 'client',
+            alert: alert
+         });
+         
+         // continue
+         c.process();
+      }
    };
    
    /**
@@ -2749,6 +2758,8 @@
     */
    tls.createConnectionState = function(c)
    {
+      var client = (c.entity === tls.ConnectionEnd.client);
+      
       var createMode = function()
       {
          var mode =
@@ -2854,8 +2865,10 @@
          sp.keys = tls.generateKeys(c, sp);
          
          // mac setup
-         state.read.macKey = sp.keys.server_write_MAC_key;
-         state.write.macKey = sp.keys.client_write_MAC_key;
+         state.read.macKey = client ?
+            sp.keys.server_write_MAC_key : sp.keys.client_write_MAC_key;
+         state.write.macKey = client ?
+            sp.keys.client_write_MAC_key : sp.keys.server_write_MAC_key;
          state.read.macLength = state.write.macLength = sp.mac_length;
          switch(sp.mac_algorithm)
          {
@@ -2875,16 +2888,16 @@
                state.read.cipherState =
                {
                   init: false,
-                  cipher: forge.aes.createDecryptionCipher(
-                     sp.keys.server_write_key),
-                  iv: sp.keys.server_write_IV
+                  cipher: forge.aes.createDecryptionCipher(client ?
+                     sp.keys.server_write_key : sp.keys.client_write_key),
+                  iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
                };
                state.write.cipherState =
                {
                   init: false,
-                  cipher: forge.aes.createEncryptionCipher(
-                     sp.keys.client_write_key),
-                  iv: sp.keys.client_write_IV
+                  cipher: forge.aes.createEncryptionCipher(client ?
+                     sp.keys.client_write_key : sp.keys.server_write_key),
+                  iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
                };
                state.read.cipherFunction = decrypt_aes_128_cbc_sha1;
                state.write.cipherFunction = encrypt_aes_128_cbc_sha1;
@@ -3659,10 +3672,12 @@
       b.putBuffer(c.session.sha1.digest());
       
       // TODO: determine prf function and verify length for TLS 1.2
+      var client = (c.entity === tls.ConnectionEnd.client);
       var sp = c.session.sp;
       var vdl = 12;
       var prf = prf_TLS1;
-      b = prf(sp.master_secret, 'client finished', b.getBytes(), vdl);
+      var label = client ? 'client finished' : 'server finished';
+      b = prf(sp.master_secret, label, b.getBytes(), vdl);
       
       // build record fragment
       var rval = forge.util.createBuffer();
@@ -4174,7 +4189,7 @@
       {
          // create cache
          rval = {};
-         rval.cache = cache;
+         rval.cache = cache || {};
          rval.capacity = Math.max(capacity || 100, 1);
          rval.order = [];
          
@@ -4208,7 +4223,7 @@
                key = rval.order[0];
             }
             
-            if(key in rval.cache)
+            if(key !== null && key in rval.cache)
             {
                // get cached session and remove from cache
                session = rval.cache[key];
