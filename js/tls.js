@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
  * 
  * The TLS Handshake Protocol involves the following steps:
  *
@@ -908,6 +908,8 @@
    
    /**
     * Supported cipher suites.
+    * 
+    * TODO: Make cipher suites modular.
     */
    tls.CipherSuites =
    {
@@ -1228,18 +1230,10 @@
             sessionId = forge.random.getBytes(32);
          }
          
-         // set up session
-         c.session =
-         {
-            id: sessionId,
-            clientHelloVersion: msg.version,
-            serverCertificate: null,
-            certificateRequest: null,
-            clientCertificate: null,
-            sp: session ? session.sp : {},
-            md5: forge.md.md5.create(),
-            sha1: forge.md.sha1.create()
-         };
+         // update session
+         c.session.id = sessionId;
+         c.session.clientHelloVersion = msg.version;
+         c.session.sp = session ? session.sp : {};
          
          // if a session is set, resume it
          if(session !== null)
@@ -2239,7 +2233,7 @@
    };
    
    /**
-    * Called when a client receives a Handshake record.
+    * Called when a Handshake record is received.
     * 
     * @param c the connection.
     * @param record the record.
@@ -2280,13 +2274,26 @@
          // handle expected message
          if(type in hsTable[c.entity][c.expect])
          {
+            // initialize server session
+            if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail)
+            {
+               c.handshaking = true;
+               c.session =
+               {
+                  serverCertificate: null,
+                  certificateRequest: null,
+                  clientCertificate: null,
+                  md5: forge.md.md5.create(),
+                  sha1: forge.md.sha1.create()
+               };
+            }
+            
             /* Update handshake messages digest. The Finished message is not
-               digested here it couldn't have been digested as part of the
+               digested here. It couldn't have been digested as part of the
                verify_data that is itself included in the Finished message.
                The message is manually digested in the Finished message
                handler. HelloRequest messages are simply never included in
-               the handshake message digest according to spec.
-             */
+               the handshake message digest according to spec. */
             if(type !== tls.HandshakeType.hello_request &&
                type !== tls.HandshakeType.finished)
             {
@@ -4211,7 +4218,7 @@
             pending: null,
             current: null
          };
-         c.expect = SHE;
+         c.expect = (c.entity === tls.ConnectionEnd.client) ? SHE : CHE;
          c.fragmented = null;
          c.records = [];
          c.open = false;
@@ -4402,6 +4409,9 @@
          }
          else
          {
+            // now handshaking
+            c.handshake = true;
+            
             // default to blank (new session)
             sessionId = sessionId || '';
             
@@ -4585,6 +4595,9 @@
    // expose cipher suites
    forge.tls.CipherSuites = tls.CipherSuites;
    
+   // expose session cache creation
+   forge.tls.createSessionCache = tls.createSessionCache;
+   
    /**
     * Creates a new TLS connection. This does not make any assumptions about
     * the transport layer that TLS is working on top of, ie: it does not
@@ -4678,10 +4691,7 @@
     * 
     * @return the new TLS connection.
     */
-   forge.tls.createConnection = function(options)
-   {
-      return tls.createConnection(options);
-   };
+   forge.tls.createConnection = tls.createConnection;
    
    /**
     * Wraps a forge.net socket with a TLS layer.
