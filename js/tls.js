@@ -1509,6 +1509,12 @@
                   }
                });
             }
+            // no certs to verify
+            else if(certs.length === 0)
+            {
+               // expect a ServerKeyExchange or ClientKeyExchange message next
+               c.expect = client ? SKE : CKE;
+            }
             // check certificate chain
             else if(tls.verifyCertificateChain(c, certs))
             {
@@ -2019,8 +2025,10 @@
             c.process();
          };
          
-         // if there is no certificate request, do callback immediately
-         if(c.session.certificateRequest === null)
+         // if there is no certificate request or no client certificate, do
+         // callback immediately
+         if(c.session.certificateRequest === null ||
+            c.session.clientCertificate === null)
          {
             callback(c, null);
          }
