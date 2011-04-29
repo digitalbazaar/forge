@@ -4482,7 +4482,7 @@
          else
          {
             // now handshaking
-            c.handshake = true;
+            c.handshaking = true;
             
             // default to blank (new session)
             sessionId = sessionId || '';
