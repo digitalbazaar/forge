@@ -1141,7 +1141,7 @@
          else
          {
             // no compression
-            c.session.compressionMethod = 0x00;
+            c.session.compressionMethod = tls.CompressionMethod.none;
          }
       }
       
@@ -1196,7 +1196,7 @@
          mac_algorithm: tls.MACAlgorithm.hmac_sha1,
          mac_length: 20,
          mac_key_length: 20,
-         compression_algorithm: msg.compression_method,
+         compression_algorithm: c.session.compressionMethod,
          pre_master_secret: null,
          master_secret: null,
          client_random: cRandom,
@@ -1607,8 +1607,8 @@
    tls.handleClientKeyExchange = function(c, record, length)
    {
       // this implementation only supports RSA, no Diffie-Hellman support
-      // so any length != 50 is invalid
-      if(length != 50)
+      // so any length != 66 is invalid
+      if(length != 66)
       {
          c.error(c, {
             message: 'Invalid key parameters. Only RSA is supported.',
@@ -1624,11 +1624,6 @@
          var b = record.fragment;
          msg =
          {
-            version:
-            {
-               major: b.getByte(),
-               minor: b.getByte()
-            },
             enc_pre_master_secret: readVector(b, 2).getBytes()
          };
          
@@ -1671,12 +1666,13 @@
             {
                // decrypt 48-byte pre-master secret
                var sp = c.session.sp;
-               sp.pre_master_secret = forge.pki.rsa.decrypt(
-                  msg.enc_pre_master_secret, privateKey, 48);
+               sp.pre_master_secret = privateKey.decrypt(
+                  msg.enc_pre_master_secret);
                
                // ensure client hello version matches first 2 bytes
-               if(msg.version.major !== sp.pre_master_secret[0] ||
-                  msg.version.minor !== sp.pre_master_secret[1])
+               var version = c.session.clientHelloVersion;
+               if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
+                  version.minor !== sp.pre_master_secret.charCodeAt(1))
                {
                   // error, do not send alert (see BLEI attack below)
                   throw {
@@ -1989,11 +1985,11 @@
                data: tls.createFinished(c)
             }));
             
-            // send records
-            tls.flush(c);
-            
             // expect a server ChangeCipherSpec message next
             c.expect = SCC;
+            
+            // send records
+            tls.flush(c);
             
             // continue
             c.process();
@@ -2164,9 +2160,6 @@
                type: tls.ContentType.handshake,
                data: tls.createFinished(c)
             }));
-            
-            // send records
-            tls.flush(c);
          }
          
          // expect application data next
@@ -2192,6 +2185,9 @@
          {
             c.session = null;
          }
+         
+         // send records
+         tls.flush(c);
          
          // now connected
          c.isConnected = true;
@@ -2868,7 +2864,7 @@
                break;
              default:
                 throw {
-                   message: 'Unsupported MAC algorithm'
+                   message: 'Unsupported MAC algorithm.'
                 };
          }
          
@@ -2895,7 +2891,7 @@
                break;
             default:
                throw {
-                  message: 'Unsupported cipher algorithm'
+                  message: 'Unsupported cipher algorithm.'
                };
          }
          switch(sp.cipher_type)
@@ -2904,7 +2900,7 @@
                break;
             default:
                throw {
-                  message: 'Unsupported cipher type'
+                  message: 'Unsupported cipher type.'
                };
          }
          
@@ -2919,7 +2915,7 @@
                break;
             default:
                throw {
-                  message: 'Unsupported compression algorithm'
+                  message: 'Unsupported compression algorithm.'
                };
          }
       }
@@ -3087,13 +3083,13 @@
       // create supported compression methods, null always supported, but
       // also support deflate if connection has inflate and deflate methods
       var compressionMethods = forge.util.createBuffer();
-      compressionMethods.putByte(0x00); // null method
+      compressionMethods.putByte(tls.CompressionMethod.none);
       // FIXME: deflate support disabled until issues with raw deflate data
       // without zlib headers are resolved
       /*
       if(c.inflate !== null && c.deflate !== null)
       {
-         compressionMethods.putByte(0x01); // deflate method
+         compressionMethods.putByte(tls.CompressionMethod.deflate);
       }
       */
       var cMethods = compressionMethods.length();
@@ -3201,9 +3197,10 @@
       rval.putByte(tls.Version.major);           // major version
       rval.putByte(tls.Version.minor);           // minor version
       rval.putBytes(c.session.sp.server_random); // random time + bytes
-      rval.putByte(c.session.cipherSuite[0]);    // cipher suite
+      writeVector(rval, 1, forge.util.createBuffer(sessionId));
+      rval.putByte(c.session.cipherSuite[0]);
       rval.putByte(c.session.cipherSuite[1]);
-      rval.putByte(c.session.compressionMethod); // compression method
+      rval.putByte(c.session.compressionMethod);
       return rval;
    };
    
@@ -3257,7 +3254,15 @@
             writeVector(certBuffer, 3, der);
             
             // save certificate
-            c.session.clientCertificate = forge.pki.certificateFromAsn1(asn1);
+            cert = forge.pki.certificateFromAsn1(asn1);
+            if(client)
+            {
+               c.session.clientCertificate = cert;
+            }
+            else
+            {
+               c.session.serverCertificate = cert;
+            }
          }
          catch(ex)
          {
