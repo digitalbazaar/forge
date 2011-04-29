@@ -1366,14 +1366,9 @@ jQuery(function($)
       setTimeout(step, 0);
    };
    
-   // FIXME: remove me
-   $('#tests').empty();
-   tests = [];
-   
-   var clientSessionCache = forge.tls.createSessionCache();
-   var serverSessionCache = forge.tls.createSessionCache();
-   
-   addTest('TLS connection, no client certificate', function(task, test)
+   var clientSessionCache1 = forge.tls.createSessionCache();
+   var serverSessionCache1 = forge.tls.createSessionCache();
+   addTest('TLS connection, w/o client-certificate', function(task, test)
    {
       var data = {};
       
@@ -1398,7 +1393,7 @@ jQuery(function($)
          {
             server: false,
             caStore: [data.server.cert],
-            sessionCache: clientSessionCache,
+            sessionCache: clientSessionCache1,
             // optional cipher suites in order of preference
             cipherSuites: [
                forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
@@ -1407,8 +1402,9 @@ jQuery(function($)
             verify: function(c, verified, depth, certs)
             {
                test.result.html(test.result.html() +
-                  'Client: Verify TLS certificate ' + depth +
-                  ' verified: ' + verified + '...');
+                  'Client verifying certificate w/CN: \"' +
+                  certs[0].subject.getField('CN').value +
+                  '\", verified: ' + verified + '...');
                if(verified !== true)
                {
                   test.fail();
@@ -1469,7 +1465,7 @@ jQuery(function($)
          end.server = forge.tls.createConnection(
          {
             server: true,
-            sessionCache: serverSessionCache,
+            sessionCache: serverSessionCache1,
             // optional cipher suites in order of preference
             cipherSuites: [
                forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
@@ -1477,6 +1473,361 @@ jQuery(function($)
             connected: function(c)
             {
                test.result.html(test.result.html() + 'Server connected...');
+            },
+            getCertificate: function(c, hint)
+            {
+               test.result.html(test.result.html() +
+                  'Server getting certificate for \"' + hint[0] + '\"...');
+               return data.server.cert;
+            },
+            getPrivateKey: function(c, cert)
+            {
+               return data.server.privateKey;
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to client
+               end.client.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               test.result.html(test.result.html() +
+                  'Server received \"' + c.data.getBytes() + '\"');
+               
+               // send response
+               c.prepare('Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Server disconnected.');
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               console.log(error);
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // start handshake
+         task.block();
+         end.client.handshake();
+      });
+   });
+   
+   var clientSessionCache2 = forge.tls.createSessionCache();
+   var serverSessionCache2 = forge.tls.createSessionCache();
+   addTest('TLS connection, w/optional client certificate', function(task, test)
+   {
+      var data = {};
+      
+      task.next('generate server certifcate', function(task)
+      {
+         generateCert(task, test, 'server', data);
+      });
+      
+      // client-cert generated but not sent in this test
+      task.next('generate client certifcate', function(task)
+      {
+         generateCert(task, test, 'client', data);
+      });
+      
+      task.next('starttls', function(task)
+      {
+         test.result.html(test.result.html() + 'Starting TLS...');
+         
+         var end =
+         {
+            client: null,
+            server: null
+         };
+         var success = false;
+         
+         // create client
+         end.client = forge.tls.createConnection(
+         {
+            server: false,
+            caStore: [data.server.cert],
+            sessionCache: clientSessionCache2,
+            // supported cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            virtualHost: 'server',
+            verify: function(c, verified, depth, certs)
+            {
+               test.result.html(test.result.html() +
+                  'Client verifying certificate w/CN: \"' +
+                  certs[0].subject.getField('CN').value +
+                  '\", verified: ' + verified + '...');
+               if(verified !== true)
+               {
+                  test.fail();
+                  task.fail();
+               }
+               return verified;
+            },
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Client connected...');
+               
+               // send message to server
+               setTimeout(function()
+               {
+                  c.prepare('Hello Server');
+               }, 1);
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to server
+               end.server.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               var response = c.data.getBytes();
+               test.result.html(test.result.html() +
+                  'Client received \"' + response + '\"');
+               success = (response === 'Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Client disconnected.');
+               test.result.html(success ? 'Success' : 'Failure');
+               if(success)
+               {
+                  test.expect.html('Success');
+                  task.unblock();
+                  test.pass();
+               }
+               else
+               {
+                  console.log('closed fail');
+                  test.fail();
+                  task.fail();
+               }
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // create server
+         end.server = forge.tls.createConnection(
+         {
+            server: true,
+            caStore: [data.client.cert],
+            sessionCache: serverSessionCache2,
+            // supported cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Server connected...');
+            },
+            verifyClient: 'optional',
+            verify: function(c, verified, depth, certs)
+            {
+               test.result.html(test.result.html() +
+                  'Server verifying certificate w/CN: \"' +
+                  certs[0].subject.getField('CN').value +
+                  '\", verified: ' + verified + '...');
+               if(verified !== true)
+               {
+                  test.fail();
+                  task.fail();
+               }
+               return verified;
+            },
+            getCertificate: function(c, hint)
+            {
+               test.result.html(test.result.html() +
+                  'Server getting certificate for \"' + hint[0] + '\"...');
+               return data.server.cert;
+            },
+            getPrivateKey: function(c, cert)
+            {
+               return data.server.privateKey;
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to client
+               end.client.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               test.result.html(test.result.html() +
+                  'Server received \"' + c.data.getBytes() + '\"');
+               
+               // send response
+               c.prepare('Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Server disconnected.');
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               console.log(error);
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // start handshake
+         task.block();
+         end.client.handshake();
+      });
+   });
+   
+   var clientSessionCache3 = forge.tls.createSessionCache();
+   var serverSessionCache3 = forge.tls.createSessionCache();
+   addTest('TLS connection, w/client certificate', function(task, test)
+   {
+      var data = {};
+      
+      task.next('generate server certifcate', function(task)
+      {
+         generateCert(task, test, 'server', data);
+      });
+      
+      task.next('generate client certifcate', function(task)
+      {
+         generateCert(task, test, 'client', data);
+      });
+      
+      task.next('starttls', function(task)
+      {
+         test.result.html(test.result.html() + 'Starting TLS...');
+         
+         var end =
+         {
+            client: null,
+            server: null
+         };
+         var success = false;
+         
+         // create client
+         end.client = forge.tls.createConnection(
+         {
+            server: false,
+            caStore: [data.server.cert],
+            sessionCache: clientSessionCache3,
+            // supported cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            virtualHost: 'server',
+            verify: function(c, verified, depth, certs)
+            {
+               test.result.html(test.result.html() +
+                  'Client verifying certificate w/CN: \"' +
+                  certs[0].subject.getField('CN').value +
+                  '\", verified: ' + verified + '...');
+               if(verified !== true)
+               {
+                  test.fail();
+                  task.fail();
+               }
+               return verified;
+            },
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Client connected...');
+               
+               // send message to server
+               setTimeout(function()
+               {
+                  c.prepare('Hello Server');
+               }, 1);
+            },
+            getCertificate: function(c, hint)
+            {
+               test.result.html(test.result.html() +
+                  'Client getting certificate ...');
+               return data.client.cert;
+            },
+            getPrivateKey: function(c, cert)
+            {
+               return data.client.privateKey;
+            },
+            tlsDataReady: function(c)
+            {
+               // send TLS data to server
+               end.server.process(c.tlsData.getBytes());
+            },
+            dataReady: function(c)
+            {
+               var response = c.data.getBytes();
+               test.result.html(test.result.html() +
+                  'Client received \"' + response + '\"');
+               success = (response === 'Hello Client');
+               c.close();
+            },
+            closed: function(c)
+            {
+               test.result.html(test.result.html() + 'Client disconnected.');
+               test.result.html(success ? 'Success' : 'Failure');
+               if(success)
+               {
+                  test.expect.html('Success');
+                  task.unblock();
+                  test.pass();
+               }
+               else
+               {
+                  console.log('closed fail');
+                  test.fail();
+                  task.fail();
+               }
+            },
+            error: function(c, error)
+            {
+               console.log('error fail');
+               test.result.html(test.result.html() + 'Error: ' + error.message);
+               test.fail();
+               task.fail();
+            }
+         });
+         
+         // create server
+         end.server = forge.tls.createConnection(
+         {
+            server: true,
+            caStore: [data.client.cert],
+            sessionCache: serverSessionCache3,
+            // supported cipher suites in order of preference
+            cipherSuites: [
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+               forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+            connected: function(c)
+            {
+               test.result.html(test.result.html() + 'Server connected...');
+            },
+            verifyClient: true, // use 'optional' to request but not require
+            verify: function(c, verified, depth, certs)
+            {
+               test.result.html(test.result.html() +
+                  'Server verifying certificate w/CN: \"' +
+                  certs[0].subject.getField('CN').value +
+                  '\", verified: ' + verified + '...');
+               if(verified !== true)
+               {
+                  test.fail();
+                  task.fail();
+               }
+               return verified;
             },
             getCertificate: function(c, hint)
             {
