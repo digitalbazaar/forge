@@ -1520,7 +1520,7 @@ jQuery(function($)
    
    var clientSessionCache2 = forge.tls.createSessionCache();
    var serverSessionCache2 = forge.tls.createSessionCache();
-   addTest('TLS connection, w/optional client certificate', function(task, test)
+   addTest('TLS connection, w/optional client-certificate', function(task, test)
    {
       var data = {};
       
@@ -1693,7 +1693,7 @@ jQuery(function($)
    
    var clientSessionCache3 = forge.tls.createSessionCache();
    var serverSessionCache3 = forge.tls.createSessionCache();
-   addTest('TLS connection, w/client certificate', function(task, test)
+   addTest('TLS connection, w/client-certificate', function(task, test)
    {
       var data = {};
       
