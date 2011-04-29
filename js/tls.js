@@ -1022,16 +1022,65 @@
             },
             random: forge.util.createBuffer(b.getBytes(32)),
             session_id: readVector(b, 1),
-            cipher_suite: b.getBytes(2),
-            compression_method: b.getByte(),
             extensions: [],
             cSuite: null
          };
+         if(client)
+         {
+            msg.cipher_suite = b.getBytes(2);
+            msg.compression_method = b.getByte();
+         }
+         else
+         {
+            msg.cipher_suites = readVector(b, 2);
+            msg.compression_methods = readVector(b, 1);
+         }
          
          // read extensions if there are any
          if(b.length() > 0)
          {
-            msg.extensions = readVector(b, 2);
+            // parse extensions
+            var exts = readVector(b, 2);
+            while(exts.length() > 0)
+            {
+               msg.extensions.push(
+               {
+                  type: [exts.getByte(), exts.getByte()],
+                  data: readVector(exts, 2)
+               });
+            }
+
+            // TODO: make extension support modular
+            if(!client)
+            {
+               for(var i = 0; i < msg.extensions.length; ++i)
+               {
+                  var ext = msg.extensions[i];
+                  
+                  // support SNI extension
+                  if(ext.type[0] === 0x00 && ext.type[1] === 0x00)
+                  {
+                     // get server name list
+                     var snl = readVector(ext.data, 2);
+                     while(snl.length() > 0)
+                     {
+                        // read server name type
+                        var snType = snl.getByte();
+                        
+                        // only HostName type (0x00) is known, break out if
+                        // another type is detected
+                        if(snType !== 0x00)
+                        {
+                           break;
+                        }
+                        
+                        // add host name to server name list
+                        c.session.serverNameList.push(
+                           readVector(snl, 2).getBytes());
+                     }
+                  }
+               }
+            }
          }
          
          // TODO: support other versions
@@ -1048,15 +1097,32 @@
             });
          }
          
-         // get the chosen (ServerHello) or preferred (ClientHello)
-         // cipher suite
-         msg.cSuite = tls.getCipherSuite(msg.cipher_suite);
+         // get the chosen (ServerHello) cipher suite
+         if(client)
+         {
+            msg.cSuite = tls.getCipherSuite(msg.cipher_suite);
+         }
+         // get a supported preferred (ClientHello) cipher suite
+         else
+         {
+            // choose the first supported cipher suite
+            var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
+            while(tmp.length() > 0)
+            {
+               // cipher suites take up 2 bytes
+               msg.cSuite = tls.getCipherSuite(tmp.getBytes(2));
+               if(msg.cSuite !== null)
+               {
+                  break;
+               }
+            }
+         }
          
          // cipher suite not supported
          if(msg.cSuite === null)
          {
             c.error(c, {
-               message: 'Cipher suite not supported.',
+               message: 'No cipher suites in common.',
                send: true,
                alert: {
                   level: tls.Alert.Level.fatal,
@@ -1065,6 +1131,8 @@
                cipherSuite: forge.util.bytesToHex(msg.cipher_suite)
             });
          }
+         
+         // TODO: handle compression methods
       }
       
       return msg;
@@ -1156,7 +1224,7 @@
     */
    tls.handleServerHello = function(c, record, length)
    {
-      var msg = tls.parseHelloMessage(c, record);
+      var msg = tls.parseHelloMessage(c, record, length);
       if(!c.fail)
       {
          // get the session ID from the message
@@ -1206,7 +1274,7 @@
     */
    tls.handleClientHello = function(c, record, length)
    {
-      var msg = tls.parseHelloMessage(c, record);
+      var msg = tls.parseHelloMessage(c, record, length);
       if(!c.fail)
       {
          // get the session ID from the message
@@ -1225,7 +1293,7 @@
          }
          
          // no session found to resume, generate a new session ID
-         if(sessionId === '')
+         if(sessionId.length === 0)
          {
             sessionId = forge.random.getBytes(32);
          }
@@ -1293,7 +1361,7 @@
             tls.queue(c, tls.createRecord(
             {
                type: tls.ContentType.handshake,
-               data: tls.createServerCertificate(c)
+               data: tls.createCertificate(c)
             }));
             
             // queue server key exchange
@@ -2280,8 +2348,8 @@
                c.handshaking = true;
                c.session =
                {
+                  serverNameList: [],
                   serverCertificate: null,
-                  certificateRequest: null,
                   clientCertificate: null,
                   md5: forge.md.md5.create(),
                   sha1: forge.md.sha1.create()
@@ -3158,8 +3226,9 @@
     * 
     * When this message will be sent:
     *    This is the first message the client can send after receiving a
-    *    server hello done message. This message is only sent if the
-    *    server requests a certificate. If no suitable certificate is
+    *    server hello done message and the first message the server can
+    *    send after sending a ServerHello. This client message is only sent
+    *    if the server requests a certificate. If no suitable certificate is
     *    available, the client should send a certificate message
     *    containing no certificates. If client authentication is required
     *    by the server for the handshake to continue, it may respond with
@@ -3180,14 +3249,17 @@
       // TODO: support sending more than 1 certificate?
       // TODO: check certificate request to ensure types are supported
       
-      // get a client-side certificate (a certificate as a PEM string)
+      // get a certificate (a certificate as a PEM string)
+      var client = (c.entity === tls.ConnectionEnd.client);
       var cert = null;
       if(c.getCertificate)
       {
-         cert = c.getCertificate(c, c.session.certificateRequest);
+         cert = c.getCertificate(
+            c, client ?
+            c.session.certificateRequest : c.session.serverNameList);
       }
       
-      // buffer to hold client-side cert
+      // buffer to hold cert
       var certBuffer = forge.util.createBuffer();
       if(cert !== null)
       {
@@ -4637,13 +4709,16 @@
     * There are three callbacks that can be used to make use of client-side
     * certificates where each takes the TLS connection as the first parameter:
     * 
-    * getCertificate(conn, CertificateRequest)
-    *    The second parameter is the CertificateRequest message from the server
-    *    that is part of the TLS protocol. It will only be included if the
-    *    connection is in client-mode, not server-mode. It can be examined to
-    *    determine what client-side certificate to use (advanced). Most
-    *    implementations will just return a certificate. The return value must
-    *    be a PEM-formatted certificate.
+    * getCertificate(conn, hint)
+    *    The second parameter is a hint as to which certificate should be
+    *    returned. If the connection entity is a client, then the hint will be
+    *    the CertificateRequest message from the server that is part of the
+    *    TLS protocol. If the connection entity is a server, then it will be
+    *    the servername list provided via an SNI extension the ClientHello, if
+    *    one was provided (empty array if not). The hint can be examined to
+    *    determine which certificate to use (advanced). Most implementations
+    *    will just return a certificate. The return value must be a
+    *    PEM-formatted certificate.
     * getPrivateKey(conn, certificate)
     *    The second parameter is an forge.pki X.509 certificate object that
     *    is associated with the requested private key. The return value must
