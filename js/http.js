@@ -367,6 +367,7 @@
             inflate: tlsOptions.inflate || null
          });
          
+         socket.options = null;
          socket.buffer = forge.util.createBuffer();
          client.sockets.push(socket);
          if(tlsOptions.prime)
