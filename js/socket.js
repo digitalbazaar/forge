@@ -3,10 +3,13 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
+   // define forge
+   var forge = window.forge = window.forge || {};
+   
    // define net namespace
    var net =
    {
@@ -313,7 +316,6 @@
       return socket;
    };
    
-   // public access to net namespace
-   window.forge = window.forge || {};
-   window.forge.net = net;
+   // access to net namespace
+   forge.net = net;
 })();

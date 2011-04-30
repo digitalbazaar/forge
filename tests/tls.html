@@ -16,8 +16,10 @@
       <script type="text/javascript" src="forge/jsbn2.js"></script>
       <script type="text/javascript" src="forge/prng.js"></script>
       <script type="text/javascript" src="forge/random.js"></script>
+      <script type="text/javascript" src="forge/rsa.js"></script>
       <script type="text/javascript" src="forge/pki.js"></script>
       <script type="text/javascript" src="forge/tls.js"></script>
+      <script type="text/javascript" src="forge/tlssocket.js"></script>
       <script type="text/javascript" src="forge/http.js"></script>
       
       <script type="text/javascript">
@@ -207,6 +209,29 @@
       {
          client.clearCookies();
       }
+
+      function websocket_test()
+      {
+         var ws = new WebSocket('ws://localhost:8080');
+         console.log('created websocket', ws);
+
+         ws.onopen = function(evt)
+         {
+            console.log('websocket connected');
+
+            // send message
+            ws.send('message');
+         };
+         ws.onmessage = function(evt)
+         {
+            console.log('websocket data: ' + evt.data);
+            ws.close();
+         };
+         ws.onclose = function(evt)
+         {
+            console.log('websocket closed');
+         };
+      }
       
       //]]>
       </script>
@@ -244,6 +269,7 @@
          <button id="stress" onclick="javascript:return client_stress();">stress</button>
          <button id="client_cookies" onclick="javascript:return client_cookies();">cookies</button>
          <button id="clear_cookies" onclick="javascript:return client_clear_cookies();">clear cookies</button>
+         <button id="websocket" onclick="javascript:return websocket_test();">websocket test</button>
       </div>
       </fieldset>
 

@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  * 
  * An API for storing data using the Abstract Syntax Notation Number One
  * format using DER (Distinguished Encoding Rules) encoding. This encoding is
@@ -126,13 +126,24 @@
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.asn1 = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = forge.asn1 = {};
+   }
    
-   /**
-    * ASN.1 implementation.
-    */
-   var asn1 = {};
+   /* ASN.1 implementation and API */
+   var asn1 = forge.asn1;
    
    /**
     * ASN.1 classes.
@@ -914,9 +925,4 @@
       
       return rval;
    };
-   
-   /**
-    * The asn.1 API.
-    */
-   window.forge.asn1 = asn1;
 })();

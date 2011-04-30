@@ -11,12 +11,28 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function($)
 {
-   // local alias
-   var forge = window.forge;
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.random = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         aes: require('./aes'),
+         md: require('./md'),
+         prng: require('./prng'),
+         util: require('./util')
+      };
+      module.exports = forge.random = {};
+   }
    
    // the default prng plugin, uses AES-128
    var prng_aes = {};
@@ -70,35 +86,39 @@
    _ctx.collectInt(+new Date(), 32);
    
    // add some entropy from navigator object
-   var _navBytes = '';
-   for(var key in navigator)
+   if(typeof(navigator) !== 'undefined')
    {
-      if(typeof(navigator[key]) == 'string')
+      var _navBytes = '';
+      for(var key in navigator)
       {
-         _navBytes += navigator[key];
+         if(typeof(navigator[key]) == 'string')
+         {
+            _navBytes += navigator[key];
+         }
       }
+      _ctx.collect(_navBytes);
+      _navBytes = null;
    }
-   _ctx.collect(_navBytes);
-   _navBytes = null;
    
-   // set up mouse entropy capture
-   $().mousemove(function(e)
+   // add mouse and keyboard collectors if jquery is available
+   if($ !== null)
    {
-      // add mouse coords
-      _ctx.collectInt(e.clientX, 16);
-      _ctx.collectInt(e.clientY, 16);
-   });
+      // set up mouse entropy capture
+      $().mousemove(function(e)
+      {
+         // add mouse coords
+         _ctx.collectInt(e.clientX, 16);
+         _ctx.collectInt(e.clientY, 16);
+      });
+      
+      // set up keyboard entropy capture
+      $().keypress(function(e)
+      {
+         _ctx.collectInt(e.charCode, 8);
+      });
+   }
    
-   // set up keyboard entropy capture
-   $().keypress(function(e)
-   {
-      _ctx.collectInt(e.charCode, 8);
-   });
-   
-   /**
-    * The crypto namespace and random API.
-    */
-   forge.random = {};
+   /* Random API */
    
    /**
     * Gets random bytes. This method tries to make the bytes more
@@ -113,4 +133,4 @@
    {
       return _ctx.generate(count);
    };
-})(jQuery);
+})(typeof(jQuery) !== 'undefined' ? jQuery : null);

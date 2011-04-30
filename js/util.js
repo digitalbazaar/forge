@@ -3,14 +3,25 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   /**
-    * The util namespace.
-    */
-   var util = {};
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.util = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge = {};
+      module.exports = forge.util = {};
+   }
+   
+   /* Utilities API */
+   var util = forge.util;
    
    /**
     * Constructor for a byte buffer.
@@ -1557,10 +1568,4 @@
       }
       return size;
    };
-   
-   /**
-    * The forge namespace and util API.
-    */
-   window.forge = window.forge || {};
-   window.forge.util = util;
 })();

@@ -5,15 +5,28 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.hmac = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         md: require('./md')
+      };
+      module.exports = forge.hmac = {};
+   }
    
-   // the hmac interface
-   var hmac = {};
+   /* HMAC API */
+   var hmac = forge.hmac;
    
    /**
     * Creates an HMAC object that uses the given message digest object.
@@ -167,7 +180,4 @@
       
       return ctx;
    };
-   
-   // expose hmac interface in forge library
-   forge.hmac = hmac;
 })();

@@ -6,12 +6,29 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   var md5 = {};
+   
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = md5;
+   }
+   forge.md = forge.md || {};
+   forge.md.algorithms = forge.md.algorithms || {};
+   forge.md.md5 = forge.md.algorithms['md5'] = md5;
    
    // padding, constant tables for calculating md5
    var _padding = null;
@@ -131,9 +148,6 @@
          len -= 64;
       }
    };
-   
-   // the md5 interface
-   var md5 = {};
    
    /**
     * Creates an MD5 message digest object.
@@ -269,10 +283,4 @@
       
       return md;
    };
-   
-   // expose md5 interface in forge library
-   forge.md = forge.md || {};
-   forge.md.algorithms = forge.md.algorithms || {};
-   forge.md.algorithms['md5'] = md5;
-   forge.md.md5 = md5;
 })();

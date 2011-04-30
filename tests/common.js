@@ -1454,7 +1454,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();
@@ -1504,8 +1503,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
-               console.log(error);
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();
@@ -1612,7 +1609,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();
@@ -1677,8 +1673,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
-               console.log(error);
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();
@@ -1794,7 +1788,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();
@@ -1859,8 +1852,6 @@ jQuery(function($)
             },
             error: function(c, error)
             {
-               console.log('error fail');
-               console.log(error);
                test.result.html(test.result.html() + 'Error: ' + error.message);
                test.fail();
                task.fail();

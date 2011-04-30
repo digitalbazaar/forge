@@ -13,10 +13,26 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.aes = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = forge.aes = {};
+   }
+   
    var init = false; // not yet initialized
    var Nb = 4;       // number of words comprising the state (AES = 4)
    var sbox;         // non-linear substitution table used in key expansion
@@ -851,14 +867,14 @@
       if(key.constructor == String &&
          (key.length == 16 || key.length == 24 || key.length == 32))
       {
-         key = window.forge.util.createBuffer(key);
+         key = forge.util.createBuffer(key);
       }
       // convert key integer array into byte buffer
       else if(key.constructor == Array &&
          (key.length == 16 || key.length == 24 || key.length == 32))
       {
          var tmp = key;
-         var key = window.forge.util.createBuffer();
+         var key = forge.util.createBuffer();
          for(var i = 0; i < tmp.length; ++i)
          {
             key.putByte(tmp[i]);
@@ -1061,13 +1077,13 @@
             // convert iv string into byte buffer
             if(iv.constructor == String && iv.length == 16)
             {
-               iv = window.forge.util.createBuffer(iv);
+               iv = forge.util.createBuffer(iv);
             }
             // convert iv byte array into byte buffer
             else if(iv.constructor == Array && iv.length == 16)
             {
                var tmp = iv;
-               var iv = window.forge.util.createBuffer();
+               var iv = forge.util.createBuffer();
                for(var i = 0; i < 16; ++i)
                {
                   iv.putByte(tmp[i]);
@@ -1086,8 +1102,8 @@
             }
             
             // set private vars
-            _input = window.forge.util.createBuffer();
-            _output = output || window.forge.util.createBuffer();
+            _input = forge.util.createBuffer();
+            _output = output || forge.util.createBuffer();
             _prev = iv.slice(0);
             _inBlock = new Array(Nb);
             _outBlock = new Array(Nb);
@@ -1102,11 +1118,7 @@
       return cipher;
    };
    
-   /**
-    * The crypto namespace and aes API.
-    */
-   window.forge = window.forge || {};
-   window.forge.aes = {};
+   /* AES API */
    
    /**
     * Creates an AES cipher object to encrypt data in CBC mode using the
@@ -1122,7 +1134,7 @@
     * 
     * @return the cipher.
     */
-   window.forge.aes.startEncrypting = function(key, iv, output)
+   forge.aes.startEncrypting = function(key, iv, output)
    {
       return createCipher(key, iv, output, false);
    };
@@ -1141,7 +1153,7 @@
     * 
     * @return the cipher.
     */
-   window.forge.aes.createEncryptionCipher = function(key)
+   forge.aes.createEncryptionCipher = function(key)
    {
       return createCipher(key, null, null, false);
    };
@@ -1160,7 +1172,7 @@
     * 
     * @return the cipher.
     */
-   window.forge.aes.startDecrypting = function(key, iv, output)
+   forge.aes.startDecrypting = function(key, iv, output)
    {
       return createCipher(key, iv, output, true);
    };
@@ -1179,7 +1191,7 @@
     * 
     * @return the cipher.
     */
-   window.forge.aes.createDecryptionCipher = function(key)
+   forge.aes.createDecryptionCipher = function(key)
    {
       return createCipher(key, null, null, true);
    };
@@ -1192,7 +1204,7 @@
     * 
     * @return the expanded key.
     */
-   window.forge.aes._expandKey = function(key, decrypt)
+   forge.aes._expandKey = function(key, decrypt)
    {
       if(!init)
       {
@@ -1209,5 +1221,5 @@
     * @param output an array of block-size 32-bit words.
     * @param decrypt true to decrypt, false to encrypt.
     */
-   window.forge.aes._updateBlock = updateBlock;
+   forge.aes._updateBlock = updateBlock;
 })();

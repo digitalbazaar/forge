@@ -8,12 +8,28 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   var sha256 = {};
+   
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+   }
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = sha256 = {};
+   }
+   forge.md = forge.md || {};
+   forge.md.algorithms = forge.md.algorithms || {};
+   forge.md.sha256 = forge.md.algorithms['sha256'] = sha256;
    
    // sha-256 padding bytes not initialized yet
    var _padding = null;
@@ -145,9 +161,6 @@
          len -= 64;
       }
    };
-   
-   // the sha256 interface
-   var sha256 = {};
    
    /**
     * Creates a SHA-256 message digest object.
@@ -295,11 +308,4 @@
       
       return md;
    };
-   
-   // expose sha256 interface in forge library
-   forge.md = forge.md || {};
-   forge.md.algorithms = forge.md.algorithms || {};
-   forge.md.algorithms['sha-256'] = sha256;
-   forge.md.algorithms['sha256'] = sha256;
-   forge.md.sha256 = sha256;
 })();

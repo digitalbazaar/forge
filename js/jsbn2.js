@@ -6,6 +6,8 @@
 
 // Version 1.1: new BigInteger("0", 10) returns "proper" zero
 
+function nbi() { return new BigInteger(null); }
+
 // (public)
 function bnClone() { var r = nbi(); this.copyTo(r); return r; }
 
@@ -588,6 +590,11 @@ function bnpMillerRabin(t) {
   return true;
 }
 
+if(typeof(module) !== 'undefined' && module.exports)
+{
+   BigInteger = require('./jsbn');
+}
+
 // protected
 BigInteger.prototype.chunkSize = bnpChunkSize;
 BigInteger.prototype.toRadix = bnpToRadix;
@@ -646,3 +653,8 @@ BigInteger.prototype.isProbablePrime = bnIsProbablePrime;
 // int hashCode()
 // long longValue()
 // static BigInteger valueOf(long val)
+
+if(typeof(module) !== 'undefined' && module.exports)
+{
+   module.exports = BigInteger;
+}

@@ -5,12 +5,28 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.pkcs5 = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         md: require('./md'),
+         util: require('./util')
+      };
+      module.exports = forge.pkcs5 = {};
+   }
+   
+   var pkcs5 = forge.pkcs5;
    
    /**
     * Derives a key from a password.
@@ -24,7 +40,7 @@
     * 
     * @return the derived key, as a string of bytes.
     */
-   var pbkdf2 = function(p, s, c, dkLen, md)
+   pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
    {
       // default prf to SHA-1
       if(typeof(md) === 'undefined' || md === null)
@@ -39,7 +55,7 @@
       if(dkLen > (0xFFFFFFFF * hLen))
       {
          throw {
-            message: 'Derived key too long.'
+            message: 'Derived key is too long.'
          };
       }
       
@@ -111,8 +127,4 @@
       /* 5. Output the derived key DK. */      
       return dk;
    };
-   
-   // expose pbkdf2 interface in forge library
-   forge.pkcs5 = forge.pkcs5 || {};
-   forge.pkcs5.pbkdf2 = pbkdf2;
 })();

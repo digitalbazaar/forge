@@ -110,7 +110,14 @@ function am3(i,x,w,j,c,n) {
   }
   return c;
 }
-if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
+
+// node.js (no browser)
+if(typeof(navigator) === 'undefined')
+{
+   BigInteger.prototype.am = am3;
+   dbits = 28;
+}
+else if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
   BigInteger.prototype.am = am2;
   dbits = 30;
 }
@@ -600,3 +607,8 @@ BigInteger.prototype.modPowInt = bnModPowInt;
 // "constants"
 BigInteger.ZERO = nbv(0);
 BigInteger.ONE = nbv(1);
+
+if(typeof(module) !== 'undefined' && module.exports)
+{
+   module.exports = BigInteger;
+}

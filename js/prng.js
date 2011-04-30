@@ -5,17 +5,30 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias
-   var forge = window.forge;
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.prng = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         md: require('./md'),
+         util: require('./util')
+      };
+      forge.md.sha1.create();
+      module.exports = forge.prng = {};
+   }
    
-   /**
-    * The prng namespace.
-    */
-   var prng = {};
+   /* PRNG API */
+   var prng = forge.prng;
    
    /**
     * Creates a new PRNG context.
@@ -234,9 +247,4 @@
       
       return ctx;
    };
-   
-   /**
-    * The prng API.
-    */
-   forge.prng = prng;
 })();

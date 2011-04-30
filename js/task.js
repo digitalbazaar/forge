@@ -5,15 +5,30 @@
  * @author Dave Longley
  * @author David I. Lehn <dlehn@digitalbazaar.com>
  *
- * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.task = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         debug: require('./debug'),
+         log: require('./log'),
+         util: require('./util')
+      };
+      module.exports = forge.task = {};
+   }
+   
    // logging category
    var cat = 'forge.task';
-   
-   // local alias
-   var forge = window.forge;
    
    // verbose level
    // 0: off, 1: a little, 2: a whole lot
@@ -688,9 +703,7 @@
       }
    };
    
-   // define the task manager interface
-   var forge = window.forge;
-   forge.task = {};
+   /* Tasks API */
    
    /**
     * Starts a new task that will run the passed function asynchronously.

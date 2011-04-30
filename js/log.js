@@ -3,10 +3,26 @@
  *
  * @author David I. Lehn <dlehn@digitalbazaar.com>
  *
- * Copyright (c) 2008-2010 Digital Bazaar, Inc.  All rights reserved.
+ * Copyright (c) 2008-2011 Digital Bazaar, Inc.  All rights reserved.
  */
 (function() 
 {
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+      forge.log = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = forge.log = {};
+   }
+   
    /**
     * Application logging system.
     * 
@@ -19,9 +35,6 @@
     * Each category is enabled by default but can be enabled or disabled with
     * the setCategoryEnabled() function.
     */
-   // log namespace object
-   var forge = window.forge;
-   forge.log = {};
    // list of known levels
    forge.log.levels =
       ['none', 'error', 'warning', 'info', 'debug', 'verbose', 'max'];
@@ -272,7 +285,7 @@
    };
    
    // setup the console logger if possible, else create fake console.log
-   if('console' in window && 'log' in console)
+   if(typeof(console) !== 'undefined' && 'log' in console)
    {
       var logger;
       if(console.error && console.warn && console.info && console.debug)

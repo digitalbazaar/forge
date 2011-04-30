@@ -3,29 +3,34 @@
  * 
  * @author David I. Lehn <dlehn@digitalbazaar.com>
  * 
- * Copyright 2008-2010 Digital Bazaar, Inc.
+ * Copyright 2008-2011 Digital Bazaar, Inc.
  */
 (function()
 {
-   // debugging info and functions
-   window.forge = window.forge || {};
-   var forge = window.forge;
-   forge.debug =
+   // define forge
+   if(typeof(window) !== 'undefined')
    {
-      // Private storage for debugging.
-      // Useful to expose data that is otherwise unviewable behind closures.
-      // NOTE: remember that this can hold references to data and cause leaks!
-      // format is "forge._debug.<modulename>.<dataname> = data"
-      // Example:
-      // (function() {
-      //    var cat = 'forge.test.Test'; // debugging category
-      //    var sState = {...}; // local state
-      //    forge.debug.set(cat, 'sState', sState);
-      // })();
-      
-      // storage
-      storage: {}
-   };
+      var forge = window.forge = window.forge || {};
+      forge.debug = {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge = {};
+      module.exports = forge.debug = {};
+   }
+   
+   // Private storage for debugging.
+   // Useful to expose data that is otherwise unviewable behind closures.
+   // NOTE: remember that this can hold references to data and cause leaks!
+   // format is "forge._debug.<modulename>.<dataname> = data"
+   // Example:
+   // (function() {
+   //    var cat = 'forge.test.Test'; // debugging category
+   //    var sState = {...}; // local state
+   //    forge.debug.set(cat, 'sState', sState);
+   // })();
+   forge.debug.storage = {};
    
    /**
     * Gets debug data. Omit name for all cat data  Omit name and cat for

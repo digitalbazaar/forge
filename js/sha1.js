@@ -6,12 +6,29 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
-   // local alias for forge stuff
-   var forge = window.forge;
+   var sha1 = {};
+   
+   // define forge
+   if(typeof(window) !== 'undefined')
+   {
+      var forge = window.forge = window.forge || {};
+   }
+   // define node.js module
+   else if(typeof(module) !== 'undefined' && module.exports)
+   {
+      var forge =
+      {
+         util: require('./util')
+      };
+      module.exports = sha1;
+   }
+   forge.md = forge.md || {};
+   forge.md.algorithms = forge.md.algorithms || {};
+   forge.md.sha1 = forge.md.algorithms['sha1'] = sha1;
    
    // sha-1 padding bytes not initialized yet
    var _padding = null;
@@ -147,9 +164,6 @@
          len -= 64;
       }
    };
-   
-   // the sha1 interface
-   var sha1 = {};
    
    /**
     * Creates a SHA-1 message digest object.
@@ -288,11 +302,4 @@
       
       return md;
    };
-   
-   // expose sha1 interface in forge library
-   forge.md = forge.md || {};
-   forge.md.algorithms = forge.md.algorithms || {};
-   forge.md.algorithms['sha-1'] = sha1;
-   forge.md.algorithms['sha1'] = sha1;
-   forge.md.sha1 = sha1;
 })();
