@@ -20,7 +20,8 @@
    {
       var forge =
       {
-         md: require('./md')
+         md: require('./md'),
+         util: require('./util')
       };
       module.exports = forge.hmac = {};
    }

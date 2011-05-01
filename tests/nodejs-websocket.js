@@ -1,9 +1,6 @@
 var sys = require('sys');
 //var ws = require('./ws');
-
 var forge = require('../js/forge');
-
-sys.puts(forge.pki);
 
 // function to create certificate
 var createCert = function(cn, data)
@@ -70,24 +67,23 @@ var createCert = function(cn, data)
       privateKey: forge.pki.privateKeyToPem(keys.privateKey)
    };
    
-   sys.puts('certificate created: \n' + data[cn].cert);
+   sys.puts('certificate created for \"' + cn + '\": \n' + data[cn].cert);
 };
 
-var data = {};
-createCert('server', data);
-
-sys.puts('done');
-
-/*
 var end = {};
 var data = {};
+
+// create certificate for server and client
+createCert('server', data);
+createCert('client', data);
+
 var success = false;
 
 // create TLS client
 end.client = forge.tls.createConnection(
 {
    server: false,
-   caStore: [],
+   caStore: [data.server.cert],
    sessionCache: {},
    // supported cipher suites in order of preference
    cipherSuites: [
@@ -155,7 +151,7 @@ end.client = forge.tls.createConnection(
 end.server = forge.tls.createConnection(
 {
    server: true,
-   caStore: [],
+   caStore: [data.client.cert],
    sessionCache: {},
    // supported cipher suites in order of preference
    cipherSuites: [
@@ -206,5 +202,5 @@ end.server = forge.tls.createConnection(
    }
 });
 
-sys.puts('created TLS server');
-*/
+sys.puts('created TLS client and server, doing handshake...');
+end.client.handshake();
