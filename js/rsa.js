@@ -17,12 +17,20 @@
    {
       var forge =
       {
-         pki: {},
-         random: require('./random')
+         asn1: require('./asn1'),
+         pki:
+         {
+            oids: require('./oids')
+         },
+         random: require('./random'),
+         util: require('./util')
       };
-      BigInteger = require('./jsbn2');
+      BigInteger = require('./jsbn');
       module.exports = forge.pki.rsa = {};
    }
+   
+   // shortcut for asn.1 API
+   var asn1 = forge.asn1;
    
    /*
     * RSA encryption and decryption, see RFC 2313.
@@ -510,7 +518,7 @@
                {
                   state.num.bitwiseTo(
                      BigInteger.ONE.shiftLeft(bits1),
-                     op_or, state.num);
+                     function(x,y){ return x|y; }, state.num);
                }
                ++state.pqState;
             }
@@ -659,11 +667,11 @@
             var d = state.e.modInverse(state.phi);
             state.keys =
             {
-               privateKey: pki.setRsaPrivateKey(
+               privateKey: forge.pki.rsa.setPrivateKey(
                   state.n, state.e, d, state.p, state.q,
                   d.mod(state.p1), d.mod(state.q1),
                   state.q.modInverse(state.p)),
-               publicKey: pki.setRsaPublicKey(state.n, state.e)
+               publicKey: forge.pki.rsa.setPublicKey(state.n, state.e)
             };
          }
          
@@ -692,5 +700,166 @@
       var state = pki.rsa.createKeyPairGenerationState(bits, e);
       pki.rsa.stepKeyPairGenerationState(state, 0);
       return state.keys;
+   };
+   
+   /**
+    * Sets an RSA public key from BigIntegers modulus and exponent.
+    * 
+    * @param n the modulus.
+    * @param e the exponent.
+    * 
+    * @return the public key.
+    */
+   pki.rsa.setPublicKey = function(n, e)
+   {
+      var key =
+      {
+         n: n,
+         e: e
+      };
+      
+      /**
+       * Encrypts the given data with this public key.
+       * 
+       * @param data the byte string to encrypt.
+       * 
+       * @return the encrypted byte string.
+       */
+      key.encrypt = function(data)
+      {
+         return pki.rsa.encrypt(data, key, 0x02);
+      };
+      
+      /**
+       * Verifies the given signature against the given digest.
+       * 
+       * Once RSA-decrypted, the signature is an OCTET STRING that holds
+       * a DigestInfo.
+       * 
+       * DigestInfo ::= SEQUENCE {
+       *    digestAlgorithm DigestAlgorithmIdentifier,
+       *    digest Digest
+       * }
+       * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+       * Digest ::= OCTET STRING
+       * 
+       * @param digest the message digest hash to compare against the signature.
+       * @param signature the signature to verify.
+       * 
+       * @return true if the signature was verified, false if not.
+       */
+      key.verify = function(digest, signature)
+      {
+         // do rsa decryption
+         var d = pki.rsa.decrypt(signature, key, true);
+         
+         // d is ASN.1 BER-encoded DigestInfo
+         var obj = asn1.fromDer(d);
+         
+         // compare the given digest to the decrypted one
+         return digest === obj.value[1].value;
+      };
+      
+      return key;
+   };
+   
+   /**
+    * Sets an RSA private key from BigIntegers modulus, exponent, primes,
+    * prime exponents, and modular multiplicative inverse.
+    * 
+    * @param n the modulus.
+    * @param e the public exponent.
+    * @param d the private exponent ((inverse of e) mod n).
+    * @param p the first prime.
+    * @param q the second prime.
+    * @param dP exponent1 (d mod (p-1)).
+    * @param dQ exponent2 (d mod (q-1)).
+    * @param qInv ((inverse of q) mod p)
+    * 
+    * @return the private key.
+    */
+   pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
+   {
+      var key =
+      {
+         n: n,
+         e: e,
+         d: d,
+         p: p,
+         q: q,
+         dP: dP,
+         dQ: dQ,
+         qInv: qInv
+      };
+      
+      /**
+       * Decrypts the given data with this private key.
+       * 
+       * @param data the byte string to decrypt.
+       * 
+       * @return the decrypted byte string.
+       */
+      key.decrypt = function(data)
+      {
+         return pki.rsa.decrypt(data, key, false);
+      };
+      
+      /**
+       * Signs the given digest, producing a signature.
+       * 
+       * First the digest is stored in a DigestInfo object. Then that object
+       * is RSA-encrypted to produce the signature.
+       * 
+       * DigestInfo ::= SEQUENCE {
+       *    digestAlgorithm DigestAlgorithmIdentifier,
+       *    digest Digest
+       * }
+       * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+       * Digest ::= OCTET STRING
+       * 
+       * @param md the message digest object with the hash to sign.
+       * 
+       * @return the signature as a byte string.
+       */
+      key.sign = function(md)
+      {
+         // get the oid for the algorithm
+         var oid;
+         if(md.algorithm in forge.pki.oids)
+         {
+            oid = forge.pki.oids[md.algorithm];
+         }
+         else
+         {
+            throw {
+               message: 'Unknown message digest algorithm.',
+               algorithm: md.algorithm
+            };
+         }
+         var oidBytes = asn1.oidToDer(oid).getBytes();
+         
+         // create the digest info
+         var digestInfo = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+         var digestAlgorithm = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+         digestAlgorithm.value.push(asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+         digestAlgorithm.value.push(asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+         var digest = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
+            false, md.digest().getBytes());
+         digestInfo.value.push(digestAlgorithm);
+         digestInfo.value.push(digest);
+         
+         // encode digest info
+         var d = asn1.toDer(digestInfo).getBytes();
+         
+         // do rsa encryption
+         return pki.rsa.encrypt(d, key, 0x01);
+      };
+      
+      return key;
    };
 })();

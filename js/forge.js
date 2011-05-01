@@ -21,5 +21,6 @@ var forge =
    util: require('./util'),
    md: require('./md')
 };
+forge.pki.oids = require('./oids');
 forge.pki.rsa = require('./rsa');
 module.exports = forge;

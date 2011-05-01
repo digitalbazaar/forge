@@ -259,6 +259,7 @@
          random: require('./random'),
          util: require('./util')
       };
+      forge.pki.oids = require('./oids');
       forge.pki.rsa = require('./rsa');
       module.exports = forge.tls = {};
    }
