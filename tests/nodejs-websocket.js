@@ -70,7 +70,7 @@ var createCert = function(cn, data)
       privateKey: forge.pki.privateKeyToPem(keys.privateKey)
    };
    
-   sys.puts('certificate created.');
+   sys.puts('certificate created: \n' + data[cn].cert);
 };
 
 var data = {};
