@@ -1778,8 +1778,8 @@
     */
    tls.handleCertificateRequest = function(c, record, length)
    {
-      // minimum of 5 bytes in message
-      if(length < 5)
+      // minimum of 3 bytes in message
+      if(length < 3)
       {
          c.error(c, {
             message: 'Invalid CertificateRequest. Message too short.',
