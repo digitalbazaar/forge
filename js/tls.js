@@ -969,14 +969,19 @@
     */
    tls.handleUnexpected = function(c, record)
    {
-      c.error(c, {
-         message: 'Unexpected message. Received TLS record out of order.',
-         send: true,
-         alert: {
-            level: tls.Alert.Level.fatal,
-            description: tls.Alert.Description.unexpected_message
-         }
-      });
+      // if connection is client and closed, ignore unexpected messages
+      var ignore = (!c.open && c.entity === tls.ConnectionEnd.client);
+      if(!ignore)
+      {
+         c.error(c, {
+            message: 'Unexpected message. Received TLS record out of order.',
+            send: true,
+            alert: {
+               level: tls.Alert.Level.fatal,
+               description: tls.Alert.Description.unexpected_message
+            }
+         });
+      }
    };
    
    /**

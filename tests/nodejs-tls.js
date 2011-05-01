@@ -1,5 +1,4 @@
 var sys = require('sys');
-//var ws = require('./ws');
 var forge = require('../js/forge');
 
 // function to create certificate
