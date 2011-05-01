@@ -123,7 +123,6 @@ var createTls = function(websocket)
          
          // send response
          c.prepare('Hello Client');
-         c.close();
       },
       closed: function(c)
       {
