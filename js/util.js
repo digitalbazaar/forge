@@ -1129,12 +1129,12 @@
       {
          var rval = {};
          var kvpairs = q.split('&');
-         for (var i = 0; i < kvpairs.length; i++)
+         for(var i = 0; i < kvpairs.length; i++)
          {
             var pos = kvpairs[i].indexOf('=');
             var key;
             var val;
-            if (pos > 0)
+            if(pos > 0)
             {
                key = kvpairs[i].substring(0,pos);
                val = kvpairs[i].substring(pos+1);
@@ -1159,8 +1159,13 @@
       var rval;
       if(typeof(query) === 'undefined')
       {
+         // no query variables available
+         if(typeof(window) === 'undefined')
+         {
+            _queryVariables = {};
+         }
          // cache and use window search query
-         if(_queryVariables === null)
+         else if(_queryVariables === null)
          {
             _queryVariables = parse(window.location.search.substring(1));
          }
