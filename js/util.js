@@ -1159,15 +1159,19 @@
       var rval;
       if(typeof(query) === 'undefined')
       {
-         // no query variables available
-         if(typeof(window) === 'undefined')
+         // set cached variables if needed
+         if(_queryVariables === null)
          {
-            _queryVariables = {};
-         }
-         // cache and use window search query
-         else if(_queryVariables === null)
-         {
-            _queryVariables = parse(window.location.search.substring(1));
+            if(typeof(window) === 'undefined')
+            {
+               // no query variables available
+               _queryVariables = {};
+            }
+            else
+            {
+               // parse window search query
+               _queryVariables = parse(window.location.search.substring(1));
+            }
          }
          rval = _queryVariables;
       }
