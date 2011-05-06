@@ -21,6 +21,17 @@
          util: require('./util')
       };
       module.exports = forge.log = {};
+      
+      // define console if not defined
+      if(typeof(console) === 'undefined')
+      {
+         /* FIXME: code executes in browser, why?
+         var sys = require('sys');
+         var console =
+         {
+            log: sys.puts
+         };*/
+      }
    }
    
    /**

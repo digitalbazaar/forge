@@ -4783,8 +4783,12 @@
             // connection no longer open, clear input
             c.open = false;
             c.input.clear();
-            if(c.isConnected)
+            
+            // if connected or handshaking, send an alert
+            if(c.isConnected || c.handshaking)
             {
+               c.isConnected = c.handshaking = false;
+               
                // send close_notify alert
                tls.queue(c, tls.createAlert(
                {
@@ -4792,13 +4796,10 @@
                   description: tls.Alert.Description.close_notify
                }));
                tls.flush(c);
-               
-               // no longer connected
-               c.isConnected = false;
-               
-               // call handler
-               c.closed(c);
             }
+            
+            // call handler
+            c.closed(c);
          }
          
          // reset TLS connection, do not clear fail flag
