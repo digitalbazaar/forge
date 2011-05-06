@@ -2227,6 +2227,10 @@
          c.handshaking = false;
          ++c.handshakes;
          
+         // save access to peer certificate
+         c.peerCertificate = client ?
+            c.session.serverCertificate : c.session.clientCertificate;
+         
          // preserve session if using session cache (it will be cached
          // if the connection is successfully shutdown later)
          if(c.sessionCache)
@@ -4430,6 +4434,7 @@
       {
          c.record = null;
          c.session = null;
+         c.peerCertificate = null;
          c.state =
          {
             pending: null,
