@@ -1651,8 +1651,8 @@
    tls.handleClientKeyExchange = function(c, record, length)
    {
       // this implementation only supports RSA, no Diffie-Hellman support
-      // so any length != 66 is invalid
-      if(length != 66)
+      // so any length < 48 is invalid
+      if(length < 48)
       {
          c.error(c, {
             message: 'Invalid key parameters. Only RSA is supported.',

@@ -1515,44 +1515,7 @@
     * 
     * @return the parsed url object or null if the url is invalid.
     */
-   http.parseUrl = function(str)
-   {
-      // FIXME: this regex looks a bit broken
-      var regex = /^(https?):\/\/([^:&^\/]*):?(\d*)(.*)$/g;
-      regex.lastIndex = 0;
-      var m = regex.exec(str);
-      var url = (m === null) ? null : {
-         full: str,
-         scheme: m[1],
-         host: m[2],
-         port: m[3]
-      };
-      if(url)
-      {
-         url.fullHost = url.host;
-         if(url.port)
-         {
-            if(url.port !== 80 && url.scheme === 'http') 
-            {
-               url.fullHost += ':' + url.port;
-            }
-            else if(url.port !== 443 && url.scheme === 'https')
-            {
-               url.fullHost += ':' + url.port;
-            }
-         }
-         else if(url.scheme === 'http')
-         {
-            url.port = 80;
-         }
-         else if(url.scheme === 'https')
-         {
-            url.port = 443;
-         }
-         url.full = url.scheme + '://' + url.fullHost;
-      }
-      return url;
-   };
+   http.parseUrl = forge.util.parseUrl;
    
    /**
     * Returns true if the given url is within the given cookie's domain.
