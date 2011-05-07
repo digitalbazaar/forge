@@ -21,6 +21,7 @@
       <script type="text/javascript" src="forge/tls.js"></script>
       <script type="text/javascript" src="forge/tlssocket.js"></script>
       <script type="text/javascript" src="forge/http.js"></script>
+      <script type="text/javascript" src="ws-webid.js"></script>
       
       <script type="text/javascript">
       //<![CDATA[
@@ -209,7 +210,7 @@
       {
          client.clearCookies();
       }
-
+      
       function websocket_test()
       {
          // create certificate
@@ -404,6 +405,7 @@
          <button id="client_cookies" onclick="javascript:return client_cookies();">cookies</button>
          <button id="clear_cookies" onclick="javascript:return client_clear_cookies();">clear cookies</button>
          <button id="websocket" onclick="javascript:return websocket_test();">websocket test</button>
+         <button id="websocket-webid" onclick="javascript:return websocket_webid('localhost', 8080);">websocket webid test</button>
       </div>
       </fieldset>
 
