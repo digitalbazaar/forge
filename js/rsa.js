@@ -61,11 +61,11 @@
          // pre-compute dP, dQ, and qInv if necessary
          if(!key.dP)
          {
-            key.dP = key.d.mod(p.subtract(BigInteger.ONE));
+            key.dP = key.d.mod(key.p.subtract(BigInteger.ONE));
          }
          if(!key.dQ)
          {
-            key.dQ = key.d.mod(q.substract(BigInteger.ONE));
+            key.dQ = key.d.mod(key.q.subtract(BigInteger.ONE));
          }
          if(!key.qInv)
          {
