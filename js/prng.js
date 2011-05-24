@@ -92,7 +92,8 @@
          // simple generator using counter-based CBC
          var cipher = ctx.plugin.cipher;
          var increment = ctx.plugin.increment;
-         var changeKey = ctx.plugin.changeKey;
+         var formatKey = ctx.plugin.formatKey;
+         var formatSeed = ctx.plugin.formatSeed;
          var b = forge.util.createBuffer();
          while(b.length() < count)
          {
@@ -101,12 +102,9 @@
             ctx.generated += bytes.length;
             b.putBytes(bytes);
             
-            // generate bytes for a new key and seed and change keys
-            ctx.key = cipher(ctx.key, increment(ctx.seed));
-            ctx.seed = cipher(ctx.key, ctx.seed);
-            var out = changeKey(ctx.key, ctx.seed);
-            ctx.key = out.key;
-            ctx.seed = out.seed;
+            // generate bytes for a new key and seed
+            ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
+            ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
             
             // if amount of data generated is greater than 1 MiB, reseed 
             if(ctx.generated >= 1048576)
@@ -188,11 +186,10 @@
             md.start();
             md.update(keyBytes);
             var seedBytes = md.digest().getBytes();
-            var out = ctx.plugin.changeKey(keyBytes, seedBytes);
             
             // update
-            ctx.key = out.key;
-            ctx.seed = out.seed;
+            ctx.key = ctx.plugin.formatKey(keyBytes);
+            ctx.seed = ctx.plugin.formatSeed(seedBytes);
             ++ctx.reseeds;
             ctx.generated = 0;
             ctx.time = +new Date();

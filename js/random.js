@@ -38,7 +38,7 @@
    var prng_aes = {};
    var _prng_aes_output = new Array(4);
    var _prng_aes_buffer = forge.util.createBuffer();
-   prng_aes.changeKey = function(key, seed)
+   prng_aes.formatKey = function(key)
    {
       // convert the key into 32-bit integers
       var tmp = forge.util.createBuffer(key);
@@ -48,6 +48,11 @@
       key[2] = tmp.getInt32();
       key[3] = tmp.getInt32();
       
+      // return the expanded key
+      return forge.aes._expandKey(key, false);
+   };
+   prng_aes.formatSeed = function(seed)
+   {
       // convert seed into 32-bit integers
       tmp = forge.util.createBuffer(seed);
       seed = new Array(4);
@@ -55,12 +60,7 @@
       seed[1] = tmp.getInt32();
       seed[2] = tmp.getInt32();
       seed[3] = tmp.getInt32();
-      
-      return {
-         // expand the key
-         key: forge.aes._expandKey(key, false),
-         seed: seed
-      };
+      return seed;
    };
    prng_aes.cipher = function(key, seed)
    {
