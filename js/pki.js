@@ -208,1945 +208,1947 @@
  */
 (function()
 {
-   // define forge
-   if(typeof(window) !== 'undefined')
+
+// define forge
+if(typeof(window) !== 'undefined')
+{
+   var forge = window.forge = window.forge || {};
+}
+// define node.js module
+else if(typeof(module) !== 'undefined' && module.exports)
+{
+   var forge =
    {
-      var forge = window.forge = window.forge || {};
-   }
-   // define node.js module
-   else if(typeof(module) !== 'undefined' && module.exports)
-   {
-      var forge =
+      asn1: require('./asn1'),
+      md: require('./md'),
+      pki:
       {
-         asn1: require('./asn1'),
-         md: require('./md'),
-         pki:
-         {
-            oids: require('./oids'),
-            rsa: require('./rsa')
-         },
-         util: require('./util')
-      };
-      BigInteger = require('./jsbn');
-      module.exports = forge.pki;
-   }
-   
-   // shortcut for asn.1 API
-   var asn1 = forge.asn1;
-   
-   /* Public Key Infrastructure (PKI) implementation. */
-   var pki = forge.pki = forge.pki || {};
-   var oids = pki.oids;
-   
-   // short name OID mappings
-   var _shortNames = {};
-   _shortNames['CN'] = oids['commonName'];
-   _shortNames['commonName'] = 'CN';
-   _shortNames['C'] = oids['countryName'];
-   _shortNames['countryName'] = 'C';
-   _shortNames['L'] = oids['localityName'];
-   _shortNames['localityName'] = 'L';
-   _shortNames['ST'] = oids['stateOrProvinceName'];
-   _shortNames['stateOrProvinceName'] = 'ST';
-   _shortNames['O'] = oids['organizationName'];
-   _shortNames['organizationName'] = 'O';
-   _shortNames['OU'] = oids['organizationalUnitName'];
-   _shortNames['organizationalUnitName'] = 'OU';
-   _shortNames['E'] = oids['emailAddress'];
-   _shortNames['emailAddress'] = 'E';
-   
-   // validator for an SubjectPublicKeyInfo structure
-   // Note: Currently only works with an RSA public key 
-   var publicKeyValidator = {
-      name: 'SubjectPublicKeyInfo',
+         oids: require('./oids'),
+         rsa: require('./rsa')
+      },
+      util: require('./util')
+   };
+   BigInteger = require('./jsbn');
+   module.exports = forge.pki;
+}
+
+// shortcut for asn.1 API
+var asn1 = forge.asn1;
+
+/* Public Key Infrastructure (PKI) implementation. */
+var pki = forge.pki = forge.pki || {};
+var oids = pki.oids;
+
+// short name OID mappings
+var _shortNames = {};
+_shortNames['CN'] = oids['commonName'];
+_shortNames['commonName'] = 'CN';
+_shortNames['C'] = oids['countryName'];
+_shortNames['countryName'] = 'C';
+_shortNames['L'] = oids['localityName'];
+_shortNames['localityName'] = 'L';
+_shortNames['ST'] = oids['stateOrProvinceName'];
+_shortNames['stateOrProvinceName'] = 'ST';
+_shortNames['O'] = oids['organizationName'];
+_shortNames['organizationName'] = 'O';
+_shortNames['OU'] = oids['organizationalUnitName'];
+_shortNames['organizationalUnitName'] = 'OU';
+_shortNames['E'] = oids['emailAddress'];
+_shortNames['emailAddress'] = 'E';
+
+// validator for an SubjectPublicKeyInfo structure
+// Note: Currently only works with an RSA public key 
+var publicKeyValidator = {
+   name: 'SubjectPublicKeyInfo',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   captureAsn1: 'subjectPublicKeyInfo',
+   value: [{
+      name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
-      captureAsn1: 'subjectPublicKeyInfo',
       value: [{
-         name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
+         name: 'AlgorithmIdentifier.algorithm',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OID,
+         constructed: false,
+         capture: 'publicKeyOid'
+      }]
+   }, {
+      // subjectPublicKey
+      name: 'SubjectPublicKeyInfo.subjectPublicKey',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.BITSTRING,
+      constructed: false,
+      value: [{
+         // RSAPublicKey
+         name: 'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey',
          tagClass: asn1.Class.UNIVERSAL,
          type: asn1.Type.SEQUENCE,
          constructed: true,
-         value: [{
-            name: 'AlgorithmIdentifier.algorithm',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.OID,
-            constructed: false,
-            capture: 'publicKeyOid'
-         }]
-      }, {
-         // subjectPublicKey
-         name: 'SubjectPublicKeyInfo.subjectPublicKey',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.BITSTRING,
-         constructed: false,
-         value: [{
-            // RSAPublicKey
-            name: 'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.SEQUENCE,
-            constructed: true,
-            optional: true,
-            captureAsn1: 'rsaPublicKey'
-         }]
+         optional: true,
+         captureAsn1: 'rsaPublicKey'
       }]
-   };
-   
-   // validator for an RSA public key
-   var rsaPublicKeyValidator = {
-      // RSAPublicKey
-      name: 'RSAPublicKey',
+   }]
+};
+
+// validator for an RSA public key
+var rsaPublicKeyValidator = {
+   // RSAPublicKey
+   name: 'RSAPublicKey',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      // modulus (n)
+      name: 'RSAPublicKey.modulus',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'publicKeyModulus'
+   }, {
+      // publicExponent (e)
+      name: 'RSAPublicKey.exponent',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'publicKeyExponent'
+   }]
+};
+
+// validator for an X.509v3 certificate
+var x509CertificateValidator = {
+   name: 'Certificate',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      name: 'Certificate.TBSCertificate',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
+      captureAsn1: 'certTbs',
       value: [{
-         // modulus (n)
-         name: 'RSAPublicKey.modulus',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'publicKeyModulus'
-      }, {
-         // publicExponent (e)
-         name: 'RSAPublicKey.exponent',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'publicKeyExponent'
-      }]
-   };
-   
-   // validator for an X.509v3 certificate
-   var x509CertificateValidator = {
-      name: 'Certificate',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
-      constructed: true,
-      value: [{
-         name: 'Certificate.TBSCertificate',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.SEQUENCE,
+         name: 'Certificate.TBSCertificate.version',
+         tagClass: asn1.Class.CONTEXT_SPECIFIC,
+         type: 0,
          constructed: true,
-         captureAsn1: 'certTbs',
+         optional: true,
          value: [{
-            name: 'Certificate.TBSCertificate.version',
-            tagClass: asn1.Class.CONTEXT_SPECIFIC,
-            type: 0,
-            constructed: true,
-            optional: true,
-            value: [{
-               name: 'Certificate.TBSCertificate.version.integer',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.BIT_STRING,
-               constructed: false,
-               capture: 'certVersion'
-            }]
-         }, {
-            name: 'Certificate.TBSCertificate.serialNumber',
+            name: 'Certificate.TBSCertificate.version.integer',
             tagClass: asn1.Class.UNIVERSAL,
             type: asn1.Type.BIT_STRING,
             constructed: false,
-            capture: 'certSerialNumber'
-         }, {
-            name: 'Certificate.TBSCertificate.signature',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.SEQUENCE,
-            constructed: true,
-            value: [{
-               name: 'Certificate.TBSCertificate.signature.algorithm',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.OID,
-               constructed: false,
-               capture: 'certSignatureOid'
-            }]
-         }, {
-            name: 'Certificate.TBSCertificate.issuer',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.SEQUENCE,
-            constructed: true,
-            captureAsn1: 'certIssuer'
-         }, {
-            name: 'Certificate.TBSCertificate.validity',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.SEQUENCE,
-            constructed: true,
-            value: [{
-               // notBefore (Time) (only UTC time is supported)
-               name: 'Certificate.TBSCertificate.validity.notBefore',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.UTCTIME,
-               constructed: false,
-               capture: 'certNotBefore'
-            }, {
-               // notAfter (Time) (only UTC time is supported)
-               name: 'Certificate.TBSCertificate.validity.notAfter',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.UTCTIME,
-               constructed: false,
-               capture: 'certNotAfter'
-            }]
-         }, {
-            // Name (subject) (RDNSequence)
-            name: 'Certificate.TBSCertificate.subject',
-            tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.SEQUENCE,
-            constructed: true,
-            captureAsn1: 'certSubject'
-         }, 
-            // SubjectPublicKeyInfo
-            publicKeyValidator,
-         {
-            // issuerUniqueID (optional)
-            name: 'Certificate.TBSCertificate.issuerUniqueID',
-            tagClass: asn1.Class.CONTEXT_SPECIFIC,
-            type: 1,
-            constructed: true,
-            optional: true,
-            value: [{
-               name: 'Certificate.TBSCertificate.issuerUniqueID.id',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.BIT_STRING,
-               constructed: false,
-               capture: 'certIssuerUniqueId'
-            }]            
-         }, {
-            // subjectUniqueID (optional)
-            name: 'Certificate.TBSCertificate.subjectUniqueID',
-            tagClass: asn1.Class.CONTEXT_SPECIFIC,
-            type: 2,
-            constructed: true,
-            optional: true,
-            value: [{
-               name: 'Certificate.TBSCertificate.subjectUniqueID.id',
-               tagClass: asn1.Class.UNIVERSAL,
-               type: asn1.Type.BIT_STRING,
-               constructed: false,
-               capture: 'certSubjectUniqueId'
-            }]
-         }, {
-            // Extensions (optional)
-            name: 'Certificate.TBSCertificate.extensions',
-            tagClass: asn1.Class.CONTEXT_SPECIFIC,
-            type: 3,
-            constructed: true,
-            captureAsn1: 'certExtensions',
-            optional: true
+            capture: 'certVersion'
          }]
       }, {
-         // AlgorithmIdentifier (signature algorithm)
-         name: 'Certificate.signatureAlgorithm',
+         name: 'Certificate.TBSCertificate.serialNumber',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.BIT_STRING,
+         constructed: false,
+         capture: 'certSerialNumber'
+      }, {
+         name: 'Certificate.TBSCertificate.signature',
          tagClass: asn1.Class.UNIVERSAL,
          type: asn1.Type.SEQUENCE,
          constructed: true,
          value: [{
-            // algorithm
-            name: 'Certificate.signatureAlgorithm.algorithm',
+            name: 'Certificate.TBSCertificate.signature.algorithm',
             tagClass: asn1.Class.UNIVERSAL,
             type: asn1.Type.OID,
             constructed: false,
             capture: 'certSignatureOid'
          }]
       }, {
-         // SignatureValue
-         name: 'Certificate.signatureValue',
+         name: 'Certificate.TBSCertificate.issuer',
          tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.BITSTRING,
-         constructed: false,
-         capture: 'certSignature'
+         type: asn1.Type.SEQUENCE,
+         constructed: true,
+         captureAsn1: 'certIssuer'
+      }, {
+         name: 'Certificate.TBSCertificate.validity',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.SEQUENCE,
+         constructed: true,
+         value: [{
+            // notBefore (Time) (only UTC time is supported)
+            name: 'Certificate.TBSCertificate.validity.notBefore',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.UTCTIME,
+            constructed: false,
+            capture: 'certNotBefore'
+         }, {
+            // notAfter (Time) (only UTC time is supported)
+            name: 'Certificate.TBSCertificate.validity.notAfter',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.UTCTIME,
+            constructed: false,
+            capture: 'certNotAfter'
+         }]
+      }, {
+         // Name (subject) (RDNSequence)
+         name: 'Certificate.TBSCertificate.subject',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.SEQUENCE,
+         constructed: true,
+         captureAsn1: 'certSubject'
+      }, 
+         // SubjectPublicKeyInfo
+         publicKeyValidator,
+      {
+         // issuerUniqueID (optional)
+         name: 'Certificate.TBSCertificate.issuerUniqueID',
+         tagClass: asn1.Class.CONTEXT_SPECIFIC,
+         type: 1,
+         constructed: true,
+         optional: true,
+         value: [{
+            name: 'Certificate.TBSCertificate.issuerUniqueID.id',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.BIT_STRING,
+            constructed: false,
+            capture: 'certIssuerUniqueId'
+         }]            
+      }, {
+         // subjectUniqueID (optional)
+         name: 'Certificate.TBSCertificate.subjectUniqueID',
+         tagClass: asn1.Class.CONTEXT_SPECIFIC,
+         type: 2,
+         constructed: true,
+         optional: true,
+         value: [{
+            name: 'Certificate.TBSCertificate.subjectUniqueID.id',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.BIT_STRING,
+            constructed: false,
+            capture: 'certSubjectUniqueId'
+         }]
+      }, {
+         // Extensions (optional)
+         name: 'Certificate.TBSCertificate.extensions',
+         tagClass: asn1.Class.CONTEXT_SPECIFIC,
+         type: 3,
+         constructed: true,
+         captureAsn1: 'certExtensions',
+         optional: true
       }]
-   };
-   
-   // validator for an RSA private key
-   var rsaPrivateKeyValidator = {
-      // RSAPrivateKey
-      name: 'RSAPrivateKey',
+   }, {
+      // AlgorithmIdentifier (signature algorithm)
+      name: 'Certificate.signatureAlgorithm',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
       value: [{
-         // Version (INTEGER)
-         name: 'RSAPrivateKey.version',
+         // algorithm
+         name: 'Certificate.signatureAlgorithm.algorithm',
          tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
+         type: asn1.Type.OID,
          constructed: false,
-         capture: 'privateKeyVersion'
-      }, {
-         // modulus (n)
-         name: 'RSAPrivateKey.modulus',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyModulus'
-      }, {
-         // publicExponent (e)
-         name: 'RSAPrivateKey.publicExponent',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyPublicExponent'
-      }, {
-         // privateExponent (d)
-         name: 'RSAPrivateKey.privateExponent',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyPrivateExponent'
-      }, {
-         // prime1 (p)
-         name: 'RSAPrivateKey.prime1',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyPrime1'
-      }, {
-         // prime2 (q)
-         name: 'RSAPrivateKey.prime2',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyPrime2'
-      }, {
-         // exponent1 (d mod (p-1))
-         name: 'RSAPrivateKey.exponent1',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyExponent1'
-      }, {
-         // exponent2 (d mod (q-1))
-         name: 'RSAPrivateKey.exponent2',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyExponent2'
-      }, {
-         // coefficient ((inverse of q) mod p)
-         name: 'RSAPrivateKey.coefficient',
-         tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.INTEGER,
-         constructed: false,
-         capture: 'privateKeyCoefficient'
+         capture: 'certSignatureOid'
       }]
-   };
+   }, {
+      // SignatureValue
+      name: 'Certificate.signatureValue',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.BITSTRING,
+      constructed: false,
+      capture: 'certSignature'
+   }]
+};
+
+// validator for an RSA private key
+var rsaPrivateKeyValidator = {
+   // RSAPrivateKey
+   name: 'RSAPrivateKey',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      // Version (INTEGER)
+      name: 'RSAPrivateKey.version',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyVersion'
+   }, {
+      // modulus (n)
+      name: 'RSAPrivateKey.modulus',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyModulus'
+   }, {
+      // publicExponent (e)
+      name: 'RSAPrivateKey.publicExponent',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyPublicExponent'
+   }, {
+      // privateExponent (d)
+      name: 'RSAPrivateKey.privateExponent',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyPrivateExponent'
+   }, {
+      // prime1 (p)
+      name: 'RSAPrivateKey.prime1',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyPrime1'
+   }, {
+      // prime2 (q)
+      name: 'RSAPrivateKey.prime2',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyPrime2'
+   }, {
+      // exponent1 (d mod (p-1))
+      name: 'RSAPrivateKey.exponent1',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyExponent1'
+   }, {
+      // exponent2 (d mod (q-1))
+      name: 'RSAPrivateKey.exponent2',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyExponent2'
+   }, {
+      // coefficient ((inverse of q) mod p)
+      name: 'RSAPrivateKey.coefficient',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyCoefficient'
+   }]
+};
+
+/**
+ * Converts an RDNSequence of ASN.1 DER-encoded RelativeDistinguishedName
+ * sets into an array with objects that have type and value properties.
+ * 
+ * @param rdn the RDNSequence to convert.
+ * @param md a message digest to append type and value to if provided.
+ */
+var _getAttributesAsArray = function(rdn, md)
+{
+   var rval = [];
    
-   /**
-    * Converts an RDNSequence of ASN.1 DER-encoded RelativeDistinguishedName
-    * sets into an array with objects that have type and value properties.
-    * 
-    * @param rdn the RDNSequence to convert.
-    * @param md a message digest to append type and value to if provided.
-    */
-   var _getAttributesAsArray = function(rdn, md)
+   // each value in 'rdn' in is a SET of RelativeDistinguishedName
+   var set, attr, obj;
+   for(var si = 0; si < rdn.value.length; ++si)
    {
-      var rval = [];
+      // get the RelativeDistinguishedName set
+      set = rdn.value[si];
       
-      // each value in 'rdn' in is a SET of RelativeDistinguishedName
-      var set, attr, obj;
-      for(var si = 0; si < rdn.value.length; ++si)
+      // each value in the SET is an AttributeTypeAndValue sequence
+      // containing first a type (an OID) and second a value (defined by
+      // the OID)
+      for(var i = 0; i < set.value.length; ++i)
       {
-         // get the RelativeDistinguishedName set
-         set = rdn.value[si];
-         
-         // each value in the SET is an AttributeTypeAndValue sequence
-         // containing first a type (an OID) and second a value (defined by
-         // the OID)
-         for(var i = 0; i < set.value.length; ++i)
+         obj = {};
+         attr = set.value[i];
+         obj.type = asn1.derToOid(attr.value[0].value);
+         obj.value = attr.value[1].value;
+         // if the OID is known, get its name and short name
+         if(obj.type in oids)
          {
-            obj = {};
-            attr = set.value[i];
-            obj.type = asn1.derToOid(attr.value[0].value);
-            obj.value = attr.value[1].value;
-            // if the OID is known, get its name and short name
-            if(obj.type in oids)
+            obj.name = oids[obj.type];
+            if(obj.name in _shortNames)
             {
-               obj.name = oids[obj.type];
-               if(obj.name in _shortNames)
+               obj.shortName = _shortNames[obj.name];
+            }
+         }
+         if(md)
+         {
+            md.update(obj.type);
+            md.update(obj.value);
+         }
+         rval.push(obj);
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Gets an issuer or subject attribute from its name, type, or short name.
+ * 
+ * @param obj the issuer or subject object.
+ * @param options a short name string or an object with:
+ *           shortName the short name for the attribute.
+ *           name the name for the attribute.
+ *           type the type for the attribute.
+ * 
+ * @return the attribute.
+ */
+var _getAttribute = function(obj, options)
+{
+   if(options.constructor == String)
+   {
+      options = {
+         shortName: options
+      };
+   }
+   
+   var rval = null;
+   var attr;
+   for(var i = 0; rval === null && i < obj.attributes.length; ++i)
+   {
+      attr = obj.attributes[i];
+      if(options.type && options.type === attr.type)
+      {
+         rval = attr;
+      }
+      else if(options.name && options.name === attr.name)
+      {
+         rval = attr;
+      }
+      else if(options.shortName && options.shortName === attr.shortName)
+      {
+         rval = attr;
+      }
+   }
+   return rval;
+};
+
+/**
+ * Converts an ASN.1 extensions object (with extension sequences as its
+ * values) into an array of extension objects with types and values.
+ * 
+ * Supported extensions:
+ * 
+ * id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
+ * KeyUsage ::= BIT STRING {
+ *    digitalSignature        (0),
+ *    nonRepudiation          (1),
+ *    keyEncipherment         (2),
+ *    dataEncipherment        (3),
+ *    keyAgreement            (4),
+ *    keyCertSign             (5),
+ *    cRLSign                 (6),
+ *    encipherOnly            (7),
+ *    decipherOnly            (8)
+ * }
+ * 
+ * id-ce-basicConstraints OBJECT IDENTIFIER ::=  { id-ce 19 }
+ * BasicConstraints ::= SEQUENCE {
+ *    cA                      BOOLEAN DEFAULT FALSE,
+ *    pathLenConstraint       INTEGER (0..MAX) OPTIONAL
+ * }
+ * 
+ * subjectAltName EXTENSION ::= {
+ *    SYNTAX GeneralNames
+ *    IDENTIFIED BY id-ce-subjectAltName
+ * }
+ * 
+ * GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+ * 
+ * GeneralName ::= CHOICE {
+ *    otherName      [0] INSTANCE OF OTHER-NAME,
+ *    rfc822Name     [1] IA5String,
+ *    dNSName        [2] IA5String,
+ *    x400Address    [3] ORAddress,
+ *    directoryName  [4] Name,
+ *    ediPartyName   [5] EDIPartyName,
+ *    uniformResourceIdentifier [6] IA5String,
+ *    IPAddress      [7] OCTET STRING,
+ *    registeredID   [8] OBJECT IDENTIFIER
+ * }
+ * 
+ * OTHER-NAME ::= TYPE-IDENTIFIER
+ * 
+ * EDIPartyName ::= SEQUENCE {
+ *    nameAssigner [0] DirectoryString {ub-name} OPTIONAL,
+ *    partyName    [1] DirectoryString {ub-name}
+ * }
+ * 
+ * @param exts the extensions ASN.1 with extension sequences to parse.
+ * 
+ * @return the array.
+ */
+var _parseExtensions = function(exts)
+{
+   var rval = [];
+   
+   var e, ext, extseq;
+   for(var i = 0; i < exts.value.length; ++i)
+   {
+      // get extension sequence
+      extseq = exts.value[i];
+      for(var ei = 0; ei < extseq.value.length; ++ei)
+      {
+         // an extension has:
+         // [0] extnID      OBJECT IDENTIFIER
+         // [1] critical    BOOLEAN DEFAULT FALSE
+         // [2] extnValue   OCTET STRING
+         ext = extseq.value[ei];
+         e = {};
+         e.id = asn1.derToOid(ext.value[0].value);
+         e.critical = false;
+         if(ext.value[1].type === asn1.Type.BOOLEAN)
+         {
+            e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
+            e.value = ext.value[2].value;
+         }
+         else
+         {
+            e.value = ext.value[1].value;
+         }
+         // if the oid is known, get its name
+         if(e.id in oids)
+         {
+            e.name = oids[e.id];
+            
+            // handle key usage
+            if(e.name === 'keyUsage')
+            {
+               // get value as BIT STRING
+               var ev = asn1.fromDer(e.value);
+               var b2 = 0x00;
+               var b3 = 0x00;
+               if(ev.value.length > 1)
                {
-                  obj.shortName = _shortNames[obj.name];
+                  // skip first byte, just indicates unused bits which
+                  // will be padded with 0s anyway
+                  // get bytes with flag bits
+                  b2 = ev.value.charCodeAt(1);
+                  b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
+               }
+               // set flags
+               e.digitalSignature = (b2 & 0x80) == 0x80;
+               e.nonRepudiation = (b2 & 0x40) == 0x40;
+               e.keyEncipherment = (b2 & 0x20) == 0x20;
+               e.dataEncipherment = (b2 & 0x10) == 0x10;
+               e.keyAgreement = (b2 & 0x08) == 0x08;
+               e.keyCertSign = (b2 & 0x04) == 0x04;
+               e.cRLSign = (b2 & 0x02) == 0x02;
+               e.encipherOnly = (b2 & 0x01) == 0x01;
+               e.decipherOnly = (b3 & 0x80) == 0x80;
+            }
+            // handle basic constraints
+            else if(e.name === 'basicConstraints')
+            {
+               // get value as SEQUENCE
+               var ev = asn1.fromDer(e.value);
+               // get cA BOOLEAN flag (defaults to false)
+               if(ev.value.length > 0)
+               {
+                  e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
+               }
+               else
+               {
+                  e.cA = false;
+               }
+               // get path length constraint
+               if(ev.value.length > 1)
+               {
+                  var tmp = forge.util.createBuffer(ev.value[1].value);
+                  e.pathLenConstraint = tmp.getInt(tmp.length() << 3);
                }
             }
-            if(md)
+            // handle subjectAltName/issuerAltName
+            else if(
+               e.name === 'subjectAltName' ||
+               e.name === 'issuerAltName')
             {
-               md.update(obj.type);
-               md.update(obj.value);
+               e.altNames = [];
+               
+               // ev is a SYNTAX SEQUENCE
+               var gn, altname;
+               var ev = asn1.fromDer(e.value);
+               for(var n = 0; n < ev.value.length; ++n)
+               {
+                  // get GeneralName
+                  gn = ev.value[n];
+                  
+                  altName = {
+                     type: gn.type,
+                     value: gn.value
+                  };
+                  e.altNames.push(altName);
+                  
+                  // Note: Support for types 1,2,6,7,8
+                  switch(gn.type)
+                  {
+                     // rfc822Name
+                     case 1:
+                     // dNSName
+                     case 2:
+                     // uniformResourceIdentifier (URI)
+                     case 6:
+                        break;
+                     // IPAddress
+                     case 7:
+                        // FIXME: convert to IPv4 dotted string/IPv6
+                        break;
+                     // registeredID
+                     case 8:
+                        altName.oid = asn1.derToOid(gn.value);
+                        break;
+                     default:
+                        // unsupported
+                  }
+               }
             }
-            rval.push(obj);
          }
+         rval.push(e);
       }
-      
-      return rval;
+   }
+   
+   return rval;
+};
+
+// regex for stripping PEM header and footer
+var _pemRegex = new RegExp(
+   '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
+
+/**
+ * Converts PEM-formatted data to DER.
+ * 
+ * @param pem the PEM-formatted data.
+ * 
+ * @return the DER-formatted data.
+ */
+pki.pemToDer = function(pem)
+{
+   var rval = null;
+   
+   // get matching base64
+   var m = _pemRegex.exec(pem);
+   if(m)
+   {
+      // base64 decode to get DER
+      rval = forge.util.createBuffer(forge.util.decode64(m[1]));
+   }
+   else
+   {
+      throw 'Invalid PEM format';
+   }
+   
+   return rval;
+};
+
+/**
+ * Converts PEM-formatted data into an certificate or key.
+ * 
+ * @param pem the PEM-formatted data.
+ * @param func the certificate or key function to convert from ASN.1.
+ * 
+ * @return the certificate or key.
+ */
+var _fromPem = function(pem, func)
+{
+   var rval = null;
+   
+   // parse DER into asn.1 object
+   var der = pki.pemToDer(pem);
+   var obj = asn1.fromDer(der);
+   
+   // convert from asn.1
+   rval = func(obj);
+   
+   return rval;
+};
+
+/**
+ * Converts a positive BigInteger into 2's-complement big-endian bytes.
+ * 
+ * @param b the big integer to convert.
+ * 
+ * @return the bytes.
+ */
+var _bnToBytes = function(b)
+{
+   // prepend 0x00 if first byte >= 0x80 
+   var hex = b.toString(16);
+   if(hex[0] >= '8')
+   {
+      hex = '00' + hex;
+   }
+   return forge.util.hexToBytes(hex);
+};
+
+/**
+ * Converts an X.509 certificate from PEM format.
+ * 
+ * Note: If the certificate is to be verified then compute hash should
+ * be set to true. This will scan the TBSCertificate part of the ASN.1
+ * object while it is converted so it doesn't need to be converted back
+ * to ASN.1-DER-encoding later.
+ * 
+ * @param pem the PEM-formatted certificate.
+ * @param computeHash true to compute the hash for verification.
+ * 
+ * @return the certificate.
+ */
+pki.certificateFromPem = function(pem, computeHash)
+{
+   return _fromPem(pem, function(obj)
+   {
+      return pki.certificateFromAsn1(obj, computeHash);
+   });
+};
+
+/**
+ * Converts an X.509 certificate to PEM format.
+ * 
+ * @param cert the certificate.
+ * @param maxline the maximum characters per line, defaults to 64.
+ * 
+ * @return the PEM-formatted certificate.
+ */
+pki.certificateToPem = function(cert, maxline)
+{
+   // convert to ASN.1, then DER, then base64-encode
+   var out = asn1.toDer(pki.certificateToAsn1(cert));
+   out = forge.util.encode64(out.getBytes(), maxline || 64);
+   return (
+      '-----BEGIN CERTIFICATE-----\r\n' +
+      out +
+      '\r\n-----END CERTIFICATE-----');
+};
+
+/**
+ * Converts an RSA public key from PEM format.
+ * 
+ * @param pem the PEM-formatted public key.
+ * 
+ * @return the public key.
+ */
+pki.publicKeyFromPem = function(pem)
+{
+   return _fromPem(pem, pki.publicKeyFromAsn1);
+};
+
+/**
+ * Converts an RSA public key to PEM format.
+ * 
+ * @param key the public key.
+ * @param maxline the maximum characters per line, defaults to 64.
+ * 
+ * @return the PEM-formatted public key.
+ */
+pki.publicKeyToPem = function(key, maxline)
+{
+   // convert to ASN.1, then DER, then base64-encode
+   var out = asn1.toDer(pki.publicKeyToAsn1(key));
+   out = forge.util.encode64(out.getBytes(), maxline || 64);
+   return (
+      '-----BEGIN PUBLIC KEY-----\r\n' +
+      out +
+      '\r\n-----END PUBLIC KEY-----');
+};
+
+/**
+ * Converts an RSA private key from PEM format.
+ * 
+ * @param pem the PEM-formatted private key.
+ * 
+ * @return the private key.
+ */
+pki.privateKeyFromPem = function(pem)
+{
+   return _fromPem(pem, pki.privateKeyFromAsn1);
+};
+
+/**
+ * Converts an RSA private key to PEM format.
+ * 
+ * @param key the private key.
+ * @param maxline the maximum characters per line, defaults to 64.
+ * 
+ * @return the PEM-formatted private key.
+ */
+pki.privateKeyToPem = function(key, maxline)
+{
+   // convert to ASN.1, then DER, then base64-encode
+   var out = asn1.toDer(pki.privateKeyToAsn1(key));
+   out = forge.util.encode64(out.getBytes(), maxline || 64);
+   return (
+      '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+      out +
+      '\r\n-----END RSA PRIVATE KEY-----');
+};
+
+/**
+ * Creates an empty X.509v3 RSA certificate.
+ * 
+ * @return the certificate.
+ */
+pki.createCertificate = function()
+{
+   var cert = {};
+   cert.version = 0x02;
+   cert.serialNumber = '00';
+   cert.signatureOid = null;
+   cert.signature = null;
+   cert.validity = {};
+   cert.validity.notBefore = new Date();
+   cert.validity.notAfter = new Date();
+   
+   cert.issuer = {};
+   cert.issuer.getField = function(sn)
+   {
+      return _getAttribute(cert.issuer, sn);
    };
+   cert.issuer.attributes = [];
+   cert.issuer.hash = null;
+   
+   cert.subject = {};
+   cert.subject.getField = function(sn)
+   {
+      return _getAttribute(cert.subject, sn);
+   };
+   cert.subject.attributes = [];
+   cert.subject.hash = null;
+   
+   cert.extensions = [];
+   cert.publicKey = null;
+   cert.md = null;
    
    /**
-    * Gets an issuer or subject attribute from its name, type, or short name.
+    * Fills in missing fields in attributes.
     * 
-    * @param obj the issuer or subject object.
-    * @param options a short name string or an object with:
-    *           shortName the short name for the attribute.
-    *           name the name for the attribute.
-    *           type the type for the attribute.
-    * 
-    * @return the attribute.
+    * @param attrs the attributes to fill missing fields in.
     */
-   var _getAttribute = function(obj, options)
+   var _fillMissingFields = function(attrs)
    {
-      if(options.constructor == String)
-      {
-         options = {
-            shortName: options
-         };
-      }
-      
-      var rval = null;
       var attr;
-      for(var i = 0; rval === null && i < obj.attributes.length; ++i)
-      {
-         attr = obj.attributes[i];
-         if(options.type && options.type === attr.type)
-         {
-            rval = attr;
-         }
-         else if(options.name && options.name === attr.name)
-         {
-            rval = attr;
-         }
-         else if(options.shortName && options.shortName === attr.shortName)
-         {
-            rval = attr;
-         }
-      }
-      return rval;
-   };
-   
-   /**
-    * Converts an ASN.1 extensions object (with extension sequences as its
-    * values) into an array of extension objects with types and values.
-    * 
-    * Supported extensions:
-    * 
-    * id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
-    * KeyUsage ::= BIT STRING {
-    *    digitalSignature        (0),
-    *    nonRepudiation          (1),
-    *    keyEncipherment         (2),
-    *    dataEncipherment        (3),
-    *    keyAgreement            (4),
-    *    keyCertSign             (5),
-    *    cRLSign                 (6),
-    *    encipherOnly            (7),
-    *    decipherOnly            (8)
-    * }
-    * 
-    * id-ce-basicConstraints OBJECT IDENTIFIER ::=  { id-ce 19 }
-    * BasicConstraints ::= SEQUENCE {
-    *    cA                      BOOLEAN DEFAULT FALSE,
-    *    pathLenConstraint       INTEGER (0..MAX) OPTIONAL
-    * }
-    * 
-    * subjectAltName EXTENSION ::= {
-    *    SYNTAX GeneralNames
-    *    IDENTIFIED BY id-ce-subjectAltName
-    * }
-    * 
-    * GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
-    * 
-    * GeneralName ::= CHOICE {
-    *    otherName      [0] INSTANCE OF OTHER-NAME,
-    *    rfc822Name     [1] IA5String,
-    *    dNSName        [2] IA5String,
-    *    x400Address    [3] ORAddress,
-    *    directoryName  [4] Name,
-    *    ediPartyName   [5] EDIPartyName,
-    *    uniformResourceIdentifier [6] IA5String,
-    *    IPAddress      [7] OCTET STRING,
-    *    registeredID   [8] OBJECT IDENTIFIER
-    * }
-    * 
-    * OTHER-NAME ::= TYPE-IDENTIFIER
-    * 
-    * EDIPartyName ::= SEQUENCE {
-    *    nameAssigner [0] DirectoryString {ub-name} OPTIONAL,
-    *    partyName    [1] DirectoryString {ub-name}
-    * }
-    * 
-    * @param exts the extensions ASN.1 with extension sequences to parse.
-    * 
-    * @return the array.
-    */
-   var _parseExtensions = function(exts)
-   {
-      var rval = [];
-      
-      var e, ext, extseq;
-      for(var i = 0; i < exts.value.length; ++i)
-      {
-         // get extension sequence
-         extseq = exts.value[i];
-         for(var ei = 0; ei < extseq.value.length; ++ei)
-         {
-            // an extension has:
-            // [0] extnID      OBJECT IDENTIFIER
-            // [1] critical    BOOLEAN DEFAULT FALSE
-            // [2] extnValue   OCTET STRING
-            ext = extseq.value[ei];
-            e = {};
-            e.id = asn1.derToOid(ext.value[0].value);
-            e.critical = false;
-            if(ext.value[1].type === asn1.Type.BOOLEAN)
-            {
-               e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
-               e.value = ext.value[2].value;
-            }
-            else
-            {
-               e.value = ext.value[1].value;
-            }
-            // if the oid is known, get its name
-            if(e.id in oids)
-            {
-               e.name = oids[e.id];
-               
-               // handle key usage
-               if(e.name === 'keyUsage')
-               {
-                  // get value as BIT STRING
-                  var ev = asn1.fromDer(e.value);
-                  var b2 = 0x00;
-                  var b3 = 0x00;
-                  if(ev.value.length > 1)
-                  {
-                     // skip first byte, just indicates unused bits which
-                     // will be padded with 0s anyway
-                     // get bytes with flag bits
-                     b2 = ev.value.charCodeAt(1);
-                     b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
-                  }
-                  // set flags
-                  e.digitalSignature = (b2 & 0x80) == 0x80;
-                  e.nonRepudiation = (b2 & 0x40) == 0x40;
-                  e.keyEncipherment = (b2 & 0x20) == 0x20;
-                  e.dataEncipherment = (b2 & 0x10) == 0x10;
-                  e.keyAgreement = (b2 & 0x08) == 0x08;
-                  e.keyCertSign = (b2 & 0x04) == 0x04;
-                  e.cRLSign = (b2 & 0x02) == 0x02;
-                  e.encipherOnly = (b2 & 0x01) == 0x01;
-                  e.decipherOnly = (b3 & 0x80) == 0x80;
-               }
-               // handle basic constraints
-               else if(e.name === 'basicConstraints')
-               {
-                  // get value as SEQUENCE
-                  var ev = asn1.fromDer(e.value);
-                  // get cA BOOLEAN flag (defaults to false)
-                  if(ev.value.length > 0)
-                  {
-                     e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
-                  }
-                  else
-                  {
-                     e.cA = false;
-                  }
-                  // get path length constraint
-                  if(ev.value.length > 1)
-                  {
-                     var tmp = forge.util.createBuffer(ev.value[1].value);
-                     e.pathLenConstraint = tmp.getInt(tmp.length() << 3);
-                  }
-               }
-               // handle subjectAltName/issuerAltName
-               else if(
-                  e.name === 'subjectAltName' ||
-                  e.name === 'issuerAltName')
-               {
-                  e.altNames = [];
-                  
-                  // ev is a SYNTAX SEQUENCE
-                  var gn, altname;
-                  var ev = asn1.fromDer(e.value);
-                  for(var n = 0; n < ev.value.length; ++n)
-                  {
-                     // get GeneralName
-                     gn = ev.value[n];
-                     
-                     altName = {
-                        type: gn.type,
-                        value: gn.value
-                     };
-                     e.altNames.push(altName);
-                     
-                     // Note: Support for types 1,2,6,7,8
-                     switch(gn.type)
-                     {
-                        // rfc822Name
-                        case 1:
-                        // dNSName
-                        case 2:
-                        // uniformResourceIdentifier (URI)
-                        case 6:
-                           break;
-                        // IPAddress
-                        case 7:
-                           // FIXME: convert to IPv4 dotted string/IPv6
-                           break;
-                        // registeredID
-                        case 8:
-                           altName.oid = asn1.derToOid(gn.value);
-                           break;
-                        default:
-                           // unsupported
-                     }
-                  }
-               }
-            }
-            rval.push(e);
-         }
-      }
-      
-      return rval;
-   };
-   
-   // regex for stripping PEM header and footer
-   var _pemRegex = new RegExp(
-      '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
-   
-   /**
-    * Converts PEM-formatted data to DER.
-    * 
-    * @param pem the PEM-formatted data.
-    * 
-    * @return the DER-formatted data.
-    */
-   pki.pemToDer = function(pem)
-   {
-      var rval = null;
-      
-      // get matching base64
-      var m = _pemRegex.exec(pem);
-      if(m)
-      {
-         // base64 decode to get DER
-         rval = forge.util.createBuffer(forge.util.decode64(m[1]));
-      }
-      else
-      {
-         throw 'Invalid PEM format';
-      }
-      
-      return rval;
-   };
-   
-   /**
-    * Converts PEM-formatted data into an certificate or key.
-    * 
-    * @param pem the PEM-formatted data.
-    * @param func the certificate or key function to convert from ASN.1.
-    * 
-    * @return the certificate or key.
-    */
-   var _fromPem = function(pem, func)
-   {
-      var rval = null;
-      
-      // parse DER into asn.1 object
-      var der = pki.pemToDer(pem);
-      var obj = asn1.fromDer(der);
-      
-      // convert from asn.1
-      rval = func(obj);
-      
-      return rval;
-   };
-   
-   /**
-    * Converts a positive BigInteger into 2's-complement big-endian bytes.
-    * 
-    * @param b the big integer to convert.
-    * 
-    * @return the bytes.
-    */
-   var _bnToBytes = function(b)
-   {
-      // prepend 0x00 if first byte >= 0x80 
-      var hex = b.toString(16);
-      if(hex[0] >= '8')
-      {
-         hex = '00' + hex;
-      }
-      return forge.util.hexToBytes(hex);
-   };
-   
-   /**
-    * Converts an X.509 certificate from PEM format.
-    * 
-    * Note: If the certificate is to be verified then compute hash should
-    * be set to true. This will scan the TBSCertificate part of the ASN.1
-    * object while it is converted so it doesn't need to be converted back
-    * to ASN.1-DER-encoding later.
-    * 
-    * @param pem the PEM-formatted certificate.
-    * @param computeHash true to compute the hash for verification.
-    * 
-    * @return the certificate.
-    */
-   pki.certificateFromPem = function(pem, computeHash)
-   {
-      return _fromPem(pem, function(obj)
-      {
-         return pki.certificateFromAsn1(obj, computeHash);
-      });
-   };
-   
-   /**
-    * Converts an X.509 certificate to PEM format.
-    * 
-    * @param cert the certificate.
-    * @param maxline the maximum characters per line, defaults to 64.
-    * 
-    * @return the PEM-formatted certificate.
-    */
-   pki.certificateToPem = function(cert, maxline)
-   {
-      // convert to ASN.1, then DER, then base64-encode
-      var out = asn1.toDer(pki.certificateToAsn1(cert));
-      out = forge.util.encode64(out.getBytes(), maxline || 64);
-      return (
-         '-----BEGIN CERTIFICATE-----\r\n' +
-         out +
-         '\r\n-----END CERTIFICATE-----');
-   };
-   
-   /**
-    * Converts an RSA public key from PEM format.
-    * 
-    * @param pem the PEM-formatted public key.
-    * 
-    * @return the public key.
-    */
-   pki.publicKeyFromPem = function(pem)
-   {
-      return _fromPem(pem, pki.publicKeyFromAsn1);
-   };
-   
-   /**
-    * Converts an RSA public key to PEM format.
-    * 
-    * @param key the public key.
-    * @param maxline the maximum characters per line, defaults to 64.
-    * 
-    * @return the PEM-formatted public key.
-    */
-   pki.publicKeyToPem = function(key, maxline)
-   {
-      // convert to ASN.1, then DER, then base64-encode
-      var out = asn1.toDer(pki.publicKeyToAsn1(key));
-      out = forge.util.encode64(out.getBytes(), maxline || 64);
-      return (
-         '-----BEGIN PUBLIC KEY-----\r\n' +
-         out +
-         '\r\n-----END PUBLIC KEY-----');
-   };
-   
-   /**
-    * Converts an RSA private key from PEM format.
-    * 
-    * @param pem the PEM-formatted private key.
-    * 
-    * @return the private key.
-    */
-   pki.privateKeyFromPem = function(pem)
-   {
-      return _fromPem(pem, pki.privateKeyFromAsn1);
-   };
-   
-   /**
-    * Converts an RSA private key to PEM format.
-    * 
-    * @param key the private key.
-    * @param maxline the maximum characters per line, defaults to 64.
-    * 
-    * @return the PEM-formatted private key.
-    */
-   pki.privateKeyToPem = function(key, maxline)
-   {
-      // convert to ASN.1, then DER, then base64-encode
-      var out = asn1.toDer(pki.privateKeyToAsn1(key));
-      out = forge.util.encode64(out.getBytes(), maxline || 64);
-      return (
-         '-----BEGIN RSA PRIVATE KEY-----\r\n' +
-         out +
-         '\r\n-----END RSA PRIVATE KEY-----');
-   };
-   
-   /**
-    * Creates an empty X.509v3 RSA certificate.
-    * 
-    * @return the certificate.
-    */
-   pki.createCertificate = function()
-   {
-      var cert = {};
-      cert.version = 0x02;
-      cert.serialNumber = '00';
-      cert.signatureOid = null;
-      cert.signature = null;
-      cert.validity = {};
-      cert.validity.notBefore = new Date();
-      cert.validity.notAfter = new Date();
-      
-      cert.issuer = {};
-      cert.issuer.getField = function(sn)
-      {
-         return _getAttribute(cert.issuer, sn);
-      };
-      cert.issuer.attributes = [];
-      cert.issuer.hash = null;
-      
-      cert.subject = {};
-      cert.subject.getField = function(sn)
-      {
-         return _getAttribute(cert.subject, sn);
-      };
-      cert.subject.attributes = [];
-      cert.subject.hash = null;
-      
-      cert.extensions = [];
-      cert.publicKey = null;
-      cert.md = null;
-      
-      /**
-       * Fills in missing fields in attributes.
-       * 
-       * @param attrs the attributes to fill missing fields in.
-       */
-      var _fillMissingFields = function(attrs)
-      {
-         var attr;
-         for(var i = 0; i < attrs.length; ++i)
-         {
-            attr = attrs[i];
-            
-            // populate missing name
-            if(typeof(attr.name) === 'undefined')
-            {
-               if(attr.type && attr.type in pki.oids)
-               {
-                  attr.name = pki.oids[attr.type];
-               }
-               else if(attr.shortName && attr.shortName in _shortNames)
-               {
-                  attr.name = pki.oids[_shortNames[attr.shortName]];
-               }
-            }
-            
-            // populate missing type (OID)
-            if(typeof(attr.type) === 'undefined')
-            {
-               if(attr.name && attr.name in pki.oids)
-               {
-                  attr.type = pki.oids[attr.name];
-               }
-               else
-               {
-                  throw {
-                     message: 'Attribute type not specified.',
-                     attribute: attr
-                  };
-               }
-            }
-            
-            // populate missing shortname
-            if(typeof(attr.shortName) === 'undefined')
-            {
-               if(attr.name && attr.name in _shortNames)
-               {
-                  attr.shortName = _shortNames[attr.name];
-               }
-            }
-            
-            if(typeof(attr.value) === 'undefined')
-            {
-               throw {
-                  message: 'Attribute value not specified.',
-                  attribute: attr
-               };
-            }
-         }
-      };
-      
-      /**
-       * Sets the subject of this certificate.
-       * 
-       * @param attrs the array of subject attributes to use.
-       * @param uniqueId an optional a unique ID to use.
-       */
-      cert.setSubject = function(attrs, uniqueId)
-      {
-         // set new attributes, clear hash
-         _fillMissingFields(attrs);
-         cert.subject.attributes = attrs;
-         delete cert.subject.uniqueId;
-         if(uniqueId)
-         {
-            cert.subject.uniqueId = uniqueId;
-         }
-         cert.subject.hash = null;
-      };
-      
-      /**
-       * Sets the issuer of this certificate.
-       * 
-       * @param attrs the array of issuer attributes to use.
-       * @param uniqueId an optional a unique ID to use.
-       */
-      cert.setIssuer = function(attrs, uniqueId)
-      {
-         // set new attributes, clear hash
-         _fillMissingFields(attrs);
-         cert.issuer.attributes = attrs;
-         delete cert.issuer.uniqueId;
-         if(uniqueId)
-         {
-            cert.issuer.uniqueId = uniqueId;
-         }
-         cert.issuer.hash = null;
-      };
-      
-      /**
-       * Sets the extensions of this certificate.
-       * 
-       * @param exts the array of extensions to use.
-       */
-      cert.setExtensions = function(exts)
-      {
-         var e;
-         for(var i = 0; i < exts.length; ++i)
-         {
-            e = exts[i];
-            
-            // populate missing name
-            if(typeof(e.name) === 'undefined')
-            {
-               if(e.id && e.id in pki.oids)
-               {
-                  e.name = pki.oids[e.id];
-               }
-            }
-            
-            // populate missing id
-            if(typeof(e.id) === 'undefined')
-            {
-               if(e.name && e.name in pki.oids)
-               {
-                  e.id = pki.oids[e.name];
-               }
-               else
-               {
-                  throw {
-                     message: 'Extension ID not specified.',
-                     extension: e
-                  };
-               }
-            }
-            
-            // handle missing value
-            if(typeof(e.value) === 'undefined')
-            {
-               // value is a BIT STRING
-               if(e.name === 'keyUsage')
-               {
-                  // build flags
-                  var unused = 0;
-                  var b2 = 0x00;
-                  var b3 = 0x00;
-                  if(e.digitalSignature)
-                  {
-                     b2 |= 0x80;
-                     unused = 7;
-                  }
-                  if(e.nonRepudiation)
-                  {
-                     b2 |= 0x40;
-                     unused = 6;
-                  }
-                  if(e.keyEncipherment)
-                  {
-                     b2 |= 0x20;
-                     unused = 5;
-                  }
-                  if(e.dataEncipherment)
-                  {
-                     b2 |= 0x10;
-                     unused = 4;
-                  }
-                  if(e.keyAgreement)
-                  {
-                     b2 |= 0x08;
-                     unused = 3;
-                  }
-                  if(e.keyCertSign)
-                  {
-                     b2 |= 0x04;
-                     unused = 2;
-                  }
-                  if(e.cRLSign)
-                  {
-                     b2 |= 0x02;
-                     unused = 1;
-                  }
-                  if(e.encipherOnly)
-                  {
-                     b2 |= 0x01;
-                     unused = 0;
-                  }
-                  if(e.decipherOnly)
-                  {
-                     b3 |= 0x80;
-                     unused = 7;
-                  }
-                  
-                  // create bit string
-                  var value = String.fromCharCode(unused);
-                  if(b3 !== 0)
-                  {
-                     value += String.fromCharCode(b2) + String.fromCharCode(b3);
-                  }
-                  else if(b2 !== 0)
-                  {
-                     value += String.fromCharCode(b2);
-                  }
-                  e.value = asn1.create(
-                     asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
-               }
-               // basicConstraints is a SEQUENCE
-               else if(e.name === 'basicConstraints')
-               {
-                  e.value = asn1.create(
-                     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-                  // cA BOOLEAN flag defaults to false
-                  if(e.cA)
-                  {
-                     e.value.value.push(asn1.create(
-                        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-                        String.fromCharCode(0xFF)));
-                  }
-                  if(e.pathLenConstraint)
-                  {
-                     var num = e.pathLenConstraint;
-                     var tmp = forge.util.createBuffer();
-                     tmp.putInt(num, num.toString(2).length)
-                     e.value.value.push(asn1.create(
-                        asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                        tmp.getBytes()));
-                  }
-               }
-               else if(
-                  e.name === 'subjectAltName' ||
-                  e.name === 'issuerAltName')
-               {
-                  // SYNTAX SEQUENCE
-                  e.value = asn1.create(
-                     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-                  
-                  var altName;
-                  for(var n = 0; n < e.altNames.length; ++n)
-                  {
-                     altName = e.altNames[n];
-                     var value = altName.value;
-                     // handle OID
-                     if(altName.type === 8)
-                     {
-                        value = asn1.oidToDer(value);
-                     }
-                     e.value.value.push(asn1.create(
-                        asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
-                        value));
-                  }
-               }
-               
-               // ensure value has been defined by now
-               if(typeof(e.value) === 'undefined')
-               {
-                  throw {
-                     message: 'Extension value not specified.',
-                     extension: e
-                  };
-               }
-            }
-         }
-         
-         // set new extensions
-         cert.extensions = exts;
-      };
-      
-      /**
-       * Gets an extension by its name or id.
-       * 
-       * @param options the name to use or an object with:
-       *           name the name to use.
-       *           id the id to use.
-       * 
-       * @return the extension or null if not found.
-       */
-      cert.getExtension = function(options)
-      {
-         if(options.constructor == String)
-         {
-            options = {
-               name: options
-            };
-         }
-         
-         var rval = null;
-         var ext;
-         for(var i = 0; rval === null && i < cert.extensions.length; ++i)
-         {
-            ext = cert.extensions[i];
-            if(options.id && ext.id === options.id)
-            {
-               rval = ext;
-            }
-            else if(options.name && ext.name === options.name)
-            {
-               rval = ext;
-            }
-         }
-         return rval;
-      };
-      
-      /**
-       * Signs this certificate using the given private key.
-       * 
-       * @param key the private key to sign with.
-       */
-      cert.sign = function(key)
-      {
-         // TODO: get signature OID from private key
-         cert.signatureOid = oids['sha1withRSAEncryption'];
-         cert.md = forge.md.sha1.create();
-         
-         // get TBSCertificate, convert to DER
-         var bytes = asn1.toDer(pki.getTBSCertificate(cert));
-         
-         // digest and sign
-         cert.md.update(bytes.getBytes());
-         cert.signature = key.sign(cert.md);
-      };
-      
-      /**
-       * Attempts verify the signature on the passed certificate using this
-       * certificate's public key.
-       * 
-       * @param child the certificate to verify.
-       * 
-       * @return true if verified, false if not.
-       */
-      cert.verify = function(child)
-      {
-         var rval = false;
-         
-         if(child.md !== null)
-         {
-            // verify signature on cert using public key
-            rval = cert.publicKey.verify(
-               child.md.digest().getBytes(), child.signature);
-         }
-         
-         return rval;
-      };
-      
-      /**
-       * Returns true if the passed certificate's subject is the issuer of
-       * this certificate.
-       * 
-       * @param parent the certificate to check.
-       * 
-       * @return true if the passed certificate's subject is the issuer of
-       *         this certificate.
-       */
-      cert.isIssuer = function(parent)
-      {
-         var rval = false;
-         
-         var i = cert.issuer;
-         var s = parent.subject;
-         
-         // compare hashes if present
-         if(i.hash && s.hash)
-         {
-            rval = (i.hash === s.hash);
-         }
-         // if all attributes are the same then issuer matches subject
-         else if(i.attributes.length === s.attributes.length)
-         {
-            rval = true;
-            var iattr, sattr;
-            for(var n; rval && n < i.attributes.length; ++i)
-            {
-               iattr = i.attributes[n];
-               sattr = s.attributes[n];
-               if(iattr.type !== sattr.type || iattr.value !== sattr.value)
-               {
-                  // attribute mismatch
-                  rval = false;
-               }
-            }
-         }
-         
-         return rval;
-      };
-      
-      return cert;
-   };
-   
-   /**
-    * Converts an X.509v3 RSA certificate from an ASN.1 object.
-    * 
-    * Note: If the certificate is to be verified then compute hash should
-    * be set to true. There is currently no implementation for converting
-    * a certificate back to ASN.1 so the TBSCertificate part of the ASN.1
-    * object needs to be scanned before the cert object is created.
-    * 
-    * @param obj the asn1 representation of an X.509v3 RSA certificate.
-    * @param computeHash true to compute the hash for verification.
-    * 
-    * @return the certificate.
-    */
-   pki.certificateFromAsn1 = function(obj, computeHash)
-   {
-      // validate certificate and capture data
-      var capture = {};
-      var errors = [];
-      if(!asn1.validate(obj, x509CertificateValidator, capture, errors))
-      {
-         throw {
-            message: 'Cannot read X.509 certificate. ' +
-               'ASN.1 object is not an X509v3 Certificate.',
-            errors: errors
-         };
-      }
-      
-      // get oid
-      var oid = asn1.derToOid(capture.publicKeyOid);
-      if(oid !== pki.oids['rsaEncryption'])
-      {
-         throw {
-            message: 'Cannot read public key. OID is not RSA.'
-         };
-      }
-      
-      // create certificate
-      var cert = pki.createCertificate();
-      cert.version = capture.certVersion ?
-         capture.certVersion.charCodeAt(0) : 0;
-      var serial = forge.util.createBuffer(capture.certSerialNumber);
-      cert.serialNumber = serial.toHex();
-      cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
-      // skip "unused bits" in signature value BITSTRING
-      var signature = forge.util.createBuffer(capture.certSignature);
-      ++signature.read;
-      cert.signature = signature.getBytes();
-      cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
-      cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
-      
-      if(computeHash)
-      {
-         // check signature OID for supported signature types
-         cert.md = null;
-         if(cert.signatureOid in oids)
-         {
-            var oid = oids[cert.signatureOid];
-            if(oid === 'sha1withRSAEncryption')
-            {
-               cert.md = forge.md.sha1.create();
-            }
-            else if(oid === 'md5withRSAEncryption')
-            {
-               cert.md = forge.md.md5.create();
-            }
-         }
-         if(cert.md === null)
-         {
-            throw {
-               message: 'Could not compute certificate digest. ' +
-                  'Unknown signature OID.',
-               signatureOid: cert.signatureOid
-            };
-         }
-         
-         // produce DER formatted TBSCertificate and digest it
-         var bytes = asn1.toDer(capture.certTbs);
-         cert.md.update(bytes.getBytes());
-      }
-      
-      // handle issuer, build issuer message digest
-      var imd = forge.md.sha1.create();
-      cert.issuer.attributes = _getAttributesAsArray(capture.certIssuer, imd);
-      if(capture.certIssuerUniqueId)
-      {
-         cert.issuer.uniqueId = capture.certIssuerUniqueId;
-      }
-      cert.issuer.hash = imd.digest().toHex();
-      
-      // handle subject, build subject message digest
-      var smd = forge.md.sha1.create();
-      cert.subject.attributes = _getAttributesAsArray(capture.certSubject, smd);
-      if(capture.certSubjectUniqueId)
-      {
-         cert.subject.uniqueId = capture.certSubjectUniqueId;
-      }
-      cert.subject.hash = smd.digest().toHex();
-      
-      // handle extensions
-      if(capture.certExtensions)
-      {
-         cert.extensions = _parseExtensions(capture.certExtensions);
-      }
-      else
-      {
-         cert.extensions = [];
-      }
-      
-      // convert RSA public key from ASN.1
-      cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
-      
-      return cert;
-   };
-   
-   /**
-    * Converts an X.509 subject or issuer to an ASN.1 RDNSequence.
-    * 
-    * @param obj the subject or issuer (distinguished name).
-    * 
-    * @return the ASN.1 RDNSequence.
-    */
-   _dnToAsn1 = function(obj)
-   {
-      // create an empty RDNSequence
-      var rval = asn1.create(
-         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-      
-      // iterate over attributes
-      var attr, set;
-      var attrs = obj.attributes;
       for(var i = 0; i < attrs.length; ++i)
       {
          attr = attrs[i];
          
-         // create a RelativeDistinguishedName set
-         // each value in the set is an AttributeTypeAndValue first
-         // containing the type (an OID) and second the value
-         set = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-               // AttributeType
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-                  asn1.oidToDer(attr.type).getBytes()),
-               // AttributeValue
-               // TODO: make value types more sophisticated
-               asn1.create(
-                  asn1.Class.UNIVERSAL, asn1.Type.PRINTABLESTRING, false,
-                  attr.value)
-            ])
-         ]);
-         rval.value.push(set);
-      }
-      
-      return rval;
-   };
-   
-   /**
-    * Converts X.509v3 certificate extensions to ASN.1.
-    * 
-    * @param exts the extensions to convert.
-    * 
-    * @return the extensions in ASN.1 format.
-    */
-   _extensionsToAsn1 = function(exts)
-   {
-      // create top-level extension container
-      var rval = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 3, true, []);
-      
-      // create extension sequence (stores a sequence for each extension)
-      var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-      rval.value.push(seq);
-      
-      var ext, extseq;
-      for(var i = 0; i < exts.length; ++i)
-      {
-         ext = exts[i];
-         
-         // create a sequence for each extension
-         extseq = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-         seq.value.push(extseq);
-         
-         // extnID (OID)
-         extseq.value.push(asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(ext.id).getBytes()));
-         
-         // critical defaults to false
-         if(ext.critical)
+         // populate missing name
+         if(typeof(attr.name) === 'undefined')
          {
-            // critical BOOLEAN DEFAULT FALSE
-            extseq.value.push(asn1.create(
-               asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-               String.fromCharCode(0xFF)));
-         }
-         
-         var value = ext.value;
-         if(ext.value.constructor != String)
-         {
-            // value is asn.1
-            value = asn1.toDer(value).getBytes();
-         }
-         
-         // extnValue (OCTET STRING)
-         extseq.value.push(asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
-      }
-      
-      return rval;
-   };
-   
-   /**
-    * Gets the ASN.1 TBSCertificate part of an X.509v3 certificate.
-    * 
-    * @param cert the certificate.
-    * 
-    * @return the asn1 TBSCertificate.
-    */
-   pki.getTBSCertificate = function(cert)
-   {
-      // TBSCertificate
-      var tbs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // version
-         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-            // integer
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-               String.fromCharCode(cert.version))
-         ]),
-         // serialNumber
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            forge.util.hexToBytes(cert.serialNumber)),
-         // signature
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // algorithm
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               asn1.oidToDer(cert.signatureOid).getBytes()),
-            // parameters (null)
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-         ]),
-         // issuer
-         _dnToAsn1(cert.issuer),
-         // validity
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // notBefore
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
-               asn1.dateToUtcTime(cert.validity.notBefore)),
-            // notAfter
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
-               asn1.dateToUtcTime(cert.validity.notAfter))
-         ]),
-         // subject
-         _dnToAsn1(cert.subject),
-         // SubjectPublicKeyInfo
-         pki.publicKeyToAsn1(cert.publicKey)
-      ]);
-      
-      if(cert.issuer.uniqueId)
-      {
-         // issuerUniqueID (optional)
-         tbs.value.push(
-            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-                  String.fromCharCode(0x00) +
-                  cert.issuer.uniqueId
-               )
-            ])
-         );
-      }
-      if(cert.subject.uniqueId)
-      {
-         // subjectUniqueID (optional)
-         tbs.value.push(
-            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-                  String.fromCharCode(0x00) +
-                  cert.subject.uniqueId
-               )
-            ])
-         );
-      }
-      
-      if(cert.extensions.length > 0)
-      {
-         // extensions (optional)
-         tbs.value.push(_extensionsToAsn1(cert.extensions));
-      }
-      
-      return tbs;
-   };
-   
-   /**
-    * Converts a DistinguishedName (subject or issuer) to an ASN.1 object.
-    * 
-    * @param dn the DistinguishedName.
-    * 
-    * @return the asn1 representation of a DistinguishedName.
-    */
-   pki.distinguishedNameToAsn1 = function(dn)
-   {
-      return _dnToAsn1(dn);
-   };
-   
-   /**
-    * Converts an X.509v3 RSA certificate to an ASN.1 object.
-    * 
-    * @param cert the certificate.
-    * 
-    * @return the asn1 representation of an X.509v3 RSA certificate.
-    */
-   pki.certificateToAsn1 = function(cert)
-   {
-      // Certificate
-      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // TBSCertificate
-         pki.getTBSCertificate(cert),
-         // AlgorithmIdentifier (signature algorithm)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // algorithm
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               asn1.oidToDer(cert.signatureOid).getBytes()),
-            // parameters (null)
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-         ]),
-         // SignatureValue
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-            String.fromCharCode(0x00) + cert.signature)
-      ]);
-   };
-   
-   /**
-    * Creates a CA store.
-    * 
-    * @param certs an optional array of certificate objects or PEM-formatted
-    *           certificate strings to add to the CA store.
-    * 
-    * @return the CA store.
-    */
-   pki.createCaStore = function(certs)
-   {
-      // create CA store
-      var caStore =
-      {
-         // stored certificates
-         certs: {}
-      };
-      
-      /**
-       * Gets the certificate that issued the passed certificate or its
-       * 'parent'.
-       * 
-       * @param cert the certificate to get the parent for.
-       * 
-       * @return the parent certificate or null if none was found.
-       */
-      caStore.getIssuer = function(cert)
-      {
-         var rval = null;
-         
-         // TODO: produce issuer hash if it doesn't exist
-         
-         // get the entry using the cert's issuer hash
-         if(cert.issuer.hash in caStore.certs)
-         {
-            rval = caStore.certs[cert.issuer.hash];
-            
-            // see if there are multiple matches
-            if(rval.constructor == Array)
+            if(attr.type && attr.type in pki.oids)
             {
-               // TODO: resolve multiple matches by checking
-               // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
-               // FIXME: or alternatively do authority key mapping
-               // if possible (X.509v1 certs can't work?)
+               attr.name = pki.oids[attr.type];
+            }
+            else if(attr.shortName && attr.shortName in _shortNames)
+            {
+               attr.name = pki.oids[_shortNames[attr.shortName]];
+            }
+         }
+         
+         // populate missing type (OID)
+         if(typeof(attr.type) === 'undefined')
+         {
+            if(attr.name && attr.name in pki.oids)
+            {
+               attr.type = pki.oids[attr.name];
+            }
+            else
+            {
                throw {
-                  message:
-                     'Resolving multiple issuer matches not implemented yet.'
+                  message: 'Attribute type not specified.',
+                  attribute: attr
                };
             }
          }
          
-         return rval;
-      };
-      
-      /**
-       * Adds a trusted certificate to the store.
-       * 
-       * @param cert the certificate to add as a trusted certificate.
-       */
-      caStore.addCertificate = function(cert)
-      {
-         // TODO: produce subject hash if it doesn't exist
-         if(cert.subject.hash in caStore.certs)
+         // populate missing shortname
+         if(typeof(attr.shortName) === 'undefined')
          {
-            // subject hash already exists, append to array
-            var tmp = caStore.certs[cert.subject.hash];
-            if(tmp.constructor != Array)
+            if(attr.name && attr.name in _shortNames)
             {
-               tmp = [tmp];
+               attr.shortName = _shortNames[attr.name];
             }
-            tmp.push(cert);
          }
-         else
+         
+         if(typeof(attr.value) === 'undefined')
          {
-            caStore.certs[cert.subject.hash] = cert;
+            throw {
+               message: 'Attribute value not specified.',
+               attribute: attr
+            };
          }
-      };
-      
-      // auto-add passed in certs
-      if(certs)
+      }
+   };
+   
+   /**
+    * Sets the subject of this certificate.
+    * 
+    * @param attrs the array of subject attributes to use.
+    * @param uniqueId an optional a unique ID to use.
+    */
+   cert.setSubject = function(attrs, uniqueId)
+   {
+      // set new attributes, clear hash
+      _fillMissingFields(attrs);
+      cert.subject.attributes = attrs;
+      delete cert.subject.uniqueId;
+      if(uniqueId)
       {
-         // parse PEM-formatted certificates as necessary
-         for(var i = 0; i < certs.length; ++i)
+         cert.subject.uniqueId = uniqueId;
+      }
+      cert.subject.hash = null;
+   };
+   
+   /**
+    * Sets the issuer of this certificate.
+    * 
+    * @param attrs the array of issuer attributes to use.
+    * @param uniqueId an optional a unique ID to use.
+    */
+   cert.setIssuer = function(attrs, uniqueId)
+   {
+      // set new attributes, clear hash
+      _fillMissingFields(attrs);
+      cert.issuer.attributes = attrs;
+      delete cert.issuer.uniqueId;
+      if(uniqueId)
+      {
+         cert.issuer.uniqueId = uniqueId;
+      }
+      cert.issuer.hash = null;
+   };
+   
+   /**
+    * Sets the extensions of this certificate.
+    * 
+    * @param exts the array of extensions to use.
+    */
+   cert.setExtensions = function(exts)
+   {
+      var e;
+      for(var i = 0; i < exts.length; ++i)
+      {
+         e = exts[i];
+         
+         // populate missing name
+         if(typeof(e.name) === 'undefined')
          {
-            var cert = certs[i];
-            if(cert.constructor == String)
+            if(e.id && e.id in pki.oids)
             {
-               // convert from pem
-               caStore.addCertificate(forge.pki.certificateFromPem(cert));
+               e.name = pki.oids[e.id];
+            }
+         }
+         
+         // populate missing id
+         if(typeof(e.id) === 'undefined')
+         {
+            if(e.name && e.name in pki.oids)
+            {
+               e.id = pki.oids[e.name];
             }
             else
             {
-               // assume forge.pki cert just add it
-               caStore.addCertificate(cert);
+               throw {
+                  message: 'Extension ID not specified.',
+                  extension: e
+               };
+            }
+         }
+         
+         // handle missing value
+         if(typeof(e.value) === 'undefined')
+         {
+            // value is a BIT STRING
+            if(e.name === 'keyUsage')
+            {
+               // build flags
+               var unused = 0;
+               var b2 = 0x00;
+               var b3 = 0x00;
+               if(e.digitalSignature)
+               {
+                  b2 |= 0x80;
+                  unused = 7;
+               }
+               if(e.nonRepudiation)
+               {
+                  b2 |= 0x40;
+                  unused = 6;
+               }
+               if(e.keyEncipherment)
+               {
+                  b2 |= 0x20;
+                  unused = 5;
+               }
+               if(e.dataEncipherment)
+               {
+                  b2 |= 0x10;
+                  unused = 4;
+               }
+               if(e.keyAgreement)
+               {
+                  b2 |= 0x08;
+                  unused = 3;
+               }
+               if(e.keyCertSign)
+               {
+                  b2 |= 0x04;
+                  unused = 2;
+               }
+               if(e.cRLSign)
+               {
+                  b2 |= 0x02;
+                  unused = 1;
+               }
+               if(e.encipherOnly)
+               {
+                  b2 |= 0x01;
+                  unused = 0;
+               }
+               if(e.decipherOnly)
+               {
+                  b3 |= 0x80;
+                  unused = 7;
+               }
+               
+               // create bit string
+               var value = String.fromCharCode(unused);
+               if(b3 !== 0)
+               {
+                  value += String.fromCharCode(b2) + String.fromCharCode(b3);
+               }
+               else if(b2 !== 0)
+               {
+                  value += String.fromCharCode(b2);
+               }
+               e.value = asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
+            }
+            // basicConstraints is a SEQUENCE
+            else if(e.name === 'basicConstraints')
+            {
+               e.value = asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+               // cA BOOLEAN flag defaults to false
+               if(e.cA)
+               {
+                  e.value.value.push(asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+                     String.fromCharCode(0xFF)));
+               }
+               if(e.pathLenConstraint)
+               {
+                  var num = e.pathLenConstraint;
+                  var tmp = forge.util.createBuffer();
+                  tmp.putInt(num, num.toString(2).length)
+                  e.value.value.push(asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                     tmp.getBytes()));
+               }
+            }
+            else if(
+               e.name === 'subjectAltName' ||
+               e.name === 'issuerAltName')
+            {
+               // SYNTAX SEQUENCE
+               e.value = asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+               
+               var altName;
+               for(var n = 0; n < e.altNames.length; ++n)
+               {
+                  altName = e.altNames[n];
+                  var value = altName.value;
+                  // handle OID
+                  if(altName.type === 8)
+                  {
+                     value = asn1.oidToDer(value);
+                  }
+                  e.value.value.push(asn1.create(
+                     asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
+                     value));
+               }
+            }
+            
+            // ensure value has been defined by now
+            if(typeof(e.value) === 'undefined')
+            {
+               throw {
+                  message: 'Extension value not specified.',
+                  extension: e
+               };
             }
          }
       }
       
-      return caStore;
+      // set new extensions
+      cert.extensions = exts;
    };
    
    /**
-    * Converts a public key from an ASN.1 object.
+    * Gets an extension by its name or id.
     * 
-    * @param obj the asn1 representation of a SubjectPublicKeyInfo.
+    * @param options the name to use or an object with:
+    *           name the name to use.
+    *           id the id to use.
     * 
-    * @return the public key.
+    * @return the extension or null if not found.
     */
-   pki.publicKeyFromAsn1 = function(obj)
+   cert.getExtension = function(options)
    {
-      // validate subject public key info and capture data
-      var capture = {};
-      var errors = [];
-      if(!asn1.validate(obj, publicKeyValidator, capture, errors))
+      if(options.constructor == String)
       {
-         throw {
-            message: 'Cannot read public key. ' +
-               'ASN.1 object is not a SubjectPublicKeyInfo.',
-            errors: errors
+         options = {
+            name: options
          };
       }
       
-      // get oid
-      var oid = asn1.derToOid(capture.publicKeyOid);
-      if(oid !== pki.oids['rsaEncryption'])
+      var rval = null;
+      var ext;
+      for(var i = 0; rval === null && i < cert.extensions.length; ++i)
       {
-         throw {
-            message: 'Cannot read public key. Unknown OID.',
-            oid: oid
-         };
+         ext = cert.extensions[i];
+         if(options.id && ext.id === options.id)
+         {
+            rval = ext;
+         }
+         else if(options.name && ext.name === options.name)
+         {
+            rval = ext;
+         }
       }
-      
-      // get RSA params
-      errors = [];
-      if(!asn1.validate(
-         capture.rsaPublicKey, rsaPublicKeyValidator, capture, errors))
-      {
-         throw {
-            message: 'Cannot read public key. ' +
-               'ASN.1 object is not an RSAPublicKey.',
-            errors: errors
-         };
-      }
-      
-      // FIXME: inefficient, get a BigInteger that uses byte strings
-      var n = forge.util.createBuffer(capture.publicKeyModulus).toHex();
-      var e = forge.util.createBuffer(capture.publicKeyExponent).toHex();
-      
-      // set public key
-      return pki.setRsaPublicKey(
-         new BigInteger(n, 16),
-         new BigInteger(e, 16));
+      return rval;
    };
    
    /**
-    * Converts a public key to an ASN.1 object.
+    * Signs this certificate using the given private key.
     * 
-    * @param key the public key.
-    * 
-    * @return the asn1 representation of a SubjectPublicKeyInfo.
+    * @param key the private key to sign with.
     */
-   pki.publicKeyToAsn1 = function(key)
+   cert.sign = function(key)
    {
-      // SubjectPublicKeyInfo
-      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // AlgorithmIdentifier
+      // TODO: get signature OID from private key
+      cert.signatureOid = oids['sha1withRSAEncryption'];
+      cert.md = forge.md.sha1.create();
+      
+      // get TBSCertificate, convert to DER
+      var bytes = asn1.toDer(pki.getTBSCertificate(cert));
+      
+      // digest and sign
+      cert.md.update(bytes.getBytes());
+      cert.signature = key.sign(cert.md);
+   };
+   
+   /**
+    * Attempts verify the signature on the passed certificate using this
+    * certificate's public key.
+    * 
+    * @param child the certificate to verify.
+    * 
+    * @return true if verified, false if not.
+    */
+   cert.verify = function(child)
+   {
+      var rval = false;
+      
+      if(child.md !== null)
+      {
+         // verify signature on cert using public key
+         rval = cert.publicKey.verify(
+            child.md.digest().getBytes(), child.signature);
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Returns true if the passed certificate's subject is the issuer of
+    * this certificate.
+    * 
+    * @param parent the certificate to check.
+    * 
+    * @return true if the passed certificate's subject is the issuer of
+    *         this certificate.
+    */
+   cert.isIssuer = function(parent)
+   {
+      var rval = false;
+      
+      var i = cert.issuer;
+      var s = parent.subject;
+      
+      // compare hashes if present
+      if(i.hash && s.hash)
+      {
+         rval = (i.hash === s.hash);
+      }
+      // if all attributes are the same then issuer matches subject
+      else if(i.attributes.length === s.attributes.length)
+      {
+         rval = true;
+         var iattr, sattr;
+         for(var n; rval && n < i.attributes.length; ++i)
+         {
+            iattr = i.attributes[n];
+            sattr = s.attributes[n];
+            if(iattr.type !== sattr.type || iattr.value !== sattr.value)
+            {
+               // attribute mismatch
+               rval = false;
+            }
+         }
+      }
+      
+      return rval;
+   };
+   
+   return cert;
+};
+
+/**
+ * Converts an X.509v3 RSA certificate from an ASN.1 object.
+ * 
+ * Note: If the certificate is to be verified then compute hash should
+ * be set to true. There is currently no implementation for converting
+ * a certificate back to ASN.1 so the TBSCertificate part of the ASN.1
+ * object needs to be scanned before the cert object is created.
+ * 
+ * @param obj the asn1 representation of an X.509v3 RSA certificate.
+ * @param computeHash true to compute the hash for verification.
+ * 
+ * @return the certificate.
+ */
+pki.certificateFromAsn1 = function(obj, computeHash)
+{
+   // validate certificate and capture data
+   var capture = {};
+   var errors = [];
+   if(!asn1.validate(obj, x509CertificateValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read X.509 certificate. ' +
+            'ASN.1 object is not an X509v3 Certificate.',
+         errors: errors
+      };
+   }
+   
+   // get oid
+   var oid = asn1.derToOid(capture.publicKeyOid);
+   if(oid !== pki.oids['rsaEncryption'])
+   {
+      throw {
+         message: 'Cannot read public key. OID is not RSA.'
+      };
+   }
+   
+   // create certificate
+   var cert = pki.createCertificate();
+   cert.version = capture.certVersion ?
+      capture.certVersion.charCodeAt(0) : 0;
+   var serial = forge.util.createBuffer(capture.certSerialNumber);
+   cert.serialNumber = serial.toHex();
+   cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
+   // skip "unused bits" in signature value BITSTRING
+   var signature = forge.util.createBuffer(capture.certSignature);
+   ++signature.read;
+   cert.signature = signature.getBytes();
+   cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
+   cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
+   
+   if(computeHash)
+   {
+      // check signature OID for supported signature types
+      cert.md = null;
+      if(cert.signatureOid in oids)
+      {
+         var oid = oids[cert.signatureOid];
+         if(oid === 'sha1withRSAEncryption')
+         {
+            cert.md = forge.md.sha1.create();
+         }
+         else if(oid === 'md5withRSAEncryption')
+         {
+            cert.md = forge.md.md5.create();
+         }
+      }
+      if(cert.md === null)
+      {
+         throw {
+            message: 'Could not compute certificate digest. ' +
+               'Unknown signature OID.',
+            signatureOid: cert.signatureOid
+         };
+      }
+      
+      // produce DER formatted TBSCertificate and digest it
+      var bytes = asn1.toDer(capture.certTbs);
+      cert.md.update(bytes.getBytes());
+   }
+   
+   // handle issuer, build issuer message digest
+   var imd = forge.md.sha1.create();
+   cert.issuer.attributes = _getAttributesAsArray(capture.certIssuer, imd);
+   if(capture.certIssuerUniqueId)
+   {
+      cert.issuer.uniqueId = capture.certIssuerUniqueId;
+   }
+   cert.issuer.hash = imd.digest().toHex();
+   
+   // handle subject, build subject message digest
+   var smd = forge.md.sha1.create();
+   cert.subject.attributes = _getAttributesAsArray(capture.certSubject, smd);
+   if(capture.certSubjectUniqueId)
+   {
+      cert.subject.uniqueId = capture.certSubjectUniqueId;
+   }
+   cert.subject.hash = smd.digest().toHex();
+   
+   // handle extensions
+   if(capture.certExtensions)
+   {
+      cert.extensions = _parseExtensions(capture.certExtensions);
+   }
+   else
+   {
+      cert.extensions = [];
+   }
+   
+   // convert RSA public key from ASN.1
+   cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
+   
+   return cert;
+};
+
+/**
+ * Converts an X.509 subject or issuer to an ASN.1 RDNSequence.
+ * 
+ * @param obj the subject or issuer (distinguished name).
+ * 
+ * @return the ASN.1 RDNSequence.
+ */
+_dnToAsn1 = function(obj)
+{
+   // create an empty RDNSequence
+   var rval = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+   
+   // iterate over attributes
+   var attr, set;
+   var attrs = obj.attributes;
+   for(var i = 0; i < attrs.length; ++i)
+   {
+      attr = attrs[i];
+      
+      // create a RelativeDistinguishedName set
+      // each value in the set is an AttributeTypeAndValue first
+      // containing the type (an OID) and second the value
+      set = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // algorithm
+            // AttributeType
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               asn1.oidToDer(pki.oids['rsaEncryption']).getBytes()),
-            // parameters (null)
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-         ]),
-         // subjectPublicKey
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
-            // RSAPublicKey
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-               // modulus (n)
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                  _bnToBytes(key.n)),
-               // publicExponent (e)
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                  _bnToBytes(key.e))
-            ])
+               asn1.oidToDer(attr.type).getBytes()),
+            // AttributeValue
+            // TODO: make value types more sophisticated
+            asn1.create(
+               asn1.Class.UNIVERSAL, asn1.Type.PRINTABLESTRING, false,
+               attr.value)
          ])
       ]);
-   };
+      rval.value.push(set);
+   }
    
-   /**
-    * Converts a private key from an ASN.1 object.
-    * 
-    * @param obj the asn1 representation of an RSAPrivateKey.
-    * 
-    * @return the private key.
-    */
-   pki.privateKeyFromAsn1 = function(obj)
+   return rval;
+};
+
+/**
+ * Converts X.509v3 certificate extensions to ASN.1.
+ * 
+ * @param exts the extensions to convert.
+ * 
+ * @return the extensions in ASN.1 format.
+ */
+_extensionsToAsn1 = function(exts)
+{
+   // create top-level extension container
+   var rval = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 3, true, []);
+   
+   // create extension sequence (stores a sequence for each extension)
+   var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+   rval.value.push(seq);
+   
+   var ext, extseq;
+   for(var i = 0; i < exts.length; ++i)
    {
-      // get RSAPrivateKey
-      var capture = {};
-      var errors = [];
-      if(!asn1.validate(obj, rsaPrivateKeyValidator, capture, errors))
+      ext = exts[i];
+      
+      // create a sequence for each extension
+      extseq = asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+      seq.value.push(extseq);
+      
+      // extnID (OID)
+      extseq.value.push(asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+         asn1.oidToDer(ext.id).getBytes()));
+      
+      // critical defaults to false
+      if(ext.critical)
       {
-         throw {
-            message: 'Cannot read private key. ' +
-               'ASN.1 object is not an RSAPrivateKey.',
-            errors: errors
-         };
+         // critical BOOLEAN DEFAULT FALSE
+         extseq.value.push(asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+            String.fromCharCode(0xFF)));
       }
       
-      // Note: Version is currently ignored.
-      // capture.privateKeyVersion
-      // FIXME: inefficient, get a BigInteger that uses byte strings
-      var n, e, d, p, q, dP, dQ, qInv;
-      n = forge.util.createBuffer(capture.privateKeyModulus).toHex();
-      e = forge.util.createBuffer(capture.privateKeyPublicExponent).toHex();
-      d = forge.util.createBuffer(capture.privateKeyPrivateExponent).toHex();
-      p = forge.util.createBuffer(capture.privateKeyPrime1).toHex();
-      q = forge.util.createBuffer(capture.privateKeyPrime2).toHex();
-      dP = forge.util.createBuffer(capture.privateKeyExponent1).toHex();
-      dQ = forge.util.createBuffer(capture.privateKeyExponent2).toHex();
-      qInv = forge.util.createBuffer(capture.privateKeyCoefficient).toHex();
+      var value = ext.value;
+      if(ext.value.constructor != String)
+      {
+         // value is asn.1
+         value = asn1.toDer(value).getBytes();
+      }
       
-      // set private key
-      return pki.setRsaPrivateKey(
-         new BigInteger(n, 16),
-         new BigInteger(e, 16),
-         new BigInteger(d, 16),
-         new BigInteger(p, 16),
-         new BigInteger(q, 16),
-         new BigInteger(dP, 16),
-         new BigInteger(dQ, 16),
-         new BigInteger(qInv, 16));
-   };
+      // extnValue (OCTET STRING)
+      extseq.value.push(asn1.create(
+         asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
+   }
    
-   /**
-    * Converts a private key to an ASN.1 RsaPrivateKey object.
-    * 
-    * @param key the private key.
-    * 
-    * @return the ASN.1 representation of an RSAPrivateKey.
-    */
-   pki.privateKeyToAsn1 = function(key)
-   {
-      // RSAPrivateKey
-      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // version (0 = only 2 primes, 1 multiple primes)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            String.fromCharCode(0x00)),
-         // modulus (n)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.n)),
-         // publicExponent (e)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.e)),
-         // privateExponent (d)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.d)),
-         // privateKeyPrime1 (p)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.p)),
-         // privateKeyPrime2 (q)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.q)),
-         // privateKeyExponent1 (dP)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.dP)),
-         // privateKeyExponent2 (dQ)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.dQ)),
-         // coefficient (qInv)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            _bnToBytes(key.qInv))
-      ]);
-   };
-   
-   /**
-    * Wraps an RSAPrivateKey ASN.1 object in an ASN.1 PrivateKeyInfo object.
-    * 
-    * @param rsaKey the ASN.1 RSAPrivateKey.
-    * 
-    * @return the ASN.1 PrivateKeyInfo.
-    */
-   pki.wrapRsaPrivateKey = function(rsaKey)
-   {
-      // get the oid for the algorithm
-      var oid = oids['rsaEncryption'];
-      var oidBytes = asn1.oidToDer(oid).getBytes();
-      
-      // create the algorithm identifier
-      var algorithm = asn1.create(
-         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-      algorithm.value.push(asn1.create(
-         asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
-      algorithm.value.push(asn1.create(
-         asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
-      
-      // PrivateKeyInfo
-      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // version (0)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            String.fromCharCode(0x00)),
-         // privateKeyAlgorithm
-         algorithm,
-         // PrivateKey
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-            asn1.toDer(rsaKey).getBytes())
-         ]);
-   };
-   
-   /**
-    * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
-    * password is provided then the private key will be encrypted.
-    * 
-    * @param key the private key.
-    * @param cert the certificate.
-    * @param password the password to use.
-    * 
-    * @return the PKCS#12 PFX ASN.1 object.
-    */
-   pki.toPkcs12Asn1 = function(key, cert, password)
-   {
-      // TODO: tests (pkcs12-related code is untested)
-      // TODO: implement password support
-      // TODO: use 'pkcs8ShroudedKeyBag' when using a password
-      
-      // get the private key and certificate as ASN.1 objects 
-      var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
-      var certAsn1 = pki.certificateToAsn1(cert);
-      
-      // create safe bag for private key
-      var keySafeBag =
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // bagId
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               asn1.oidToDer(oids['keyBag']).getBytes()),
-            // bagValue
-            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-               // PrivateKeyInfo
-               asn1.toDer(
-                  pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key))).getBytes())
-            // bagAttributes (OPTIONAL)
-         ]);
-      
-      // create safe bag for certificate
-      var certSafeBag =
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // bagId
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               asn1.oidToDer(oids['certBag']).getBytes()),
-            // bagValue
-            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-               // CertBag
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-                  // certId
-                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-                     asn1.oidToDer(oids['x509Certificate']).getBytes()),
-                  // certValue (x509Certificate)
-                  asn1.create(
-                     asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-                     asn1.toDer(pki.certificateToAsn1(cert)).getBytes())
-                  ]))
-            // bagAttributes (OPTIONAL)
-         ]);
-      
-      // create SafeContents
-      var safeContents =
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
-            [keySafeBag, certSafeBag]);
-      
-      // create AuthenticatedSafe
-      var safe = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // PKCS#7 ContentInfo
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // contentType
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               // OID for the content type is 'data'
-               asn1.oidToDer(oids['data']).getBytes()),
-            // content
-            asn1.toDer(safeContents).getBytes()])
-         ]);
-      
-      // PFX
-      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // version (3)
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-            String.fromCharCode(0x03)),
-         // PKCS#7 ContentInfo
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // contentType
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-               // OID for the content type is 'data'
-               asn1.oidToDer(oids['data']).getBytes()),
-            // content
-            pki.toDer(safe).getBytes()])
-         ]);
-   };
-   
-   /**
-    * Sets an RSA public key from BigIntegers modulus and exponent.
-    * 
-    * @param n the modulus.
-    * @param e the exponent.
-    * 
-    * @return the public key.
-    */
-   pki.setRsaPublicKey = pki.rsa.setPublicKey;
+   return rval;
+};
 
+/**
+ * Gets the ASN.1 TBSCertificate part of an X.509v3 certificate.
+ * 
+ * @param cert the certificate.
+ * 
+ * @return the asn1 TBSCertificate.
+ */
+pki.getTBSCertificate = function(cert)
+{
+   // TBSCertificate
+   var tbs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // version
+      asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+         // integer
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(cert.version))
+      ]),
+      // serialNumber
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         forge.util.hexToBytes(cert.serialNumber)),
+      // signature
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // algorithm
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(cert.signatureOid).getBytes()),
+         // parameters (null)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      ]),
+      // issuer
+      _dnToAsn1(cert.issuer),
+      // validity
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // notBefore
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+            asn1.dateToUtcTime(cert.validity.notBefore)),
+         // notAfter
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+            asn1.dateToUtcTime(cert.validity.notAfter))
+      ]),
+      // subject
+      _dnToAsn1(cert.subject),
+      // SubjectPublicKeyInfo
+      pki.publicKeyToAsn1(cert.publicKey)
+   ]);
+   
+   if(cert.issuer.uniqueId)
+   {
+      // issuerUniqueID (optional)
+      tbs.value.push(
+         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+               String.fromCharCode(0x00) +
+               cert.issuer.uniqueId
+            )
+         ])
+      );
+   }
+   if(cert.subject.uniqueId)
+   {
+      // subjectUniqueID (optional)
+      tbs.value.push(
+         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+               String.fromCharCode(0x00) +
+               cert.subject.uniqueId
+            )
+         ])
+      );
+   }
+   
+   if(cert.extensions.length > 0)
+   {
+      // extensions (optional)
+      tbs.value.push(_extensionsToAsn1(cert.extensions));
+   }
+   
+   return tbs;
+};
+
+/**
+ * Converts a DistinguishedName (subject or issuer) to an ASN.1 object.
+ * 
+ * @param dn the DistinguishedName.
+ * 
+ * @return the asn1 representation of a DistinguishedName.
+ */
+pki.distinguishedNameToAsn1 = function(dn)
+{
+   return _dnToAsn1(dn);
+};
+
+/**
+ * Converts an X.509v3 RSA certificate to an ASN.1 object.
+ * 
+ * @param cert the certificate.
+ * 
+ * @return the asn1 representation of an X.509v3 RSA certificate.
+ */
+pki.certificateToAsn1 = function(cert)
+{
+   // Certificate
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // TBSCertificate
+      pki.getTBSCertificate(cert),
+      // AlgorithmIdentifier (signature algorithm)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // algorithm
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(cert.signatureOid).getBytes()),
+         // parameters (null)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      ]),
+      // SignatureValue
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+         String.fromCharCode(0x00) + cert.signature)
+   ]);
+};
+
+/**
+ * Creates a CA store.
+ * 
+ * @param certs an optional array of certificate objects or PEM-formatted
+ *           certificate strings to add to the CA store.
+ * 
+ * @return the CA store.
+ */
+pki.createCaStore = function(certs)
+{
+   // create CA store
+   var caStore =
+   {
+      // stored certificates
+      certs: {}
+   };
+   
    /**
-    * Sets an RSA private key from BigIntegers modulus, exponent, primes,
-    * prime exponents, and modular multiplicative inverse.
+    * Gets the certificate that issued the passed certificate or its
+    * 'parent'.
     * 
-    * @param n the modulus.
-    * @param e the public exponent.
-    * @param d the private exponent ((inverse of e) mod n).
-    * @param p the first prime.
-    * @param q the second prime.
-    * @param dP exponent1 (d mod (p-1)).
-    * @param dQ exponent2 (d mod (q-1)).
-    * @param qInv ((inverse of q) mod p)
+    * @param cert the certificate to get the parent for.
     * 
-    * @return the private key.
+    * @return the parent certificate or null if none was found.
     */
-   pki.setRsaPrivateKey = pki.rsa.setPrivateKey;
+   caStore.getIssuer = function(cert)
+   {
+      var rval = null;
+      
+      // TODO: produce issuer hash if it doesn't exist
+      
+      // get the entry using the cert's issuer hash
+      if(cert.issuer.hash in caStore.certs)
+      {
+         rval = caStore.certs[cert.issuer.hash];
+         
+         // see if there are multiple matches
+         if(rval.constructor == Array)
+         {
+            // TODO: resolve multiple matches by checking
+            // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
+            // FIXME: or alternatively do authority key mapping
+            // if possible (X.509v1 certs can't work?)
+            throw {
+               message:
+                  'Resolving multiple issuer matches not implemented yet.'
+            };
+         }
+      }
+      
+      return rval;
+   };
+   
+   /**
+    * Adds a trusted certificate to the store.
+    * 
+    * @param cert the certificate to add as a trusted certificate.
+    */
+   caStore.addCertificate = function(cert)
+   {
+      // TODO: produce subject hash if it doesn't exist
+      if(cert.subject.hash in caStore.certs)
+      {
+         // subject hash already exists, append to array
+         var tmp = caStore.certs[cert.subject.hash];
+         if(tmp.constructor != Array)
+         {
+            tmp = [tmp];
+         }
+         tmp.push(cert);
+      }
+      else
+      {
+         caStore.certs[cert.subject.hash] = cert;
+      }
+   };
+   
+   // auto-add passed in certs
+   if(certs)
+   {
+      // parse PEM-formatted certificates as necessary
+      for(var i = 0; i < certs.length; ++i)
+      {
+         var cert = certs[i];
+         if(cert.constructor == String)
+         {
+            // convert from pem
+            caStore.addCertificate(forge.pki.certificateFromPem(cert));
+         }
+         else
+         {
+            // assume forge.pki cert just add it
+            caStore.addCertificate(cert);
+         }
+      }
+   }
+   
+   return caStore;
+};
+
+/**
+ * Converts a public key from an ASN.1 object.
+ * 
+ * @param obj the asn1 representation of a SubjectPublicKeyInfo.
+ * 
+ * @return the public key.
+ */
+pki.publicKeyFromAsn1 = function(obj)
+{
+   // validate subject public key info and capture data
+   var capture = {};
+   var errors = [];
+   if(!asn1.validate(obj, publicKeyValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read public key. ' +
+            'ASN.1 object is not a SubjectPublicKeyInfo.',
+         errors: errors
+      };
+   }
+   
+   // get oid
+   var oid = asn1.derToOid(capture.publicKeyOid);
+   if(oid !== pki.oids['rsaEncryption'])
+   {
+      throw {
+         message: 'Cannot read public key. Unknown OID.',
+         oid: oid
+      };
+   }
+   
+   // get RSA params
+   errors = [];
+   if(!asn1.validate(
+      capture.rsaPublicKey, rsaPublicKeyValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read public key. ' +
+            'ASN.1 object is not an RSAPublicKey.',
+         errors: errors
+      };
+   }
+   
+   // FIXME: inefficient, get a BigInteger that uses byte strings
+   var n = forge.util.createBuffer(capture.publicKeyModulus).toHex();
+   var e = forge.util.createBuffer(capture.publicKeyExponent).toHex();
+   
+   // set public key
+   return pki.setRsaPublicKey(
+      new BigInteger(n, 16),
+      new BigInteger(e, 16));
+};
+
+/**
+ * Converts a public key to an ASN.1 object.
+ * 
+ * @param key the public key.
+ * 
+ * @return the asn1 representation of a SubjectPublicKeyInfo.
+ */
+pki.publicKeyToAsn1 = function(key)
+{
+   // SubjectPublicKeyInfo
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // AlgorithmIdentifier
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // algorithm
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(pki.oids['rsaEncryption']).getBytes()),
+         // parameters (null)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      ]),
+      // subjectPublicKey
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
+         // RSAPublicKey
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // modulus (n)
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+               _bnToBytes(key.n)),
+            // publicExponent (e)
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+               _bnToBytes(key.e))
+         ])
+      ])
+   ]);
+};
+
+/**
+ * Converts a private key from an ASN.1 object.
+ * 
+ * @param obj the asn1 representation of an RSAPrivateKey.
+ * 
+ * @return the private key.
+ */
+pki.privateKeyFromAsn1 = function(obj)
+{
+   // get RSAPrivateKey
+   var capture = {};
+   var errors = [];
+   if(!asn1.validate(obj, rsaPrivateKeyValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read private key. ' +
+            'ASN.1 object is not an RSAPrivateKey.',
+         errors: errors
+      };
+   }
+   
+   // Note: Version is currently ignored.
+   // capture.privateKeyVersion
+   // FIXME: inefficient, get a BigInteger that uses byte strings
+   var n, e, d, p, q, dP, dQ, qInv;
+   n = forge.util.createBuffer(capture.privateKeyModulus).toHex();
+   e = forge.util.createBuffer(capture.privateKeyPublicExponent).toHex();
+   d = forge.util.createBuffer(capture.privateKeyPrivateExponent).toHex();
+   p = forge.util.createBuffer(capture.privateKeyPrime1).toHex();
+   q = forge.util.createBuffer(capture.privateKeyPrime2).toHex();
+   dP = forge.util.createBuffer(capture.privateKeyExponent1).toHex();
+   dQ = forge.util.createBuffer(capture.privateKeyExponent2).toHex();
+   qInv = forge.util.createBuffer(capture.privateKeyCoefficient).toHex();
+   
+   // set private key
+   return pki.setRsaPrivateKey(
+      new BigInteger(n, 16),
+      new BigInteger(e, 16),
+      new BigInteger(d, 16),
+      new BigInteger(p, 16),
+      new BigInteger(q, 16),
+      new BigInteger(dP, 16),
+      new BigInteger(dQ, 16),
+      new BigInteger(qInv, 16));
+};
+
+/**
+ * Converts a private key to an ASN.1 RsaPrivateKey object.
+ * 
+ * @param key the private key.
+ * 
+ * @return the ASN.1 representation of an RSAPrivateKey.
+ */
+pki.privateKeyToAsn1 = function(key)
+{
+   // RSAPrivateKey
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // version (0 = only 2 primes, 1 multiple primes)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         String.fromCharCode(0x00)),
+      // modulus (n)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.n)),
+      // publicExponent (e)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.e)),
+      // privateExponent (d)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.d)),
+      // privateKeyPrime1 (p)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.p)),
+      // privateKeyPrime2 (q)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.q)),
+      // privateKeyExponent1 (dP)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.dP)),
+      // privateKeyExponent2 (dQ)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.dQ)),
+      // coefficient (qInv)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         _bnToBytes(key.qInv))
+   ]);
+};
+
+/**
+ * Wraps an RSAPrivateKey ASN.1 object in an ASN.1 PrivateKeyInfo object.
+ * 
+ * @param rsaKey the ASN.1 RSAPrivateKey.
+ * 
+ * @return the ASN.1 PrivateKeyInfo.
+ */
+pki.wrapRsaPrivateKey = function(rsaKey)
+{
+   // get the oid for the algorithm
+   var oid = oids['rsaEncryption'];
+   var oidBytes = asn1.oidToDer(oid).getBytes();
+   
+   // create the algorithm identifier
+   var algorithm = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+   algorithm.value.push(asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+   algorithm.value.push(asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+   
+   // PrivateKeyInfo
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // version (0)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         String.fromCharCode(0x00)),
+      // privateKeyAlgorithm
+      algorithm,
+      // PrivateKey
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+         asn1.toDer(rsaKey).getBytes())
+      ]);
+};
+
+/**
+ * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
+ * password is provided then the private key will be encrypted.
+ * 
+ * @param key the private key.
+ * @param cert the certificate.
+ * @param password the password to use.
+ * 
+ * @return the PKCS#12 PFX ASN.1 object.
+ */
+pki.toPkcs12Asn1 = function(key, cert, password)
+{
+   // TODO: tests (pkcs12-related code is untested)
+   // TODO: implement password support
+   // TODO: use 'pkcs8ShroudedKeyBag' when using a password
+   
+   // get the private key and certificate as ASN.1 objects 
+   var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
+   var certAsn1 = pki.certificateToAsn1(cert);
+   
+   // create safe bag for private key
+   var keySafeBag =
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // bagId
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(oids['keyBag']).getBytes()),
+         // bagValue
+         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+            // PrivateKeyInfo
+            asn1.toDer(
+               pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key))).getBytes())
+         // bagAttributes (OPTIONAL)
+      ]);
+   
+   // create safe bag for certificate
+   var certSafeBag =
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // bagId
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(oids['certBag']).getBytes()),
+         // bagValue
+         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+            // CertBag
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               // certId
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(oids['x509Certificate']).getBytes()),
+               // certValue (x509Certificate)
+               asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+                  asn1.toDer(pki.certificateToAsn1(cert)).getBytes())
+               ]))
+         // bagAttributes (OPTIONAL)
+      ]);
+   
+   // create SafeContents
+   var safeContents =
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+         [keySafeBag, certSafeBag]);
+   
+   // create AuthenticatedSafe
+   var safe = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // PKCS#7 ContentInfo
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // contentType
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            // OID for the content type is 'data'
+            asn1.oidToDer(oids['data']).getBytes()),
+         // content
+         asn1.toDer(safeContents).getBytes()])
+      ]);
+   
+   // PFX
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // version (3)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         String.fromCharCode(0x03)),
+      // PKCS#7 ContentInfo
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // contentType
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            // OID for the content type is 'data'
+            asn1.oidToDer(oids['data']).getBytes()),
+         // content
+         pki.toDer(safe).getBytes()])
+      ]);
+};
+
+/**
+ * Sets an RSA public key from BigIntegers modulus and exponent.
+ * 
+ * @param n the modulus.
+ * @param e the exponent.
+ * 
+ * @return the public key.
+ */
+pki.setRsaPublicKey = pki.rsa.setPublicKey;
+
+/**
+ * Sets an RSA private key from BigIntegers modulus, exponent, primes,
+ * prime exponents, and modular multiplicative inverse.
+ * 
+ * @param n the modulus.
+ * @param e the public exponent.
+ * @param d the private exponent ((inverse of e) mod n).
+ * @param p the first prime.
+ * @param q the second prime.
+ * @param dP exponent1 (d mod (p-1)).
+ * @param dQ exponent2 (d mod (q-1)).
+ * @param qInv ((inverse of q) mod p)
+ * 
+ * @return the private key.
+ */
+pki.setRsaPrivateKey = pki.rsa.setPrivateKey;
+
 })();
