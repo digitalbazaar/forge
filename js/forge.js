@@ -11,6 +11,7 @@ var forge =
    asn1: require('./asn1'),
    debug: require('./debug'),
    hmac: require('./hmac'),
+   jsonld: require('./jsonld'),
    log: require('./log'),
    pkcs5: require('./pbkdf2'),
    pki: require('./pki'),
