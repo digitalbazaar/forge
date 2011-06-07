@@ -234,5 +234,157 @@
             "@iri": "http://example.org/test#book"
          }
       }]
+   }, {
+      "name": "datatype",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test#example",
+         "@context": {
+            "@coerce": {
+               "xsd:dateTime": "ex:validFrom"
+            },
+            "ex": "http://example.org/vocab#"
+         },
+         "ex:validFrom": "2011-01-25T00:00:00+0000"
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://example.org/vocab#validFrom": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@literal": "2011-01-25T00:00:00+0000"
+         }
+      }]
+   }, {
+      "name": "type-coerced datatype",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test#example",
+         "@context": {
+            "@coerce": {
+               "xsd:dateTime": "ex:validFrom"
+            },
+            "ex": "http://example.org/vocab#"
+         },
+         "ex:validFrom": "2011-01-25T00:00:00Z"
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://example.org/vocab#validFrom": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@literal": "2011-01-25T00:00:00Z"
+         }
+      }]
+   }, {
+      "name": "type-coerced datatype, double reference",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test#example",
+         "@context": {
+            "@coerce": {
+               "xsd:dateTime": "ex:date"
+            },
+            "ex": "http://example.org/vocab#"
+         },
+         "ex:date": [
+            "2011-01-25T00:00:00Z",
+            "2011-01-25T00:00:00Z"
+         ]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://example.org/vocab#date": [
+            {
+               "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+               "@literal": "2011-01-25T00:00:00Z"
+            },
+            {
+               "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+               "@literal": "2011-01-25T00:00:00Z"
+            }
+         ]
+      }]
+   }, {
+      "name": "type-coerced datatype, cycle",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test#example1",
+         "@context": {
+            "@coerce": {
+               "xsd:anyURI": "ex:parent",
+               "xsd:dateTime": "ex:date"
+            },
+            "ex": "http://example.org/vocab#"
+         },
+         "ex:date": "2011-01-25T00:00:00Z",
+         "ex:embed": {
+            "@": "http://example.org/test#example2",
+            "ex:parent": "http://example.org/test#example1"
+         }
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example1"
+         },
+         "http://example.org/vocab#date": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+            "@literal": "2011-01-25T00:00:00Z"
+         },
+         "http://example.org/vocab#embed": {
+            "@iri": "http://example.org/test#example2"
+         }
+      },
+      {
+         "@": {
+            "@iri": "http://example.org/test#example2"
+         },
+         "http://example.org/vocab#parent": {
+            "@iri": "http://example.org/test#example1"
+         }
+      }]
+   }, {
+      "name": "check types",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test",
+         "@context": {
+            "d": "http://purl.org/dc/elements/1.1/",
+            "e": "http://example.org/vocab#",
+            "f": "http://xmlns.com/foaf/0.1/",
+            "@coerce": {
+               "xsd:double": "e:double-zero"
+            }
+         },
+         "e:bool": true,
+         "e:double": 1.23,
+         "e:double-zero": 0.0,
+         "e:int": 123
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test"
+         },
+         "http://example.org/vocab#bool": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#boolean",
+            "@literal": "true"
+         },
+         "http://example.org/vocab#double": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#double",
+            "@literal": "1.230000e+00"
+         },
+         "http://example.org/vocab#double-zero": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#double",
+            "@literal": "0.000000e+00"
+         },
+         "http://example.org/vocab#int": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#integer",
+            "@literal": "123"
+         }
+      }]
    }]
 }

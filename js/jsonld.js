@@ -228,7 +228,8 @@ var _setProperty = function(s, p, o)
 };
 
 /**
- * Clones a value that is an array or an object. Deep clone is not performed.
+ * Clones a value that is an array or an object and sorts the keys. Deep clone
+ * is not performed.
  * 
  * @param value the value to clone.
  * 
@@ -237,8 +238,11 @@ var _setProperty = function(s, p, o)
 var _clone = function(value)
 {
    var rval = {};
-   for(var key in value)
+   var keys = Object.keys(value);
+   keys.sort();
+   for(var i in keys)
    {
+      var key = keys[i];
       rval[key] = value[key];
    }
    return rval;
@@ -597,7 +601,7 @@ var _expand = function(ctx, property, value, expandSubjects)
          }
       }
 
-      // only expand subjects if requested
+      // coerce to appropriate datatype, only expand subjects if requested
       if(coerce !== null && (property !== '@' || expandSubjects))
       {
          rval = {};
@@ -610,8 +614,14 @@ var _expand = function(ctx, property, value, expandSubjects)
          // other datatype
          else
          {
-            rval['@literal'] = value;
             rval['@datatype'] = coerce;
+            if(coerce === xsd.double)
+            {
+               // do special JSON-LD double format
+               value = value.toExponential(6).replace(
+                  /(e(?:\+|-))([0-9])$/, '$10$2');
+            }
+            rval['@literal'] = '' + value;
          }
       }
       // nothing to coerce
