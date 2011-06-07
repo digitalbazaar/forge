@@ -10,6 +10,41 @@ var fs = require('fs');
 var forge = require('../js/forge');
 var jsonld = forge.jsonld;
 
+var _sortKeys = function(obj)
+{
+   var rval;
+   
+   if(obj.constructor === Array)
+   {
+      rval = [];
+      for(var i in obj)
+      {
+         rval[i] = _sortKeys(obj[i]);
+      }
+   }
+   else if(obj.constructor === Object)
+   {
+      rval = {};
+      var keys = Object.keys(obj);
+      keys.sort();
+      for(var i in keys)
+      {
+         rval[keys[i]] = _sortKeys(obj[keys[i]]);
+      }
+   }
+   else
+   {
+      rval = obj;
+   }
+   
+   return rval;
+};
+
+var _stringifySorted = function(obj)
+{
+   return JSON.stringify(_sortKeys(obj), null, 2);
+};
+
 function TestRunner()
 {
    // set up groups, add root group
@@ -38,8 +73,8 @@ TestRunner.prototype.test = function(name)
 
 TestRunner.prototype.check = function(expect, result)
 {
-   expect = JSON.stringify(expect, null, 2);
-   result = JSON.stringify(result, null, 2);
+   expect = _stringifySorted(expect);
+   result = _stringifySorted(result);
    
    var line = '';
    for(var i in this.groups)
@@ -107,7 +142,7 @@ TestRunner.prototype.run = function(tests)
       If 'group' is present, then 'tests' must be present and list all of the
       tests in the group. If 'group' is not present then 'name' must be present
       as well as 'input' and 'expect'. Groups may be embedded. The test types
-      are: normalize, expand, and compact.
+      are: normalize, expand, compact, and change.
     */
    for(var i in tests)
    {
@@ -125,22 +160,36 @@ TestRunner.prototype.run = function(tests)
       else
       {
          tr.test(test.name);
-         if(test.type === 'normalize')
+         var input = test.input;
+         if(test.type.constructor !== Array)
          {
-            tr.check(test.expect, jsonld.normalize(test.input));
+            test.type = [test.type];
          }
-         else if(test.type === 'expand')
+         for(var t in test.type)
          {
-            tr.check(test.expect, jsonld.removeContext(test.input));
+            var type = test.type[t];
+            if(type === 'normalize')
+            {
+               input = jsonld.normalize(input);
+            }
+            else if(type === 'expand')
+            {
+               input = jsonld.removeContext(input);
+            }
+            else if(type === 'compact')
+            {
+               input = jsonld.addContext(test.context, input);
+            }
+            else if(type === 'change')
+            {
+               input = jsonld.changeContext(test.context, input);
+            }
+            else
+            {
+               throw 'Unknown test type: ' + type;
+            }
          }
-         else if(test.type === 'compact')
-         {
-            tr.check(test.expect, jsonld.addContext(test.context, test.input));
-         }
-         else
-         {
-            throw 'Unknown test type: ' + test.type;
-         }
+         tr.check(test.expect, input);
       }
    }
 };

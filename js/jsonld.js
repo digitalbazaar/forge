@@ -108,7 +108,7 @@ var _compactIri = function(ctx, iri, usedCtx)
                rval = key + ':' + iri.substr(idx + ctxIri.length);
                if(usedCtx)
                {
-                  usedCtx[name] = ctxIri;
+                  usedCtx[key] = ctxIri;
                }
                break;
             }
@@ -118,7 +118,7 @@ var _compactIri = function(ctx, iri, usedCtx)
                rval = name;
                if(usedCtx)
                {
-                  usedCtx[name] = ctxIri;
+                  usedCtx[key] = ctxIri;
                }
                break;
             }
@@ -323,6 +323,11 @@ var _getCoerceType = function(ctx, property, usedCtx)
                rval = _expandTerm(ctx, type, usedCtx);
                if(usedCtx)
                {
+                  if(!('@coerce' in usedCtx))
+                  {
+                     usedCtx['@coerce'] = {};
+                  }
+                  
                   if(!(type in usedCtx['@coerce']))
                   {
                      usedCtx['@coerce'][type] = p;
@@ -887,7 +892,7 @@ jsonld.addContext = function(ctx, input)
    rval = _compact(ctx, null, input, ctxOut);
 
    // add context if used
-   if(Object.keys(ctxOut).length() > 0)
+   if(Object.keys(ctxOut).length > 0)
    {
       // add copy of context to every entry in output array
       if(rval.constructor === Array)
@@ -897,10 +902,10 @@ jsonld.addContext = function(ctx, input)
             rval[i]['@context'] = _cloneContext(ctxOut);
          }
       }
-   }
-   else
-   {
-      rval['@context'] = ctxOut;
+      else
+      {
+         rval['@context'] = ctxOut;
+      }
    }
 
    return rval;
