@@ -680,7 +680,7 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
          // top-level graph literal
          for(var key in value['@'])
          {
-            _flatten(parent, parentProperty, value[key], subjects, out);
+            _flatten(parent, parentProperty, value['@'][key], subjects, out);
          }
       }
       // named blank node
@@ -802,8 +802,32 @@ jsonld.normalize = function(input)
          rval.push(subjects[key]);
       }
 
-      // FIXME: sort output
-      //rval.sort(sortFunc);
+      // sort output
+      rval.sort(function(a, b)
+      {
+         var rval = 0;
+         
+         // FIXME: after canonical bnode naming is implemented, all entries
+         // will have '@'
+         if('@' in a && !('@' in b))
+         {
+            rval = 1;
+         }
+         else if('@' in b && !('@' in a))
+         {
+            rval = -1;
+         }
+         else if(a['@']['@iri'] < b['@']['@iri'])
+         {
+            rval = -1;
+         }
+         else if(a['@']['@iri'] > b['@']['@iri'])
+         {
+            rval = 1;
+         }
+         
+         return rval;
+      });
    }
 
    return rval;
@@ -931,7 +955,7 @@ jsonld.mergeContexts = function(ctx1, ctx2)
       {
          merged[key] = copy[key];
       }
-   
+      
       // special-merge @coerce
       for(var type in c1)
       {
@@ -966,16 +990,16 @@ jsonld.mergeContexts = function(ctx1, ctx2)
             }
          }
       }
-   
+      
       // add new types from new @coerce
       for(var type in c2)
       {
-         if(!('type' in c1))
+         if(!(type in c1))
          {
-            c1['type'] = c2['type']; 
+            c1[type] = c2[type]; 
          }
       }
-   
+      
       // ensure there are no property duplicates in @coerce
       var unique = {};
       var dups = [];

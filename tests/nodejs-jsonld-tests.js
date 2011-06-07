@@ -77,7 +77,7 @@ var normalize = function(tr)
    {
       tr.test('simple id');
       
-      input = {
+      var input = {
          '@': 'http://example.org/test#example'
       };
       
@@ -94,9 +94,9 @@ var normalize = function(tr)
    
    (function()
    {
-      tr.test('no subject identifier');
+      tr.test('bnode');
       
-      input = {
+      var input = {
          '@context': {
             'ex': 'http://example.org/vocab#'
          },
@@ -116,9 +116,9 @@ var normalize = function(tr)
    
    (function()
    {
-      tr.test('no subject identifier plus embed w/subject');
+      tr.test('bnode plus embed w/subject');
       
-      input = {
+      var input = {
          '@context': {
             'ex': 'http://example.org/vocab#'
          },
@@ -137,14 +137,238 @@ var normalize = function(tr)
          'http://example.org/vocab#embed': {
             '@iri': 'http://example.org/test#example'
          }
-      },
-      {
+      }, {
          '@': {
             '@iri': 'http://example.org/test#example'
          }
       }];
       
       tr.check(expect, output); 
+   })();
+   
+   (function()
+   {
+      tr.test('bnode embed');
+      
+      var input = {
+         '@context': {
+            'ex': 'http://example.org/vocab#'
+         },
+         '@': 'http://example.org/test#example',
+         'a': 'ex:Foo',
+         'ex:embed': {
+            'a': 'ex:Bar'
+         }
+      };
+      
+      var output = jsonld.normalize(input);
+      
+      var expect = [{
+         '@': {
+            '@iri': 'http://example.org/test#example'
+         },
+         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
+            '@iri': 'http://example.org/vocab#Foo'
+         },
+         'http://example.org/vocab#embed': {
+            'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
+               '@iri': 'http://example.org/vocab#Bar'
+            }
+         }
+      }];
+      
+      tr.check(expect, output); 
+   })();
+   
+   (function()
+   {
+      tr.test('multiple rdf types');
+      
+      var input = {
+         '@context': {
+            'ex': 'http://example.org/vocab#'
+         },
+         '@': 'http://example.org/test#example',
+         'a': ['ex:Foo', 'ex:Bar']
+      };
+      
+      var output = jsonld.normalize(input);
+      
+      var expect = [{
+         '@': {
+            '@iri': 'http://example.org/test#example'
+         },
+         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': [{
+            '@iri': 'http://example.org/vocab#Foo'
+         }, {
+            '@iri': 'http://example.org/vocab#Bar'
+         }]
+      }];
+      
+      tr.check(expect, output); 
+   })();
+   
+   (function()
+   {
+      tr.test('coerce CURIE value');
+      
+      var input = {
+         '@context': {
+            'ex': 'http://example.org/vocab#',
+            '@coerce': {
+               'xsd:anyURI': 'ex:foo'
+            }
+         },
+         '@': 'http://example.org/test#example',
+         'a': 'ex:Foo',
+         'ex:foo': 'ex:Bar'
+      };
+      
+      var output = jsonld.normalize(input);
+      
+      var expect = [{
+         '@': {
+            '@iri': 'http://example.org/test#example'
+         },
+         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
+            '@iri': 'http://example.org/vocab#Foo'
+         },
+         'http://example.org/vocab#foo': {
+            '@iri': 'http://example.org/vocab#Bar'
+         }
+      }];
+      
+      tr.check(expect, output);
+   })();
+   
+   (function()
+   {
+      tr.test('single subject complex');
+      
+      var input = {
+         '@context': {
+            'dc': 'http://purl.org/dc/elements/1.1/',
+            'ex': 'http://example.org/vocab#',
+            '@coerce': {
+               'xsd:anyURI': 'ex:contains'
+            }
+         },
+         '@': 'http://example.org/test#library',
+         'ex:contains': {
+            '@': 'http://example.org/test#book',
+            'dc:contributor': 'Writer',
+            'dc:title': 'My Book',
+            'ex:contains': {
+               '@': 'http://example.org/test#chapter',
+               'dc:description': 'Fun',
+               'dc:title': 'Chapter One'
+            }
+         }
+      };
+      
+      var output = jsonld.normalize(input);
+      
+      var expect = [{
+         '@': {
+            '@iri': 'http://example.org/test#book'
+         },
+         'http://purl.org/dc/elements/1.1/contributor': 'Writer',
+         'http://purl.org/dc/elements/1.1/title': 'My Book',
+         'http://example.org/vocab#contains': {
+            '@iri': 'http://example.org/test#chapter'
+         },
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#chapter'
+         },
+         'http://purl.org/dc/elements/1.1/description': 'Fun',
+         'http://purl.org/dc/elements/1.1/title': 'Chapter One'
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#library'
+         },
+         'http://example.org/vocab#contains': {
+            '@iri': 'http://example.org/test#book'
+         }
+      }];
+      
+      tr.check(expect, output);
+   })();
+   
+   (function()
+   {
+      tr.test('multiple subjects - complex');
+      
+      var input = {
+         '@context': {
+            'dc': 'http://purl.org/dc/elements/1.1/',
+            'ex': 'http://example.org/vocab#',
+            '@coerce': {
+               'xsd:anyURI': ['ex:authored', 'ex:contains']
+            },
+         },
+         '@': [{
+            '@': 'http://example.org/test#chapter',
+            'dc:description': 'Fun',
+            'dc:title': 'Chapter One',
+         }, {
+            '@': 'http://example.org/test#jane',
+            'ex:authored': 'http://example.org/test#chapter',
+            'foaf:name': 'Jane'
+         }, {
+            '@': 'http://example.org/test#john',
+            'foaf:name': 'John'
+         }, {
+            '@': 'http://example.org/test#library',
+            'ex:contains': {
+               '@': 'http://example.org/test#book',
+               'dc:contributor': 'Writer',
+               'dc:title': 'My Book',
+               'ex:contains': 'http://example.org/test#chapter'
+            }
+         }]
+      };
+      
+      var output = jsonld.normalize(input);
+      
+      var expect = [{
+         '@': {
+            '@iri': 'http://example.org/test#book'
+         },
+         'http://purl.org/dc/elements/1.1/contributor': 'Writer',
+         'http://purl.org/dc/elements/1.1/title': 'My Book',
+         'http://example.org/vocab#contains': {
+            '@iri': 'http://example.org/test#chapter'
+         },
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#chapter'
+         },
+         'http://purl.org/dc/elements/1.1/description': 'Fun',
+         'http://purl.org/dc/elements/1.1/title': 'Chapter One'
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#jane'
+         },
+         'http://example.org/vocab#authored': {
+            '@iri': 'http://example.org/test#chapter'
+         },
+         'http://xmlns.com/foaf/0.1/name': 'Jane'
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#john'
+         },
+         'http://xmlns.com/foaf/0.1/name': 'John'
+      }, {
+         '@': {
+            '@iri': 'http://example.org/test#library'
+         },
+         'http://example.org/vocab#contains': {
+            '@iri': 'http://example.org/test#book'
+         }
+      }];
+      
+      tr.check(expect, output);
    })();
    
    tr.ungroup();
@@ -154,6 +378,9 @@ var normalize = function(tr)
 var tr = new TestRunner();
 
 tr.group('JSON-LD');
+
+// FIXME: use files, read in tests (names, inputs, expects) from test
+// directory, create tests, run them
 
 normalize(tr);
 
