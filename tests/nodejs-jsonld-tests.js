@@ -6,6 +6,7 @@
  * Copyright (c) 2011 Digital Bazaar, Inc. All rights reserved.
  */
 var sys = require('sys');
+var fs = require('fs');
 var forge = require('../js/forge');
 var jsonld = forge.jsonld;
 
@@ -69,319 +70,83 @@ TestRunner.prototype.check = function(expect, result)
    }
 }
 
-var normalize = function(tr)
+TestRunner.prototype.load = function(path)
 {
-   tr.group('normalize');
+   var tests = [];
    
-   (function()
+   // get full path
+   path = fs.realpathSync(path);
+   sys.log('Reading tests from: "' + path + '"');
+   
+   // read each test file from the directory
+   var files = fs.readdirSync(path);
+   for(var i in files)
    {
-      tr.test('simple id');
-      
-      var input = {
-         '@': 'http://example.org/test#example'
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#example'
-         }
-      }];
-      
-      tr.check(expect, output); 
-   })();
+      var file = path + '/' + files[i];
+      sys.log('Reading test file: "' + file + '"');
+      tests.push(JSON.parse(fs.readFileSync(file, 'utf8')));
+   }
    
-   (function()
-   {
-      tr.test('bnode');
-      
-      var input = {
-         '@context': {
-            'ex': 'http://example.org/vocab#'
-         },
-         'a': 'ex:Foo'
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
-            '@iri': 'http://example.org/vocab#Foo'
-         }
-      }];
-      
-      tr.check(expect, output); 
-   })();
-   
-   (function()
-   {
-      tr.test('bnode plus embed w/subject');
-      
-      var input = {
-         '@context': {
-            'ex': 'http://example.org/vocab#'
-         },
-         'a': 'ex:Foo',
-         'ex:embed': {
-            '@': 'http://example.org/test#example'
-         }
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
-            '@iri': 'http://example.org/vocab#Foo'
-         },
-         'http://example.org/vocab#embed': {
-            '@iri': 'http://example.org/test#example'
-         }
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#example'
-         }
-      }];
-      
-      tr.check(expect, output); 
-   })();
-   
-   (function()
-   {
-      tr.test('bnode embed');
-      
-      var input = {
-         '@context': {
-            'ex': 'http://example.org/vocab#'
-         },
-         '@': 'http://example.org/test#example',
-         'a': 'ex:Foo',
-         'ex:embed': {
-            'a': 'ex:Bar'
-         }
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#example'
-         },
-         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
-            '@iri': 'http://example.org/vocab#Foo'
-         },
-         'http://example.org/vocab#embed': {
-            'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
-               '@iri': 'http://example.org/vocab#Bar'
-            }
-         }
-      }];
-      
-      tr.check(expect, output); 
-   })();
-   
-   (function()
-   {
-      tr.test('multiple rdf types');
-      
-      var input = {
-         '@context': {
-            'ex': 'http://example.org/vocab#'
-         },
-         '@': 'http://example.org/test#example',
-         'a': ['ex:Foo', 'ex:Bar']
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#example'
-         },
-         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': [{
-            '@iri': 'http://example.org/vocab#Foo'
-         }, {
-            '@iri': 'http://example.org/vocab#Bar'
-         }]
-      }];
-      
-      tr.check(expect, output); 
-   })();
-   
-   (function()
-   {
-      tr.test('coerce CURIE value');
-      
-      var input = {
-         '@context': {
-            'ex': 'http://example.org/vocab#',
-            '@coerce': {
-               'xsd:anyURI': 'ex:foo'
-            }
-         },
-         '@': 'http://example.org/test#example',
-         'a': 'ex:Foo',
-         'ex:foo': 'ex:Bar'
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#example'
-         },
-         'http://www.w3.org/1999/02/22-rdf-syntax-ns#type': {
-            '@iri': 'http://example.org/vocab#Foo'
-         },
-         'http://example.org/vocab#foo': {
-            '@iri': 'http://example.org/vocab#Bar'
-         }
-      }];
-      
-      tr.check(expect, output);
-   })();
-   
-   (function()
-   {
-      tr.test('single subject complex');
-      
-      var input = {
-         '@context': {
-            'dc': 'http://purl.org/dc/elements/1.1/',
-            'ex': 'http://example.org/vocab#',
-            '@coerce': {
-               'xsd:anyURI': 'ex:contains'
-            }
-         },
-         '@': 'http://example.org/test#library',
-         'ex:contains': {
-            '@': 'http://example.org/test#book',
-            'dc:contributor': 'Writer',
-            'dc:title': 'My Book',
-            'ex:contains': {
-               '@': 'http://example.org/test#chapter',
-               'dc:description': 'Fun',
-               'dc:title': 'Chapter One'
-            }
-         }
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#book'
-         },
-         'http://purl.org/dc/elements/1.1/contributor': 'Writer',
-         'http://purl.org/dc/elements/1.1/title': 'My Book',
-         'http://example.org/vocab#contains': {
-            '@iri': 'http://example.org/test#chapter'
-         },
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#chapter'
-         },
-         'http://purl.org/dc/elements/1.1/description': 'Fun',
-         'http://purl.org/dc/elements/1.1/title': 'Chapter One'
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#library'
-         },
-         'http://example.org/vocab#contains': {
-            '@iri': 'http://example.org/test#book'
-         }
-      }];
-      
-      tr.check(expect, output);
-   })();
-   
-   (function()
-   {
-      tr.test('multiple subjects - complex');
-      
-      var input = {
-         '@context': {
-            'dc': 'http://purl.org/dc/elements/1.1/',
-            'ex': 'http://example.org/vocab#',
-            '@coerce': {
-               'xsd:anyURI': ['ex:authored', 'ex:contains']
-            },
-         },
-         '@': [{
-            '@': 'http://example.org/test#chapter',
-            'dc:description': 'Fun',
-            'dc:title': 'Chapter One',
-         }, {
-            '@': 'http://example.org/test#jane',
-            'ex:authored': 'http://example.org/test#chapter',
-            'foaf:name': 'Jane'
-         }, {
-            '@': 'http://example.org/test#john',
-            'foaf:name': 'John'
-         }, {
-            '@': 'http://example.org/test#library',
-            'ex:contains': {
-               '@': 'http://example.org/test#book',
-               'dc:contributor': 'Writer',
-               'dc:title': 'My Book',
-               'ex:contains': 'http://example.org/test#chapter'
-            }
-         }]
-      };
-      
-      var output = jsonld.normalize(input);
-      
-      var expect = [{
-         '@': {
-            '@iri': 'http://example.org/test#book'
-         },
-         'http://purl.org/dc/elements/1.1/contributor': 'Writer',
-         'http://purl.org/dc/elements/1.1/title': 'My Book',
-         'http://example.org/vocab#contains': {
-            '@iri': 'http://example.org/test#chapter'
-         },
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#chapter'
-         },
-         'http://purl.org/dc/elements/1.1/description': 'Fun',
-         'http://purl.org/dc/elements/1.1/title': 'Chapter One'
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#jane'
-         },
-         'http://example.org/vocab#authored': {
-            '@iri': 'http://example.org/test#chapter'
-         },
-         'http://xmlns.com/foaf/0.1/name': 'Jane'
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#john'
-         },
-         'http://xmlns.com/foaf/0.1/name': 'John'
-      }, {
-         '@': {
-            '@iri': 'http://example.org/test#library'
-         },
-         'http://example.org/vocab#contains': {
-            '@iri': 'http://example.org/test#book'
-         }
-      }];
-      
-      tr.check(expect, output);
-   })();
-   
-   tr.ungroup();
+   return tests;
 };
 
-// run tests
+TestRunner.prototype.run = function(tests)
+{
+   /* Test format:
+      {
+         group: <optional group name>,
+         tests: [{
+            'name': <test name>,
+            'type': <type of test>,
+            'input': <input for test>,
+            'expect': <expected result>,
+            'context': <context for add context test type>
+         }]
+      }
+      
+      If 'group' is present, then 'tests' must be present and list all of the
+      tests in the group. If 'group' is not present then 'name' must be present
+      as well as 'input' and 'expect'. Groups may be embedded. The test types
+      are: normalize, expand, and compact.
+    */
+   for(var i in tests)
+   {
+      var test = tests[i];
+      if('group' in test)
+      {
+         tr.group(test.group);
+         this.run(test.tests);
+         tr.ungroup();
+      }
+      else if(!('name' in test))
+      {
+         throw '"group" or "name" must be specified in test file.';
+      }
+      else
+      {
+         tr.test(test.name);
+         if(test.type === 'normalize')
+         {
+            tr.check(test.expect, jsonld.normalize(test.input));
+         }
+         else if(test.type === 'expand')
+         {
+            tr.check(test.expect, jsonld.removeContext(test.input));
+         }
+         else if(test.type === 'compact')
+         {
+            tr.check(test.expect, jsonld.addContext(test.context, test.input));
+         }
+         else
+         {
+            throw 'Unknown test type: ' + test.type;
+         }
+      }
+   }
+};
+
+// load and run tests
 var tr = new TestRunner();
-
 tr.group('JSON-LD');
-
-// FIXME: use files, read in tests (names, inputs, expects) from test
-// directory, create tests, run them
-
-normalize(tr);
-
+tr.run(tr.load('jsonld'));
 tr.ungroup();

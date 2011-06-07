@@ -1,0 +1,238 @@
+{
+   "group": "normalize",
+   "tests": [{
+      "name": "simple id",
+      "type": "normalize",
+      "input": {
+         "@": "http://example.org/test#example"
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         }
+      }]
+   }, {
+      "name": "bnode",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "a": "ex:Foo"
+      },
+      "expect": [{
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Foo"
+         }
+      }]
+   }, {
+      "name": "bnode plus embed w/subject",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "a": "ex:Foo",
+         "ex:embed": {
+            "@": "http://example.org/test#example"
+         }
+      },
+      "expect": [{
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Foo"
+         },
+         "http://example.org/vocab#embed": {
+            "@iri": "http://example.org/test#example"
+         }
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#example"
+         }
+      }]
+   }, {
+      "name": "bnode embed",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": "http://example.org/test#example",
+         "a": "ex:Foo",
+         "ex:embed": {
+            "a": "ex:Bar"
+         }
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Foo"
+         },
+         "http://example.org/vocab#embed": {
+            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+               "@iri": "http://example.org/vocab#Bar"
+            }
+         }
+      }]
+   }, {
+      "name": "multiple rdf types",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": "http://example.org/test#example",
+         "a": ["ex:Foo", "ex:Bar"]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [{
+            "@iri": "http://example.org/vocab#Foo"
+         }, {
+            "@iri": "http://example.org/vocab#Bar"
+         }]
+      }]
+   }, {
+      "name": "coerce CURIE value",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "ex:foo"
+            }
+         },
+         "@": "http://example.org/test#example",
+         "a": "ex:Foo",
+         "ex:foo": "ex:Bar"
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example"
+         },
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Foo"
+         },
+         "http://example.org/vocab#foo": {
+            "@iri": "http://example.org/vocab#Bar"
+         }
+      }]
+   }, {
+      "name": "single subject complex",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "dc": "http://purl.org/dc/elements/1.1/",
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "ex:contains"
+            }
+         },
+         "@": "http://example.org/test#library",
+         "ex:contains": {
+            "@": "http://example.org/test#book",
+            "dc:contributor": "Writer",
+            "dc:title": "My Book",
+            "ex:contains": {
+               "@": "http://example.org/test#chapter",
+               "dc:description": "Fun",
+               "dc:title": "Chapter One"
+            }
+         }
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#book"
+         },
+         "http://purl.org/dc/elements/1.1/contributor": "Writer",
+         "http://purl.org/dc/elements/1.1/title": "My Book",
+         "http://example.org/vocab#contains": {
+            "@iri": "http://example.org/test#chapter"
+         }
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#chapter"
+         },
+         "http://purl.org/dc/elements/1.1/description": "Fun",
+         "http://purl.org/dc/elements/1.1/title": "Chapter One"
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#library"
+         },
+         "http://example.org/vocab#contains": {
+            "@iri": "http://example.org/test#book"
+         }
+      }]
+   }, {
+      "name": "multiple subjects - complex",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "dc": "http://purl.org/dc/elements/1.1/",
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["ex:authored", "ex:contains"]
+            }
+         },
+         "@": [{
+            "@": "http://example.org/test#chapter",
+            "dc:description": "Fun",
+            "dc:title": "Chapter One"
+         }, {
+            "@": "http://example.org/test#jane",
+            "ex:authored": "http://example.org/test#chapter",
+            "foaf:name": "Jane"
+         }, {
+            "@": "http://example.org/test#john",
+            "foaf:name": "John"
+         }, {
+            "@": "http://example.org/test#library",
+            "ex:contains": {
+               "@": "http://example.org/test#book",
+               "dc:contributor": "Writer",
+               "dc:title": "My Book",
+               "ex:contains": "http://example.org/test#chapter"
+            }
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#book"
+         },
+         "http://purl.org/dc/elements/1.1/contributor": "Writer",
+         "http://purl.org/dc/elements/1.1/title": "My Book",
+         "http://example.org/vocab#contains": {
+            "@iri": "http://example.org/test#chapter"
+         }
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#chapter"
+         },
+         "http://purl.org/dc/elements/1.1/description": "Fun",
+         "http://purl.org/dc/elements/1.1/title": "Chapter One"
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#jane"
+         },
+         "http://example.org/vocab#authored": {
+            "@iri": "http://example.org/test#chapter"
+         },
+         "http://xmlns.com/foaf/0.1/name": "Jane"
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#john"
+         },
+         "http://xmlns.com/foaf/0.1/name": "John"
+      }, {
+         "@": {
+            "@iri": "http://example.org/test#library"
+         },
+         "http://example.org/vocab#contains": {
+            "@iri": "http://example.org/test#book"
+         }
+      }]
+   }]
+}
