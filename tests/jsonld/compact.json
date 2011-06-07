@@ -1,0 +1,147 @@
+{
+   "group": "compact",
+   "tests": [{
+      "name": "add context",
+      "type": "compact",
+      "input": {
+         "@": [{
+            "@": {
+               "@iri": "http://example.org/test#chapter"
+            },
+            "http://purl.org/dc/elements/1.1/description": "Fun",
+            "http://purl.org/dc/elements/1.1/title": "Chapter One"
+         }, {
+            "@": {
+               "@iri": "http://example.org/test#jane"
+            },
+            "http://example.org/vocab#authored": "http://example.org/test#chapter",
+            "http://xmlns.com/foaf/0.1/name": "Jane"
+         }, {
+            "@": {
+               "@iri": "http://example.org/test#john"
+            },
+            "http://xmlns.com/foaf/0.1/name": "John"
+         }, {
+            "@": {
+               "@iri": "http://example.org/test#library"
+            },
+            "http://example.org/vocab#contains": {
+               "@": "http://example.org/test#book",
+               "http://example.org/vocab#contains": "http://example.org/test#chapter",
+               "http://purl.org/dc/elements/1.1/contributor": "Writer",
+               "http://purl.org/dc/elements/1.1/title": "My Book"
+            }
+         }]
+      },
+      "context": {
+         "dc": "http://purl.org/dc/elements/1.1/",
+         "ex": "http://example.org/vocab#",
+         "foaf": "http://xmlns.com/foaf/0.1/"
+      },
+      "expect": {
+         "@context": {
+            "dc": "http://purl.org/dc/elements/1.1/",
+            "ex": "http://example.org/vocab#",
+            "foaf": "http://xmlns.com/foaf/0.1/"
+         },
+         "@": [{
+            "@": "http://example.org/test#chapter",
+            "dc:description": "Fun",
+            "dc:title": "Chapter One"
+         }, {
+            "@": "http://example.org/test#jane",
+            "ex:authored": "http://example.org/test#chapter",
+            "foaf:name": "Jane"
+         }, {
+            "@": "http://example.org/test#john",
+            "foaf:name": "John"
+         }, {
+            "@": "http://example.org/test#library",
+            "ex:contains": {
+               "@": "http://example.org/test#book",
+               "dc:contributor": "Writer",
+               "dc:title": "My Book",
+               "ex:contains": "http://example.org/test#chapter"
+            }
+         }]
+      }
+   }, {
+      "name": "reduced context",
+      "type": "compact",
+      "input": {
+         "@": "http://example.org/test#thing",
+         "http://purl.org/dc/terms/title": "Title"
+      },
+      "context": {
+         "dc": "http://purl.org/dc/terms/",
+         "ex": "http://example.org/test#"
+      },
+      "expect": {
+         "@context": {
+            "dc": "http://purl.org/dc/terms/",
+            "ex": "http://example.org/test#"
+         },
+         "@": "ex:thing",
+         "dc:title": "Title"
+      }
+   }, {
+      "name": "coerced ex:contains",
+      "type": "compact",
+      "input": {
+         "@": "http://example.org/test#book",
+         "http://example.org/vocab#contains": {
+            "@iri": "http://example.org/test#chapter"
+         },
+         "http://purl.org/dc/elements/1.1/title": "Title"
+      },
+      "context": {
+         "@coerce": {
+            "xsd:anyURI": "ex:contains"
+         },
+         "dc": "http://purl.org/dc/elements/1.1/",
+         "ex": "http://example.org/vocab#",
+         "xsd": "http://www.w3.org/2001/XMLSchema#"
+      },
+      "expect": {
+         "@context": {
+            "@coerce": {
+               "xsd:anyURI": "ex:contains"
+            },
+            "dc": "http://purl.org/dc/elements/1.1/",
+            "ex": "http://example.org/vocab#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#"
+         },
+         "@": "http://example.org/test#book",
+         "dc:title": "Title",
+         "ex:contains": "http://example.org/test#chapter"
+      }
+   }, {
+      "name": "with coerce",
+      "type": "compact",
+      "input": {
+         "@": "http://example.org/test",
+         "http://example.org/test#int": {
+            "@datatype": "http://www.w3.org/2001/XMLSchema#integer",
+            "@literal": "123"
+         }
+      },
+      "context": {
+         "@coerce": {
+            "xsd:integer": "ex:int"
+         },
+         "ex": "http://example.org/test#",
+         "xsd": "http://www.w3.org/2001/XMLSchema#"
+      },
+      "expect": {
+         "@context": {
+            "@coerce": {
+               "xsd:integer": "ex:int"
+            },
+            "ex": "http://example.org/test#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#"
+         },
+         "@": "http://example.org/test",
+         "ex:int": 123
+      }
+   }]
+}

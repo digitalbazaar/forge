@@ -134,8 +134,8 @@ TestRunner.prototype.run = function(tests)
             'name': <test name>,
             'type': <type of test>,
             'input': <input for test>,
+            'context': <context for add context test type>,
             'expect': <expected result>,
-            'context': <context for add context test type>
          }]
       }
       

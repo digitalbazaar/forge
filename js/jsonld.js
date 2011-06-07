@@ -229,7 +229,7 @@ var _setProperty = function(s, p, o)
 
 /**
  * Clones a value that is an array or an object and sorts the keys. Deep clone
- * is not performed.
+ * is not performed. This function should not be called on an array.
  * 
  * @param value the value to clone.
  * 
@@ -237,14 +237,24 @@ var _setProperty = function(s, p, o)
  */
 var _clone = function(value)
 {
-   var rval = {};
-   var keys = Object.keys(value);
-   keys.sort();
-   for(var i in keys)
+   var rval;
+   
+   if(value.constructor === Object)
    {
-      var key = keys[i];
-      rval[key] = value[key];
+      rval = {};
+      var keys = Object.keys(value);
+      keys.sort();
+      for(var i in keys)
+      {
+         var key = keys[i];
+         rval[key] = value[key];
+      }
    }
+   else
+   {
+      rval = value;
+   }
+   
    return rval;
 };
 
@@ -923,7 +933,7 @@ jsonld.addContext = function(ctx, input)
 jsonld.changeContext = function(ctx, input)
 {
    // remove context and then add new one
-   return addContext(ctx, removeContext(input));
+   return jsonld.addContext(ctx, jsonld.removeContext(input));
 };
 
 /**
