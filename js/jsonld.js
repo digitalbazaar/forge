@@ -242,8 +242,7 @@ var _clone = function(value)
    if(value.constructor === Object)
    {
       rval = {};
-      var keys = Object.keys(value);
-      keys.sort();
+      var keys = Object.keys(value).sort();
       for(var i in keys)
       {
          var key = keys[i];
@@ -649,13 +648,17 @@ var _expand = function(ctx, property, value, expandSubjects)
    return rval;
 };
 
+var _isBlankNodeIri = function(v)
+{
+   return v.indexOf('_:') === 0;
+};
+
 var _isNamedBlankNode = function(v)
 {
    // look for "_:" at the beginning of the subject
    return (
       v.constructor === Object && '@' in v &&
-      '@iri' in v['@'] &&
-      v['@']['@iri'].indexOf('_:') === 0);
+      '@iri' in v['@'] && _isBlankNodeIri(v['@']['@iri']));
 };
 
 var _isBlankNode = function(v)
@@ -667,10 +670,262 @@ var _isBlankNode = function(v)
       (!('@' in v) || _isNamedBlankNode(v)));
 };
 
+
 /**
- * Flattens the given value into a map of unique subjects, where
- * the only embeds are unnamed blank nodes. If any named blank nodes are
- * encountered, an exception will be raised.
+ * Compares two values.
+ * 
+ * @param v1 the first value.
+ * @param v2 the second value.
+ * 
+ * @return -1 if b1 < b2, 0 if b1 == b2, 1 if b1 > b2.
+ */
+var _compare = function(v1, v2)
+{
+   var rval = 0;
+   
+   if(v1.constructor === Array && v2.constructor === Array)
+   {
+      for(var i = 0; i < v1.length && rval === 0; ++i)
+      {
+         rval = _compare(v1[i], v2[i]);
+      }
+   }
+   else
+   {
+      rval = (v1 < v2 ? -1 : (v1 > v2 ? 1 : 0));
+   }
+   
+   return rval;
+};
+
+/**
+ * Compares two keys in an object. If the key exists in one object
+ * and not the other, that object is less. If the key exists in both objects,
+ * then the one with the lesser value is less.
+ * 
+ * @param o1 the first object.
+ * @param o2 the second object.
+ * @param key the key.
+ * 
+ * @return -1 if o1 < o2, 0 if o1 == o2, 1 if o1 > o2.
+ */
+var _compareObjectKeys = function(o1, o2, key)
+{
+   var rval = 0;
+   if(key in o1)
+   {
+      if(key in o2)
+      {
+         rval = _compare(o1[key], o2[key]);
+      }
+      else
+      {
+         rval = -1;
+      }
+   }
+   else if(key in o2)
+   {
+      rval = 1;
+   }
+   return rval;
+};
+
+/**
+ * Compares two object values.
+ * 
+ * @param o1 the first object.
+ * @param o2 the second object.
+ * 
+ * @return -1 if o1 < o2, 0 if o1 == o2, 1 if o1 > o2.
+ */
+var _compareObjects = function(o1, o2)
+{
+   var rval = 0;
+   
+   if(o1.constructor === String)
+   {
+      if(o2.constructor !== String)
+      {
+         rval = -1;
+      }
+      else
+      {
+         rval = _compare(o1, o2);
+      }
+   }
+   else if(o2.constructor === String)
+   {
+      rval = 1;
+   }
+   else
+   {
+      rval = _compareObjectKeys(o1, o2, '@literal');
+      if(rval === 0)
+      {
+         if('@literal' in o1)
+         {
+            rval = _compareObjectKeys(o1, o2, '@datatype');
+            if(rval === 0)
+            {
+               rval = _compareObjectKeys(o1, o2, '@language');
+            }
+         }
+         // both are '@iri' objects
+         else
+         {
+            rval = _compare(o1['@iri'], o2['@iri']);
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Compares the object values between two bnodes.
+ * 
+ * @param b1 the first bnode.
+ * @param b2 the second bnode.
+ * 
+ * @return -1 if b1 < b2, 0 if b1 == b2, 1 if b1 > b2.
+ */
+var _compareBlankNodeObjects = function(b1, b2)
+{
+   var rval = 0;
+   
+   /*
+   3. For each property, compare sorted object values.
+   3.1. The bnode with fewer objects is first.
+   3.2. For each object value, compare only literals and non-bnodes.
+   3.2.1.  The bnode with fewer non-bnodes is first.
+   3.2.2. The bnode with a string object is first.
+   3.2.3. The bnode with the alphabetically-first string is first.
+   3.2.4. The bnode with a @literal is first.
+   3.2.5. The bnode with the alphabetically-first @literal is first.
+   3.2.6. The bnode with the alphabetically-first @datatype is first.
+   3.2.7. The bnode with a @language is first.
+   3.2.8. The bnode with the alphabetically-first @language is first.
+   3.2.9. The bnode with the alphabetically-first @iri is first.
+   */
+   
+   for(var p in b1)
+   {
+      // step #3.1
+      var b1Len = (b1[p].constructor === String) ? 1 : b1[p].length;
+      var b2Len = (b2[p].constructor === String) ? 1 : b2[p].length;
+      rval = _compare(b1Len, b2Len);
+      
+      // step #3.2.1
+      if(rval === 0)
+      {
+         // normalize objects to an array
+         var b1Objs = b1[p];
+         var b2Objs = b2[p];
+         if(b1Objs.constructor === String)
+         {
+            b1Objs = [b1Objs];
+            b2Objs = [b2Objs];
+         }
+         
+         // filter non-bnodes (remove bnodes from comparison)
+         b1Objs = b1Objs.filter(function(e) {
+            return !('@iri' in e && _isBlankNodeIri(e['@iri']));
+         });
+         b2Objs = b2Objs.filter(function(e) {
+            return !('@iri' in e && _isBlankNodeIri(e['@iri']));
+         });
+         
+         rval = _compare(b1Objs.length, b2Objs.length);
+      }
+      
+      // steps #3.2.2-3.2.9
+      if(rval === 0)
+      {
+         for(var i = 0; i < b1Objs.length && rval === 0; ++i)
+         {
+            rval = _compareObjects(b1Objs[i], b1Objs[i]);
+         }
+      }
+      
+      if(rval !== 0)
+      {
+         break;
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Creates a blank node name generator using the given prefix for the
+ * blank nodes. 
+ * 
+ * @param prefix the prefix to use.
+ * 
+ * @return the blank node name generator.
+ */
+var _createNameGenerator = function(prefix)
+{
+   var count = -1;
+   var ng = {
+      next: function()
+      {
+         ++count;
+         return ng.current();
+      },
+      current: function()
+      {
+         return '_:' + prefix + count;
+      },
+      inNamespace: function(iri)
+      {
+         return iri.indexOf('_:' + prefix) === 0;
+      }
+   };
+   return ng;
+};
+
+/**
+ * Populates a map of all named subjects from the given input and an array
+ * of all unnamed bnodes (includes embedded ones).
+ * 
+ * @param input the input (must be expanded, no context).
+ * @param subjects the subjects map to populate.
+ */
+var _collectSubjects = function(input, subjects, bnodes)
+{
+   if(input.constructor === Array)
+   {
+      for(var i in input)
+      {
+         _collectSubjects(input[i], subjects, bnodes);
+      }
+   }
+   else if(input.constructor === Object)
+   {
+      // named subject
+      if('@' in input)
+      {
+         subjects[input['@']['@iri']] = input;
+      }
+      // unnamed blank node
+      else if(_isBlankNode(input))
+      {
+         bnodes.push(input);
+      }
+      
+      // recurse through subject properties
+      for(var key in input)
+      {
+         _collectSubjects(input[key], subjects, bnodes);
+      }
+   }
+};
+
+/**
+ * Flattens the given value into a map of unique subjects. It is assumed that
+ * all blank nodes have been uniquely named before this call. Array values for
+ * properties will be sorted.
  *
  * @param parent the value's parent, NULL for none.
  * @param parentProperty the property relating the value to the parent.
@@ -688,6 +943,9 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
       {
          _flatten(parent, parentProperty, value[i], subjects, out);
       }
+      
+      // sort values
+      value.sort(_compareObjects);
    }
    else if(value.constructor === Object)
    {
@@ -708,15 +966,6 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
             _flatten(parent, parentProperty, value['@'][key], subjects, out);
          }
       }
-      // named blank node
-      else if(_isNamedBlankNode(value))
-      {
-         // FIXME: permit flattening of named blank nodes
-         throw {
-            message: 'Could not flatten JSON-LD. It contains a named ' +
-               'blank node.'
-         };
-      }
       // already-expanded value
       else if('@literal' in value || '@iri' in value)
       {
@@ -727,7 +976,7 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
       {
          // create or fetch existing subject
          var subject;
-         if('@' in value && value['@'] in subjects)
+         if(value['@'] in subjects)
          {
             // FIXME: '@' might be a graph literal (as {})
             subject = subjects[value['@']['@iri']];
@@ -765,35 +1014,33 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
    }
 
    // add flattened value to parent
-   if(flattened !== null)
+   if(flattened !== null && parent !== null)
    {
-      // if the flattened value is an unnamed blank node, add it to the
-      // top-level output
-      if(parent === null && _isBlankNode(flattened))
+      // remove top-level '@' for subjects
+      // 'http://mypredicate': {'@': {'@iri': 'http://mysubject'}} becomes
+      // 'http://mypredicate': {'@iri': 'http://mysubject'}
+      if(flattened.constructor === Object && '@' in flattened)
       {
-         parent = out;
+         flattened = flattened['@'];
       }
 
-      if(parent !== null)
+      if(parent.constructor === Array)
       {
-         // remove top-level '@' for subjects
-         // 'http://mypredicate': {'@': {'@iri': 'http://mysubject'}} becomes
-         // 'http://mypredicate': {'@iri': 'http://mysubject'}
-         if(flattened.constructor === Object && '@' in flattened)
-         {
-            flattened = flattened['@'];
-         }
-
-         if(parent.constructor === Array)
-         {
-            parent.push(flattened);
-         }
-         else
-         {
-            parent[parentProperty] = flattened;
-         }
+         parent.push(flattened);
+      }
+      else
+      {
+         parent[parentProperty] = flattened;
       }
    }
+};
+
+/**
+ * Constructs a new JSON-LD processor.
+ */
+jsonld.Processor = function()
+{
+   this.memo = {};
 };
 
 /**
@@ -803,7 +1050,7 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
  * 
  * @return the normalized JSON-LD object.
  */
-jsonld.normalize = function(input)
+jsonld.Processor.prototype.normalize = function(input)
 {
    var rval = [];
 
@@ -816,10 +1063,17 @@ jsonld.normalize = function(input)
 
       // expand input
       var expanded = _expand(ctx, null, input, true);
-      
+
+      // assign names to unnamed bnodes
+      this.nameBlankNodes(expanded);
+
+      // FIXME: when flattening, remove duplicate property+subjects
       // flatten
       var subjects = {};
       _flatten(null, null, expanded, subjects, rval);
+
+      // canonicalize blank nodes
+      this.canonicalizeBlankNodes(rval);
 
       // append unique subjects to array of sorted triples
       for(var key in subjects)
@@ -830,32 +1084,602 @@ jsonld.normalize = function(input)
       // sort output
       rval.sort(function(a, b)
       {
-         var rval = 0;
-         
-         // FIXME: after canonical bnode naming is implemented, all entries
-         // will have '@'
-         if('@' in a && !('@' in b))
-         {
-            rval = 1;
-         }
-         else if('@' in b && !('@' in a))
-         {
-            rval = -1;
-         }
-         else if(a['@']['@iri'] < b['@']['@iri'])
-         {
-            rval = -1;
-         }
-         else if(a['@']['@iri'] > b['@']['@iri'])
-         {
-            rval = 1;
-         }
-         
-         return rval;
+         return _compare(a['@']['@iri'], b['@']['@iri']);
       });
    }
 
    return rval;
+};
+
+/**
+ * Assigns unique names to blank nodes that are unnamed in the given input.
+ * 
+ * @param input the input to assign names to.
+ */
+jsonld.Processor.prototype.nameBlankNodes = function(input)
+{
+   // create temporary blank node name generator
+   var ng = this.ng = _createNameGenerator('tmp');
+   
+   // collect subjects and unnamed bnodes
+   var subjects = {};
+   var bnodes = [];
+   _collectSubjects(input, subjects, bnodes);
+   
+   // uniquely name all unnamed bnodes
+   for(var i in bnodes)
+   {
+      var bnode = bnodes[i];
+      if(!('@' in bnode))
+      {
+         // generate names until one is unique
+         while(ng.next() in subjects);
+         bnode['@'] =
+         {
+            '@iri': ng.current()
+         };
+         subjects[ng.current()] = bnode;
+      }
+   }
+};
+
+/**
+ * Renames a blank node, changing its references, etc. The method assumes
+ * that the given name is unique.
+ * 
+ * @param b the blank node to rename.
+ * @param id the new name to use.
+ */
+jsonld.Processor.prototype.renameBlankNode = function(b, id)
+{
+   var old = b['@']['@iri'];
+   var subjects = this.subjects;
+   var refs = this.edges.refs[old].all;
+   for(var i in refs)
+   {
+      var iri = refs[i];
+      var ref = subjects[iri];
+      for(var p in ref)
+      {
+         // normalize property to array for single code-path
+         var tmp = (ref[p].constructor === Object) ? [ref[p]] :
+            (ref[p].constructor === Array) ? ref[p] : [];
+         for(var n in tmp)
+         {
+            if(tmp[n].constructor === Object &&
+               '@iri' in tmp[n] && tmp[n] === old)
+            {
+               tmp[n]['@iri'] = id;
+            }
+         }
+      }
+   }
+};
+
+/**
+ * Deeply names the given blank node by first naming it if it doesn't already
+ * have an appropriate prefix, and then by naming its properties and then
+ * references.
+ * 
+ * @param b the bnode to name.
+ */
+jsonld.Processor.prototype.deepNameBlankNode = function(b)
+{
+   var ng = this.ng;
+   var subjects = this.subjects;
+   
+   // rename bnode itself
+   var iri = b['@']['@iri'];
+   if(!ng.inNamespace(iri))
+   {
+      this.renameBlankNode(b, ng.next());
+      iri = ng.current();
+   }
+   
+   var self = this;
+   
+   // rename bnodes properties
+   var props = this.edges.props[iri].bnodes.sort(
+      function(a, b) { return self.compareEdges(a, b); });
+   for(var i in props)
+   {
+      this.deepNameBlankNode(subjects[props[i].s]);
+   }
+   
+   // rename bnode references
+   var refs = this.edges.refs[iri].bnodes.sort(
+      function(a, b) { return self.compareEdges(a, b); });
+   for(var i in refs)
+   {
+      this.deepNameBlankNode(subjects[refs[i].s]);
+   }
+};
+
+/**
+ * Canonically names blank nodes in the given input.
+ * 
+ * @param input the flat input graph to assign names to.
+ */
+jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
+{
+   // collect subjects and bnodes from flat input graph
+   var memo = this.memo = {};
+   var edges = this.edges = {};
+   var subjects = this.subjects = {};
+   var bnodes = [];
+   for(var i in input)
+   {
+      var iri = input[i]['@']['@iri'];
+      subjects[iri] = input[i];
+      edges.refs[iri].all = [];
+      edges.props[iri].all = [];
+      if(_isBlankNodeIri(iri))
+      {
+         bnodes.push(input[i]);
+      }
+   }
+   
+   // build map of memoized bnode comparisons
+   for(var i1 in bnodes)
+   {
+      var iri1 = bnodes[i1]['@']['@iri'];
+      memo[iri1].compared = {};
+      
+      // build map of uncompared bnodes
+      for(var i2 in bnodes)
+      {
+         var iri2 = bnodes[i2]['@']['@iri'];
+         if(iri1 !== iri2)
+         {
+            memo[iri].uncompared[iri2] = true;
+         }
+      }
+   }
+   
+   // collect edges in the graph
+   this.collectEdges();
+   
+   // sort blank nodes, store detected isomorphisms
+   var self = this;
+   bnodes.sort(function(a, b)
+   {
+      var rval = 0;
+      
+      // use memoized comparison if available
+      var iriA = a['@']['@iri'];
+      var iriB = b['@']['@iri'];
+      if(iriB in memo[iriA].compared)
+      {
+         rval = memo[iriA].compared[iriB];
+      }
+      else
+      {
+         // do shallow compare first
+         rval = self.shallowCompareBlankNodes(a, b);
+         if(rval !== 0)
+         {
+            // compare done
+            memo[iriA].compared[iriB] = rval;
+            memo[iriB].compared[iriA] = -rval;
+            delete memo[iriA].uncompared[iriB];
+            delete memo[iriB].uncompared[iriA];
+         }
+         else
+         {
+            // do deep compare
+            var iso = {};
+            rval = self.deepCompareBlankNodes(a, b, iso);
+            if(iriB in memo[iriA].uncompared)
+            {
+               memo[iriA].compared[iriB] = rval;
+               delete memo[iriA].uncompared[iriB];
+            }
+            if(iriA in memo[iriB].uncompared)
+            {
+               memo[iriB].compared[iriA] = -rval;
+               delete memo[iriB].uncompared[iriA];
+            }
+         }
+      }
+      
+      return rval;
+   });
+   
+   // create canonical blank node name generator
+   var c14n = _createNameGenerator('c14n');
+   
+   // rename all bnodes that have canonical names to temporary names
+   var tmp = this.ng;
+   for(var i in bnodes)
+   {
+      var bnode = bnodes[i];
+      if(c14n.inNamespace(bnode['@']['@iri']))
+      {
+         // generate names until one is unique
+         while(tmp.next() in subjects);
+         this.renameBlankNode(bnode, tmp.current());
+      }
+   }
+   
+   // change internal name generator from tmp one to canonical one
+   this.ng = c14n;
+   
+   // deeply-iterate over bnodes canonically-naming them
+   for(var i in bnodes)
+   {
+      this.deepNameBlankNode(bnodes[i]);
+   }
+};
+
+/**
+ * Compares the edges between two nodes for equivalence.
+ * 
+ * @param a the first bnode.
+ * @param b the second bnode.
+ * @param dir the edge direction ('props' or 'refs').
+ * @param iso the current subgraph isomorphism for connected bnodes.
+ * 
+ * @return -1 if a < b, 0 if a == b, 1 if a > b. 
+ */
+jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
+{
+   var rval = 0;
+   
+   /* Edge comparison algorithm:
+      1. Compare adjacent bnode lists for matches.
+      1.1. If a bnode ID is in the potential isomorphism, then its associated
+         bnode *must* be in the other bnode under the same property.
+      1.2. If a bnode ID is not in the potential isomorphism yet, then the
+         associated bnode *must* have a bnode with the same property from the
+         same bnode group that isn't in the isomorphism yet to match up.
+         Iterate over each bnode in the group until an equivalent one is found.
+      1.3. Recurse to compare the chosen bnodes.
+      1.4. The bnode with lowest group index amongst bnodes with the same
+         property name is first.
+    */
+   
+   // for every bnode edge in A, make sure there's a match in B
+   var edgesA = edges[dir][a].bnodes;
+   var edgesB = edges[dir][b].bnodes;
+   for(var i1 = 0; i1 < edgesA.length && rval === 0; ++i1)
+   {
+      var found = false;
+      var edgeA = edgesA[i1];
+      
+      // step #1.1
+      if(edgeA.s in iso)
+      {
+         var match = iso[edgeA.s];
+         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
+         {
+            var edgeB = edgesB[i2];
+            if(edgeB.p === edgeA.p)
+            {
+               found = (edgeB.s === match);
+               break;
+            }
+         }
+      }
+      // step #1.2
+      else
+      {
+         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgesB.p; ++i2)
+         {
+            var edgeB = edgesB[i2];
+            if(edgeB.p === edgeA.p && !(edgeB.s in iso))
+            {
+               // add bnode pair temporarily to iso
+               iso[edgeA.s] = edgeB.s;
+               iso[edgeB.s] = edgeA.s;
+               
+               // step #1.3
+               var sA = subjects[edgeA.s];
+               var sB = subjects[edgeB.s];
+               if(this.deepCompareBlankNodes(sA, sB, iso) === 0)
+               {
+                  found = true;
+                  break;
+               }
+               
+               // remove non-matching bnode pair from iso
+               delete iso[edgeA.s];
+               delete iso[edgeB.s];
+            }
+         }
+      }
+      
+      // step #1.4
+      if(!found)
+      {
+         // no matching bnode pair found, sort order is the bnode with the
+         // least bnode for edgeA's property
+         rval = this.compareEdgeType(a, b, edgeA.p, dir, iso);
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Compares bnodes along the same edge type to determine which is less.
+ * 
+ * @param a the first bnode.
+ * @param b the second bnode.
+ * @param p the property.
+ * @param dir the direction of the edge ('props' or 'refs').
+ * @param iso the current subgraph isomorphism for connected bnodes.
+ * 
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
+ */
+jsonld.Processor.prototype.compareEdgeType = function(a, b, p, dir, iso)
+{
+   // compare the smallest bnode connected to 'a' and to 'b'
+   var leastA = this.findSmallestBlankNode(a, p, dir, iso);
+   var leastB = this.findSmallestBlankNode(b, p, dir, iso);
+   return this.deepCompareBlankNodes(leastA, leastB, iso);
+};
+
+/**
+ * Finds the smallest bnode along an edge of a certain type.
+ * 
+ * @param b the bnode.
+ * @param p the property (edge type).
+ * @param direction the direction of the edge ('props' or 'refs').
+ * @param iso the current subgraph isomorphism for connected bnodes.
+ * 
+ * @return the smallest bnode.
+ */
+jsonld.Processor.prototype.findSmallestBlankNode = function(b, p, dir, iso)
+{
+   var rval = null;
+   
+   // find the smallest bnode connected to 'b'
+   var edges = this.edges[dir][b].bnodes;
+   for(var i = 0; i < edges.length && edges[i].p <= p; ++i)
+   {
+      if(edges[i].p === p)
+      {
+         var s = this.subjects[edges[i].s];
+         if(rval === null)
+         {
+            least = s;
+         }
+         else
+         {
+            if(_deepCompareBlankNodes(rval, s, iso) < 0)
+            {
+               rval = s;
+            }
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Compares two blank nodes for equivalence.
+ * 
+ * @param a the first blank node.
+ * @param b the second blank node.
+ * @param iso the current subgraph isomorphism for connected bnodes.
+ * 
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
+ */
+jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
+{
+   var rval = 0;
+   
+   // use memoized comparison if available
+   var iriA = a['@']['@iri'];
+   var iriB = b['@']['@iri'];
+   if(iriB in this.memo[iriA].compared)
+   {
+      rval = this.memo[iriA].compared[iriB];
+   }
+   else
+   {
+      // do shallow compare first
+      rval = this.shallowCompareBlankNodes(a, b);
+      if(rval !== 0)
+      {
+         // compare done
+         this.memo[iriA].compared[iriB] = rval;
+         delete this.memo[iriA].uncompared[iriB];
+      }
+      // deep comparison is necessary
+      else
+      {
+         // compare properties
+         rval = this.deepCompareEdges(a, b, 'props', iso);
+         
+         // compare references
+         if(rval === 0)
+         {
+            rval = this.deepCompareEdges(a, b, 'refs', iso);
+         }
+         
+         // do deep compare
+         if(iriB in this.memo[iriA].uncompared)
+         {
+            this.memo[iriA].compared[iriB] = rval;
+            delete this.memo[iriA].uncompared[iriB];
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Performs a shallow sort comparison on the given bnodes.
+ * 
+ * @param a the first bnode.
+ * @param b the second bnode.
+ * 
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
+ */
+jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
+{
+   var rval = 0;
+   
+   /* ShallowSort Algorithm (when comparing two bnodes):
+      1. Compare the number of properties.
+      1.1. The bnode with fewer properties is first.
+      2. Compare alphabetically sorted-properties.
+      3.1. The bnode with the alphabetically-first property is first.
+      3. For each property, compare object values.
+      4. Compare the number of references.
+      4.1. The bnode with fewer references is first.
+      5. Compare sorted references.
+      5.1. The bnode with the reference iri (vs. bnode) is first.
+      5.2. The bnode with the alphabetically-first reference iri is first.
+      5.3. The bnode with the alphabetically-first reference property is first.
+    */
+   var pA = Object.keys(a);
+   var pB = Object.keys(b);
+   
+   // step #1
+   rval = _compare(pA.length, pB.length);
+   
+   // step #2
+   if(rval === 0)
+   {
+      rval = _compare(pA.sort(), pB.sort());
+   }
+   
+   // step #3
+   if(rval === 0)
+   {
+      rval = _compareBlankNodeObjects(a, b);
+   }
+   
+   // step #4
+   if(rval === 0)
+   {
+      var edgesA = this.edges.refs[a['@']['@iri']].all;
+      var edgesB = this.edges.refs[b['@']['@iri']].all;
+      rval = _compare(edgesA.length, edgesB.length);
+   }
+   
+   // step #5
+   if(rval === 0)
+   {
+      for(var i = 0; i < edgesA.length && rval === 0; ++i)
+      {
+         rval = this.compareEdges(edgesA.all[i], edgesB.all[i]);
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Compares two edges. Edges with an IRI (vs. a bnode ID) come first, then
+ * alphabetically-first IRIs, then alphabetically-first properties. If a
+ * blank node appears in the blank node equality memo then they will be
+ * compared, otherwise they won't be.
+ * 
+ * @param e1 the first edge.
+ * @param e2 the second edge.
+ * 
+ * @return -1 if e1 < e2, 0 if e1 == e2, 1 if e1 > e2.
+ */
+jsonld.Processor.prototype.compareEdges = function(e1, e2)
+{
+   var rval = 0;
+   
+   var e1Bnode = _isBlankNodeIri(e1.s);
+   var e2Bnode = _isBlankNodeIri(e2.s);
+   var memo = this.memo;
+   
+   if(e1Bnode ^ e2Bnode === 1)
+   {
+      rval = e1Bnode ? 1 : -1;
+   }
+   else
+   {
+      if(!e1Bnode)
+      {
+         rval = _compare(e1.s, e2.s);
+      }
+      if(rval === 0)
+      {
+         rval = _compare(e1.p, e2.p);
+      }
+      if(rval === 0 && e1Bnode && e1.s in memo && e2.s in memo[e1.s])
+      {
+         rval = memo[e1.s][e2.s];
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Populates the given reference map with all of the subject edges in the
+ * graph. The references will be categorized by the direction of the edges,
+ * where 'props' is for properties and 'refs' is for references to a subject as
+ * an object. The edge direction categories for each IRI will be sorted into
+ * groups 'all' and 'bnodes'.
+ */
+jsonld.Processor.prototype.collectEdges = function()
+{
+   var refs = this.edges.refs;
+   var props = this.edges.props;
+   
+   // collect all references and properties
+   for(var iri in this.subjects)
+   {
+      var subject = this.subjects[iri];
+      for(var key in subject)
+      {
+         if(key !== '@')
+         {
+            var object = subject[key];
+            if(object.constructor === Object && '@iri' in object &&
+               object['@iri'] in this.subjects)
+            {
+               var objIri = object['@iri'];
+               
+               // map object to this subject
+               refs[objIri].all.push({ s: iri, p: key });
+               
+               // map this subject to object
+               props[iri].all.push({ s: objIri, p: key });
+            }
+         }
+      }
+   }
+   
+   // create sorted categories
+   var self = this;
+   for(var iri in refs)
+   {
+      refs[iri].all.sort(function(a, b) { return self.compareEdges(a, b); });
+      refs[iri].bnodes = refs[iri].all.filter(function(edge) {
+         return _isBlankNodeIri(edge.s);
+      });
+   }
+   for(var iri in props)
+   {
+      props[iri].all.sort(function(a, b) { return self.compareEdges(a, b); });
+      props[iri].bnodes = props[iri].all.filter(function(edge) {
+         return _isBlankNodeIri(edge.s);
+      });
+   }
+};
+
+/**
+ * Normalizes a JSON-LD object.
+ *
+ * @param input the JSON-LD object to normalize.
+ * 
+ * @return the normalized JSON-LD object.
+ */
+jsonld.normalize = function(input)
+{
+   return new jsonld.Processor().normalize(input);
 };
 
 /**
