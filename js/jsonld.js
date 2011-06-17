@@ -1190,8 +1190,6 @@ jsonld.Processor.prototype.deepNameBlankNode = function(b)
    var ng = this.ng;
    var subjects = this.subjects;
    
-   require('sys').puts('B: ' + JSON.stringify(b));
-   
    // rename bnode itself
    var iri = b['@']['@iri'];
    if(!ng.inNamespace(iri))
