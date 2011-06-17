@@ -7,6 +7,7 @@
  */
 var sys = require('sys');
 var fs = require('fs');
+var path = require('path');
 var forge = require('../js/forge');
 var jsonld = forge.jsonld;
 
@@ -108,21 +109,24 @@ TestRunner.prototype.check = function(expect, result)
    }
 }
 
-TestRunner.prototype.load = function(path)
+TestRunner.prototype.load = function(filepath)
 {
    var tests = [];
    
    // get full path
-   path = fs.realpathSync(path);
-   sys.log('Reading tests from: "' + path + '"');
+   filepath = fs.realpathSync(filepath);
+   sys.log('Reading tests from: "' + filepath + '"');
    
    // read each test file from the directory
-   var files = fs.readdirSync(path);
+   var files = fs.readdirSync(filepath);
    for(var i in files)
    {
-      var file = path + '/' + files[i];
-      sys.log('Reading test file: "' + file + '"');
-      tests.push(JSON.parse(fs.readFileSync(file, 'utf8')));
+      var file = filepath + '/' + files[i];
+      if(path.extname(file) == '.json')
+      {
+         sys.log('Reading test file: "' + file + '"');
+         tests.push(JSON.parse(fs.readFileSync(file, 'utf8')));
+      }
    }
    
    return tests;
