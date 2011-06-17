@@ -70,7 +70,8 @@ var _createDefaultContext = function()
       {
          'xsd:anyURI': ['foaf:homepage', 'foaf:member'],
          'xsd:integer': 'foaf:age'
-      }
+      },
+      '@vocab': ''
    };
    return ctx;
 };
@@ -1137,7 +1138,7 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
    var refs = this.edges.refs[old].all;
    for(var i in refs)
    {
-      var iri = refs[i];
+      var iri = refs[i].s;
       var ref = subjects[iri];
       for(var p in ref)
       {
