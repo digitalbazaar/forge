@@ -21,6 +21,9 @@
          "a": "ex:Foo"
       },
       "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
             "@iri": "http://example.org/vocab#Foo"
          }
@@ -38,6 +41,9 @@
          }
       },
       "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
             "@iri": "http://example.org/vocab#Foo"
          },
@@ -64,15 +70,20 @@
       },
       "expect": [{
          "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Bar"
+         }
+      }, {
+         "@": {
             "@iri": "http://example.org/test#example"
          },
          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
             "@iri": "http://example.org/vocab#Foo"
          },
          "http://example.org/vocab#embed": {
-            "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
-               "@iri": "http://example.org/vocab#Bar"
-            }
+            "@iri": "_:c14n0"
          }
       }]
    }, {

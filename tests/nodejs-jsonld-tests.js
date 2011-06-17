@@ -102,6 +102,9 @@ TestRunner.prototype.check = function(expect, result)
    {
       sys.puts('Expect: ' + expect);
       sys.puts('Result: ' + result);
+      
+      // FIXME: remove me
+      throw 'FAIL';
    }
 }
 

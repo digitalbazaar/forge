@@ -931,9 +931,8 @@ var _collectSubjects = function(input, subjects, bnodes)
  * @param parentProperty the property relating the value to the parent.
  * @param value the value to flatten.
  * @param subjects the map of subjects to write to.
- * @param out the top-level array for flattened values.
  */
-var _flatten = function(parent, parentProperty, value, subjects, out)
+var _flatten = function(parent, parentProperty, value, subjects)
 {
    var flattened = null;
    
@@ -941,7 +940,7 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
    {
       for(var i in value)
       {
-         _flatten(parent, parentProperty, value[i], subjects, out);
+         _flatten(parent, parentProperty, value[i], subjects);
       }
       
       // sort values
@@ -963,7 +962,7 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
          // top-level graph literal
          for(var key in value['@'])
          {
-            _flatten(parent, parentProperty, value['@'][key], subjects, out);
+            _flatten(parent, parentProperty, value['@'][key], subjects);
          }
       }
       // already-expanded value
@@ -998,11 +997,11 @@ var _flatten = function(parent, parentProperty, value, subjects, out)
             if(value[key].constructor === Array)
             {
                subject[key] = [];
-               _flatten(subject[key], null, value[key], subjects, out);
+               _flatten(subject[key], null, value[key], subjects);
             }
             else
             {
-               _flatten(subject, key, value[key], subjects, out);
+               _flatten(subject, key, value[key], subjects);
             }
          }
       }
@@ -1070,16 +1069,16 @@ jsonld.Processor.prototype.normalize = function(input)
       // FIXME: when flattening, remove duplicate property+subjects
       // flatten
       var subjects = {};
-      _flatten(null, null, expanded, subjects, rval);
-
-      // canonicalize blank nodes
-      this.canonicalizeBlankNodes(rval);
+      _flatten(null, null, expanded, subjects);
 
       // append unique subjects to array of sorted triples
       for(var key in subjects)
       {
          rval.push(subjects[key]);
       }
+
+      // canonicalize blank nodes
+      this.canonicalizeBlankNodes(rval);
 
       // sort output
       rval.sort(function(a, b)
@@ -1132,6 +1131,7 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
  */
 jsonld.Processor.prototype.renameBlankNode = function(b, id)
 {
+   // update references
    var old = b['@']['@iri'];
    var subjects = this.subjects;
    var refs = this.edges.refs[old].all;
@@ -1154,6 +1154,19 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
          }
       }
    }
+   
+   // update bnode IRI
+   b['@']['@iri'] = id;
+   
+   // update subjects map
+   subjects[id] = subjects[old];
+   delete subjects[old];
+   
+   // update reference and property lists
+   this.edges.refs[id] = this.edges.refs[old];
+   this.edges.props[id] = this.edges.props[old];
+   delete this.edges.refs[old];
+   delete this.edges.props[old];
 };
 
 /**
@@ -1204,15 +1217,27 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
 {
    // collect subjects and bnodes from flat input graph
    var memo = this.memo = {};
-   var edges = this.edges = {};
+   var edges = this.edges =
+   {
+      refs: {},
+      props: {}
+   };
    var subjects = this.subjects = {};
    var bnodes = [];
    for(var i in input)
    {
       var iri = input[i]['@']['@iri'];
       subjects[iri] = input[i];
-      edges.refs[iri].all = [];
-      edges.props[iri].all = [];
+      edges.refs[iri] =
+      {
+         all: [],
+         bnodes: []
+      };
+      edges.props[iri] =
+      {
+         all: [],
+         bnodes: []
+      };
       if(_isBlankNodeIri(iri))
       {
          bnodes.push(input[i]);
@@ -1223,7 +1248,11 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    for(var i1 in bnodes)
    {
       var iri1 = bnodes[i1]['@']['@iri'];
-      memo[iri1].compared = {};
+      memo[iri1] =
+      {
+         compared: {},
+         uncompared: {}
+      };
       
       // build map of uncompared bnodes
       for(var i2 in bnodes)
