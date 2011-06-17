@@ -144,8 +144,7 @@ TestRunner.prototype.run = function(tests)
       
       If 'group' is present, then 'tests' must be present and list all of the
       tests in the group. If 'group' is not present then 'name' must be present
-      as well as 'input' and 'expect'. Groups may be embedded. The test types
-      are: normalize, expand, compact, and change.
+      as well as 'input' and 'expect'. Groups may be embedded.
     */
    for(var i in tests)
    {
@@ -186,6 +185,16 @@ TestRunner.prototype.run = function(tests)
             else if(type === 'change')
             {
                input = jsonld.changeContext(test.context, input);
+            }
+            else if(type === 'compare')
+            {
+               var tmp = [];
+               for(var n in input)
+               {
+                  var input = jsonld.normalize(input[n]);
+                  tmp.push(test.expect);
+               }
+               test.expect = tmp;
             }
             else
             {
