@@ -1,0 +1,28 @@
+{
+   "group": "compare",
+   "tests": [{
+      "name": "bnode",
+      "type": "compare",
+      "input": [{
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": "_:a",
+         "a": "ex:Foo"
+      }, {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": "_:b",
+         "a": "ex:Foo"
+      }],
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
+            "@iri": "http://example.org/vocab#Foo"
+         }
+      }]
+   }]
+}

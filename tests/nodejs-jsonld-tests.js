@@ -192,12 +192,14 @@ TestRunner.prototype.run = function(tests)
             }
             else if(type === 'compare')
             {
+               var result = [];
                var tmp = [];
                for(var n in input)
                {
-                  var input = jsonld.normalize(input[n]);
+                  result.push(jsonld.normalize(input[n]));
                   tmp.push(test.expect);
                }
+               input = result;
                test.expect = tmp;
             }
             else
