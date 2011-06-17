@@ -398,7 +398,31 @@
          }
       }]
    }, {
-      "name": "blank node - diamond - embed",
+      "name": "top level context",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#"
+         },
+         "@": [{
+            "@": "e:A"
+         },
+         {
+            "@": "e:B"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/vocab#A"
+         }
+      },
+      {
+         "@": {
+            "@iri": "http://example.org/vocab#B"
+         }
+      }]
+   }, {
+      "name": "blank node - dual link - embed",
       "type": "normalize",
       "input": {
          "@context": {
@@ -417,44 +441,176 @@
          },
          "e:B": "_:b1"
       },
-      "expect": [
-        {
-          "@": {
+      "expect": [{
+         "@": {
             "@iri": "_:c14n0"
-          },
-          "name": "foo"
-        },
-        {
-          "@": {
+         },
+         "name": "foo"
+      },
+      {
+         "@": {
             "@iri": "http://example.org/test"
-          },
-          "http://example.org/vocab#A": {
+         },
+         "http://example.org/vocab#A": {
             "@iri": "_:c14n0"
-          },
-          "http://example.org/vocab#B": {
+         },
+         "http://example.org/vocab#B": {
             "@iri": "_:c14n0"
-          },
-          "http://example.org/vocab#embed": {
+         },
+         "http://example.org/vocab#embed": {
             "@iri": "_:c14n0"
-          }
-        }
-      ]
+         }
+      }]
    }, {
-      "name": "blank node - diamond - non-embed",
+      "name": "blank node - dual link - non-embed",
       "type": "normalize",
       "input": [{
          "@context": {
-            "e": "http://example.org/vocab#"
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "e:B"
+            }
          },
          "@": "http://example.org/test",
-         "e:A": "_:b1",
-         "e:B": "_:b1",
-         "e:bool": true
+         "e:A": {
+            "@iri": "_:b1"
+         },
+         "e:B": "_:b1"
       }, {
          "@": "_:b1",
          "name": "foo"
       }],
       "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "name": "foo"
+      },
+      {
+         "@": {
+            "@iri": "http://example.org/test"
+         },
+         "http://example.org/vocab#A": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#B": {
+            "@iri": "_:c14n0"
+         }
       }]
+   }, {
+      "name": "blank node - diamond",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["e:A", "e:B", "e:next"]
+            }
+         },
+         "@": [{
+            "@": "e:test",
+            "e:A": "_:b1",
+            "e:B": "_:b2"
+         },
+         {
+            "@": "_:b1",
+            "e:next": "_:b3"
+         },
+         {
+            "@": "_:b2",
+            "e:next": "_:b3"
+         },
+         {
+            "@": "_:b3"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n0"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n2"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n0"
+         }
+      },
+      {
+         "@": {
+            "@iri": "http://example.org/vocab#test"
+         },
+         "http://example.org/vocab#A": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#B": {
+            "@iri": "_:c14n2"
+         }
+      }]
+   }, {
+      "name": "blank node - raw circle",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "e:next"
+            }
+         },
+         "@": [{
+            "@": "_:b1",
+            "e:next": "_:b2"
+         },
+         {
+            "@": "_:b2",
+            "e:next": "_:b3"
+         },
+         {
+            "@": "_:b3",
+            "e:next": "_:b1"
+         }]
+      },
+      "expect": [
+      ]
+   }, {
+      "name": "blank node - point at circle",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["e:A", "e:B", "e:C", "e:next"]
+            }
+         },
+         "@": [{
+            "@": "e:test",
+            "e:A": "_:b1",
+            "e:B": "_:b2",
+            "e:C": "_:b3"
+         },
+         {
+            "@": "_:b1",
+            "e:next": "_:b2"
+         },
+         {
+            "@": "_:b2",
+            "e:next": "_:b3"
+         },
+         {
+            "@": "_:b3",
+            "e:next": "_:b1"
+         }]
+      },
+      "expect": [
+      ]
    }]
 }
