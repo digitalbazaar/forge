@@ -1385,8 +1385,8 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
     */
    
    // for every bnode edge in A, make sure there's a match in B
-   var edgesA = edges[dir][a].bnodes;
-   var edgesB = edges[dir][b].bnodes;
+   var edgesA = this.edges[dir][a].bnodes;
+   var edgesB = this.edges[dir][b].bnodes;
    for(var i1 = 0; i1 < edgesA.length && rval === 0; ++i1)
    {
       var found = false;
