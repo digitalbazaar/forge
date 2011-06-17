@@ -397,5 +397,51 @@
             "@literal": "123"
          }
       }]
+   }, {
+      "name": "blank node - embed",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "e:B"
+            }
+         },
+         "@": "http://example.org/test",
+         "e:embed": {
+            "@": "_:b1",
+            "name": "foo"
+         },
+         "e:A": {
+            "@iri": "_:b1"
+         },
+         "e:B": "_:b1",
+         "e:bool": true
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test"
+         }
+      }]
+   }, {
+      "name": "blank node - non-embed",
+      "type": "normalize",
+      "input": [{
+         "@context": {
+            "e": "http://example.org/vocab#"
+         },
+         "@": "http://example.org/test",
+         "e:A": "_:b1",
+         "e:B": "_:b1",
+         "e:bool": true
+      }, {
+         "@": "_:b1",
+         "name": "foo"
+      }],
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test"
+         }
+      }]
    }]
 }
