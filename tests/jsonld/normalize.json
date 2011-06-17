@@ -398,7 +398,7 @@
          }
       }]
    }, {
-      "name": "blank node - embed",
+      "name": "blank node - diamond - embed",
       "type": "normalize",
       "input": {
          "@context": {
@@ -415,16 +415,32 @@
          "e:A": {
             "@iri": "_:b1"
          },
-         "e:B": "_:b1",
-         "e:bool": true
+         "e:B": "_:b1"
       },
-      "expect": [{
-         "@": {
+      "expect": [
+        {
+          "@": {
+            "@iri": "_:c14n0"
+          },
+          "name": "foo"
+        },
+        {
+          "@": {
             "@iri": "http://example.org/test"
-         }
-      }]
+          },
+          "http://example.org/vocab#A": {
+            "@iri": "_:c14n0"
+          },
+          "http://example.org/vocab#B": {
+            "@iri": "_:c14n0"
+          },
+          "http://example.org/vocab#embed": {
+            "@iri": "_:c14n0"
+          }
+        }
+      ]
    }, {
-      "name": "blank node - non-embed",
+      "name": "blank node - diamond - non-embed",
       "type": "normalize",
       "input": [{
          "@context": {
@@ -439,9 +455,6 @@
          "name": "foo"
       }],
       "expect": [{
-         "@": {
-            "@iri": "http://example.org/test"
-         }
       }]
    }]
 }
