@@ -1385,8 +1385,10 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
     */
    
    // for every bnode edge in A, make sure there's a match in B
-   var edgesA = this.edges[dir][a].bnodes;
-   var edgesB = this.edges[dir][b].bnodes;
+   var iriA = a['@']['@iri'];
+   var iriB = b['@']['@iri'];
+   var edgesA = this.edges[dir][iriA].bnodes;
+   var edgesB = this.edges[dir][iriB].bnodes;
    for(var i1 = 0; i1 < edgesA.length && rval === 0; ++i1)
    {
       var found = false;
@@ -1480,7 +1482,8 @@ jsonld.Processor.prototype.findSmallestBlankNode = function(b, p, dir, iso)
    var rval = null;
    
    // find the smallest bnode connected to 'b'
-   var edges = this.edges[dir][b].bnodes;
+   var iri = b['@']['@iri'];
+   var edges = this.edges[dir][iri].bnodes;
    for(var i = 0; i < edges.length && edges[i].p <= p; ++i)
    {
       if(edges[i].p === p)
@@ -1488,7 +1491,7 @@ jsonld.Processor.prototype.findSmallestBlankNode = function(b, p, dir, iso)
          var s = this.subjects[edges[i].s];
          if(rval === null)
          {
-            least = s;
+            rval = s;
          }
          else
          {
@@ -1613,7 +1616,7 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
    {
       for(var i = 0; i < edgesA.length && rval === 0; ++i)
       {
-         rval = this.compareEdges(edgesA.all[i], edgesB.all[i]);
+         rval = this.compareEdges(edgesA[i], edgesB[i]);
       }
    }
    
