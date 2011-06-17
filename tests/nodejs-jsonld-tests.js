@@ -43,7 +43,7 @@ var _sortKeys = function(obj)
 
 var _stringifySorted = function(obj)
 {
-   return JSON.stringify(_sortKeys(obj), null, 2);
+   return JSON.stringify(_sortKeys(obj), null, 3);
 };
 
 function TestRunner()
