@@ -1147,7 +1147,7 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
          for(var n in tmp)
          {
             if(tmp[n].constructor === Object &&
-               '@iri' in tmp[n] && tmp[n] === old)
+               '@iri' in tmp[n] && tmp[n]['@iri'] === old)
             {
                tmp[n]['@iri'] = id;
             }
