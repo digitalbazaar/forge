@@ -678,7 +678,7 @@ var _isBlankNode = function(v)
  * @param v1 the first value.
  * @param v2 the second value.
  * 
- * @return -1 if b1 < b2, 0 if b1 == b2, 1 if b1 > b2.
+ * @return -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2.
  */
 var _compare = function(v1, v2)
 {
@@ -785,12 +785,12 @@ var _compareObjects = function(o1, o2)
 /**
  * Compares the object values between two bnodes.
  * 
- * @param b1 the first bnode.
- * @param b2 the second bnode.
+ * @param a the first bnode.
+ * @param b the second bnode.
  * 
- * @return -1 if b1 < b2, 0 if b1 == b2, 1 if b1 > b2.
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-var _compareBlankNodeObjects = function(b1, b2)
+var _compareBlankNodeObjects = function(a, b)
 {
    var rval = 0;
    
@@ -809,42 +809,44 @@ var _compareBlankNodeObjects = function(b1, b2)
    3.2.9. The bnode with the alphabetically-first @iri is first.
    */
    
-   for(var p in b1)
+   for(var p in a)
    {
       // step #3.1
-      var b1Len = (b1[p].constructor === String) ? 1 : b1[p].length;
-      var b2Len = (b2[p].constructor === String) ? 1 : b2[p].length;
-      rval = _compare(b1Len, b2Len);
+      var lenA = (a[p].constructor === Array) ? a[p].length : 1;
+      var lenB = (b[p].constructor === Array) ? b[p].length : 1;
+      rval = _compare(lenA, lenB);
       
       // step #3.2.1
       if(rval === 0)
       {
          // normalize objects to an array
-         var b1Objs = b1[p];
-         var b2Objs = b2[p];
-         if(b1Objs.constructor === String)
+         var objsA = a[p];
+         var objsB = b[p];
+         if(objsA.constructor !== Array)
          {
-            b1Objs = [b1Objs];
-            b2Objs = [b2Objs];
+            objsA = [objsA];
+            objsB = [objsB];
          }
          
          // filter non-bnodes (remove bnodes from comparison)
-         b1Objs = b1Objs.filter(function(e) {
-            return !('@iri' in e && _isBlankNodeIri(e['@iri']));
+         objsA = objsA.filter(function(e) {
+            return (e.constructor === String ||
+               !('@iri' in e && _isBlankNodeIri(e['@iri'])));
          });
-         b2Objs = b2Objs.filter(function(e) {
-            return !('@iri' in e && _isBlankNodeIri(e['@iri']));
+         objsB = objsB.filter(function(e) {
+            return (e.constructor === String ||
+               !('@iri' in e && _isBlankNodeIri(e['@iri'])));
          });
          
-         rval = _compare(b1Objs.length, b2Objs.length);
+         rval = _compare(objsA.length, objsB.length);
       }
       
       // steps #3.2.2-3.2.9
       if(rval === 0)
       {
-         for(var i = 0; i < b1Objs.length && rval === 0; ++i)
+         for(var i = 0; i < objsA.length && rval === 0; ++i)
          {
-            rval = _compareObjects(b1Objs[i], b1Objs[i]);
+            rval = _compareObjects(objsA[i], objsA[i]);
          }
       }
       
