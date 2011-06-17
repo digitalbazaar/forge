@@ -1269,7 +1269,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
          var iri2 = bnodes[i2]['@']['@iri'];
          if(iri1 !== iri2)
          {
-            memo[iri].uncompared[iri2] = true;
+            memo[iri1].uncompared[iri2] = true;
          }
       }
    }
