@@ -1190,6 +1190,8 @@ jsonld.Processor.prototype.deepNameBlankNode = function(b)
    var ng = this.ng;
    var subjects = this.subjects;
    
+   require('sys').puts('B: ' + JSON.stringify(b));
+   
    // rename bnode itself
    var iri = b['@']['@iri'];
    if(!ng.inNamespace(iri))
@@ -1200,12 +1202,15 @@ jsonld.Processor.prototype.deepNameBlankNode = function(b)
    
    var self = this;
    
-   // rename bnodes properties
+   // rename bnode properties
    var props = this.edges.props[iri].bnodes.sort(
       function(a, b) { return self.compareEdges(a, b); });
    for(var i in props)
    {
-      this.deepNameBlankNode(subjects[props[i].s]);
+      if(props[i].s in subjects)
+      {
+         this.deepNameBlankNode(subjects[props[i].s]);
+      }
    }
    
    // rename bnode references
@@ -1213,7 +1218,10 @@ jsonld.Processor.prototype.deepNameBlankNode = function(b)
       function(a, b) { return self.compareEdges(a, b); });
    for(var i in refs)
    {
-      this.deepNameBlankNode(subjects[refs[i].s]);
+      if(refs[i].s in subjects)
+      {
+         this.deepNameBlankNode(subjects[refs[i].s]);
+      }
    }
 };
 
