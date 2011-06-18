@@ -1483,49 +1483,50 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
  */
 jsonld.Processor.prototype.compareEdgeType = function(a, b, p, dir, iso)
 {
-   // compare the smallest bnode connected to 'a' and to 'b'
-   var leastA = this.findSmallestBlankNode(a, p, dir, iso);
-   var leastB = this.findSmallestBlankNode(b, p, dir, iso);
-   return this.deepCompareBlankNodes(leastA, leastB, iso);
+   var rval = 0;
+   
+   // compare adjacent bnodes for smallest
+   var adjA = this.getSortedAdjacents(a, p, dir, iso);
+   var adjB = this.getSortedAdjacents(a, p, dir, iso);
+   for(var i = 0; i < adjA.length && rval === 0; ++i)
+   {
+      rval = this.deepCompareBlankNodes(adjA[i], adjB[i], iso);
+   }
+   
+   return rval;
 };
 
 /**
- * Finds the smallest bnode along an edge of a certain type.
+ * Returns the bnode properties for a particular bnode in sorted order.
  * 
  * @param b the bnode.
  * @param p the property (edge type).
  * @param direction the direction of the edge ('props' or 'refs').
  * @param iso the current subgraph isomorphism for connected bnodes.
  * 
- * @return the smallest bnode.
+ * @return the sorted bnodes for the property.
  */
-jsonld.Processor.prototype.findSmallestBlankNode = function(b, p, dir, iso)
+jsonld.Processor.prototype.getSortedAdjacents = function(b, p, dir, iso)
 {
-   var rval = null;
+   var rval = [];
    
-   // find the smallest bnode connected to 'b'
+   // add all bnodes for the given property
    var iri = b['@']['@iri'];
    var edges = this.edges[dir][iri].bnodes;
    for(var i = 0; i < edges.length && edges[i].p <= p; ++i)
    {
       if(edges[i].p === p)
       {
-         var s = this.subjects[edges[i].s];
-         if(rval === null)
-         {
-            rval = s;
-         }
-         else
-         {
-            if(this.deepCompareBlankNodes(rval, s, iso) < 0)
-            {
-               rval = s;
-            }
-         }
+         rval.push(this.subjects[edges[i].s]);
       }
    }
    
-   return rval;
+   // sort bnodes
+   var self = this;
+   return rval.sort(function(a, b)
+   {
+      return self.deepCompareBlankNodes(a, b, iso);
+   });
 };
 
 /**
