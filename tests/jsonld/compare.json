@@ -3,7 +3,8 @@
    "tests": [{
       "name": "bnode",
       "type": "compare",
-      "input": [{
+      "input": [
+      {
          "@context": {
             "ex": "http://example.org/vocab#"
          },
@@ -23,6 +24,152 @@
          "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": {
             "@iri": "http://example.org/vocab#Foo"
          }
+      }]
+   }, {
+      "name": "disjoint identical subgraphs",
+      "type": "compare",
+      "input": [{
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": [{
+            "@": "_:a0",
+            "ex:prop": {
+               "@": "_:a1"
+            }
+         }, {
+            "@": "_:b0",
+            "ex:prop": {
+               "@": "_:b1"
+            }
+         }]
+      }, {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": [{
+            "@": "_:b0",
+            "ex:prop": {
+               "@": "_:b1"
+            }
+         }, {
+            "@": "_:a0",
+            "ex:prop": {
+               "@": "_:a1"
+            }
+         }]
+      }],
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#prop": {
+            "@iri": "_:c14n0"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n2"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n3"
+         },
+         "http://example.org/vocab#prop": {
+            "@iri": "_:c14n2"
+         }
+      }]
+   }, {
+      "name": "reordered",
+      "type": "compare",
+      "input": [{
+         "@context": {
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "ex:p1"
+            }
+         },
+         "@": [{
+            "@": "_:a1",
+            "ex:p1": "_:a3"
+         }, {
+            "@": "_:a2",
+            "ex:p1": "_:a4"
+         }, {
+            "@": "_:a3",
+            "ex:p2": "Foo"
+         }, {
+            "@": "_:a4",
+            "ex:p2": "Foo"
+         }]
+      }, {
+         "@context": {
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "ex:p1"
+            }
+         },
+         "@": [{
+            "@": "_:a1",
+            "ex:p1": "_:a4"
+         }, {
+            "@": "_:a2",
+            "ex:p1": "_:a3"
+         }, {
+            "@": "_:a3",
+            "ex:p2": "Foo"
+         }, {
+            "@": "_:a4",
+            "ex:p2": "Foo"
+         }]
+      }, {
+         "@context": {
+            "ex": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "ex:p1"
+            }
+         },
+         "@": [{
+            "@": "_:b1",
+            "ex:p1": "_:b4"
+         }, {
+            "@": "_:b2",
+            "ex:p1": "_:b3"
+         }, {
+            "@": "_:b3",
+            "ex:p2": "Foo"
+         }, {
+            "@": "_:b4",
+            "ex:p2": "Foo"
+         }]
+      }],
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#p1": {
+            "@iri": "_:c14n1"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#p2": "Foo"
+      }, {
+         "@": {
+            "@iri": "_:c14n2"
+         },
+         "http://example.org/vocab#p1": {
+            "@iri": "_:c14n3"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n3"
+         },
+         "http://example.org/vocab#p2": "Foo"
       }]
    }]
 }

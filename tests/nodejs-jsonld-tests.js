@@ -121,7 +121,7 @@ TestRunner.prototype.load = function(filepath)
    var files = fs.readdirSync(filepath);
    for(var i in files)
    {
-      var file = filepath + '/' + files[i];
+      var file = path.join(filepath, files[i]);
       if(path.extname(file) == '.json')
       {
          sys.log('Reading test file: "' + file + '"');
