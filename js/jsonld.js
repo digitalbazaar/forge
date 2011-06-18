@@ -1142,26 +1142,49 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
  */
 jsonld.Processor.prototype.renameBlankNode = function(b, id)
 {
-   // update references
    var old = b['@']['@iri'];
    var subjects = this.subjects;
+   
+   // update references to this bnode
    var refs = this.edges.refs[old].all;
    for(var i in refs)
    {
       var iri = refs[i].s;
       var ref = subjects[iri];
-      for(var p in ref)
+      var props = this.edges.props[iri].all;
+      for(var i2 in props)
       {
-         // normalize property to array for single code-path
-         var tmp = (ref[p].constructor === Object) ? [ref[p]] :
-            (ref[p].constructor === Array) ? ref[p] : [];
-         for(var n in tmp)
+         if(props[i2].s === old)
          {
-            if(tmp[n].constructor === Object &&
-               '@iri' in tmp[n] && tmp[n]['@iri'] === old)
+            props[i2].s = id;
+            
+            // normalize property to array for single code-path
+            var p = props[i2].p;
+            var tmp = (ref[p].constructor === Object) ? [ref[p]] :
+               (ref[p].constructor === Array) ? ref[p] : [];
+            for(var n in tmp)
             {
-               tmp[n]['@iri'] = id;
+               if(tmp[n].constructor === Object &&
+                  '@iri' in tmp[n] && tmp[n]['@iri'] === old)
+               {
+                  tmp[n]['@iri'] = id;
+               }
             }
+         }
+      }
+   }
+   
+   // update references from this bnode 
+   var props = this.edges.props[old].all;
+   for(var i in props)
+   {
+      var iri = props[i].s;
+      refs = this.edges.refs[iri].all;
+      for(var r in refs)
+      {
+         if(refs[r].s === old)
+         {
+            refs[r].s = id;
          }
       }
    }
@@ -1189,38 +1212,37 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
  */
 jsonld.Processor.prototype.deepNameBlankNode = function(b)
 {
-   var ng = this.ng;
-   var subjects = this.subjects;
-   
-   // rename bnode itself
+   // rename bnode (if not already renamed)
    var iri = b['@']['@iri'];
+   var ng = this.ng;
    if(!ng.inNamespace(iri))
    {
       this.renameBlankNode(b, ng.next());
       iri = ng.current();
-   }
-   
-   var self = this;
-   
-   // rename bnode properties
-   var props = this.edges.props[iri].bnodes.sort(
-      function(a, b) { return self.compareEdges(a, b); });
-   for(var i in props)
-   {
-      if(props[i].s in subjects)
+      
+      var self = this;
+      var subjects = this.subjects;
+      
+      // rename bnode properties
+      var props = this.edges.props[iri].bnodes.sort(
+         function(a, b) { return self.compareEdges(a, b); });
+      for(var i in props)
       {
-         this.deepNameBlankNode(subjects[props[i].s]);
+         if(props[i].s in subjects)
+         {
+            this.deepNameBlankNode(subjects[props[i].s]);
+         }
       }
-   }
-   
-   // rename bnode references
-   var refs = this.edges.refs[iri].bnodes.sort(
-      function(a, b) { return self.compareEdges(a, b); });
-   for(var i in refs)
-   {
-      if(refs[i].s in subjects)
+      
+      // rename bnode references
+      var refs = this.edges.refs[iri].bnodes.sort(
+         function(a, b) { return self.compareEdges(a, b); });
+      for(var i in refs)
       {
-         this.deepNameBlankNode(subjects[refs[i].s]);
+         if(refs[i].s in subjects)
+         {
+            this.deepNameBlankNode(subjects[refs[i].s]);
+         }
       }
    }
 };
@@ -1495,7 +1517,7 @@ jsonld.Processor.prototype.findSmallestBlankNode = function(b, p, dir, iso)
          }
          else
          {
-            if(_deepCompareBlankNodes(rval, s, iso) < 0)
+            if(this.deepCompareBlankNodes(rval, s, iso) < 0)
             {
                rval = s;
             }
