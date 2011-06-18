@@ -1009,6 +1009,11 @@ var _flatten = function(parent, parentProperty, value, subjects)
             {
                subject[key] = [];
                _flatten(subject[key], null, value[key], subjects);
+               if(subject[key].length === 1)
+               {
+                  // convert subject[key] to object if only 1 value was added
+                  subject[key] = subject[key][0];
+               }
             }
             else
             {
@@ -1036,7 +1041,20 @@ var _flatten = function(parent, parentProperty, value, subjects)
 
       if(parent.constructor === Array)
       {
-         parent.push(flattened);
+         // do not add duplicate IRIs for the same property
+         var duplicate = false;
+         if(flattened.constructor === Object && '@iri' in flattened)
+         {
+            duplicate = (parent.filter(function(e)
+            {
+               return (e.constructor === Object && '@iri' in e &&
+                  e['@iri'] === flattened['@iri']);
+            }).length > 0);
+         }
+         if(!duplicate)
+         {
+            parent.push(flattened);
+         }
       }
       else
       {
@@ -1077,12 +1095,11 @@ jsonld.Processor.prototype.normalize = function(input)
       // assign names to unnamed bnodes
       this.nameBlankNodes(expanded);
 
-      // FIXME: when flattening, remove duplicate property+subjects
       // flatten
       var subjects = {};
       _flatten(null, null, expanded, subjects);
 
-      // append unique subjects to array of sorted triples
+      // append subjects to array of triples
       for(var key in subjects)
       {
          rval.push(subjects[key]);
@@ -1377,6 +1394,22 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    {
       this.deepNameBlankNode(bnodes[i]);
    }
+   
+   // sort property lists that now have canonically-named bnodes
+   for(var key in edges.props)
+   {
+      if(edges.props[key].bnodes.length > 0)
+      {
+         var bnode = subjects[key];
+         for(var p in bnode)
+         {
+            if(p.indexOf('@') !== 0 && bnode[p].constructor === Array)
+            {
+               bnode[p].sort(_compareObjects);
+            }
+         }
+      }
+   }
 };
 
 /**
@@ -1648,40 +1681,40 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
 
 /**
  * Compares two edges. Edges with an IRI (vs. a bnode ID) come first, then
- * alphabetically-first IRIs, then alphabetically-first properties. If a
- * blank node appears in the blank node equality memo then they will be
- * compared, otherwise they won't be.
+ * alphabetically-first IRIs, then alphabetically-first properties. If a blank
+ * node appears in the blank node equality memo then they will be compared
+ * after properties, otherwise they won't be.
  * 
- * @param e1 the first edge.
- * @param e2 the second edge.
+ * @param a the first edge.
+ * @param b the second edge.
  * 
- * @return -1 if e1 < e2, 0 if e1 == e2, 1 if e1 > e2.
+ * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-jsonld.Processor.prototype.compareEdges = function(e1, e2)
+jsonld.Processor.prototype.compareEdges = function(a, b)
 {
    var rval = 0;
    
-   var e1Bnode = _isBlankNodeIri(e1.s);
-   var e2Bnode = _isBlankNodeIri(e2.s);
+   var bnodeA = _isBlankNodeIri(a.s);
+   var bnodeB = _isBlankNodeIri(b.s);
    var memo = this.memo;
    
-   if(e1Bnode ^ e2Bnode === 1)
+   if(bnodeA ^ bnodeB === 1)
    {
-      rval = e1Bnode ? 1 : -1;
+      rval = bnodeA ? 1 : -1;
    }
    else
    {
-      if(!e1Bnode)
+      if(!bnodeA)
       {
-         rval = _compare(e1.s, e2.s);
+         rval = _compare(a.s, b.s);
       }
       if(rval === 0)
       {
-         rval = _compare(e1.p, e2.p);
+         rval = _compare(a.p, b.p);
       }
-      if(rval === 0 && e1Bnode && e1.s in memo && e2.s in memo[e1.s])
+      if(rval === 0 && bnodeA && a.s in memo && b.s in memo[a.s])
       {
-         rval = memo[e1.s][e2.s];
+         rval = memo[a.s][b.s];
       }
    }
    
@@ -1708,17 +1741,23 @@ jsonld.Processor.prototype.collectEdges = function()
       {
          if(key !== '@')
          {
+            // normalize to array for single codepath
             var object = subject[key];
-            if(object.constructor === Object && '@iri' in object &&
-               object['@iri'] in this.subjects)
+            var tmp = (object.constructor !== Array) ? [object] : object;
+            for(var i in tmp)
             {
-               var objIri = object['@iri'];
-               
-               // map object to this subject
-               refs[objIri].all.push({ s: iri, p: key });
-               
-               // map this subject to object
-               props[iri].all.push({ s: objIri, p: key });
+               var o = tmp[i];
+               if(o.constructor === Object && '@iri' in o &&
+                  o['@iri'] in this.subjects)
+               {
+                  var objIri = o['@iri'];
+                  
+                  // map object to this subject
+                  refs[objIri].all.push({ s: iri, p: key });
+                  
+                  // map this subject to object
+                  props[iri].all.push({ s: objIri, p: key });
+               }
             }
          }
       }

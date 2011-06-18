@@ -12,6 +12,28 @@
          }
       }]
    }, {
+      "name": "duplicate property iri values",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "ex": "http://example.org/vocab#"
+         },
+         "@": "http://example.org/test#example1",
+         "ex:p": [{
+            "@iri": "http://example.org/test#example2"
+         }, {
+            "@iri": "http://example.org/test#example2"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "http://example.org/test#example1"
+         },
+         "http://example.org/vocab#p": {
+            "@iri": "http://example.org/test#example2"
+         }
+      }]
+   }, {
       "name": "bnode",
       "type": "normalize",
       "input": {
