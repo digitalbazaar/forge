@@ -1327,7 +1327,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    // collect edges in the graph
    this.collectEdges();
    
-   // sort blank nodes, store detected isomorphisms
+   // sort blank nodes
    var self = this;
    bnodes.sort(function(a, b)
    {
@@ -1635,7 +1635,7 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
       1. Compare the number of properties.
       1.1. The bnode with fewer properties is first.
       2. Compare alphabetically sorted-properties.
-      3.1. The bnode with the alphabetically-first property is first.
+      2.1. The bnode with the alphabetically-first property is first.
       3. For each property, compare object values.
       4. Compare the number of references.
       4.1. The bnode with fewer references is first.
