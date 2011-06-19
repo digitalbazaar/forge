@@ -1240,6 +1240,9 @@ jsonld.Processor.prototype.deepNameBlankNode = function(b)
       var self = this;
       var subjects = this.subjects;
       
+      // FIXME: can bnode edge sorting be optimized out due to sorting them
+      // when they are unequal in other parts of this algorithm?
+      
       // rename bnode properties
       var props = this.edges.props[iri].bnodes.sort(
          function(a, b) { return self.compareEdges(a, b); });
