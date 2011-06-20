@@ -520,6 +520,60 @@
          }
       }]
    }, {
+      "name": "blank node - self link",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["@", "e:self"]
+            }
+         },
+         "@": "_:b0",
+         "e:self": "_:b0"
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#self": {
+            "@iri": "_:c14n0"
+         }
+      }]
+   }, {
+      "name": "blank node - disjoint self links",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["@", "e:self"]
+            }
+         },
+         "@": [{
+            "@": "_:b0",
+            "e:self": "_:b0"
+         }, {
+            "@": "_:b1",
+            "e:self": "_:b1"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#self": {
+            "@iri": "_:c14n0"
+         }
+      }, {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#self": {
+            "@iri": "_:c14n1"
+         }
+      }]
+   }, {
       "name": "blank node - diamond",
       "type": "normalize",
       "input": {
@@ -579,7 +633,85 @@
          }
       }]
    }, {
-      "name": "blank node - raw circle",
+      "name": "blank node - circle of 2",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": "e:next"
+            }
+         },
+         "@": [{
+            "@": "_:b1",
+            "e:next": "_:b2"
+         },
+         {
+            "@": "_:b2",
+            "e:next": "_:b1"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n1"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n0"
+         }
+      }]
+   }, {
+      "name": "blank node - double circle of 2",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["e:next", "e:prev"]
+            }
+         },
+         "@": [{
+            "@": "_:b1",
+            "e:prev": "_:b2",
+            "e:next": "_:b2"
+         },
+         {
+            "@": "_:b2",
+            "e:prev": "_:b1",
+            "e:next": "_:b1"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#prev": {
+            "@iri": "_:c14n1"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#prev": {
+            "@iri": "_:c14n0"
+         }
+      }]
+   }, {
+      "name": "blank node - circle of 3",
       "type": "normalize",
       "input": {
          "@context": {
@@ -626,7 +758,66 @@
          }
       }]
    }, {
-      "name": "blank node - point at circle",
+      "name": "blank node - double circle of 3",
+      "type": "normalize",
+      "input": {
+         "@context": {
+            "e": "http://example.org/vocab#",
+            "@coerce": {
+               "xsd:anyURI": ["e:next", "e:prev"]
+            }
+         },
+         "@": [{
+            "@": "_:b1",
+            "e:prev": "_:b3",
+            "e:next": "_:b2"
+         },
+         {
+            "@": "_:b2",
+            "e:prev": "_:b1",
+            "e:next": "_:b3"
+         },
+         {
+            "@": "_:b3",
+            "e:prev": "_:b2",
+            "e:next": "_:b1"
+         }]
+      },
+      "expect": [{
+         "@": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n2"
+         },
+         "http://example.org/vocab#prev": {
+            "@iri": "_:c14n1"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n0"
+         },
+         "http://example.org/vocab#prev": {
+            "@iri": "_:c14n2"
+         }
+      },
+      {
+         "@": {
+            "@iri": "_:c14n2"
+         },
+         "http://example.org/vocab#next": {
+            "@iri": "_:c14n1"
+         },
+         "http://example.org/vocab#prev": {
+            "@iri": "_:c14n0"
+         }
+      }]
+   }, {
+      "name": "blank node - point at circle of 3",
       "type": "normalize",
       "input": {
          "@context": {
@@ -691,7 +882,6 @@
          "http://example.org/vocab#C": {
             "@iri": "_:c14n0"
          }
-      }
-      ]
+      }]
    }]
 }
