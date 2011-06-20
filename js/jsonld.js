@@ -578,12 +578,17 @@ var _expand = function(ctx, property, value, expandSubjects)
          rval = {};
          for(var key in value)
          {
-            if(key !== '@context')
+            if(key.length === 1 || key.indexOf('@') !== 0)
             {
                // set object to expanded property
                _setProperty(
                   rval, _expandTerm(ctx, key),
                   _expand(ctx, key, value[key], expandSubjects));
+            }
+            else if(key !== '@context')
+            {
+               // preserve non-context json-ld keywords
+               _setProperty(rval, key, _clone(value[key]));
             }
          }
       }
