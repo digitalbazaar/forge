@@ -1312,21 +1312,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    for(var i1 in bnodes)
    {
       var iri1 = bnodes[i1]['@']['@iri'];
-      memo[iri1] =
-      {
-         compared: {},
-         uncompared: {}
-      };
-      
-      // build map of uncompared bnodes
-      for(var i2 in bnodes)
-      {
-         var iri2 = bnodes[i2]['@']['@iri'];
-         if(iri1 !== iri2)
-         {
-            memo[iri1].uncompared[iri2] = true;
-         }
-      }
+      memo[iri1] = {};
    }
    
    // collect edges in the graph
@@ -1336,46 +1322,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    var self = this;
    bnodes.sort(function(a, b)
    {
-      var rval = 0;
-      
-      // use memoized comparison if available
-      var iriA = a['@']['@iri'];
-      var iriB = b['@']['@iri'];
-      if(iriB in memo[iriA].compared)
-      {
-         rval = memo[iriA].compared[iriB];
-      }
-      else
-      {
-         // do shallow compare first
-         rval = self.shallowCompareBlankNodes(a, b);
-         if(rval !== 0)
-         {
-            // compare done
-            memo[iriA].compared[iriB] = rval;
-            memo[iriB].compared[iriA] = -rval;
-            delete memo[iriA].uncompared[iriB];
-            delete memo[iriB].uncompared[iriA];
-         }
-         else
-         {
-            // do deep compare
-            var iso = {};
-            rval = self.deepCompareBlankNodes(a, b, iso);
-            if(iriB in memo[iriA].uncompared)
-            {
-               memo[iriA].compared[iriB] = rval;
-               delete memo[iriA].uncompared[iriB];
-            }
-            if(iriA in memo[iriB].uncompared)
-            {
-               memo[iriB].compared[iriA] = -rval;
-               delete memo[iriB].uncompared[iriA];
-            }
-         }
-      }
-      
-      return rval;
+      return self.deepCompareBlankNodes(a, b, {});
    });
    
    // create canonical blank node name generator
@@ -1586,9 +1533,9 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
    // use memoized comparison if available
    var iriA = a['@']['@iri'];
    var iriB = b['@']['@iri'];
-   if(iriB in this.memo[iriA].compared)
+   if(iriB in this.memo[iriA])
    {
-      rval = this.memo[iriA].compared[iriB];
+      rval = this.memo[iriA][iriB];
    }
    else
    {
@@ -1597,8 +1544,8 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
       if(rval !== 0)
       {
          // compare done
-         this.memo[iriA].compared[iriB] = rval;
-         delete this.memo[iriA].uncompared[iriB];
+         this.memo[iriA][iriB] = rval;
+         this.memo[iriB][iriA] = -rval;
       }
       // deep comparison is necessary
       else
@@ -1612,11 +1559,11 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
             rval = this.deepCompareEdges(a, b, 'refs', iso);
          }
          
-         // do deep compare
-         if(iriB in this.memo[iriA].uncompared)
+         // update memo
+         if(!(iriB in this.memo[iriA]))
          {
-            this.memo[iriA].compared[iriB] = rval;
-            delete this.memo[iriA].uncompared[iriB];
+            this.memo[iriA][iriB] = rval;
+            this.memo[iriB][iriA] = -rval;
          }
       }
    }
