@@ -1,0 +1,10 @@
+{
+   "group": "frame",
+   "tests": [{
+      "name": "simple",
+      "type": "frame",
+      "input": "frame-0001-in.json",
+      "frame": "frame-0001-frame.json",
+      "expect": "frame-0001-out.json"
+   }]
+}

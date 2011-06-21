@@ -1,0 +1,21 @@
+{
+   "@": [
+      {
+         "@": "_:b0",
+         "ex:p1": [
+            {},
+            "_:b2"
+         ]
+      },
+      {
+         "@": "_:b2",
+         "ex:p1": {}
+      }
+   ],
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": "ex:p1"
+      },
+      "ex": "http://example.org/vocab#"
+   }
+}

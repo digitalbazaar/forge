@@ -150,5 +150,65 @@
       "type": "normalize",
       "input": "normalize-0030-in.json",
       "expect": "normalize-0030-out.json"
+   }, {
+      "name": "bnode (1)",
+      "type": "normalize",
+      "input": "normalize-0031-in.json",
+      "expect": "normalize-0031-out.json"
+   }, {
+      "name": "bnode (2)",
+      "type": "normalize",
+      "input": "normalize-0032-in.json",
+      "expect": "normalize-0032-out.json"
+   }, {
+      "name": "disjoint identical subgraphs (1)",
+      "type": "normalize",
+      "input": "normalize-0033-in.json",
+      "expect": "normalize-0033-out.json"
+   }, {
+      "name": "disjoint identical subgraphs (2)",
+      "type": "normalize",
+      "input": "normalize-0034-in.json",
+      "expect": "normalize-0034-out.json"
+   }, {
+      "name": "reordered w/strings (1)",
+      "type": "normalize",
+      "input": "normalize-0035-in.json",
+      "expect": "normalize-0035-out.json"
+   }, {
+      "name": "reordered w/strings (2)",
+      "type": "normalize",
+      "input": "normalize-0036-in.json",
+      "expect": "normalize-0036-out.json"
+   }, {
+      "name": "reordered w/strings (3)",
+      "type": "normalize",
+      "input": "normalize-0037-in.json",
+      "expect": "normalize-0037-out.json"
+   }, {
+      "name": "reordered 4 bnodes, reordered 2 properties (1)",
+      "type": "normalize",
+      "input": "normalize-0038-in.json",
+      "expect": "normalize-0038-out.json"
+   }, {
+      "name": "reordered 4 bnodes, reordered 2 properties (2)",
+      "type": "normalize",
+      "input": "normalize-0039-in.json",
+      "expect": "normalize-0039-out.json"
+   }, {
+      "name": "reordered 6 bnodes (1)",
+      "type": "normalize",
+      "input": "normalize-0040-in.json",
+      "expect": "normalize-0040-out.json"
+   }, {
+      "name": "reordered 6 bnodes (2)",
+      "type": "normalize",
+      "input": "normalize-0041-in.json",
+      "expect": "normalize-0041-out.json"
+   }, {
+      "name": "reordered 6 bnodes (3)",
+      "type": "normalize",
+      "input": "normalize-0042-in.json",
+      "expect": "normalize-0042-out.json"
    }]
 }
