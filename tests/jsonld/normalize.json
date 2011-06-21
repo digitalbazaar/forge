@@ -526,7 +526,7 @@
          "@context": {
             "e": "http://example.org/vocab#",
             "@coerce": {
-               "xsd:anyURI": ["@", "e:self"]
+               "xsd:anyURI": "e:self"
             }
          },
          "@": "_:b0",
@@ -547,7 +547,7 @@
          "@context": {
             "e": "http://example.org/vocab#",
             "@coerce": {
-               "xsd:anyURI": ["@", "e:self"]
+               "xsd:anyURI": "e:self"
             }
          },
          "@": [{
