@@ -1,0 +1,19 @@
+[
+   {
+      "@": "http://example.org/test",
+      "@context": {
+         "@coerce": {
+            "xsd:anyURI": "e:B"
+         },
+         "e": "http://example.org/vocab#"
+      },
+      "e:A": {
+         "@iri": "_:b1"
+      },
+      "e:B": "_:b1"
+   },
+   {
+      "@": "_:b1",
+      "name": "foo"
+   }
+]

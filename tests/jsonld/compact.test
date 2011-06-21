@@ -1,0 +1,34 @@
+{
+   "group": "compact",
+   "tests": [{
+      "name": "add context",
+      "type": "compact",
+      "input": "compact-0001-in.json",
+      "context": "compact-0001-context.json",
+      "expect": "compact-0001-out.json"
+   }, {
+      "name": "reduced context",
+      "type": "compact",
+      "input": "compact-0002-in.json",
+      "context": "compact-0002-context.json",
+      "expect": "compact-0002-out.json"
+   }, {
+      "name": "coerced ex:contains",
+      "type": "compact",
+      "input": "compact-0003-in.json",
+      "context": "compact-0003-context.json",
+      "expect": "compact-0003-out.json"
+   }, {
+      "name": "with coerce",
+      "type": "compact",
+      "input": "compact-0004-in.json",
+      "context": "compact-0004-context.json",
+      "expect": "compact-0004-out.json"
+   }, {
+      "name": "with date coerce",
+      "type": "compact",
+      "input": "compact-0005-in.json",
+      "context": "compact-0005-context.json",
+      "expect": "compact-0005-out.json"
+   }]
+}

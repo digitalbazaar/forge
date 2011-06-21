@@ -1,0 +1,12 @@
+[
+   {
+      "@": {
+         "@iri": "http://example.org/vocab#A"
+      }
+   },
+   {
+      "@": {
+         "@iri": "http://example.org/vocab#B"
+      }
+   }
+]

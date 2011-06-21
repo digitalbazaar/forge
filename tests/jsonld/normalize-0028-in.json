@@ -1,0 +1,28 @@
+{
+   "@": [
+      {
+         "@": "_:b3",
+         "e:next": "_:b1",
+         "e:prev": "_:b2"
+      },
+      {
+         "@": "_:b2",
+         "e:next": "_:b3",
+         "e:prev": "_:b1"
+      },
+      {
+         "@": "_:b1",
+         "e:next": "_:b2",
+         "e:prev": "_:b3"
+      }
+   ],
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": [
+            "e:next",
+            "e:prev"
+         ]
+      },
+      "e": "http://example.org/vocab#"
+   }
+}

@@ -1,0 +1,20 @@
+{
+   "@": "http://example.org/test#library",
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": "ex:contains"
+      },
+      "dc": "http://purl.org/dc/elements/1.1/",
+      "ex": "http://example.org/vocab#"
+   },
+   "ex:contains": {
+      "@": "http://example.org/test#book",
+      "dc:contributor": "Writer",
+      "dc:title": "My Book",
+      "ex:contains": {
+         "@": "http://example.org/test#chapter",
+         "dc:description": "Fun",
+         "dc:title": "Chapter One"
+      }
+   }
+}

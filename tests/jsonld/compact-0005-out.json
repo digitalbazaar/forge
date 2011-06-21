@@ -1,0 +1,16 @@
+{
+   "@": "http://example.org/test#example1",
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": "ex:parent",
+         "xsd:dateTime": "ex:date"
+      },
+      "ex": "http://example.org/vocab#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
+   },
+   "ex:date": "2011-01-25T00:00:00Z",
+   "ex:embed": {
+      "@": "http://example.org/test#example2",
+      "ex:parent": "http://example.org/test#example1"
+   }
+}

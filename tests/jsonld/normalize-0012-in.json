@@ -1,0 +1,13 @@
+{
+   "@": "http://example.org/test#example",
+   "@context": {
+      "@coerce": {
+         "xsd:dateTime": "ex:date"
+      },
+      "ex": "http://example.org/vocab#"
+   },
+   "ex:date": [
+      "2011-01-25T00:00:00Z",
+      "2011-01-25T00:00:00Z"
+   ]
+}

@@ -1,0 +1,10 @@
+{
+   "@": "http://example.org/test#example",
+   "@context": {
+      "@coerce": {
+         "xsd:dateTime": "ex:validFrom"
+      },
+      "ex": "http://example.org/vocab#"
+   },
+   "ex:validFrom": "2011-01-25T00:00:00Z"
+}

@@ -1,0 +1,10 @@
+{
+   "@": "_:b0",
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": "e:self"
+      },
+      "e": "http://example.org/vocab#"
+   },
+   "e:self": "_:b0"
+}

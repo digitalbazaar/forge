@@ -1,0 +1,13 @@
+{
+   "@": "http://example.org/test#example1",
+   "http://example.org/vocab#date": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#dateTime",
+      "@literal": "2011-01-25T00:00:00Z"
+   },
+   "http://example.org/vocab#embed": {
+      "@": "http://example.org/test#example2",
+      "http://example.org/vocab#parent": {
+         "@iri": "http://example.org/test#example1"
+      }
+   }
+}

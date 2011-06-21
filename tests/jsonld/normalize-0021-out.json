@@ -1,0 +1,18 @@
+[
+   {
+      "@": {
+         "@iri": "_:c14n0"
+      },
+      "http://example.org/vocab#next": {
+         "@iri": "_:c14n1"
+      }
+   },
+   {
+      "@": {
+         "@iri": "_:c14n1"
+      },
+      "http://example.org/vocab#next": {
+         "@iri": "_:c14n0"
+      }
+   }
+]

@@ -1,0 +1,10 @@
+{
+   "@": "http://example.org/test#example",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "a": [
+      "ex:Foo",
+      "ex:Bar"
+   ]
+}

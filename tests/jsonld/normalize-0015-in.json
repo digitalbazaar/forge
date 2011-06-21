@@ -1,0 +1,13 @@
+{
+   "@": [
+      {
+         "@": "e:A"
+      },
+      {
+         "@": "e:B"
+      }
+   ],
+   "@context": {
+      "e": "http://example.org/vocab#"
+   }
+}
