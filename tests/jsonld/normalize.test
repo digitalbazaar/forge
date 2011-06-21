@@ -1,0 +1,9 @@
+{
+   "group": "normalize",
+   "tests": [{
+      "name": "simple id",
+      "type": "normalize",
+      "input": "0001-input-simple_id.json",
+      "expect": "0001-expect-simple_id.json"
+   }]
+}

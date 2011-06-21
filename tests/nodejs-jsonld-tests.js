@@ -119,24 +119,61 @@ TestRunner.prototype.load = function(filepath)
    
    // get full path
    filepath = fs.realpathSync(filepath);
-   sys.log('Reading tests from: "' + filepath + '"');
+   sys.log('Reading test files from: "' + filepath + '"');
    
    // read each test file from the directory
    var files = fs.readdirSync(filepath);
    for(var i in files)
    {
       var file = path.join(filepath, files[i]);
-      if(path.extname(file) == '.json')
+      if(path.extname(file) == '.test')
       {
          sys.log('Reading test file: "' + file + '"');
-         tests.push(JSON.parse(fs.readFileSync(file, 'utf8')));
+         var test = JSON.parse(fs.readFileSync(file, 'utf8'));
+         if(typeof(test.filepath) === 'undefined')
+         {
+            test.filepath = filepath;
+         }
+         tests.push(test);
       }
    }
+   
+   sys.log(tests.length + ' test file(s) read');
    
    return tests;
 };
 
-TestRunner.prototype.run = function(tests)
+/**
+ * Reads test JSON files.
+ * 
+ * @param files the files to read.
+ * @param filepath the test filepath.
+ * 
+ * @return the read JSON.
+ */
+var _readTestJson = function(files, filepath)
+{
+   var rval;
+   
+   if(files.constructor === Array)
+   {
+      var rval = [];
+      for(var i in files)
+      {
+         var file = path.join(filepath, files[i]);
+         rval.push(JSON.parse(fs.readFileSync(file, 'utf8')));
+      }
+   }
+   else
+   {
+      var file = path.join(filepath, files);
+      rval = JSON.parse(fs.readFileSync(file, 'utf8'));
+   }
+   
+   return rval;
+};
+
+TestRunner.prototype.run = function(tests, filepath)
 {
    /* Test format:
       {
@@ -144,10 +181,10 @@ TestRunner.prototype.run = function(tests)
          tests: [{
             'name': <test name>,
             'type': <type of test>,
-            'input': <input for test>,
-            'context': <context for add context test type>,
-            'frame': <frame for frame test type>,
-            'expect': <expected result>,
+            'input': <input file(s) for test>,
+            'context': <context file(s) for add context test type>,
+            'frame': <frame file(s) for frame test type>,
+            'expect': <expected result file>,
          }]
       }
       
@@ -161,7 +198,7 @@ TestRunner.prototype.run = function(tests)
       if('group' in test)
       {
          tr.group(test.group);
-         this.run(test.tests);
+         this.run(test.tests, test.filepath);
          tr.ungroup();
       }
       else if(!('name' in test))
@@ -171,7 +208,26 @@ TestRunner.prototype.run = function(tests)
       else
       {
          tr.test(test.name);
-         var input = test.input;
+         
+         // use parent test filepath as necessary
+         if(typeof(test.filepath) === 'undefined') 
+         {
+            test.filepath = filepath;
+         }
+         
+         // read test files
+         var input = _readTestJson(test.input, test.filepath);
+         test.expect = _readTestJson(test.expect, test.filepath);
+         if(test.context)
+         {
+            test.context = _readTestJson(test.context, test.filepath);
+         }
+         if(test.frame)
+         {
+            test.frame = _readTestJson(test.frame, test.filepath);
+         }
+         
+         // perform test
          if(test.type.constructor !== Array)
          {
             test.type = [test.type];
