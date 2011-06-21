@@ -76,10 +76,25 @@ TestRunner.prototype.test = function(name)
    this.groups[this.groups.length - 1].tests.push(name);
 };
 
-TestRunner.prototype.check = function(expect, result)
+TestRunner.prototype.check = function(expect, result, sort)
 {
-   expect = _stringifySorted(expect);
-   result = _stringifySorted(result);
+   if(typeof(sort) === 'undefined')
+   {
+      sort = true;
+   }
+   
+   if(sort)
+   {
+      // sort and use whitespace
+      expect = _stringifySorted(expect);
+      result = _stringifySorted(result);
+   }
+   else
+   {
+      // do not sort or use whitespace
+      expect = JSON.stringify(expect);
+      result = JSON.stringify(result);
+   }
    
    var line = '';
    for(var i in this.groups)
@@ -153,24 +168,8 @@ TestRunner.prototype.load = function(filepath)
  */
 var _readTestJson = function(files, filepath)
 {
-   var rval;
-   
-   if(files.constructor === Array)
-   {
-      var rval = [];
-      for(var i in files)
-      {
-         var file = path.join(filepath, files[i]);
-         rval.push(JSON.parse(fs.readFileSync(file, 'utf8')));
-      }
-   }
-   else
-   {
-      var file = path.join(filepath, files);
-      rval = JSON.parse(fs.readFileSync(file, 'utf8'));
-   }
-   
-   return rval;
+   var file = path.join(filepath, files);
+   return JSON.parse(fs.readFileSync(file, 'utf8'));
 };
 
 TestRunner.prototype.run = function(tests, filepath)
@@ -181,9 +180,9 @@ TestRunner.prototype.run = function(tests, filepath)
          tests: [{
             'name': <test name>,
             'type': <type of test>,
-            'input': <input file(s) for test>,
-            'context': <context file(s) for add context test type>,
-            'frame': <frame file(s) for frame test type>,
+            'input': <input file for test>,
+            'context': <context file for add context test type>,
+            'frame': <frame file for frame test type>,
             'expect': <expected result file>,
          }]
       }
@@ -228,51 +227,30 @@ TestRunner.prototype.run = function(tests, filepath)
          }
          
          // perform test
-         if(test.type.constructor !== Array)
+         var type = test.type;
+         if(type === 'normalize')
          {
-            test.type = [test.type];
+            input = jsonld.normalize(input);
          }
-         for(var t in test.type)
+         else if(type === 'expand')
          {
-            var type = test.type[t];
-            if(type === 'normalize')
-            {
-               input = jsonld.normalize(input);
-            }
-            else if(type === 'expand')
-            {
-               input = jsonld.removeContext(input);
-            }
-            else if(type === 'compact')
-            {
-               input = jsonld.addContext(test.context, input);
-            }
-            else if(type === 'change')
-            {
-               input = jsonld.changeContext(test.context, input);
-            }
-            else if(type === 'compare')
-            {
-               var result = [];
-               var tmp = [];
-               for(var n in input)
-               {
-                  result.push(jsonld.normalize(input[n]));
-                  tmp.push(test.expect);
-               }
-               input = result;
-               test.expect = tmp;
-            }
-            else if(type === 'frame')
-            {
-               input = jsonld.frame(input, test.frame);
-            }
-            else
-            {
-               throw 'Unknown test type: ' + type;
-            }
+            input = jsonld.removeContext(input);
          }
-         tr.check(test.expect, input);
+         else if(type === 'compact')
+         {
+            input = jsonld.addContext(test.context, input);
+         }
+         else if(type === 'frame')
+         {
+            input = jsonld.frame(input, test.frame);
+         }
+         else
+         {
+            throw 'Unknown test type: ' + type;
+         }
+         
+         // check results (only sort output on non-normalize tests)
+         tr.check(test.expect, input, test.type !== 'normalize');
       }
    }
 };
