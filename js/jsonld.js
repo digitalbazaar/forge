@@ -1165,13 +1165,30 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
 jsonld.Processor.prototype.renameBlankNode = function(b, id)
 {
    var old = b['@']['@iri'];
+   
+   // update bnode IRI
+   b['@']['@iri'] = id;
+   
+   // update subjects map
    var subjects = this.subjects;
+   subjects[id] = subjects[old];
+   delete subjects[old];
+   
+   // update reference and property lists
+   this.edges.refs[id] = this.edges.refs[old];
+   this.edges.props[id] = this.edges.props[old];
+   delete this.edges.refs[old];
+   delete this.edges.props[old];
    
    // update references to this bnode
-   var refs = this.edges.refs[old].all;
+   var refs = this.edges.refs[id].all;
    for(var i in refs)
    {
       var iri = refs[i].s;
+      if(iri === old)
+      {
+         iri = id;
+      }
       var ref = subjects[iri];
       var props = this.edges.props[iri].all;
       for(var i2 in props)
@@ -1197,7 +1214,7 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
    }
    
    // update references from this bnode 
-   var props = this.edges.props[old].all;
+   var props = this.edges.props[id].all;
    for(var i in props)
    {
       var iri = props[i].s;
@@ -1210,19 +1227,6 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
          }
       }
    }
-   
-   // update bnode IRI
-   b['@']['@iri'] = id;
-   
-   // update subjects map
-   subjects[id] = subjects[old];
-   delete subjects[old];
-   
-   // update reference and property lists
-   this.edges.refs[id] = this.edges.refs[old];
-   this.edges.props[id] = this.edges.props[old];
-   delete this.edges.refs[old];
-   delete this.edges.props[old];
 };
 
 /**
