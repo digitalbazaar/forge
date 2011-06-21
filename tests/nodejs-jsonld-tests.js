@@ -45,9 +45,9 @@ var _sortKeys = function(obj)
    return rval;
 };
 
-var _stringifySorted = function(obj)
+var _stringifySorted = function(obj, indent)
 {
-   return JSON.stringify(_sortKeys(obj), null, 3);
+   return JSON.stringify(_sortKeys(obj), null, indent);
 };
 
 function TestRunner()
@@ -76,25 +76,16 @@ TestRunner.prototype.test = function(name)
    this.groups[this.groups.length - 1].tests.push(name);
 };
 
-TestRunner.prototype.check = function(expect, result, sort)
+TestRunner.prototype.check = function(expect, result, indent)
 {
-   if(typeof(sort) === 'undefined')
+   if(typeof(indent) === 'undefined')
    {
-      sort = true;
+      indent = 0;
    }
    
-   if(sort)
-   {
-      // sort and use whitespace
-      expect = _stringifySorted(expect);
-      result = _stringifySorted(result);
-   }
-   else
-   {
-      // do not sort or use whitespace
-      expect = JSON.stringify(expect);
-      result = JSON.stringify(result);
-   }
+   // sort and use given indent level
+   expect = _stringifySorted(expect, indent);
+   result = _stringifySorted(result, indent);
    
    var line = '';
    for(var i in this.groups)
@@ -249,8 +240,8 @@ TestRunner.prototype.run = function(tests, filepath)
             throw 'Unknown test type: ' + type;
          }
          
-         // check results (only sort output on non-normalize tests)
-         tr.check(test.expect, input, test.type !== 'normalize');
+         // check results (only indent output on non-normalize tests)
+         tr.check(test.expect, input, (test.type === 'normalize') ? 0 : 3);
       }
    }
 };
