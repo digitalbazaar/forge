@@ -91,33 +91,44 @@ var _compactIri = function(ctx, iri, usedCtx)
 {
    var rval = null;
    
-   // check the context for a term or prefix that could shorten the IRI
+   // check the context for a term that could shorten the IRI
+   // (give preference to terms over CURIEs)
    for(var key in ctx)
    {
       // skip special context keys (start with '@')
       if(key.length > 0 && key.indexOf('@') !== 0)
       {
-         // see if IRI begins with the next IRI from the context
-         var ctxIri = ctx[key];
-         var idx = iri.indexOf(ctxIri);
-         if(idx === 0)
+         // compact to a term
+         if(iri === ctx[key])
          {
+            rval = key;
+            if(usedCtx !== null)
+            {
+               usedCtx[key] = ctx[key];
+            }
+            break;
+         }
+      }
+   }
+   
+   // term not found, check the context for a prefix
+   if(rval === null)
+   {
+      for(var key in ctx)
+      {
+         // skip special context keys (start with '@')
+         if(key.length > 0 && key.indexOf('@') !== 0)
+         {
+            // see if IRI begins with the next IRI from the context
+            var ctxIri = ctx[key];
+            var idx = iri.indexOf(ctxIri);
+            
             // compact to a CURIE
-            if(iri.length > ctxIri.length)
+            if(idx === 0 && iri.length > ctxIri.length)
             {
                // add 2 to make room for null-terminator and colon
                rval = key + ':' + iri.substr(idx + ctxIri.length);
-               if(usedCtx)
-               {
-                  usedCtx[key] = ctxIri;
-               }
-               break;
-            }
-            // compact to a term
-            else if(idx.length == ctxIri.length)
-            {
-               rval = name;
-               if(usedCtx)
+               if(usedCtx !== null)
                {
                   usedCtx[key] = ctxIri;
                }
@@ -163,7 +174,7 @@ var _expandTerm = function(ctx, term, usedCtx)
       {
          // prefix found, expand property to absolute IRI
          rval = ctx[prefix] + term.substr(idx + 1);
-         if(usedCtx)
+         if(usedCtx !== null)
          {
             usedCtx[prefix] = ctx[prefix];
          }
@@ -178,7 +189,7 @@ var _expandTerm = function(ctx, term, usedCtx)
    else if(term in ctx)
    {
       rval = ctx[term];
-      if(usedCtx)
+      if(usedCtx !== null)
       {
          usedCtx[term] = rval;
       }
@@ -192,7 +203,7 @@ var _expandTerm = function(ctx, term, usedCtx)
    else
    {
       rval = ctx['@vocab'] + term;
-      if(usedCtx)
+      if(usedCtx !== null)
       {
          usedCtx['@vocab'] = ctx['@vocab'];
       }
@@ -302,7 +313,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
    var rval = null;
 
    // get expanded property
-   var p = _expandTerm(ctx, property);
+   var p = _expandTerm(ctx, property, null);
 
    // built-in type coercion JSON-LD-isms
    if(p === '@' || p === jsonld.ns.rdf + 'type')
@@ -313,7 +324,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
    else
    {
       // force compacted property
-      p = _compactIri(ctx, p);
+      p = _compactIri(ctx, p, null);
       
       for(var type in ctx['@coerce'])
       {
@@ -331,7 +342,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
             if(props[i] === p)
             {
                rval = _expandTerm(ctx, type, usedCtx);
-               if(usedCtx)
+               if(usedCtx !== null)
                {
                   if(!('@coerce' in usedCtx))
                   {
@@ -377,7 +388,11 @@ var _compact = function(ctx, property, value, usedCtx)
 {
    var rval;
    
-   if(value.constructor === Array)
+   if(value === null)
+   {
+      rval = null;
+   }
+   else if(value.constructor === Array)
    {
       // recursively add compacted values to array
       rval = [];
@@ -552,7 +567,7 @@ var _expand = function(ctx, property, value, expandSubjects)
    // value is a property itself), expand to an IRI
    if(property === null && value.constructor === String)
    {
-      rval = _expandTerm(ctx, value);
+      rval = _expandTerm(ctx, value, null);
    }
    else if(value.constructor === Array)
    {
@@ -582,7 +597,7 @@ var _expand = function(ctx, property, value, expandSubjects)
             {
                // set object to expanded property
                _setProperty(
-                  rval, _expandTerm(ctx, key),
+                  rval, _expandTerm(ctx, key, null),
                   _expand(ctx, key, value[key], expandSubjects));
             }
             else if(key !== '@context')
@@ -601,7 +616,7 @@ var _expand = function(ctx, property, value, expandSubjects)
    else
    {
       // do type coercion
-      var coerce = _getCoerceType(ctx, property);
+      var coerce = _getCoerceType(ctx, property, null);
 
       // automatic coercion for basic JSON types
       if(coerce === null &&
@@ -629,7 +644,7 @@ var _expand = function(ctx, property, value, expandSubjects)
          // expand IRI
          if(coerce === xsd.anyURI)
          {
-            rval['@iri'] = _expandTerm(ctx, value);
+            rval['@iri'] = _expandTerm(ctx, value, null);
          }
          // other datatype
          else
@@ -1741,6 +1756,274 @@ jsonld.Processor.prototype.collectEdges = function()
 };
 
 /**
+ * Returns true if the given input is a subject and has one of the given types
+ * in the given frame.
+ * 
+ * @param input the input.
+ * @param frame the frame with types to look for.
+ * 
+ * @return true if the input has one of the given types.
+ */
+var _isType = function(input, frame)
+{
+   var rval = false;
+   
+   // check if type(s) are specified in frame and input
+   var type = jsonld.ns.rdf + 'type';
+   if(type in frame &&
+      input.constructor === Object && '@' in input && type in input)
+   {
+      var tmp = (input[type].constructor === Array) ?
+         input[type] : [input[type]];
+      var types = (frame[type].constructor === Array) ?
+         frame[type] : [frame[type]];
+      for(var t = 0; t < types.length && !rval; ++t)
+      {
+         type = types[t]['@iri'];
+         for(var i in tmp)
+         {
+            if(tmp[i]['@iri'] === type)
+            {
+               rval = true;
+               break;
+            }
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Returns true if the given input matches the given frame via duck-typing.
+ * 
+ * @param input the input.
+ * @param frame the frame to check against.
+ * 
+ * @return true if the input matches the frame.
+ */
+var _isDuckType = function(input, frame)
+{
+   var rval = false;
+   
+   // frame must not have a specific type
+   var type = jsonld.ns.rdf + 'type';
+   if(!(type in frame))
+   {
+      // get frame properties that must exist on input
+      var props = Object.keys(frame);
+      if(props.length === 0)
+      {
+         // input always matches if there are no properties
+         rval = true;
+      }
+      // input must be a subject with all the given properties
+      else if(input.constructor === Object && '@' in input)
+      {
+         rval = true;
+         for(i in props)
+         {
+            if(!(i in input))
+            {
+               rval = false;
+               break;
+            }
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Recursively frames the given input according to the given frame.
+ * 
+ * @param subjects a map of subjects in the graph.
+ * @param input the input to frame.
+ * @param frame the frame to use.
+ * @param embeds a map of previously embedded subjects, used to prevent cycles.
+ * @param options the framing options.
+ * 
+ * @return the framed input.
+ */
+var _frame = function(subjects, input, frame, embeds, options)
+{
+   var rval = null;
+   
+   // prepare output, set limit, get array of frames
+   var limit = -1;
+   var frames;
+   if(frame.constructor === Array)
+   {
+      rval = [];
+      frames = frame;
+   }
+   else
+   {
+      frames = [frame];
+      limit = 1;
+   }
+   
+   // iterate over frames adding input matches to list
+   var values = [];
+   for(var i = 0; i < frames.length && limit !== 0; ++i)
+   {
+      // create array of values for each frame
+      frame = frames[i];
+      values[i] = [];
+      for(var n = 0; n < input.length && limit !== 0; ++n)
+      {
+         // add input to list if it matches frame specific type or duck-type
+         if(_isType(input[n], frame) || _isDuckType(input[n], frame))
+         {
+            values[i].push(input[n]);
+            --limit;
+         }
+      }
+   }
+   
+   // for each matching value, add it to the output
+   for(var i1 in values)
+   {
+      for(var i2 in values[i1])
+      {
+         frame = frames[i1];
+         var value = values[i1][i2];
+         
+         // determine if value should be embedded or referenced
+         var embedOn = ('@embed' in frame) ?
+            frame['@embed'] : options.defaults.embedOn;
+         if(!embedOn)
+         {
+            // if value is a subject, only use subject IRI as reference 
+            if(value.constructor === Object && '@' in value)
+            {
+               value = value['@'];
+            }
+         }
+         else if('@' in value && value['@']['@iri'] in embeds)
+         {
+            // TODO: possibly support multiple embeds in the future ... and
+            // instead only prevent cycles?
+            throw {
+               message: 'Multiple embeds of the same subject is not supported.',
+               subject: value['@']['@iri']
+            };
+         }
+         // if value is a subject, do embedding and subframing
+         else if('@' in value)
+         {
+            embeds[value['@']['@iri']] = true;
+            
+            // determine if only explicitly mentioned properties should be
+            // included
+            var explicitOn = ('@explicit' in frame) ?
+               frame['@explicit'] : options.defaults.explicitOn;
+            for(var key in value)
+            {
+               // skip keywords and type query
+               if(key.indexOf('@') !== 0 && key !== jsonld.ns.rdf + 'type')
+               {
+                  if(key in frame)
+                  {
+                     // build input and do recursion
+                     input = (value[key].constructor === Array) ?
+                        value[key] : [value[key]];
+                     for(var n in input)
+                     {
+                        // replace reference to subject w/subject
+                        if(input[n].constructor === Object &&
+                           '@iri' in input[n] && input[n]['@iri'] in subjects)
+                        {
+                           input[n] = subjects[input[n]['@iri']];
+                        }
+                     }
+                     value[key] = _frame(
+                        subjects, input, frame[key], embeds, options);
+                  }
+                  else if(explicitOn)
+                  {
+                     delete value[key];
+                  }
+               }
+            }
+         }
+         
+         // add value to output
+         if(rval === null)
+         {
+            rval = value;
+         }
+         else
+         {
+            rval.push(value);
+         }
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Frames JSON-LD input.
+ * 
+ * @param input the JSON-LD input.
+ * @param frame the frame to use.
+ * @param options framing options to use.
+ * 
+ * @return the framed output.
+ */
+jsonld.Processor.prototype.frame = function(input, frame, options)
+{
+   var rval;
+   
+   // normalize input
+   input = jsonld.normalize(input);
+   
+   // save frame context
+   var ctx = null;
+   if('@context' in frame)
+   {
+      ctx = jsonld.mergeContexts(_createDefaultContext(), frame['@context']);
+   }
+   
+   // remove context from frame
+   frame = jsonld.removeContext(frame);
+   
+   // create framing options
+   // TODO: merge in options from function parameter
+   options =
+   {
+      defaults:
+      {
+         embedOn: true,
+         explicitOn: false
+      }
+   };
+   
+   // build map of all subjects
+   var subjects = {};
+   for(var i in input)
+   {
+      if(input.constructor === Array && '@' in input[i])
+      {
+         subjects[input[i]['@']['@iri']] = input[i];
+      }
+   }
+   
+   // frame input
+   rval = _frame(subjects, input, frame, {}, options);
+   
+   // apply context
+   if(ctx !== null && rval !== null)
+   {
+      rval = jsonld.addContext(ctx, rval);
+   }
+   
+   return rval;
+};
+
+/**
  * Normalizes a JSON-LD object.
  *
  * @param input the JSON-LD object to normalize.
@@ -1794,7 +2077,7 @@ jsonld.addContext = function(ctx, input)
    
    // compact
    rval = _compact(ctx, null, input, ctxOut);
-
+   
    // add context if used
    if(Object.keys(ctxOut).length > 0)
    {
@@ -1979,6 +2262,23 @@ jsonld.expandTerm = _expandTerm;
  *
  * @return the compacted IRI as a term or CURIE or the original IRI.
  */
-jsonld.compactIri = _compactIri;
+jsonld.compactIri = function(ctx, iri)
+{
+   return _compactIri(ctx, iri, null);
+};
+
+/**
+ * Frames JSON-LD input.
+ * 
+ * @param input the JSON-LD input.
+ * @param frame the frame to use.
+ * @param options framing options to use.
+ * 
+ * @return the framed output.
+ */
+jsonld.frame = function(input, frame, options)
+{
+   return new jsonld.Processor().frame(input, frame, options);
+};
 
 })();

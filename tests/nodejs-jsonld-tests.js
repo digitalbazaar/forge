@@ -15,7 +15,11 @@ var _sortKeys = function(obj)
 {
    var rval;
    
-   if(obj.constructor === Array)
+   if(obj === null)
+   {
+      rval = null;
+   }
+   else if(obj.constructor === Array)
    {
       rval = [];
       for(var i in obj)
@@ -142,6 +146,7 @@ TestRunner.prototype.run = function(tests)
             'type': <type of test>,
             'input': <input for test>,
             'context': <context for add context test type>,
+            'frame': <frame for frame test type>,
             'expect': <expected result>,
          }]
       }
@@ -201,6 +206,10 @@ TestRunner.prototype.run = function(tests)
                }
                input = result;
                test.expect = tmp;
+            }
+            else if(type === 'frame')
+            {
+               input = jsonld.frame(input, test.frame);
             }
             else
             {
