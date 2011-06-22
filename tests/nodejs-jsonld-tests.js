@@ -263,7 +263,7 @@ TestRunner.prototype.run = function(tests, filepath)
          }
          
          // check results (only indent output on non-normalize tests)
-         tr.check(test.expect, input, 3);//(test.type === 'normalize') ? 0 : 3);
+         tr.check(test.expect, input, (test.type === 'normalize') ? 0 : 3);
       }
    }
 };
