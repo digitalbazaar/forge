@@ -971,8 +971,7 @@ var _flatten = function(parent, parentProperty, value, subjects)
       if(value.length > 0 &&
          (value[0].constructor === String ||
          (value[0].constructor === Object &&
-         '@literal' in value[0] ||
-         '@iri' in value[0])))
+         ('@literal' in value[0] || '@iri' in value[0]))))
       {
          // sort values
          value.sort(_compareObjects);
