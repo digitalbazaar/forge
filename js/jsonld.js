@@ -1680,7 +1680,8 @@ jsonld.Processor.prototype.compareEdges = function(a, b)
    var bnodeB = _isBlankNodeIri(b.s);
    var memo = this.memo;
    
-   if((bnodeA ^ bnodeB) === 1)
+   // logical XOR
+   if((bnodeA || bnodeB) && !(bnodeA && bnodeB))
    {
       rval = bnodeA ? 1 : -1;
    }
