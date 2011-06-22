@@ -2029,10 +2029,7 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    var subjects = {};
    for(var i in input)
    {
-      if(input.constructor === Array && '@' in input[i])
-      {
-         subjects[input[i]['@']['@iri']] = input[i];
-      }
+      subjects[input[i]['@']['@iri']] = input[i];
    }
    
    // frame input
