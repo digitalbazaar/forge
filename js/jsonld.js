@@ -865,7 +865,7 @@ var _compareBlankNodeObjects = function(a, b)
       {
          for(var i = 0; i < objsA.length && rval === 0; ++i)
          {
-            rval = _compareObjects(objsA[i], objsA[i]);
+            rval = _compareObjects(objsA[i], objsB[i]);
          }
       }
       
@@ -1120,7 +1120,7 @@ jsonld.Processor.prototype.normalize = function(input)
       var subjects = {};
       _flatten(null, null, expanded, subjects);
 
-      // append subjects to array of triples
+      // append subjects to array
       for(var key in subjects)
       {
          rval.push(subjects[key]);
@@ -2155,6 +2155,7 @@ jsonld.mergeContexts = function(ctx1, ctx2)
             if(merged[mkey] === copy[key])
             {
                delete merged[mkey];
+               break;
             }
          }
       }
