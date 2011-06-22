@@ -1557,10 +1557,15 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
 {
    var rval = 0;
    
-   // use memoized comparison if available
+   // compare IRIs
    var iriA = a['@']['@iri'];
    var iriB = b['@']['@iri'];
-   if(iriB in this.memo[iriA])
+   if(iriA === iriB)
+   {
+      rval = 0;
+   }
+   // use memoized comparison if available
+   else if(iriB in this.memo[iriA])
    {
       rval = this.memo[iriA][iriB];
    }
