@@ -111,7 +111,7 @@ var _compactIri = function(ctx, iri, usedCtx)
       }
    }
    
-   // term not found, check the context for a prefix
+   // term not found, check the context for a CURIE prefix
    if(rval === null)
    {
       for(var key in ctx)
@@ -194,7 +194,7 @@ var _expandTerm = function(ctx, term, usedCtx)
          usedCtx[term] = rval;
       }
    }
-   // 3. The property is the special-case '@'
+   // 3. The property is the special-case '@'.
    else if(term === "@")
    {
       rval = "@";
@@ -691,7 +691,6 @@ var _isBlankNode = function(v)
       (!('@' in v) || _isNamedBlankNode(v)));
 };
 
-
 /**
  * Compares two values.
  * 
@@ -914,6 +913,7 @@ var _createNameGenerator = function(prefix)
  * 
  * @param input the input (must be expanded, no context).
  * @param subjects the subjects map to populate.
+ * @param bnodes the bnodes array to populate.
  */
 var _collectSubjects = function(input, subjects, bnodes)
 {
@@ -968,7 +968,8 @@ var _flatten = function(parent, parentProperty, value, subjects)
       }
       
       // if value is a list of objects, sort them
-      if(value.length > 0 && (value[0].constructor === String ||
+      if(value.length > 0 &&
+         (value[0].constructor === String ||
          (value[0].constructor === Object &&
          '@literal' in value[0] ||
          '@iri' in value[0])))
@@ -1440,7 +1441,7 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
       // step #1.2
       else
       {
-         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgesB.p; ++i2)
+         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
          {
             var edgeB = edgesB[i2];
             if(edgeB.p === edgeA.p && !(edgeB.s in iso))
@@ -1450,8 +1451,8 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
                iso[edgeB.s] = edgeA.s;
                
                // step #1.3
-               var sA = subjects[edgeA.s];
-               var sB = subjects[edgeB.s];
+               var sA = this.subjects[edgeA.s];
+               var sB = this.subjects[edgeB.s];
                if(this.deepCompareBlankNodes(sA, sB, iso) === 0)
                {
                   found = true;
