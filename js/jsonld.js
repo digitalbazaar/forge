@@ -926,10 +926,18 @@ var _collectSubjects = function(input, subjects, bnodes)
    }
    else if(input.constructor === Object)
    {
-      // named subject
       if('@' in input)
       {
-         subjects[input['@']['@iri']] = input;
+         // graph literal
+         if(input['@'].constructor == Array)
+         {
+            _collectSubjects(input['@'], subjects, bnodes);
+         }
+         // named subject
+         else
+         {
+            subjects[input['@']['@iri']] = input;
+         }
       }
       // unnamed blank node
       else if(_isBlankNode(input))
@@ -1111,7 +1119,7 @@ jsonld.Processor.prototype.normalize = function(input)
 
       // expand input
       var expanded = _expand(ctx, null, input, true);
-
+      
       // assign names to unnamed bnodes
       this.nameBlankNodes(expanded);
 
