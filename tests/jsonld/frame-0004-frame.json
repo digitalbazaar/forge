@@ -1,0 +1,10 @@
+{
+   "@context": {
+      "dc": "http://purl.org/dc/elements/1.1/",
+      "ex": "http://example.org/vocab#",
+      "@coerce": {
+         "xsd:anyURI": "ex:contains"
+      }
+   },
+   "a": "ex:Library"
+}

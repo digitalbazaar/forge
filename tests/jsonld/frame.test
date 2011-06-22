@@ -6,5 +6,29 @@
       "input": "frame-0001-in.json",
       "frame": "frame-0001-frame.json",
       "expect": "frame-0001-out.json"
+   }, {
+      "name": "reframe w/extra CURIE value",
+      "type": "frame",
+      "input": "frame-0002-in.json",
+      "frame": "frame-0002-frame.json",
+      "expect": "frame-0002-out.json"
+   }, {
+      "name": "reframe (null)",
+      "type": "frame",
+      "input": "frame-0003-in.json",
+      "frame": "frame-0003-frame.json",
+      "expect": "frame-0003-out.json"
+   }, {
+      "name": "reframe (type)",
+      "type": "frame",
+      "input": "frame-0004-in.json",
+      "frame": "frame-0004-frame.json",
+      "expect": "frame-0004-out.json"
+   }, {
+      "name": "reframe (explicit)",
+      "type": "frame",
+      "input": "frame-0005-in.json",
+      "frame": "frame-0005-frame.json",
+      "expect": "frame-0005-out.json"
    }]
 }

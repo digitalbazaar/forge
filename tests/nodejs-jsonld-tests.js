@@ -135,7 +135,17 @@ TestRunner.prototype.load = function(filepath)
       if(path.extname(file) == '.test')
       {
          sys.log('Reading test file: "' + file + '"');
-         var test = JSON.parse(fs.readFileSync(file, 'utf8'));
+         
+         try
+         {
+            var test = JSON.parse(fs.readFileSync(file, 'utf8'));
+         }
+         catch(e)
+         {
+            sys.log('Exception while parsing file: ' + file);
+            throw e;
+         }
+         
          if(typeof(test.filepath) === 'undefined')
          {
             test.filepath = filepath;
@@ -159,8 +169,20 @@ TestRunner.prototype.load = function(filepath)
  */
 var _readTestJson = function(files, filepath)
 {
-   var file = path.join(filepath, files);
-   return JSON.parse(fs.readFileSync(file, 'utf8'));
+   var rval;
+   
+   try
+   {
+      var file = path.join(filepath, files);
+      rval = JSON.parse(fs.readFileSync(file, 'utf8'));
+   }
+   catch(e)
+   {
+      sys.log('Exception while parsing file: ' + file);
+      throw e;
+   }
+   
+   return rval;
 };
 
 TestRunner.prototype.run = function(tests, filepath)

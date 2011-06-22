@@ -1,0 +1,29 @@
+{
+   "@": [
+      {
+         "@": "http://example.org/test/#library",
+         "a": "ex:Library",
+         "ex:contains": "http://example.org/test#book"
+      },
+      {
+         "@": "http://example.org/test#book",
+         "a": "ex:Book",
+         "dc:contributor": "Writer",
+         "dc:title": "My Book",
+         "ex:contains": "http://example.org/test#chapter"
+      },
+      {
+         "@": "http://example.org/test#chapter",
+         "a": "ex:Chapter",
+         "dc:description": "Fun",
+         "dc:title": "Chapter One"
+      }
+   ],
+   "@context": {
+      "@coerce": {
+         "xsd:anyURI": "ex:contains"
+      },
+      "dc": "http://purl.org/dc/elements/1.1/",
+      "ex": "http://example.org/vocab#"
+   }
+}

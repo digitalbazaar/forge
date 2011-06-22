@@ -1901,7 +1901,9 @@ var _frame = function(subjects, input, frame, embeds, options)
                value = value['@'];
             }
          }
-         else if('@' in value && value['@']['@iri'] in embeds)
+         else if(
+            value.constructor === Object &&
+            '@' in value && value['@']['@iri'] in embeds)
          {
             // TODO: possibly support multiple embeds in the future ... and
             // instead only prevent cycles?
@@ -1911,20 +1913,32 @@ var _frame = function(subjects, input, frame, embeds, options)
             };
          }
          // if value is a subject, do embedding and subframing
-         else if('@' in value)
+         else if(value.constructor === Object && '@' in value)
          {
             embeds[value['@']['@iri']] = true;
             
-            // determine if only explicitly mentioned properties should be
-            // included
+            // if explicit is on, remove keys from value that aren't in frame
             var explicitOn = ('@explicit' in frame) ?
                frame['@explicit'] : options.defaults.explicitOn;
-            for(var key in value)
+            if(explicitOn)
+            {
+               for(key in value)
+               {
+                  // always include subject
+                  if(key !== '@' && !(key in frame))
+                  {
+                     delete value[key];
+                  }
+               }
+            }
+            
+            // iterate over frame keys to do subframing
+            for(key in frame)
             {
                // skip keywords and type query
                if(key.indexOf('@') !== 0 && key !== jsonld.ns.rdf + 'type')
                {
-                  if(key in frame)
+                  if(key in value)
                   {
                      // build input and do recursion
                      input = (value[key].constructor === Array) ?
@@ -1941,9 +1955,10 @@ var _frame = function(subjects, input, frame, embeds, options)
                      value[key] = _frame(
                         subjects, input, frame[key], embeds, options);
                   }
-                  else if(explicitOn)
+                  else
                   {
-                     delete value[key];
+                     // add null property to value
+                     value[key] = null;
                   }
                }
             }
