@@ -1832,7 +1832,7 @@ var _isDuckType = function(input, frame)
          rval = true;
          for(i in props)
          {
-            if(!(i in input))
+            if(!(props[i] in input))
             {
                rval = false;
                break;
