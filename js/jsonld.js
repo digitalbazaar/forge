@@ -2279,7 +2279,7 @@ jsonld.mergeContexts = function(ctx1, ctx2)
 jsonld.expandTerm = _expandTerm;
 
 /**
- * Compacts an IRI into a term or CURIE it can be. IRIs will not be
+ * Compacts an IRI into a term or CURIE if it can be. IRIs will not be
  * compacted to relative IRIs if they match the given context's default
  * vocabulary.
  *
