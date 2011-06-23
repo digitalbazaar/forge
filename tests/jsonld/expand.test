@@ -26,7 +26,7 @@
       "input": "expand-0005-in.json",
       "expect": "expand-0005-out.json"
    }, {
-      "name": "native types",
+      "name": "native expanded type",
       "type": "expand",
       "input": "expand-0006-in.json",
       "expect": "expand-0006-out.json"
