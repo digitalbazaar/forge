@@ -126,7 +126,6 @@ var _compactIri = function(ctx, iri, usedCtx)
             // compact to a CURIE
             if(idx === 0 && iri.length > ctxIri.length)
             {
-               // add 2 to make room for null-terminator and colon
                rval = key + ':' + iri.substr(idx + ctxIri.length);
                if(usedCtx !== null)
                {
