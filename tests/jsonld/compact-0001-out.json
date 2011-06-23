@@ -25,8 +25,15 @@
       }
    ],
    "@context": {
+      "@coerce": {
+         "xsd:anyURI": [
+            "ex:authored",
+            "ex:contains"
+         ]
+      },
       "dc": "http://purl.org/dc/elements/1.1/",
       "ex": "http://example.org/vocab#",
-      "foaf": "http://xmlns.com/foaf/0.1/"
+      "foaf": "http://xmlns.com/foaf/0.1/",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
    }
 }
