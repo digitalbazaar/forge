@@ -1,0 +1,16 @@
+{
+   "@": "http://example.org/test",
+   "@context": {
+      "@coerce": {
+         "xsd:boolean": "ex:bool",
+         "xsd:double": "ex:double",
+         "xsd:integer": "ex:int"
+      },
+      "ex": "http://example.org/vocab#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
+   },
+   "ex:bool": true,
+   "ex:double": 1.23,
+   "ex:double-zero": 0,
+   "ex:int": 123
+}

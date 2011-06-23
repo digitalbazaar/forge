@@ -1,0 +1,10 @@
+{
+   "@": "http://example.org/test",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "ex:bool": true,
+   "ex:double": 1.23,
+   "ex:double-zero": 0,
+   "ex:int": 123
+}

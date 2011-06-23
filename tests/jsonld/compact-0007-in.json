@@ -1,0 +1,19 @@
+{
+   "@": "http://example.org/test",
+   "http://example.org/vocab#bool": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#boolean",
+      "@literal": "true"
+   },
+   "http://example.org/vocab#double": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#double",
+      "@literal": "1.230000e+00"
+   },
+   "http://example.org/vocab#double-zero": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#double",
+      "@literal": "0.000000e+00"
+   },
+   "http://example.org/vocab#int": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#integer",
+      "@literal": "123"
+   }
+}

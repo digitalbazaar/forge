@@ -1,0 +1,7 @@
+{
+   "@": "http://example.org/test",
+   "http://example.org/test#int": {
+      "@datatype": "http://www.w3.org/2001/XMLSchema#integer",
+      "@literal": "123"
+   }
+}
