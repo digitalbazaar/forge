@@ -2266,10 +2266,7 @@ jsonld.mergeContexts = function(ctx1, ctx2)
          };
       }
       
-      if(Object.keys(c1).length > 0)
-      {
-         merged['@coerce'] = c1;
-      }
+      merged['@coerce'] = c1;
    }
 
    return merged;
