@@ -30,5 +30,10 @@
       "type": "expand",
       "input": "expand-0006-in.json",
       "expect": "expand-0006-out.json"
+   }, {
+      "name": "literal with language",
+      "type": "expand",
+      "input": "expand-0007-in.json",
+      "expect": "expand-0007-out.json"
    }]
 }
