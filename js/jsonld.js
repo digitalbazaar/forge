@@ -1883,8 +1883,16 @@ var _frame = function(subjects, input, frame, embeds, options)
    var values = [];
    for(var i = 0; i < frames.length && limit !== 0; ++i)
    {
-      // create array of values for each frame
+      // get next frame
       frame = frames[i];
+      if(frame.constructor !== Object)
+      {
+         throw {
+            message: 'Invalid JSON-LD frame. Frame type is not a map or array.'
+         };
+      }
+      
+      // create array of values for each frame
       values[i] = [];
       for(var n = 0; n < input.length && limit !== 0; ++n)
       {
