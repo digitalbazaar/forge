@@ -1,0 +1,11 @@
+[
+   {
+      "@": {
+         "@iri": "http://example.org/test"
+      },
+      "http://example.org/vocab#test": {
+         "@language": "en",
+         "@literal": "test"
+      }
+   }
+]

@@ -1,0 +1,10 @@
+{
+   "@": "http://example.org/test",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "ex:test": {
+      "@language": "en",
+      "@literal": "test"
+   }
+}

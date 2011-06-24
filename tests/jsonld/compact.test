@@ -42,5 +42,11 @@
       "input": "compact-0007-in.json",
       "context": "compact-0007-context.json",
       "expect": "compact-0007-out.json"
+   }, {
+      "name": "literal with langage",
+      "type": "compact",
+      "input": "compact-0008-in.json",
+      "context": "compact-0008-context.json",
+      "expect": "compact-0008-out.json"
    }]
 }

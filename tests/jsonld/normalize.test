@@ -210,5 +210,10 @@
       "type": "normalize",
       "input": "normalize-0042-in.json",
       "expect": "normalize-0042-out.json"
+   }, {
+      "name": "literal with language",
+      "type": "normalize",
+      "input": "normalize-0043-in.json",
+      "expect": "normalize-0043-out.json"
    }]
 }
