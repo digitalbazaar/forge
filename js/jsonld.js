@@ -239,8 +239,10 @@ var _setProperty = function(s, p, o)
 };
 
 /**
- * Clones a value that is an array or an object and sorts the keys. Deep clone
- * is not performed. This function should not be called on an array.
+ * Clones a string/number or an object and sorts the keys. Deep clone
+ * is not performed. This function will not shallow or deep copy arrays, but
+ * that feature isn't needed in this implementation at present. If it is
+ * needed in the future, it will have to be implemented here.
  * 
  * @param value the value to clone.
  * 
