@@ -2172,21 +2172,25 @@ jsonld.mergeContexts = function(ctx1, ctx2)
       }
    }
 
-   // @coerce must be specially-merged, remove from context
-   if('@coerce' in merged || '@coerce' in copy)
+   // @coerce must be specially-merged, remove from contexts
+   var coerceExists = ('@coerce' in merged) || ('@coerce' in copy);
+   if(coerceExists)
    {
       var c1 = ('@coerce' in merged) ? merged['@coerce'] : {};
       var c2 = ('@coerce' in copy) ? copy['@coerce'] : {};
       delete merged['@coerce'];
       delete copy['@coerce'];
+   }
 
-      // merge contexts
-      for(var key in copy)
-      {
-         merged[key] = copy[key];
-      }
-      
-      // special-merge @coerce
+   // merge contexts
+   for(var key in copy)
+   {
+      merged[key] = copy[key];
+   }
+   
+   // special-merge @coerce
+   if(coerceExists)
+   {
       for(var type in c1)
       {
          // append existing-type properties that don't already exist
@@ -2262,7 +2266,10 @@ jsonld.mergeContexts = function(ctx1, ctx2)
          };
       }
       
-      merged['@coerce'] = c1;
+      if(Object.keys(c1).length > 0)
+      {
+         merged['@coerce'] = c1;
+      }
    }
 
    return merged;
