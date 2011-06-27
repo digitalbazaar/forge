@@ -215,5 +215,10 @@
       "type": "normalize",
       "input": "normalize-0043-in.json",
       "expect": "normalize-0043-out.json"
+   }, {
+      "name": "evil",
+      "type": "normalize",
+      "input": "normalize-0044-in.json",
+      "expect": "normalize-0044-out.json"
    }]
 }

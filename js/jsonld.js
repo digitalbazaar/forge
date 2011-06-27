@@ -373,7 +373,6 @@ var _getCoerceType = function(ctx, property, usedCtx)
    return rval;
 };
 
-
 /**
  * Recursively compacts a value. This method will compact IRIs to CURIEs or
  * terms and do reverse type coercion to compact a value.
@@ -1015,7 +1014,7 @@ var _flatten = function(parent, parentProperty, value, subjects)
       {
          // create or fetch existing subject
          var subject;
-         if(value['@'] in subjects)
+         if(value['@']['@iri'] in subjects)
          {
             // FIXME: '@' might be a graph literal (as {})
             subject = subjects[value['@']['@iri']];
@@ -1396,6 +1395,45 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
 };
 
 /**
+ * Checks to see if the given bnode IRIs are equivalent in the given
+ * isomorphism.
+ * 
+ * @param iso the isomorphism to check.
+ * @param iriA the first bnode IRI.
+ * @param iriB the second bnode IRI.
+ * @param cycle a map to prevent cycles when checking. 
+ * 
+ * @return true if iriA and iriB are for equivalent bnodes per the isomorphism.
+ */
+var _isIsoMatch = function(iso, iriA, iriB, cycle)
+{
+   var rval = false;
+   
+   if(iriA === iriB)
+   {
+      rval = true;
+   }
+   else if(iriA in iso)
+   {
+      if(iso[iriA] === iriB)
+      {
+         rval = true;
+      }
+      else if(!(iriA in cycle))
+      {
+         cycle[iriA] = true;
+         rval = _isIsoMatch(iso, iso[iriA], iriB, cycle);
+      }
+   }
+   else if(iriB in iso)
+   {
+      rval = _isIsoMatch(iso, iriB, iriA, cycle);
+   }
+   
+   return rval;
+};
+
+/**
  * Compares the edges between two nodes for equivalence.
  * 
  * @param a the first bnode.
@@ -1411,8 +1449,8 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
    
    /* Edge comparison algorithm:
       1. Compare adjacent bnode lists for matches.
-      1.1. If a bnode IRI is in the potential isomorphism, then its associated
-         bnode *must* be in the other bnode under the same property.
+      1.1. If a bnode IRI is in the potential isomorphism, then the other bnode
+         under the same edge must be equivalent in that isomorphism.
       1.2. If a bnode IRI is not in the potential isomorphism yet, then the
          associated bnode *must* have a bnode with the same edge that isn't
          in the isomorphism yet to match up. Iterate over each bnode until an
@@ -1434,14 +1472,13 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
       // step #1.1
       if(edgeA.s in iso)
       {
-         var match = iso[edgeA.s];
-         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
+         for(var i2 = 0;
+            !found && i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
          {
             var edgeB = edgesB[i2];
-            if(edgeB.p === edgeA.p)
+            if(edgeB.p === edgeA.p && _isIsoMatch(iso, edgeA.s, edgeB.s, {}))
             {
-               found = (edgeB.s === match);
-               break;
+               found = true;
             }
          }
       }
@@ -1451,24 +1488,31 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
          for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
          {
             var edgeB = edgesB[i2];
-            if(edgeB.p === edgeA.p && !(edgeB.s in iso))
+            if(edgeB.p === edgeA.p)
             {
-               // add bnode pair temporarily to iso
-               iso[edgeA.s] = edgeB.s;
-               iso[edgeB.s] = edgeA.s;
-               
-               // step #1.3
-               var sA = this.subjects[edgeA.s];
-               var sB = this.subjects[edgeB.s];
-               if(this.deepCompareBlankNodes(sA, sB, iso) === 0)
+               // identical edge case
+               if(edgeA.s === edgeB.s)
                {
                   found = true;
                   break;
                }
-               
-               // remove non-matching bnode pair from iso
-               delete iso[edgeA.s];
-               delete iso[edgeB.s];
+               else if(!(edgeB.s in iso))
+               {
+                  // add bnode pair temporarily to iso
+                  iso[edgeB.s] = edgeA.s;
+                  
+                  // step #1.3
+                  var sA = this.subjects[edgeA.s];
+                  var sB = this.subjects[edgeB.s];
+                  if(this.deepCompareBlankNodes(sA, sB, iso) === 0)
+                  {
+                     found = true;
+                     break;
+                  }
+                  
+                  // remove non-matching bnode pair from iso
+                  delete iso[edgeB.s];
+               }
             }
          }
       }
@@ -1757,7 +1801,7 @@ jsonld.Processor.prototype.collectEdges = function()
    {
       refs[iri].all.sort(function(a, b) { return self.compareEdges(a, b); });
       refs[iri].bnodes = refs[iri].all.filter(function(edge) {
-         return _isBlankNodeIri(edge.s);
+         return _isBlankNodeIri(edge.s)
       });
    }
    for(var iri in props)
