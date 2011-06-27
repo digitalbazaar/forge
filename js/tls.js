@@ -3756,8 +3756,9 @@ tls.queue = function(c, record)
          records.push(tls.createRecord(
          {
             type: record.type,
-            data: forge.util.createBuffer(data.splice(0, tls.MaxFragment))
+            data: forge.util.createBuffer(data.slice(0, tls.MaxFragment))
          }));
+         data = data.slice(tls.MaxFragment);
       }
       // add last record
       if(data.length > 0)
