@@ -4056,7 +4056,7 @@ tls.verifyCertificateChain = function(c, chain)
       // TODO: 3. check revoked
       
       // 4. check for matching issuer/subject
-      if(error === null && !parent.isIssuer(cert))
+      if(error === null && !cert.isIssuer(parent))
       {
          // parent is not issuer
          error = {
