@@ -1411,15 +1411,14 @@ jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
    
    /* Edge comparison algorithm:
       1. Compare adjacent bnode lists for matches.
-      1.1. If a bnode ID is in the potential isomorphism, then its associated
+      1.1. If a bnode IRI is in the potential isomorphism, then its associated
          bnode *must* be in the other bnode under the same property.
-      1.2. If a bnode ID is not in the potential isomorphism yet, then the
-         associated bnode *must* have a bnode with the same property from the
-         same bnode group that isn't in the isomorphism yet to match up.
-         Iterate over each bnode in the group until an equivalent one is found.
+      1.2. If a bnode IRI is not in the potential isomorphism yet, then the
+         associated bnode *must* have a bnode with the same edge that isn't
+         in the isomorphism yet to match up. Iterate over each bnode until an
+         equivalent one is found.
       1.3. Recurse to compare the chosen bnodes.
-      1.4. The bnode with lowest group index amongst bnodes with the same
-         property name is first.
+      1.4. The least bnode is the one with the least bnode for the edge.
     */
    
    // for every bnode edge in A, make sure there's a match in B
