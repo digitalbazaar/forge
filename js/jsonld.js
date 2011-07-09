@@ -22,7 +22,8 @@ else if(typeof(module) !== 'undefined' && module.exports)
 }
 
 // local defines for keywords
-var __s = '@';//subject';
+var __s = '@subject';
+var __t = '@type';
 
 /*
  * JSON-LD API.
@@ -52,7 +53,6 @@ var _createDefaultContext = function()
 {
    var ctx =
    {
-      a: jsonld.ns.rdf + 'type',
       rdf: jsonld.ns.rdf,
       rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
       owl: 'http://www.w3.org/2002/07/owl#',
@@ -113,6 +113,12 @@ var _compactIri = function(ctx, iri, usedCtx)
             break;
          }
       }
+   }
+   
+   // term not found, if term is rdf type, use built-in keyword
+   if(rval === null && iri === jsonld.ns.rdf + 'type')
+   {
+      rval = __t;
    }
    
    // term not found, check the context for a CURIE prefix
@@ -202,7 +208,12 @@ var _expandTerm = function(ctx, term, usedCtx)
    {
       rval = __s;
    }
-   // 4. The property is a relative IRI, prepend the default vocab.
+   // 4. The property is the special-case rdf type.
+   else if(term === __t)
+   {
+      rval = jsonld.ns.rdf + 'type';
+   }
+   // 5. The property is a relative IRI, prepend the default vocab.
    else
    {
       rval = ctx['@vocab'] + term;
@@ -604,17 +615,17 @@ var _expand = function(ctx, property, value, expandSubjects)
          rval = {};
          for(var key in value)
          {
-            if(key.length === 1 || key.indexOf('@') !== 0)
+            // preserve frame keywords
+            if(key === '@embed' || key === '@explicit')
+            {
+               _setProperty(rval, key, _clone(value[key]));
+            }
+            else if(key !== '@context' && key !== '@coerce')
             {
                // set object to expanded property
                _setProperty(
                   rval, _expandTerm(ctx, key, null),
                   _expand(ctx, key, value[key], expandSubjects));
-            }
-            else if(key !== '@context')
-            {
-               // preserve non-context json-ld keywords
-               _setProperty(rval, key, _clone(value[key]));
             }
          }
       }

@@ -1,20 +1,20 @@
 {
-   "@": [
+   "@subject": [
       {
-         "@": "http://example.org/test/#library",
-         "a": "ex:Library",
+         "@subject": "http://example.org/test/#library",
+         "@type": "ex:Library",
          "ex:contains": "http://example.org/test#book"
       },
       {
-         "@": "http://example.org/test#book",
-         "a": "ex:Book",
+         "@subject": "http://example.org/test#book",
+         "@type": "ex:Book",
          "dc:contributor": "Writer",
          "dc:title": "My Book",
          "ex:contains": "http://example.org/test#chapter"
       },
       {
-         "@": "http://example.org/test#chapter",
-         "a": "ex:Chapter",
+         "@subject": "http://example.org/test#chapter",
+         "@type": "ex:Chapter",
          "dc:description": "Fun",
          "dc:title": "Chapter One"
       }

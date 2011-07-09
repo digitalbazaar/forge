@@ -1,13 +1,12 @@
 {
-   "@": "http://example.org/test/#library",
+   "@subject": "http://example.org/test/#library",
    "@context": {
-      "a": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
       "ex": "http://example.org/vocab#",
       "xsd": "http://www.w3.org/2001/XMLSchema#",
       "@coerce": {
          "xsd:anyURI": "ex:contains"
       }
    },
-   "a": "ex:Library",
+   "@type": "ex:Library",
    "ex:contains": "http://example.org/test#book"
 }

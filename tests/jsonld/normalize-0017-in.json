@@ -1,6 +1,6 @@
 [
    {
-      "@": "http://example.org/test",
+      "@subject": "http://example.org/test",
       "@context": {
          "@coerce": {
             "xsd:anyURI": "e:B"
@@ -13,7 +13,7 @@
       "e:B": "_:b1"
    },
    {
-      "@": "_:b1",
+      "@subject": "_:b1",
       "name": "foo"
    }
 ]

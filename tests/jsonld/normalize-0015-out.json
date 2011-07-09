@@ -1,11 +1,11 @@
 [
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/vocab#A"
       }
    },
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/vocab#B"
       }
    }

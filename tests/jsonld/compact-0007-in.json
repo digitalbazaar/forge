@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test",
+   "@subject": "http://example.org/test",
    "http://example.org/vocab#bool": {
       "@datatype": "http://www.w3.org/2001/XMLSchema#boolean",
       "@literal": "true"

@@ -1,25 +1,25 @@
 {
-   "@": [
+   "@subject": [
       {
-         "@": "http://example.org/test#chapter",
+         "@subject": "http://example.org/test#chapter",
          "http://purl.org/dc/elements/1.1/description": "Fun",
          "http://purl.org/dc/elements/1.1/title": "Chapter One"
       },
       {
-         "@": "http://example.org/test#jane",
+         "@subject": "http://example.org/test#jane",
          "http://example.org/vocab#authored": {
             "@iri": "http://example.org/test#chapter"
          },
          "http://xmlns.com/foaf/0.1/name": "Jane"
       },
       {
-         "@": "http://example.org/test#john",
+         "@subject": "http://example.org/test#john",
          "http://xmlns.com/foaf/0.1/name": "John"
       },
       {
-         "@": "http://example.org/test#library",
+         "@subject": "http://example.org/test#library",
          "http://example.org/vocab#contains": {
-            "@": "http://example.org/test#book",
+            "@subject": "http://example.org/test#book",
             "http://example.org/vocab#contains": {
                "@iri": "http://example.org/test#chapter"
             },

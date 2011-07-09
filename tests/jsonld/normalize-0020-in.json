@@ -1,20 +1,20 @@
 {
-   "@": [
+   "@subject": [
       {
-         "@": "e:test",
+         "@subject": "e:test",
          "e:A": "_:b1",
          "e:B": "_:b2"
       },
       {
-         "@": "_:b1",
+         "@subject": "_:b1",
          "e:next": "_:b3"
       },
       {
-         "@": "_:b2",
+         "@subject": "_:b2",
          "e:next": "_:b3"
       },
       {
-         "@": "_:b3"
+         "@subject": "_:b3"
       }
    ],
    "@context": {

@@ -2,8 +2,8 @@
    "@context": {
       "ex": "http://example.org/vocab#"
    },
-   "a": "ex:Foo",
+   "@type": "ex:Foo",
    "ex:embed": {
-      "@": "http://example.org/test#example"
+      "@subject": "http://example.org/test#example"
    }
 }

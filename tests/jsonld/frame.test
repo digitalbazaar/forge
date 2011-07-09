@@ -30,5 +30,11 @@
       "input": "frame-0005-in.json",
       "frame": "frame-0005-frame.json",
       "expect": "frame-0005-out.json"
+   }, {
+      "name": "reframe (non-explicit)",
+      "type": "frame",
+      "input": "frame-0006-in.json",
+      "frame": "frame-0006-frame.json",
+      "expect": "frame-0006-out.json"
    }]
 }

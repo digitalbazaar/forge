@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test#book",
+   "@subject": "http://example.org/test#book",
    "@context": {
       "@coerce": {
          "xsd:anyURI": "ex:contains"

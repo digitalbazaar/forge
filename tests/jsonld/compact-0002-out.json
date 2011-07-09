@@ -1,5 +1,5 @@
 {
-   "@": "ex:thing",
+   "@subject": "ex:thing",
    "@context": {
       "dc": "http://purl.org/dc/terms/",
       "ex": "http://example.org/test#"

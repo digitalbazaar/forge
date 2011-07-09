@@ -1,9 +1,9 @@
 {
-   "@": "http://example.org/test#example",
+   "@subject": "http://example.org/test#example",
    "@context": {
       "ex": "http://example.org/vocab#"
    },
-   "a": [
+   "@type": [
       "ex:Foo",
       "ex:Bar"
    ]

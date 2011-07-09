@@ -3,5 +3,5 @@
       "dc": "http://purl.org/dc/elements/1.1/",
       "ex": "http://example.org/vocab#"
    },
-   "a": "ex:DoesNotExist"
+   "@type": "ex:DoesNotExist"
 }

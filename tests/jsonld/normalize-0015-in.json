@@ -1,10 +1,10 @@
 {
-   "@": [
+   "@subject": [
       {
-         "@": "e:A"
+         "@subject": "e:A"
       },
       {
-         "@": "e:B"
+         "@subject": "e:B"
       }
    ],
    "@context": {

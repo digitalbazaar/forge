@@ -1,23 +1,23 @@
 {
-   "@": [
+   "@subject": [
       {
-         "@": "http://example.org/test#chapter",
+         "@subject": "http://example.org/test#chapter",
          "dc:description": "Fun",
          "dc:title": "Chapter One"
       },
       {
-         "@": "http://example.org/test#jane",
+         "@subject": "http://example.org/test#jane",
          "ex:authored": "http://example.org/test#chapter",
          "foaf:name": "Jane"
       },
       {
-         "@": "http://example.org/test#john",
+         "@subject": "http://example.org/test#john",
          "foaf:name": "John"
       },
       {
-         "@": "http://example.org/test#library",
+         "@subject": "http://example.org/test#library",
          "ex:contains": {
-            "@": "http://example.org/test#book",
+            "@subject": "http://example.org/test#book",
             "dc:contributor": "Writer",
             "dc:title": "My Book",
             "ex:contains": "http://example.org/test#chapter"

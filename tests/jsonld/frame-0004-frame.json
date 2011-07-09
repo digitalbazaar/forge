@@ -6,5 +6,5 @@
          "xsd:anyURI": "ex:contains"
       }
    },
-   "a": "ex:Library"
+   "@type": "ex:Library"
 }

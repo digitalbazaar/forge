@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test#example1",
+   "@subject": "http://example.org/test#example1",
    "@context": {
       "@coerce": {
          "xsd:anyURI": "ex:parent",
@@ -10,7 +10,7 @@
    },
    "ex:date": "2011-01-25T00:00:00Z",
    "ex:embed": {
-      "@": "http://example.org/test#example2",
+      "@subject": "http://example.org/test#example2",
       "ex:parent": "http://example.org/test#example1"
    }
 }

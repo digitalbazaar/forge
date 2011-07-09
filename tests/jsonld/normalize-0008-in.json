@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test#library",
+   "@subject": "http://example.org/test#library",
    "@context": {
       "@coerce": {
          "xsd:anyURI": "ex:contains"
@@ -8,11 +8,11 @@
       "ex": "http://example.org/vocab#"
    },
    "ex:contains": {
-      "@": "http://example.org/test#book",
+      "@subject": "http://example.org/test#book",
       "dc:contributor": "Writer",
       "dc:title": "My Book",
       "ex:contains": {
-         "@": "http://example.org/test#chapter",
+         "@subject": "http://example.org/test#chapter",
          "dc:description": "Fun",
          "dc:title": "Chapter One"
       }

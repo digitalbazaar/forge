@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test#book",
+   "@subject": "http://example.org/test#book",
    "http://example.org/vocab#contains": {
       "@iri": "http://example.org/test#chapter"
    },

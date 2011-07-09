@@ -1,11 +1,11 @@
 {
-   "@": "http://example.org/test#example",
+   "@subject": "http://example.org/test#example",
    "@context": {
       "@coerce": {
          "xsd:anyURI": "ex:foo"
       },
       "ex": "http://example.org/vocab#"
    },
-   "a": "ex:Foo",
+   "@type": "ex:Foo",
    "ex:foo": "ex:Bar"
 }

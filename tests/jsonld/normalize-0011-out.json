@@ -1,6 +1,6 @@
 [
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/test#example"
       },
       "http://example.org/vocab#validFrom": {

@@ -1,1 +1,1 @@
-[{"@":{"@iri":"_:c14n0"}},{"@":{"@iri":"_:c14n1"},"http://example.org/vocab#prop":{"@iri":"_:c14n0"}},{"@":{"@iri":"_:c14n2"}},{"@":{"@iri":"_:c14n3"},"http://example.org/vocab#prop":{"@iri":"_:c14n2"}}]
+[{"@subject":{"@iri":"_:c14n0"}},{"@subject":{"@iri":"_:c14n1"},"http://example.org/vocab#prop":{"@iri":"_:c14n0"}},{"@subject":{"@iri":"_:c14n2"}},{"@subject":{"@iri":"_:c14n3"},"http://example.org/vocab#prop":{"@iri":"_:c14n2"}}]

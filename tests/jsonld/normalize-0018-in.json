@@ -1,5 +1,5 @@
 {
-   "@": "_:b0",
+   "@subject": "_:b0",
    "@context": {
       "@coerce": {
          "xsd:anyURI": "e:self"

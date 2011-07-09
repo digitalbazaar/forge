@@ -1,6 +1,6 @@
 [
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/test#book"
       },
       "http://example.org/vocab#contains": {
@@ -10,14 +10,14 @@
       "http://purl.org/dc/elements/1.1/title": "My Book"
    },
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/test#chapter"
       },
       "http://purl.org/dc/elements/1.1/description": "Fun",
       "http://purl.org/dc/elements/1.1/title": "Chapter One"
    },
    {
-      "@": {
+      "@subject": {
          "@iri": "http://example.org/test#library"
       },
       "http://example.org/vocab#contains": {

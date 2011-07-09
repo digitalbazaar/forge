@@ -4,14 +4,14 @@
       "ex": "http://example.org/vocab#"
    },
    "@explicit": true,
-   "a": "ex:Library",
+   "@type": "ex:Library",
    "ex:contains": {
       "@explicit": true,
-      "a": "ex:Book",
+      "@type": "ex:Book",
       "dc:title": {},
       "ex:contains": {
          "@explicit": true,
-         "a": "ex:Chapter",
+         "@type": "ex:Chapter",
          "dc:title": {},
          "ex:null": {}
       }

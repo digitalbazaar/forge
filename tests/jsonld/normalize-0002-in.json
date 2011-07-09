@@ -1,5 +1,5 @@
 {
-   "@": "http://example.org/test#example1",
+   "@subject": "http://example.org/test#example1",
    "@context": {
       "ex": "http://example.org/vocab#"
    },
