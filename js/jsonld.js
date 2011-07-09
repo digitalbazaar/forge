@@ -2219,7 +2219,7 @@ jsonld.normalize = function(input)
  * 
  * @return the context-neutral JSON-LD object.
  */
-jsonld.removeContext = function(input)
+jsonld.expand = jsonld.removeContext = function(input)
 {
    var rval = null;
    
@@ -2284,7 +2284,7 @@ jsonld.addContext = function(ctx, input)
  * 
  * @return the output JSON-LD object.
  */
-jsonld.changeContext = function(ctx, input)
+jsonld.compact = jsonld.changeContext = function(ctx, input)
 {
    // remove context and then add new one
    return jsonld.addContext(ctx, jsonld.removeContext(input));
