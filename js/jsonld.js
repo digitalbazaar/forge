@@ -1519,7 +1519,12 @@ var _recursiveSerializeMapping = function(keys, output, done)
          break;
       }
       
-      if(!(k in done))
+      if(k in done)
+      {
+         // mark cycle
+         rval += '_' + k;
+      }
+      else
       {
          done[k] = true;
          var tmp = output[k];
@@ -1616,7 +1621,7 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
             // recurse into adjacent values
             for(var i2 in values)
             {
-               // TODO: optimizatino: for each value, see if the value already
+               // TODO: optimization: for each value, see if the value already
                // has a shortest serialization for the given direction that
                // can be reused
                this.serializeBlankNode(s, values[i2].s, m, dir);
