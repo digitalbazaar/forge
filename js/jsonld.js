@@ -1593,57 +1593,50 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       mb.mapped[iri] = true;
       var top = mb.mapNode(iri);
       
-      // copy original mapping builder, get edge values
+      // copy original mapping builder, loop over adjacent values
       var original = mb.copy();
       var values = this.edges[dir][iri].bnodes.slice();
-      
-      // handle no edges case
-      if(values.length === 0)
+      var loop = Math.max(1, values.length);
+      for(var i = 0; i < loop; ++i)
       {
-         mb.output[top] = [];
-         var _s = _serializeMapping(mb.output);
+         var m = (i === 0) ? mb : original.copy();
+         
+         // map all edge nodes
+         var tmp = [];
+         for(var i2 in values)
+         {
+            tmp.push(m.mapNode(values[i2].s));
+         }
+         m.output[top] = tmp.sort();
+         var oldCount = m.count;
+         
+         // optimize away mappings that are already too large
+         var _s = _serializeMapping(m.output);
          if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
          {
-            s[dir] = { s: _s, m: mb.mapping };
-         }
-      }
-      // has edges case
-      else
-      {
-         for(var i = 0; i < values.length; ++i)
-         {
-            var m = (i === 0) ? mb : original.copy();
-            
-            // map all edge nodes
-            var tmp = [];
+            // recurse into adjacent values
             for(var i2 in values)
             {
-               tmp.push(m.mapNode(values[i2].s));
+               this.serializeBlankNode(s, values[i2].s, m, dir);
             }
-            m.output[top] = tmp.sort();
             
-            // optimize away mappings that are already too large
-            var _s = _serializeMapping(m.output);
-            if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
+            // reserialize if more nodes were mapped
+            if(m.count > oldCount)
             {
-               for(var i2 in values)
-               {
-                  this.serializeBlankNode(s, values[i2].s, m, dir);
-               }
-               
-               // update least serialization if new one has been found
-               var _s = _serializeMapping(m.output);
-               if(s[dir] === null ||
-                  (_compareSerializations(_s, s[dir].s) <= 0 &&
-                  _s.length >= s[dir].s.length))
-               {
-                  s[dir] = { s: _s, m: m.mapping };
-               }
+               _s = _serializeMapping(m.output);
             }
             
-            // rotate values
-            _rotate(values);
+            // update least serialization if new one has been found
+            if(s[dir] === null ||
+               (_compareSerializations(_s, s[dir].s) <= 0 &&
+               _s.length >= s[dir].s.length))
+            {
+               s[dir] = { s: _s, m: m.mapping };
+            }
          }
+         
+         // rotate values
+         _rotate(values);
       }
    }
 };
