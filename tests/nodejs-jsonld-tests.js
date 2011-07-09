@@ -62,7 +62,8 @@ TestRunner.prototype.group = function(name)
    this.groups.push(
    {
       name: name,
-      tests: []
+      tests: [],
+      count: 1
    });
 };
 
@@ -95,6 +96,17 @@ TestRunner.prototype.check = function(expect, result, indent)
    }
    
    var g = this.groups[this.groups.length - 1];
+   if(g.name !== '')
+   {
+      var count = '' + g.count;
+      var end = 4 - count.length;
+      for(var i = 0; i < end; ++i)
+      {
+         count = '0' + count;
+      }
+      line += ' ' + count;
+      ++g.count;
+   }
    line += '/' + g.tests.pop();
    
    var fail = false;
@@ -113,6 +125,12 @@ TestRunner.prototype.check = function(expect, result, indent)
    {
       sys.puts('Expect: ' + expect);
       sys.puts('Result: ' + result);
+      
+      /*
+      sys.puts('Legible Expect: ' +
+         JSON.stringify(JSON.parse(expect), null, 2));
+      sys.puts('Legible Result: ' +
+         JSON.stringify(JSON.parse(result), null, 2));*/
       
       // FIXME: remove me
       throw 'FAIL';

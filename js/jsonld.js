@@ -12,6 +12,7 @@
 if(typeof(window) !== 'undefined')
 {
    var forge = window.forge = window.forge || {};
+   forge.jsonld = {};
 }
 // define node.js module
 else if(typeof(module) !== 'undefined' && module.exports)
@@ -19,6 +20,8 @@ else if(typeof(module) !== 'undefined' && module.exports)
    var forge = {};
    module.exports = forge.jsonld = {};
 }
+
+// FIXME: create local define for '@' and '@type'
 
 /*
  * JSON-LD API.
@@ -240,9 +243,9 @@ var _setProperty = function(s, p, o)
 
 /**
  * Clones a string/number or an object and sorts the keys. Deep clone
- * is not performed. This function will not shallow or deep copy arrays, but
- * that feature isn't needed in this implementation at present. If it is
- * needed in the future, it will have to be implemented here.
+ * is not performed. This function will deep copy arrays, but that feature
+ * isn't needed in this implementation at present. If it is needed in the
+ * future, it will have to be implemented here.
  * 
  * @param value the value to clone.
  * 
@@ -259,7 +262,14 @@ var _clone = function(value)
       for(var i in keys)
       {
          var key = keys[i];
-         rval[key] = value[key];
+         if(value[key].constructor === Array)
+         {
+            rval[key] = value[key].slice();
+         }
+         else
+         {
+            rval[key] = value[key];
+         }
       }
    }
    else
@@ -863,6 +873,8 @@ var _compareBlankNodeObjects = function(a, b)
       // steps #3.2.2-3.2.9
       if(rval === 0)
       {
+         objsA.sort(_compareObjects);
+         objsB.sort(_compareObjects);
          for(var i = 0; i < objsA.length && rval === 0; ++i)
          {
             rval = _compareObjects(objsA[i], objsB[i]);
@@ -1096,7 +1108,11 @@ var _flatten = function(parent, parentProperty, value, subjects)
  */
 jsonld.Processor = function()
 {
-   this.memo = {};
+   this.ng =
+   {
+      tmp: null,
+      c14n: null
+   };
 };
 
 /**
@@ -1154,7 +1170,7 @@ jsonld.Processor.prototype.normalize = function(input)
 jsonld.Processor.prototype.nameBlankNodes = function(input)
 {
    // create temporary blank node name generator
-   var ng = this.ng = _createNameGenerator('tmp');
+   var ng = this.ng.tmp = _createNameGenerator('tmp');
    
    // collect subjects and unnamed bnodes
    var subjects = {};
@@ -1253,61 +1269,18 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
 };
 
 /**
- * Deeply names the given blank node by first naming it if it doesn't already
- * have an appropriate prefix, and then by naming its properties and then
- * references.
- * 
- * @param b the bnode to name.
- */
-jsonld.Processor.prototype.deepNameBlankNode = function(b)
-{
-   // rename bnode (if not already renamed)
-   var iri = b['@']['@iri'];
-   var ng = this.ng;
-   if(!ng.inNamespace(iri))
-   {
-      this.renameBlankNode(b, ng.next());
-      iri = ng.current();
-      
-      var self = this;
-      var subjects = this.subjects;
-      
-      // FIXME: can bnode edge sorting be optimized out due to sorting them
-      // when they are unequal in other parts of this algorithm?
-      
-      // rename bnode properties
-      var props = this.edges.props[iri].bnodes.sort(
-         function(a, b) { return self.compareEdges(a, b); });
-      for(var i in props)
-      {
-         if(props[i].s in subjects)
-         {
-            this.deepNameBlankNode(subjects[props[i].s]);
-         }
-      }
-      
-      // rename bnode references
-      var refs = this.edges.refs[iri].bnodes.sort(
-         function(a, b) { return self.compareEdges(a, b); });
-      for(var i in refs)
-      {
-         if(refs[i].s in subjects)
-         {
-            this.deepNameBlankNode(subjects[refs[i].s]);
-         }
-      }
-   }
-};
-
-/**
  * Canonically names blank nodes in the given input.
  * 
  * @param input the flat input graph to assign names to.
  */
 jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
 {
+   // create serialization state
+   this.renamed = {};
+   this.mappings = {};
+   this.serializations = {};
+   
    // collect subjects and bnodes from flat input graph
-   var memo = this.memo = {};
    var edges = this.edges =
    {
       refs: {},
@@ -1335,46 +1308,100 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
       }
    }
    
-   // build map of memoized bnode comparisons
-   for(var i1 in bnodes)
-   {
-      var iri1 = bnodes[i1]['@']['@iri'];
-      memo[iri1] = {};
-   }
-   
    // collect edges in the graph
    this.collectEdges();
    
-   // sort blank nodes
-   var self = this;
-   bnodes.sort(function(a, b)
-   {
-      return self.deepCompareBlankNodes(a, b, {});
-   });
-   
    // create canonical blank node name generator
-   var c14n = _createNameGenerator('c14n');
+   var c14n = this.ng.c14n = _createNameGenerator('c14n');
+   var ngTmp = this.ng.tmp;
    
-   // rename all bnodes that have canonical names to temporary names
-   var tmp = this.ng;
+   // rename all bnodes that happen to be in the c14n namespace
+   // and initialize serializations
    for(var i in bnodes)
    {
       var bnode = bnodes[i];
-      if(c14n.inNamespace(bnode['@']['@iri']))
+      var iri = bnode['@']['@iri'];
+      this.serializations[iri] =
+      {
+         'props': null,
+         'refs': null
+      };
+      if(c14n.inNamespace(iri))
       {
          // generate names until one is unique
-         while(tmp.next() in subjects);
-         this.renameBlankNode(bnode, tmp.current());
+         while(ngTmp.next() in subjects);
+         this.renameBlankNode(bnode, ngTmp.current());
       }
    }
    
-   // change internal name generator from tmp one to canonical one
-   this.ng = c14n;
-   
-   // deeply-iterate over bnodes canonically-naming them
-   for(var i in bnodes)
+   // keep sorting and naming blank nodes until they are all named
+   var self = this;
+   while(bnodes.length > 0)
    {
-      this.deepNameBlankNode(bnodes[i]);
+      bnodes.sort(function(a, b)
+      {
+         return self.deepCompareBlankNodes(a, b);
+      });
+      
+      // name all bnodes according to the first bnode's relation mappings
+      var bnode = bnodes.shift(1);
+      var iri = bnode['@']['@iri'];
+      var dirs = ['props', 'refs'];
+      for(var d in dirs)
+      {
+         var dir = dirs[d];
+         if(this.serializations[iri][dir] === null)
+         {
+            var mapping = {};
+            mapping[iri] = 's1';
+         }
+         else
+         {
+            mapping = this.serializations[iri][dir].m;
+         }
+         
+         // sort keys by value to name them in order
+         var keys = Object.keys(mapping);
+         keys.sort(function(a, b)
+         {
+            return _compare(mapping[a], mapping[b]);
+         });
+         
+         // name bnodes in mapping
+         var renamed = [];
+         for(var i in keys)
+         {
+            var iri = keys[i];
+            if(!c14n.inNamespace(iri) && iri in subjects)
+            {
+               this.renameBlankNode(subjects[iri], c14n.next());
+               renamed.push(iri);
+            }
+         }
+         
+         // only keep non-canonically named bnodes
+         var tmp = bnodes;
+         bnodes = [];
+         for(var i in tmp)
+         {
+            if(!c14n.inNamespace(tmp[i]['@']['@iri']))
+            {
+               bnodes.push(tmp[i]);
+            }
+         }
+         
+         // mark all remaining bnode serializations related to the named bnodes
+         // as dirty
+         for(var i in bnodes)
+         {
+            var b = bnodes[i];
+            var iriB = b['@']['@iri'];
+            for(var i2 in renamed)
+            {
+               this.markSerializationDirty(iriB, renamed[i2], dir);
+            }
+         }
+      }
    }
    
    // sort property lists that now have canonically-named bnodes
@@ -1395,197 +1422,230 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
 };
 
 /**
- * Checks to see if the given bnode IRIs are equivalent in the given
- * isomorphism.
- * 
- * @param iso the isomorphism to check.
- * @param iriA the first bnode IRI.
- * @param iriB the second bnode IRI.
- * @param cycle a map to prevent cycles when checking. 
- * 
- * @return true if iriA and iriB are for equivalent bnodes per the isomorphism.
+ * A MappingBuilder is used to build a mapping of existing blank node names
+ * to a form for serialization. The serialization is used to compare blank
+ * nodes against one another to determine a sort order.
  */
-var _isIsoMatch = function(iso, iriA, iriB, cycle)
+MappingBuilder = function()
 {
-   var rval = false;
-   
-   if(iriA === iriB)
-   {
-      rval = true;
-   }
-   else if(iriA in iso)
-   {
-      if(iso[iriA] === iriB)
-      {
-         rval = true;
-      }
-      else if(!(iriA in cycle))
-      {
-         cycle[iriA] = true;
-         rval = _isIsoMatch(iso, iso[iriA], iriB, cycle);
-      }
-   }
-   else if(iriB in iso)
-   {
-      rval = _isIsoMatch(iso, iriB, iriA, cycle);
-   }
-   
+   this.count = 1;
+   this.mapped = {};
+   this.mapping = {};
+   this.output = {};
+};
+
+/**
+ * Copies a MappingBuilder.
+ * 
+ * @param mb the MappingBuilder to copy.
+ */
+MappingBuilder.prototype.copy = function()
+{
+   var rval = new MappingBuilder();
+   rval.count = this.count;
+   rval.mapped = _clone(this.mapped);
+   rval.mapping = _clone(this.mapping);
+   rval.output = _clone(this.output);
    return rval;
 };
 
 /**
- * Compares the edges between two nodes for equivalence.
+ * Maps the next name to the given bnode IRI if the bnode IRI isn't already in
+ * the mapping. If the given bnode IRI is canonical, then it will be given
+ * a shortened form of the same name.
  * 
- * @param a the first bnode.
- * @param b the second bnode.
- * @param dir the edge direction ('props' or 'refs').
- * @param iso the current subgraph isomorphism for connected bnodes.
+ * @param iri the blank node IRI to map the next name to.
  * 
- * @return -1 if a < b, 0 if a == b, 1 if a > b. 
+ * @return the mapped name.
  */
-jsonld.Processor.prototype.deepCompareEdges = function(a, b, dir, iso)
+MappingBuilder.prototype.mapNode = function(iri)
 {
-   var rval = 0;
-   
-   /* Edge comparison algorithm:
-      1. Compare adjacent bnode lists for matches.
-      1.1. If a bnode IRI is in the potential isomorphism, then the other bnode
-         under the same edge must be equivalent in that isomorphism.
-      1.2. If a bnode IRI is not in the potential isomorphism yet, then the
-         associated bnode *must* have a bnode with the same edge that isn't
-         in the isomorphism yet to match up. Iterate over each bnode until an
-         equivalent one is found.
-      1.3. Recurse to compare the chosen bnodes.
-      1.4. The least bnode is the one with the least bnode for the edge.
-    */
-   
-   // for every bnode edge in A, make sure there's a match in B
-   var iriA = a['@']['@iri'];
-   var iriB = b['@']['@iri'];
-   var edgesA = this.edges[dir][iriA].bnodes;
-   var edgesB = this.edges[dir][iriB].bnodes;
-   for(var i1 = 0; i1 < edgesA.length && rval === 0; ++i1)
+   if(!(iri in this.mapping))
    {
-      var found = false;
-      var edgeA = edgesA[i1];
-      
-      // step #1.1
-      if(edgeA.s in iso)
+      if(iri.indexOf('_:c14n') === 0)
       {
-         for(var i2 = 0;
-            !found && i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
-         {
-            var edgeB = edgesB[i2];
-            if(edgeB.p === edgeA.p && _isIsoMatch(iso, edgeA.s, edgeB.s, {}))
-            {
-               found = true;
-            }
-         }
+         this.mapping[iri] = 'c' + iri.substr(6);
       }
-      // step #1.2
       else
       {
-         for(var i2 = 0; i2 < edgesB.length && edgesB[i2].p <= edgeA.p; ++i2)
-         {
-            var edgeB = edgesB[i2];
-            if(edgeB.p === edgeA.p)
-            {
-               // identical edge case
-               if(edgeA.s === edgeB.s)
-               {
-                  found = true;
-                  break;
-               }
-               else if(!(edgeB.s in iso))
-               {
-                  // add bnode pair temporarily to iso
-                  iso[edgeB.s] = edgeA.s;
-                  
-                  // step #1.3
-                  var sA = this.subjects[edgeA.s];
-                  var sB = this.subjects[edgeB.s];
-                  if(this.deepCompareBlankNodes(sA, sB, iso) === 0)
-                  {
-                     found = true;
-                     break;
-                  }
-                  
-                  // remove non-matching bnode pair from iso
-                  delete iso[edgeB.s];
-               }
-            }
-         }
-      }
-      
-      // step #1.4
-      if(!found)
-      {
-         // no matching bnode pair found, sort order is the bnode with the
-         // least bnode for edgeA's property
-         rval = this.compareEdgeType(a, b, edgeA.p, dir, iso);
+         this.mapping[iri] = 's' + this.count++;
       }
    }
-   
+   return this.mapping[iri];
+};
+
+/**
+ * Marks a relation serialization as dirty if necessary.
+ * 
+ * @param iri the IRI of the bnode to check.
+ * @param changed the old IRI of the bnode that changed.
+ * @param dir the direction to check ('props' or 'refs').
+ */
+jsonld.Processor.prototype.markSerializationDirty = function(iri, changed, dir)
+{
+   var s = this.serializations[iri];
+   if(s[dir] !== null && changed in s[dir].m)
+   {
+      s[dir] = null;
+   }
+};
+
+/**
+ * Rotates the elements in an array one position.
+ * 
+ * @param a the array.
+ */
+var _rotate = function(a)
+{
+   a.unshift.apply(a, a.splice(1, a.length));
+};
+
+/**
+ * Recursively creates a relation serialization (partial or full).
+ * 
+ * @param keys the keys to serialize in the current output.
+ * @param output the current mapping builder output.
+ * @param done the already serialized keys.
+ * 
+ * @return the relation serialization.
+ */
+var _recursiveSerializeMapping = function(keys, output, done)
+{
+   var rval = '';
+   for(var i in keys)
+   {
+      var k = keys[i];
+      if(!(k in output))
+      {
+         break;
+      }
+      
+      if(!(k in done))
+      {
+         done[k] = true;
+         var tmp = output[k];
+         rval += k + tmp.join('');
+         rval += _recursiveSerializeMapping(tmp, output, done);
+      }
+   }
    return rval;
 };
 
 /**
- * Compares bnodes along the same edge type to determine which is less.
+ * Creates a relation serialization (partial or full).
  * 
- * @param a the first bnode.
- * @param b the second bnode.
- * @param p the property.
- * @param dir the direction of the edge ('props' or 'refs').
- * @param iso the current subgraph isomorphism for connected bnodes.
+ * @param output the current mapping builder output.
  * 
- * @return -1 if a < b, 0 if a == b, 1 if a > b.
+ * @return the relation serialization.
  */
-jsonld.Processor.prototype.compareEdgeType = function(a, b, p, dir, iso)
+var _serializeMapping = function(output)
+{
+   // get sorted keys for current output
+   var keys = Object.keys(output).sort();
+   var done = {};
+   return _recursiveSerializeMapping(keys, output, done);
+};
+
+/**
+ * Compares two serializations for the same blank node. If the two
+ * serializations aren't complete enough to determine if they are equal (or if
+ * they are actually equal), 0 is returned.
+ * 
+ * @param s1 the first serialization.
+ * @param s2 the second serialization.
+ * 
+ * @return -1 if s1 < s2, 0 if s1 == s2 (or indeterminate), 1 if s1 > v2.
+ */
+var _compareSerializations = function(s1, s2)
 {
    var rval = 0;
    
-   // compare adjacent bnodes for smallest
-   var adjA = this.getSortedAdjacents(a, p, dir, iso);
-   var adjB = this.getSortedAdjacents(a, p, dir, iso);
-   for(var i = 0; i < adjA.length && rval === 0; ++i)
+   if(s1.length == s2.length)
    {
-      rval = this.deepCompareBlankNodes(adjA[i], adjB[i], iso);
+      rval = _compare(s1, s2);
+   }
+   else if(s1.length > s2.length)
+   {
+      rval = _compare(s1.substr(0, s2.length), s2);
+   }
+   else
+   {
+      rval = _compare(s1, s2.substr(0, s1.length));
    }
    
    return rval;
 };
 
 /**
- * Returns the bnode properties for a particular bnode in sorted order.
+ * Computes the relation serialization for the given blank node IRI.
  * 
- * @param b the bnode.
- * @param p the property (edge type).
- * @param direction the direction of the edge ('props' or 'refs').
- * @param iso the current subgraph isomorphism for connected bnodes.
- * 
- * @return the sorted bnodes for the property.
+ * @param s the serialization to update.
+ * @param iri the current bnode IRI to be mapped.
+ * @param mb the MappingBuilder to use.
+ * @param dir the edge direction to use ('props' or 'refs').
  */
-jsonld.Processor.prototype.getSortedAdjacents = function(b, p, dir, iso)
+jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
 {
-   var rval = [];
-   
-   // add all bnodes for the given property
-   var iri = b['@']['@iri'];
-   var edges = this.edges[dir][iri].bnodes;
-   for(var i = 0; i < edges.length && edges[i].p <= p; ++i)
+   // only do mapping if iri not already mapped
+   if(!(iri in mb.mapped))
    {
-      if(edges[i].p === p)
+      // iri now mapped
+      mb.mapped[iri] = true;
+      var top = mb.mapNode(iri);
+      
+      // copy original mapping builder, get edge values
+      var original = mb.copy();
+      var values = this.edges[dir][iri].bnodes.slice();
+      
+      // handle no edges case
+      if(values.length === 0)
       {
-         rval.push(this.subjects[edges[i].s]);
+         mb.output[top] = [];
+         var _s = _serializeMapping(mb.output);
+         if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
+         {
+            s[dir] = { s: _s, m: mb.mapping };
+         }
+      }
+      // has edges case
+      else
+      {
+         for(var i = 0; i < values.length; ++i)
+         {
+            var m = (i === 0) ? mb : original.copy();
+            
+            // map all edge nodes
+            var tmp = [];
+            for(var i2 in values)
+            {
+               tmp.push(m.mapNode(values[i2].s));
+            }
+            m.output[top] = tmp.sort();
+            
+            // optimize away mappings that are already too large
+            var _s = _serializeMapping(m.output);
+            if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
+            {
+               for(var i2 in values)
+               {
+                  this.serializeBlankNode(s, values[i2].s, m, dir);
+               }
+               
+               // update least serialization if new one has been found
+               var _s = _serializeMapping(m.output);
+               if(s[dir] === null ||
+                  (_compareSerializations(_s, s[dir].s) <= 0 &&
+                  _s.length >= s[dir].s.length))
+               {
+                  s[dir] = { s: _s, m: m.mapping };
+               }
+            }
+            
+            // rotate values
+            _rotate(values);
+         }
       }
    }
-   
-   // sort bnodes
-   var self = this;
-   return rval.sort(function(a, b)
-   {
-      return self.deepCompareBlankNodes(a, b, iso);
-   });
 };
 
 /**
@@ -1593,11 +1653,10 @@ jsonld.Processor.prototype.getSortedAdjacents = function(b, p, dir, iso)
  * 
  * @param a the first blank node.
  * @param b the second blank node.
- * @param iso the current subgraph isomorphism for connected bnodes.
  * 
  * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
+jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b)
 {
    var rval = 0;
    
@@ -1608,38 +1667,47 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b, iso)
    {
       rval = 0;
    }
-   // use memoized comparison if available
-   else if(iriB in this.memo[iriA])
-   {
-      rval = this.memo[iriA][iriB];
-   }
    else
    {
       // do shallow compare first
       rval = this.shallowCompareBlankNodes(a, b);
-      if(rval !== 0)
-      {
-         // compare done
-         this.memo[iriA][iriB] = rval;
-         this.memo[iriB][iriA] = -rval;
-      }
+      
       // deep comparison is necessary
-      else
+      if(rval === 0)
       {
-         // compare properties
-         rval = this.deepCompareEdges(a, b, 'props', iso);
-         
-         // compare references
-         if(rval === 0)
+         // compare property edges and then reference edges
+         var dirs = ['props', 'refs'];
+         for(var i = 0; rval === 0 && i < dirs.length; ++i)
          {
-            rval = this.deepCompareEdges(a, b, 'refs', iso);
-         }
-         
-         // update memo
-         if(!(iriB in this.memo[iriA]))
-         {
-            this.memo[iriA][iriB] = rval;
-            this.memo[iriB][iriA] = -rval;
+            // recompute 'a' and 'b' serializations as necessary
+            var dir = dirs[i];
+            var sA = this.serializations[iriA];
+            var sB = this.serializations[iriB];
+            if(sA[dir] === null)
+            {
+               var mb = new MappingBuilder();
+               if(dir === 'refs')
+               {
+                  // keep same mapping and count from 'props' serialization
+                  mb.mapping = _clone(sA['props'].m);
+                  mb.count = Object.keys(mb.mapping).length + 1;
+               }
+               this.serializeBlankNode(sA, iriA, mb, dir);
+            }
+            if(sB[dir] === null)
+            {
+               var mb = new MappingBuilder();
+               if(dir === 'refs')
+               {
+                  // keep same mapping and count from 'props' serialization
+                  mb.mapping = _clone(sB['props'].m);
+                  mb.count = Object.keys(mb.mapping).length + 1;
+               }
+               this.serializeBlankNode(sB, iriB, mb, dir);
+            }
+            
+            // compare serializations
+            rval = _compare(sA[dir].s, sB[dir].s);
          }
       }
    }
@@ -1713,8 +1781,9 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
 /**
  * Compares two edges. Edges with an IRI (vs. a bnode ID) come first, then
  * alphabetically-first IRIs, then alphabetically-first properties. If a blank
- * node appears in the blank node equality memo then they will be compared
- * after properties, otherwise they won't be.
+ * node has been canonically named, then blank nodes will be compared after
+ * properties (with a preference for canonically named over non-canonically
+ * named), otherwise they won't be.
  * 
  * @param a the first edge.
  * @param b the second edge.
@@ -1727,7 +1796,7 @@ jsonld.Processor.prototype.compareEdges = function(a, b)
    
    var bnodeA = _isBlankNodeIri(a.s);
    var bnodeB = _isBlankNodeIri(b.s);
-   var memo = this.memo;
+   var c14n = this.ng.c14n;
    
    // if not both bnodes, one that is a bnode is greater
    if(bnodeA != bnodeB)
@@ -1744,9 +1813,20 @@ jsonld.Processor.prototype.compareEdges = function(a, b)
       {
          rval = _compare(a.p, b.p);
       }
-      if(rval === 0 && bnodeA && a.s in memo && b.s in memo[a.s])
+      
+      // do bnode IRI comparison if canonical naming has begun
+      if(rval === 0 && c14n !== null)
       {
-         rval = memo[a.s][b.s];
+         var c14nA = c14n.inNamespace(a.s);
+         var c14nB = c14n.inNamespace(b.s);
+         if(c14nA != c14nB)
+         {
+            rval = c14nA ? 1 : -1;
+         }
+         else if(c14nA)
+         {
+            rval = _compare(a.s, b.s);
+         }
       }
    }
    
@@ -1879,7 +1959,7 @@ var _isDuckType = function(input, frame)
       else if(input.constructor === Object && '@' in input)
       {
          rval = true;
-         for(i in props)
+         for(var i in props)
          {
             if(!(props[i] in input))
             {
