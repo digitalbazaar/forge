@@ -1350,6 +1350,8 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
       for(var d in dirs)
       {
          var dir = dirs[d];
+         
+         // if no serialization has been computed, name only the first node
          if(this.serializations[iri][dir] === null)
          {
             var mapping = {};
@@ -1384,21 +1386,16 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
          bnodes = [];
          for(var i in tmp)
          {
-            if(!c14n.inNamespace(tmp[i]['@']['@iri']))
-            {
-               bnodes.push(tmp[i]);
-            }
-         }
-         
-         // mark all remaining bnode serializations related to the named bnodes
-         // as dirty
-         for(var i in bnodes)
-         {
-            var b = bnodes[i];
+            var b = tmp[i];
             var iriB = b['@']['@iri'];
-            for(var i2 in renamed)
+            if(!c14n.inNamespace(iriB))
             {
-               this.markSerializationDirty(iriB, renamed[i2], dir);
+               // mark serializations related to the named bnodes as dirty
+               for(var i2 in renamed)
+               {
+                  this.markSerializationDirty(iriB, renamed[i2], dir);
+               }
+               bnodes.push(b);
             }
          }
       }
