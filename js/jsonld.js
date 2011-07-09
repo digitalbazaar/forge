@@ -21,7 +21,8 @@ else if(typeof(module) !== 'undefined' && module.exports)
    module.exports = forge.jsonld = {};
 }
 
-// FIXME: create local define for '@' and '@type'
+// local defines for keywords
+var __s = '@';//subject';
 
 /*
  * JSON-LD API.
@@ -196,10 +197,10 @@ var _expandTerm = function(ctx, term, usedCtx)
          usedCtx[term] = rval;
       }
    }
-   // 3. The property is the special-case '@'.
-   else if(term === "@")
+   // 3. The property is the special-case subject.
+   else if(term === __s)
    {
-      rval = "@";
+      rval = __s;
    }
    // 4. The property is a relative IRI, prepend the default vocab.
    else
@@ -327,7 +328,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
    var p = _expandTerm(ctx, property, null);
 
    // built-in type coercion JSON-LD-isms
-   if(p === '@' || p === jsonld.ns.rdf + 'type')
+   if(p === __s || p === jsonld.ns.rdf + 'type')
    {
       rval = xsd.anyURI;
    }
@@ -414,10 +415,10 @@ var _compact = function(ctx, property, value, usedCtx)
    // graph literal/disjoint graph
    else if(
       value.constructor === Object &&
-      '@' in value && value['@'].constructor === Array)
+      __s in value && value[__s].constructor === Array)
    {
       rval = {};
-      rval['@'] = _compact(ctx, property, value['@'], usedCtx);
+      rval[__s] = _compact(ctx, property, value[__s], usedCtx);
    }
    // value has sub-properties if it doesn't define a literal or IRI value
    else if(
@@ -647,7 +648,7 @@ var _expand = function(ctx, property, value, expandSubjects)
       }
 
       // coerce to appropriate datatype, only expand subjects if requested
-      if(coerce !== null && (property !== '@' || expandSubjects))
+      if(coerce !== null && (property !== __s || expandSubjects))
       {
          rval = {};
          
@@ -688,8 +689,8 @@ var _isNamedBlankNode = function(v)
 {
    // look for "_:" at the beginning of the subject
    return (
-      v.constructor === Object && '@' in v &&
-      '@iri' in v['@'] && _isBlankNodeIri(v['@']['@iri']));
+      v.constructor === Object && __s in v &&
+      '@iri' in v[__s] && _isBlankNodeIri(v[__s]['@iri']));
 };
 
 var _isBlankNode = function(v)
@@ -698,7 +699,7 @@ var _isBlankNode = function(v)
    return (
       v.constructor === Object &&
       !('@iri' in v || '@literal' in v) &&
-      (!('@' in v) || _isNamedBlankNode(v)));
+      (!(__s in v) || _isNamedBlankNode(v)));
 };
 
 /**
@@ -938,17 +939,17 @@ var _collectSubjects = function(input, subjects, bnodes)
    }
    else if(input.constructor === Object)
    {
-      if('@' in input)
+      if(__s in input)
       {
          // graph literal
-         if(input['@'].constructor == Array)
+         if(input[__s].constructor == Array)
          {
-            _collectSubjects(input['@'], subjects, bnodes);
+            _collectSubjects(input[__s], subjects, bnodes);
          }
          // named subject
          else
          {
-            subjects[input['@']['@iri']] = input;
+            subjects[input[__s]['@iri']] = input;
          }
       }
       // unnamed blank node
@@ -1000,7 +1001,7 @@ var _flatten = function(parent, parentProperty, value, subjects)
    else if(value.constructor === Object)
    {
       // graph literal/disjoint graph
-      if('@' in value && value['@'].constructor === Array)
+      if(__s in value && value[__s].constructor === Array)
       {
          // cannot flatten embedded graph literals
          if(parent !== null)
@@ -1011,9 +1012,9 @@ var _flatten = function(parent, parentProperty, value, subjects)
          }
          
          // top-level graph literal
-         for(var key in value['@'])
+         for(var key in value[__s])
          {
-            _flatten(parent, parentProperty, value['@'][key], subjects);
+            _flatten(parent, parentProperty, value[__s][key], subjects);
          }
       }
       // already-expanded value
@@ -1026,18 +1027,18 @@ var _flatten = function(parent, parentProperty, value, subjects)
       {
          // create or fetch existing subject
          var subject;
-         if(value['@']['@iri'] in subjects)
+         if(value[__s]['@iri'] in subjects)
          {
-            // FIXME: '@' might be a graph literal (as {})
-            subject = subjects[value['@']['@iri']];
+            // FIXME: __s might be a graph literal (as {})
+            subject = subjects[value[__s]['@iri']];
          }
          else
          {
             subject = {};
-            if('@' in value)
+            if(__s in value)
             {
-               // FIXME: '@' might be a graph literal (as {})
-               subjects[value['@']['@iri']] = subject;
+               // FIXME: __s might be a graph literal (as {})
+               subjects[value[__s]['@iri']] = subject;
             }
          }
          flattened = subject;
@@ -1071,12 +1072,13 @@ var _flatten = function(parent, parentProperty, value, subjects)
    // add flattened value to parent
    if(flattened !== null && parent !== null)
    {
-      // remove top-level '@' for subjects
-      // 'http://mypredicate': {'@': {'@iri': 'http://mysubject'}} becomes
+      // remove top-level __s for subjects
+      // 'http://mypredicate': {'@subject': {'@iri': 'http://mysubject'}}
+      // becomes
       // 'http://mypredicate': {'@iri': 'http://mysubject'}
-      if(flattened.constructor === Object && '@' in flattened)
+      if(flattened.constructor === Object && __s in flattened)
       {
-         flattened = flattened['@'];
+         flattened = flattened[__s];
       }
 
       if(parent.constructor === Array)
@@ -1155,7 +1157,7 @@ jsonld.Processor.prototype.normalize = function(input)
       // sort output
       rval.sort(function(a, b)
       {
-         return _compare(a['@']['@iri'], b['@']['@iri']);
+         return _compare(a[__s]['@iri'], b[__s]['@iri']);
       });
    }
 
@@ -1181,11 +1183,11 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
    for(var i in bnodes)
    {
       var bnode = bnodes[i];
-      if(!('@' in bnode))
+      if(!(__s in bnode))
       {
          // generate names until one is unique
          while(ng.next() in subjects);
-         bnode['@'] =
+         bnode[__s] =
          {
             '@iri': ng.current()
          };
@@ -1203,10 +1205,10 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
  */
 jsonld.Processor.prototype.renameBlankNode = function(b, id)
 {
-   var old = b['@']['@iri'];
+   var old = b[__s]['@iri'];
    
    // update bnode IRI
-   b['@']['@iri'] = id;
+   b[__s]['@iri'] = id;
    
    // update subjects map
    var subjects = this.subjects;
@@ -1290,7 +1292,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    var bnodes = [];
    for(var i in input)
    {
-      var iri = input[i]['@']['@iri'];
+      var iri = input[i][__s]['@iri'];
       subjects[iri] = input[i];
       edges.refs[iri] =
       {
@@ -1320,7 +1322,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    for(var i in bnodes)
    {
       var bnode = bnodes[i];
-      var iri = bnode['@']['@iri'];
+      var iri = bnode[__s]['@iri'];
       this.serializations[iri] =
       {
          'props': null,
@@ -1345,7 +1347,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
       
       // name all bnodes according to the first bnode's relation mappings
       var bnode = bnodes.shift(1);
-      var iri = bnode['@']['@iri'];
+      var iri = bnode[__s]['@iri'];
       var dirs = ['props', 'refs'];
       for(var d in dirs)
       {
@@ -1387,7 +1389,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
          for(var i in tmp)
          {
             var b = tmp[i];
-            var iriB = b['@']['@iri'];
+            var iriB = b[__s]['@iri'];
             if(!c14n.inNamespace(iriB))
             {
                // mark serializations related to the named bnodes as dirty
@@ -1654,8 +1656,8 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b)
    var rval = 0;
    
    // compare IRIs
-   var iriA = a['@']['@iri'];
-   var iriB = b['@']['@iri'];
+   var iriA = a[__s]['@iri'];
+   var iriB = b[__s]['@iri'];
    if(iriA === iriB)
    {
       rval = 0;
@@ -1754,8 +1756,8 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
    // step #4
    if(rval === 0)
    {
-      var edgesA = this.edges.refs[a['@']['@iri']].all;
-      var edgesB = this.edges.refs[b['@']['@iri']].all;
+      var edgesA = this.edges.refs[a[__s]['@iri']].all;
+      var edgesB = this.edges.refs[b[__s]['@iri']].all;
       rval = _compare(edgesA.length, edgesB.length);
    }
    
@@ -1844,7 +1846,7 @@ jsonld.Processor.prototype.collectEdges = function()
       var subject = this.subjects[iri];
       for(var key in subject)
       {
-         if(key !== '@')
+         if(key !== __s)
          {
             // normalize to array for single codepath
             var object = subject[key];
@@ -1902,7 +1904,7 @@ var _isType = function(input, frame)
    // check if type(s) are specified in frame and input
    var type = jsonld.ns.rdf + 'type';
    if(type in frame &&
-      input.constructor === Object && '@' in input && type in input)
+      input.constructor === Object && __s in input && type in input)
    {
       var tmp = (input[type].constructor === Array) ?
          input[type] : [input[type]];
@@ -1949,7 +1951,7 @@ var _isDuckType = function(input, frame)
          rval = true;
       }
       // input must be a subject with all the given properties
-      else if(input.constructor === Object && '@' in input)
+      else if(input.constructor === Object && __s in input)
       {
          rval = true;
          for(var i in props)
@@ -2035,26 +2037,26 @@ var _frame = function(subjects, input, frame, embeds, options)
          if(!embedOn)
          {
             // if value is a subject, only use subject IRI as reference 
-            if(value.constructor === Object && '@' in value)
+            if(value.constructor === Object && __s in value)
             {
-               value = value['@'];
+               value = value[__s];
             }
          }
          else if(
             value.constructor === Object &&
-            '@' in value && value['@']['@iri'] in embeds)
+            __s in value && value[__s]['@iri'] in embeds)
          {
             // TODO: possibly support multiple embeds in the future ... and
             // instead only prevent cycles?
             throw {
                message: 'Multiple embeds of the same subject is not supported.',
-               subject: value['@']['@iri']
+               subject: value[__s]['@iri']
             };
          }
          // if value is a subject, do embedding and subframing
-         else if(value.constructor === Object && '@' in value)
+         else if(value.constructor === Object && __s in value)
          {
-            embeds[value['@']['@iri']] = true;
+            embeds[value[__s]['@iri']] = true;
             
             // if explicit is on, remove keys from value that aren't in frame
             var explicitOn = ('@explicit' in frame) ?
@@ -2064,7 +2066,7 @@ var _frame = function(subjects, input, frame, embeds, options)
                for(key in value)
                {
                   // always include subject
-                  if(key !== '@' && !(key in frame))
+                  if(key !== __s && !(key in frame))
                   {
                      delete value[key];
                   }
@@ -2159,7 +2161,7 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    var subjects = {};
    for(var i in input)
    {
-      subjects[input[i]['@']['@iri']] = input[i];
+      subjects[input[i][__s]['@iri']] = input[i];
    }
    
    // frame input
