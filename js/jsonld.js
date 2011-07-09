@@ -1156,10 +1156,18 @@ jsonld.Processor.prototype.normalize = function(input)
       var subjects = {};
       _flatten(null, null, expanded, subjects);
 
-      // append subjects to array
+      // append subjects with sorted properties to array
       for(var key in subjects)
       {
-         rval.push(subjects[key]);
+         var s = subjects[key];
+         var sorted = {};
+         var keys = Object.keys(s).sort();
+         for(var i in keys)
+         {
+            var k = keys[i];
+            sorted[k] = s[k];
+         }
+         rval.push(sorted);
       }
 
       // canonicalize blank nodes
