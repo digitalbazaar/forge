@@ -1614,6 +1614,9 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
             // recurse into adjacent values
             for(var i2 in values)
             {
+               // TODO: optimizatino: for each value, see if the value already
+               // has a shortest serialization for the given direction that
+               // can be reused
                this.serializeBlankNode(s, values[i2].s, m, dir);
             }
             
