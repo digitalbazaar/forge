@@ -1616,42 +1616,26 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       mb.mapped[iri] = true;
       var top = mb.mapNode(iri);
       
-      // copy original mapping builder, loop over adjacent values
+      // copy original mapping builder, determine number of possible combos
       var original = mb.copy();
       var values = this.edges[dir][iri].bnodes.slice();
       var combos = Math.max(1, values.length);
       
-      // if the current bnode already has a serialization, see if its mapping
-      // order can be reused
+      // TODO: ensure this optimization does not alter canonical order
+      
+      // if the current bnode already has a serialization, reuse it
       var hint = this.serializations[iri][dir];
       if(hint !== null)
       {
-         // TODO: ensure this optimization does not alter canonical order
-         
-         // reuse mapping order if none of the adjacent nodes have already been
-         // mapped
-         var reuse = true;
-         for(var i in values)
+         var hm = hint.m;
+         values.sort(function(a, b)
          {
-            if(values[i] in mb.mapping)
-            {
-               reuse = false;
-               break;
-            }
-         }
-         
-         // sort values according to existing mapping and only build one combo
-         if(reuse)
-         {
-            var hm = hint.m;
-            values.sort(function(a, b)
-            {
-               return _compare(hm[a.s], hm[b.s]);
-            });
-            combos = 1;
-         }
+            return _compare(hm[a.s], hm[b.s]);
+         });
+         combos = 1;
       }
       
+      // loop over adjacent possible combinations
       for(var i = 0; i < combos; ++i)
       {
          var m = (i === 0) ? mb : original.copy();
