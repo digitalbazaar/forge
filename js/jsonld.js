@@ -620,7 +620,7 @@ var _expand = function(ctx, property, value, expandSubjects)
             {
                _setProperty(rval, key, _clone(value[key]));
             }
-            else if(key !== '@context' && key !== '@coerce')
+            else if(key !== '@context')
             {
                // set object to expanded property
                _setProperty(
@@ -1619,8 +1619,40 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       // copy original mapping builder, loop over adjacent values
       var original = mb.copy();
       var values = this.edges[dir][iri].bnodes.slice();
-      var loop = Math.max(1, values.length);
-      for(var i = 0; i < loop; ++i)
+      var combos = Math.max(1, values.length);
+      
+      // if the current bnode already has a serialization, see if its mapping
+      // order can be reused
+      var hint = this.serializations[iri][dir];
+      if(hint !== null)
+      {
+         // TODO: ensure this optimization does not alter canonical order
+         
+         // reuse mapping order if none of the adjacent nodes have already been
+         // mapped
+         var reuse = true;
+         for(var i in values)
+         {
+            if(values[i] in mb.mapping)
+            {
+               reuse = false;
+               break;
+            }
+         }
+         
+         // sort values according to existing mapping and only build one combo
+         if(reuse)
+         {
+            var hm = hint.m;
+            values.sort(function(a, b)
+            {
+               return _compare(hm[a.s], hm[b.s]);
+            });
+            combos = 1;
+         }
+      }
+      
+      for(var i = 0; i < combos; ++i)
       {
          var m = (i === 0) ? mb : original.copy();
          
@@ -1640,9 +1672,6 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
             // recurse into adjacent values
             for(var i2 in values)
             {
-               // TODO: optimization: for each value, see if the value already
-               // has a shortest serialization for the given direction that
-               // can be reused
                this.serializeBlankNode(s, values[i2].s, m, dir);
             }
             
