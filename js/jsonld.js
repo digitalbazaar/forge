@@ -136,7 +136,7 @@ var _compactIri = function(ctx, iri, usedCtx)
             // compact to a CURIE
             if(idx === 0 && iri.length > ctxIri.length)
             {
-               rval = key + ':' + iri.substr(idx + ctxIri.length);
+               rval = key + ':' + iri.substr(ctxIri.length);
                if(usedCtx !== null)
                {
                   usedCtx[key] = ctxIri;
@@ -1365,7 +1365,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
       });
       
       // name all bnodes according to the first bnode's relation mappings
-      var bnode = bnodes.shift(1);
+      var bnode = bnodes.shift();
       var iri = bnode[__s]['@iri'];
       var dirs = ['props', 'refs'];
       for(var d in dirs)
@@ -1597,6 +1597,77 @@ var _compareSerializations = function(s1, s2)
 };
 
 /**
+ * Recursively serializes adjacent bnode combinations.
+ * 
+ * @param s the serialization to update.
+ * @param top the top of the serialization.
+ * @param mb the MappingBuilder to use.
+ * @param dir the edge direction to use ('props' or 'refs').
+ * @param mapped all of the already-mapped adjacent bnodes.
+ * @param notMapped all of the not-yet mapped adjacent bnodes.
+ */
+jsonld.Processor.prototype.serializeCombos = function(
+   s, top, mb, dir, mapped, notMapped)
+{
+   // copy mapped nodes
+   mapped = _clone(mapped);
+   
+   // handle recursion
+   if(notMapped.length > 0)
+   {
+      // map first bnode in list
+      mapped[mb.mapNode(notMapped[0].s)] = notMapped[0].s;
+      
+      // recurse into remaining possible combinations
+      var original = mb.copy();
+      notMapped = notMapped.slice(1);
+      var rotations = Math.max(1, notMapped.length);
+      for(var r = 0; r < rotations; ++r)
+      {
+         var m = (r === 0) ? mb : original.copy();
+         this.serializeCombos(s, top, m, dir, mapped, notMapped);
+         
+         // rotate not-mapped for next combination
+         _rotate(notMapped);
+      }
+   }
+   // handle final adjacent node in current combination
+   else
+   {
+      var keys = Object.keys(mapped).sort();
+      mb.output[top] = keys;
+      
+      // optimize away mappings that are already too large
+      var _s = _serializeMapping(mb.output);
+      if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
+      {
+         var oldCount = mb.count;
+         
+         // recurse into adjacent values
+         for(var i in keys)
+         {
+            var k = keys[i];
+            this.serializeBlankNode(s, mapped[k], mb, dir);
+         }
+         
+         // reserialize if more nodes were mapped
+         if(mb.count > oldCount)
+         {
+            _s = _serializeMapping(mb.output);
+         }
+         
+         // update least serialization if new one has been found
+         if(s[dir] === null ||
+            (_compareSerializations(_s, s[dir].s) <= 0 &&
+            _s.length >= s[dir].s.length))
+         {
+            s[dir] = { s: _s, m: mb.mapping };
+         }
+      }
+   }
+};
+
+/**
  * Computes the relation serialization for the given blank node IRI.
  * 
  * @param s the serialization to update.
@@ -1613,24 +1684,23 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       mb.mapped[iri] = true;
       var top = mb.mapNode(iri);
       
-      // copy original mapping builder, determine number of possible combos
+      // copy original mapping builder
       var original = mb.copy();
-      var values = this.edges[dir][iri].bnodes.slice();
-      var combos = Math.max(1, values.length);
       
-      // count the number of values that haven't been mapped, if it is 1 or 0
-      // then only one combination is possible
-      var notMapped = 0;
-      for(var i in values)
+      // split adjacent bnodes on mapped and not-mapped
+      var adj = this.edges[dir][iri].bnodes;
+      var mapped = [];
+      var notMapped = [];
+      for(var i in adj)
       {
-         if(!(values[i].s in mb.mapping))
+         if(adj[i].s in mb.mapping)
          {
-            ++notMapped;
+            mapped[mb.mapping[adj[i].s]] = adj[i].s;
          }
-      }
-      if(notMapped <= 1)
-      {
-         combos = 1;
+         else
+         {
+            notMapped.push(adj[i]);
+         }
       }
       
       // TODO: ensure this optimization does not alter canonical order
@@ -1641,54 +1711,23 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       if(hint !== null)
       {
          var hm = hint.m;
-         values.sort(function(a, b)
+         notMapped.sort(function(a, b)
          {
             return _compare(hm[a.s], hm[b.s]);
          });
-         combos = 1;
+         for(var i in notMapped)
+         {
+            mapped[mb.mapNode(notMapped[i].s)] = notMapped[i].s;
+         }
+         notMapped = [];
       }*/
       
-      // loop over adjacent possible combinations
+      // loop over possible combinations
+      var combos = Math.max(1, notMapped.length);
       for(var i = 0; i < combos; ++i)
       {
          var m = (i === 0) ? mb : original.copy();
-         
-         // map all edge nodes
-         var tmp = [];
-         for(var i2 in values)
-         {
-            tmp.push(m.mapNode(values[i2].s));
-         }
-         m.output[top] = tmp.sort();
-         var oldCount = m.count;
-         
-         // optimize away mappings that are already too large
-         var _s = _serializeMapping(m.output);
-         if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
-         {
-            // recurse into adjacent values
-            for(var i2 in values)
-            {
-               this.serializeBlankNode(s, values[i2].s, m, dir);
-            }
-            
-            // reserialize if more nodes were mapped
-            if(m.count > oldCount)
-            {
-               _s = _serializeMapping(m.output);
-            }
-            
-            // update least serialization if new one has been found
-            if(s[dir] === null ||
-               (_compareSerializations(_s, s[dir].s) <= 0 &&
-               _s.length >= s[dir].s.length))
-            {
-               s[dir] = { s: _s, m: m.mapping };
-            }
-         }
-         
-         // rotate values
-         _rotate(values);
+         this.serializeCombos(s, top, mb, dir, mapped, notMapped);         
       }
    }
 };
