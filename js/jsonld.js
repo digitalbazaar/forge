@@ -1618,10 +1618,26 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       var values = this.edges[dir][iri].bnodes.slice();
       var combos = Math.max(1, values.length);
       
+      // count the number of values that haven't been mapped, if it is 1 or 0
+      // then only one combination is possible
+      var notMapped = 0;
+      for(var i in values)
+      {
+         if(!(values[i].s in mb.mapping))
+         {
+            ++notMapped;
+         }
+      }
+      if(notMapped <= 1)
+      {
+         combos = 1;
+      }
+      
       // TODO: ensure this optimization does not alter canonical order
       
       // if the current bnode already has a serialization, reuse it
-      var hint = this.serializations[iri][dir];
+      /*var hint = (iri in this.serializations) ?
+         this.serializations[iri][dir] : null;
       if(hint !== null)
       {
          var hm = hint.m;
@@ -1630,7 +1646,7 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
             return _compare(hm[a.s], hm[b.s]);
          });
          combos = 1;
-      }
+      }*/
       
       // loop over adjacent possible combinations
       for(var i = 0; i < combos; ++i)
