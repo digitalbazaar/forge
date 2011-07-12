@@ -1563,10 +1563,7 @@ var _recursiveSerializeMapping = function(keys, output, done)
  */
 var _serializeMapping = function(output)
 {
-   // get sorted keys for current output
-   var keys = Object.keys(output).sort();
-   var done = {};
-   return _recursiveSerializeMapping(keys, output, done);
+   return _recursiveSerializeMapping(['s1'], output, {});
 };
 
 /**
