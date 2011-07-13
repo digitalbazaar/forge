@@ -2529,4 +2529,11 @@ jsonld.frame = function(input, frame, options)
    return new jsonld.Processor().frame(input, frame, options);
 };
 
+/**
+ * Creates the JSON-LD default context.
+ *
+ * @return the JSON-LD default context.
+ */
+jsonld.createDefaultContext = _createDefaultContext;
+
 })();
