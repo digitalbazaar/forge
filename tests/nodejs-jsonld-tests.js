@@ -180,7 +180,7 @@ TestRunner.prototype.load = function(filepath)
 /**
  * Reads test JSON files.
  * 
- * @param file the files to read.
+ * @param file the file to read.
  * @param filepath the test filepath.
  * 
  * @return the read JSON.
@@ -227,9 +227,9 @@ TestRunner.prototype.run = function(tests, filepath)
       var test = tests[i];
       if('group' in test)
       {
-         tr.group(test.group);
+         this.group(test.group);
          this.run(test.tests, test.filepath);
-         tr.ungroup();
+         this.ungroup();
       }
       else if(!('name' in test))
       {
@@ -237,7 +237,7 @@ TestRunner.prototype.run = function(tests, filepath)
       }
       else
       {
-         tr.test(test.name);
+         this.test(test.name);
          
          // use parent test filepath as necessary
          if(typeof(test.filepath) === 'undefined') 
@@ -281,7 +281,7 @@ TestRunner.prototype.run = function(tests, filepath)
          }
          
          // check results (only indent output on non-normalize tests)
-         tr.check(test.expect, input, (test.type === 'normalize') ? 0 : 3);
+         this.check(test.expect, input, (test.type === 'normalize') ? 0 : 3);
       }
    }
 };
