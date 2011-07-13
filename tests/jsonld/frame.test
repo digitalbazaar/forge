@@ -36,5 +36,11 @@
       "input": "frame-0006-in.json",
       "frame": "frame-0006-frame.json",
       "expect": "frame-0006-out.json"
+   }, {
+      "name": "input has multiple types",
+      "type": "frame",
+      "input": "frame-0007-in.json",
+      "frame": "frame-0007-frame.json",
+      "expect": "frame-0007-out.json"
    }]
 }
