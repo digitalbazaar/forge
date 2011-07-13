@@ -1342,17 +1342,18 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    {
       var bnode = bnodes[i];
       var iri = bnode[__s]['@iri'];
-      this.serializations[iri] =
-      {
-         'props': null,
-         'refs': null
-      };
       if(c14n.inNamespace(iri))
       {
          // generate names until one is unique
          while(ngTmp.next() in subjects);
          this.renameBlankNode(bnode, ngTmp.current());
+         iri = bnode[__s]['@iri'];
       }
+      this.serializations[iri] =
+      {
+         'props': null,
+         'refs': null
+      };
    }
    
    // keep sorting and naming blank nodes until they are all named
@@ -1394,11 +1395,11 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
          var renamed = [];
          for(var i in keys)
          {
-            var iri = keys[i];
-            if(!c14n.inNamespace(iri) && iri in subjects)
+            var iriK = keys[i];
+            if(!c14n.inNamespace(iri) && iriK in subjects)
             {
-               this.renameBlankNode(subjects[iri], c14n.next());
-               renamed.push(iri);
+               this.renameBlankNode(subjects[iriK], c14n.next());
+               renamed.push(iriK);
             }
          }
          
