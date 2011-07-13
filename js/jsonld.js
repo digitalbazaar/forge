@@ -1689,7 +1689,7 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       
       // split adjacent bnodes on mapped and not-mapped
       var adj = this.edges[dir][iri].bnodes;
-      var mapped = [];
+      var mapped = {};
       var notMapped = [];
       for(var i in adj)
       {
