@@ -1454,9 +1454,9 @@ MappingBuilder = function()
 };
 
 /**
- * Copies a MappingBuilder.
+ * Copies this MappingBuilder.
  * 
- * @param mb the MappingBuilder to copy.
+ * @return the MappingBuilder copy.
  */
 MappingBuilder.prototype.copy = function()
 {
