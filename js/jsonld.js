@@ -100,7 +100,7 @@ var _compactIri = function(ctx, iri, usedCtx)
    for(var key in ctx)
    {
       // skip special context keys (start with '@')
-      if(key.length > 0 && key.indexOf('@') !== 0)
+      if(key.length > 0 && key[0] !== '@')
       {
          // compact to a term
          if(iri === ctx[key])
@@ -127,7 +127,7 @@ var _compactIri = function(ctx, iri, usedCtx)
       for(var key in ctx)
       {
          // skip special context keys (start with '@')
-         if(key.length > 0 && key.indexOf('@') !== 0)
+         if(key.length > 0 && key[0] !== '@')
          {
             // see if IRI begins with the next IRI from the context
             var ctxIri = ctx[key];
