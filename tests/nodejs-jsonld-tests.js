@@ -180,18 +180,18 @@ TestRunner.prototype.load = function(filepath)
 /**
  * Reads test JSON files.
  * 
- * @param files the files to read.
+ * @param file the files to read.
  * @param filepath the test filepath.
  * 
  * @return the read JSON.
  */
-var _readTestJson = function(files, filepath)
+var _readTestJson = function(file, filepath)
 {
    var rval;
    
    try
    {
-      var file = path.join(filepath, files);
+      file = path.join(filepath, file);
       rval = JSON.parse(fs.readFileSync(file, 'utf8'));
    }
    catch(e)
