@@ -1549,7 +1549,7 @@ var _serializeProperties = function(b)
             if(prop[pi].constructor === Object &&
                '@iri' in prop[pi] && _isBlankNodeIri(prop[pi]['@iri']))
             {
-               rval += JSON.stringify({'@iri':''});
+               rval += 'b';
             }
             else
             {
@@ -1620,7 +1620,7 @@ jsonld.Processor.prototype.recursiveSerializeMapping = function(
                   {
                      rval += '|';
                   }
-                  rval += _isBlankNodeIri(refs[r].s) ? '_:b' : refs[r].s;
+                  rval += _isBlankNodeIri(refs[r].s) ? '_' : refs[r].s;
                }
                rval += '>';
             }
