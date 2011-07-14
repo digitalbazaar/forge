@@ -1535,8 +1535,8 @@ var _serializeProperties = function(b)
       if(p !== '@subject')
       {
          var first = true;
-         var prop = (b[p].constructor === Array) ? b[p] : [b[p]];
-         for(var pi in prop)
+         var objs = (b[p].constructor === Array) ? b[p] : [b[p]];
+         for(var oi in objs)
          {
             if(first)
             {
@@ -1546,14 +1546,14 @@ var _serializeProperties = function(b)
             {
                rval += '|';
             }
-            if(prop[pi].constructor === Object &&
-               '@iri' in prop[pi] && _isBlankNodeIri(prop[pi]['@iri']))
+            if(objs[oi].constructor === Object &&
+               '@iri' in objs[oi] && _isBlankNodeIri(objs[oi]['@iri']))
             {
-               rval += 'b';
+               rval += '_:';
             }
             else
             {
-               rval += JSON.stringify(prop[pi]);
+               rval += JSON.stringify(objs[oi]);
             }
          }
       }
@@ -1620,7 +1620,7 @@ jsonld.Processor.prototype.recursiveSerializeMapping = function(
                   {
                      rval += '|';
                   }
-                  rval += _isBlankNodeIri(refs[r].s) ? '_' : refs[r].s;
+                  rval += _isBlankNodeIri(refs[r].s) ? '_:' : refs[r].s;
                }
                rval += '>';
             }
