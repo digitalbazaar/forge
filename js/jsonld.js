@@ -1560,7 +1560,7 @@ var _serializeProperties = function(b)
    }
    
    return rval;
-}
+};
 
 /**
  * Recursively creates a relation serialization (partial or full).
