@@ -230,5 +230,15 @@
       "type": "normalize",
       "input": "normalize-0046-in.json",
       "expect": "normalize-0046-out.json"
+   }, {
+      "name": "deep diff (1)",
+      "type": "normalize",
+      "input": "normalize-0047-in.json",
+      "expect": "normalize-0047-out.json"
+   }, {
+      "name": "deep diff (2)",
+      "type": "normalize",
+      "input": "normalize-0048-in.json",
+      "expect": "normalize-0048-out.json"
    }]
 }

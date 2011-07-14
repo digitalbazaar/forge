@@ -1520,6 +1520,49 @@ var _rotate = function(a)
 };
 
 /**
+ * Serializes the properties of the given bnode for its relation serialization.
+ * 
+ * @param b the blank node.
+ * 
+ * @return the serialized properties.
+ */
+var _serializeProperties = function(b)
+{
+   var rval = '';
+   
+   for(var p in b)
+   {
+      if(p !== '@subject')
+      {
+         var first = true;
+         var prop = (b[p].constructor === Array) ? b[p] : [b[p]];
+         for(var pi in prop)
+         {
+            if(first)
+            {
+               first = false;
+            }
+            else
+            {
+               rval += '|';
+            }
+            if(prop[pi].constructor === Object &&
+               '@iri' in prop[pi] && _isBlankNodeIri(prop[pi]['@iri']))
+            {
+               rval += JSON.stringify({'@iri':''});
+            }
+            else
+            {
+               rval += JSON.stringify(prop[pi]);
+            }
+         }
+      }
+   }
+   
+   return rval;
+}
+
+/**
  * Recursively creates a relation serialization (partial or full).
  * 
  * @param keys the keys to serialize in the current output.
@@ -1528,7 +1571,8 @@ var _rotate = function(a)
  * 
  * @return the relation serialization.
  */
-var _recursiveSerializeMapping = function(keys, output, done)
+jsonld.Processor.prototype.recursiveSerializeMapping = function(
+   keys, output, done)
 {
    var rval = '';
    for(var i in keys)
@@ -1548,8 +1592,40 @@ var _recursiveSerializeMapping = function(keys, output, done)
       {
          done[k] = true;
          var tmp = output[k];
-         rval += k + tmp.join('');
-         rval += _recursiveSerializeMapping(tmp, output, done);
+         for(var t in tmp.k)
+         {
+            var s = tmp.k[t]; 
+            rval += s;
+            var iri = tmp.m[s];
+            if(iri in this.subjects)
+            {
+               var b = this.subjects[iri];
+               
+               // serialize properties
+               rval += '<';
+               rval += _serializeProperties(b);
+               rval += '>';
+               
+               // serialize references
+               rval += '<';
+               var first = true;
+               var refs = this.edges.refs[iri].all;
+               for(var r in refs)
+               {
+                  if(first)
+                  {
+                     first = false;
+                  }
+                  else
+                  {
+                     rval += '|';
+                  }
+                  rval += _isBlankNodeIri(refs[r].s) ? '_:b' : refs[r].s;
+               }
+               rval += '>';
+            }
+         }
+         rval += this.recursiveSerializeMapping(tmp.k, output, done);
       }
    }
    return rval;
@@ -1562,9 +1638,9 @@ var _recursiveSerializeMapping = function(keys, output, done)
  * 
  * @return the relation serialization.
  */
-var _serializeMapping = function(output)
+jsonld.Processor.prototype.serializeMapping = function(output)
 {
-   return _recursiveSerializeMapping(['s1'], output, {});
+   return this.recursiveSerializeMapping(['s1'], output, {});
 };
 
 /**
@@ -1636,10 +1712,10 @@ jsonld.Processor.prototype.serializeCombos = function(
    else
    {
       var keys = Object.keys(mapped).sort();
-      mb.output[top] = keys;
+      mb.output[top] = { k: keys, m: mapped };
       
       // optimize away mappings that are already too large
-      var _s = _serializeMapping(mb.output);
+      var _s = this.serializeMapping(mb.output);
       if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
       {
          var oldCount = mb.count;
@@ -1654,7 +1730,7 @@ jsonld.Processor.prototype.serializeCombos = function(
          // reserialize if more nodes were mapped
          if(mb.count > oldCount)
          {
-            _s = _serializeMapping(mb.output);
+            _s = this.serializeMapping(mb.output);
          }
          
          // update least serialization if new one has been found
