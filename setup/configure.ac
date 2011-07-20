@@ -128,7 +128,8 @@ echo -e "\n--------- Configuring Build Environment -----------"
 PKG_PROG_PKG_CONFIG
 
 # Checking for standard build tools
-AC_PROG_INSTALL()
+AC_PROG_CPP
+AC_PROG_INSTALL
 AS_PATH_PYTHON([2.6])
 
 if test "x$PYTHON" != x; then
