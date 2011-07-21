@@ -142,6 +142,16 @@
  * 
  * The OID for the RSA key algorithm is: 1.2.840.113549.1.1.1
  * 
+ * An EncryptedPrivateKeyInfo:
+ * 
+ * EncryptedPrivateKeyInfo ::= SEQUENCE {
+ *    encryptionAlgorithm  EncryptionAlgorithmIdentifier,
+ *    encryptedData        EncryptedData }
+ *
+ * EncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
+ *
+ * EncryptedData ::= OCTET STRING
+ * 
  * PFX ::= SEQUENCE {
  *    version  INTEGER {v3(3)}(v3,...),
  *    authSafe ContentInfo,
@@ -219,13 +229,16 @@ else if(typeof(module) !== 'undefined' && module.exports)
 {
    var forge =
    {
+      aes: require('./aes'),
       asn1: require('./asn1'),
       md: require('./md'),
+      pkcs5: require('./pbkdf2'),
       pki:
       {
          oids: require('./oids'),
          rsa: require('./rsa')
       },
+      random: require('./random'),
       util: require('./util')
    };
    BigInteger = require('./jsbn');
@@ -458,6 +471,43 @@ var x509CertificateValidator = {
    }]
 };
 
+// validator for a PrivateKeyInfo structure
+var privateKeyValidator = {
+   // PrivateKeyInfo
+   name: 'PrivateKeyInfo',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      // Version (INTEGER)
+      name: 'PrivateKeyInfo.version',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'privateKeyVersion'
+   }, {
+      // privateKeyAlgorithm
+      name: 'PrivateKeyInfo.privateKeyAlgorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+         name: 'AlgorithmIdentifier.algorithm',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OID,
+         constructed: false,
+         capture: 'privateKeyOid'
+      }]
+   }, {
+      // PrivateKey
+      name: 'PrivateKeyInfo',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OCTETSTRING,
+      constructed: false,
+      capture: 'privateKey'
+   }]
+};
+
 // validator for an RSA private key
 var rsaPrivateKeyValidator = {
    // RSAPrivateKey
@@ -528,6 +578,99 @@ var rsaPrivateKeyValidator = {
       type: asn1.Type.INTEGER,
       constructed: false,
       capture: 'privateKeyCoefficient'
+   }]
+};
+
+// validator for an EncryptedPrivateKeyInfo structure
+// Note: Currently only works w/algorithm params 
+var encryptedPrivateKeyValidator = {
+   name: 'EncryptedPrivateKeyInfo',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      name: 'EncryptedPrivateKeyInfo.encryptionAlgorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+         name: 'AlgorithmIdentifier.algorithm',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OID,
+         constructed: false,
+         capture: 'encryptionOid'
+      }, {
+         name: 'AlgorithmIdentifier.parameters',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.SEQUENCE,
+         constructed: true,
+         captureAsn1: 'encryptionParams'
+      }]
+   }, {
+      // encryptedData
+      name: 'EncryptedPrivateKeyInfo.encryptedData',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OCTETSTRING,
+      constructed: false,
+      capture: 'encryptedData'
+   }]
+};
+
+// validator for a PBES2Algorithms structure
+// Note: Currently only works w/PBKDF2 + AES encryption schemes 
+var PBES2AlgorithmsValidator = {
+   name: 'PBES2Algorithms',
+   tagClass: asn1.Class.UNIVERSAL,
+   type: asn1.Type.SEQUENCE,
+   constructed: true,
+   value: [{
+      name: 'PBES2Algorithms.keyDerivationFunc',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+         name: 'PBES2Algorithms.keyDerivationFunc.oid',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OID,
+         constructed: false,
+         capture: 'kdfOid'
+      }, {
+         name: 'PBES2Algorithms.params',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.SEQUENCE,
+         constructed: true,
+         value: [{
+            name: 'PBES2Algorithms.params.salt',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.OCTETSTRING,
+            constructed: false,
+            capture: 'kdfSalt'
+         }, {
+            name: 'PBES2Algorithms.params.iterationCount',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.INTEGER,
+            onstructed: true,
+            capture: 'kdfIterationCount'
+         }]
+      }]
+   }, {
+      name: 'PBES2Algorithms.encryptionScheme',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+         name: 'PBES2Algorithms.encryptionScheme.oid',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OID,
+         constructed: false,
+         capture: 'encOid'
+      }, {
+         name: 'PBES2Algorithms.encryptionScheme.iv',
+         tagClass: asn1.Class.UNIVERSAL,
+         type: asn1.Type.OCTETSTRING,
+         constructed: false,
+         capture: 'encIv'
+      }]
    }]
 };
 
@@ -1918,15 +2061,24 @@ pki.publicKeyToAsn1 = function(key)
 /**
  * Converts a private key from an ASN.1 object.
  * 
- * @param obj the asn1 representation of an RSAPrivateKey.
+ * @param obj the ASN.1 representation of a PrivateKeyInfo containing an
+ *           RSAPrivateKey or an RSAPrivateKey.
  * 
  * @return the private key.
  */
 pki.privateKeyFromAsn1 = function(obj)
 {
-   // get RSAPrivateKey
+   // get PrivateKeyInfo
    var capture = {};
    var errors = [];
+   if(asn1.validate(obj, privateKeyValidator, capture, errors))
+   {
+      obj = asn1.fromDer(forge.util.createBuffer(capture.privateKey));
+   }
+   
+   // get RSAPrivateKey
+   capture = {};
+   errors = [];
    if(!asn1.validate(obj, rsaPrivateKeyValidator, capture, errors))
    {
       throw {
@@ -2037,6 +2189,303 @@ pki.wrapRsaPrivateKey = function(rsaKey)
 };
 
 /**
+ * Encrypts a ASN.1 PrivateKeyInfo object.
+ * 
+ * PBES2Algorithms ALGORITHM-IDENTIFIER ::=
+ *    { {PBES2-params IDENTIFIED BY id-PBES2}, ...}
+ * 
+ * id-PBES2 OBJECT IDENTIFIER ::= {pkcs-5 13}
+ * 
+ * PBES2-params ::= SEQUENCE {
+ *    keyDerivationFunc AlgorithmIdentifier {{PBES2-KDFs}},
+ *    encryptionScheme AlgorithmIdentifier {{PBES2-Encs}}
+ * }
+ * 
+ * PBES2-KDFs ALGORITHM-IDENTIFIER ::=
+ *    { {PBKDF2-params IDENTIFIED BY id-PBKDF2}, ... }
+ * 
+ * PBES2-Encs ALGORITHM-IDENTIFIER ::= { ... }
+ * 
+ * PBKDF2-params ::= SEQUENCE {
+ *    salt CHOICE {
+ *       specified OCTET STRING,
+ *       otherSource AlgorithmIdentifier {{PBKDF2-SaltSources}}
+ *    },
+ *    iterationCount INTEGER (1..MAX),
+ *    keyLength INTEGER (1..MAX) OPTIONAL,
+ *    prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
+ * }
+ * 
+ * @param obj the ASN.1 PrivateKeyInfo object.
+ * @param password the password to encrypt with.
+ * @param options:
+ *    encAlg the encryption algorithm to use ('aes128', 'aes192', 'aes256').
+ *    count the iteration count to use.
+ *    saltSize the salt size to use.
+ * 
+ * @return the ASN.1 EncryptedPrivateKeyInfo.
+ */
+pki.encryptPrivateKeyInfo = function(obj, password, options)
+{
+   // set default options
+   options = options || {};
+   options.saltSize = options.saltSize || 8;
+   options.count = options.count || 2048;
+   options.encAlg = options.encAlg || 'aes128';
+   
+   // generate PBE params
+   var salt = forge.random.getBytes(options.saltSize);
+   var count = options.count;
+   var dkLen;
+   var encOid;
+   if(options.encAlg === 'aes128')
+   {
+      dkLen = 16;
+      encOid = oids['aes128-CBC'];
+   }
+   else if(options.encAlg === 'aes192')
+   {
+      dkLen = 24;
+      encOid = oids['aes192-CBC'];
+   }
+   else if(options.encAlg === 'aes256')
+   {
+      dkLen = 32;
+      encOid = oids['aes256-CBC'];
+   }
+   
+   var countBytes = forge.util.createBuffer();
+   countBytes.putInt16(count);
+   
+   // encrypt private key using pbe SHA-1 and AES
+   var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
+   var iv = forge.random.getBytes(16);
+   var cipher = forge.aes.createEncryptionCipher(dk);
+   cipher.start(iv);
+   cipher.update(asn1.toDer(obj));
+   cipher.finish();
+   
+   // TODO: support more than PBE aes
+   
+   // EncryptedPrivateKeyInfo
+   var rval = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // encryptionAlgorithm (PBES2Algorithms)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(oids['pkcs5PBES2']).getBytes()),
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // keyDerivationFunc
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(oids['pkcs5PBKDF2']).getBytes()),
+               // PBKDF2-params
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+                  // salt
+                  asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
+                  // iteration count
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                     countBytes.getBytes())
+               ]),
+            ]),
+            // encryptionScheme
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(encOid).getBytes()),
+               // iv
+               asn1.create(
+                  asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv),
+            ])
+         ])
+      ]),
+      // encryptedData
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+         cipher.output.getBytes())
+   ]);
+   return rval;
+};
+
+/**
+ * Decrypts a ASN.1 PrivateKeyInfo object.
+ * 
+ * @param obj the ASN.1 EncryptedPrivateKeyInfo object.
+ * @param password the password to decrypt with.
+ * 
+ * @return the ASN.1 PrivateKeyInfo on success, null on failure.
+ */
+pki.decryptPrivateKeyInfo = function(obj, password)
+{
+   var rval = null;
+   
+   // get PBE params
+   var capture = {};
+   var errors = [];
+   if(!asn1.validate(obj, encryptedPrivateKeyValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read encrypted private key. ' +
+            'ASN.1 object is not a supported EncryptedPrivateKeyInfo.',
+         errors: errors
+      };
+   }
+   
+   // check oid
+   var oid = asn1.derToOid(capture.encryptionOid);
+   if(oid !== pki.oids['pkcs5PBES2'])
+   {
+      throw {
+         message: 'Cannot read encrypted private key. Unsupported OID.',
+         oid: oid,
+         supportedOids: ['pkcs5PBES2']
+      };
+   }
+   
+   // get encrypted data
+   var encrypted = forge.util.createBuffer(capture.encryptedData);
+   
+   // get PBE params
+   errors = [];
+   if(!asn1.validate(
+      capture.encryptionParams, PBES2AlgorithmsValidator, capture, errors))
+   {
+      throw {
+         message: 'Cannot read password-based-encryption algorithm ' +
+            'parameters. ASN.1 object is not a supported ' +
+            'EncryptedPrivateKeyInfo.',
+         errors: errors
+      };
+   }
+   
+   // check oids
+   oid = asn1.derToOid(capture.kdfOid);
+   if(oid !== pki.oids['pkcs5PBKDF2'])
+   {
+      throw {
+         message: 'Cannot read encrypted private key. ' +
+            'Unsupported key derivation function OID.',
+         oid: oid,
+         supportedOids: ['pkcs5PBKDF2']
+      };
+   }
+   oid = asn1.derToOid(capture.encOid);
+   if(oid !== pki.oids['aes128-CBC'] &&
+      oid !== pki.oids['aes192-CBC'] &&
+      oid !== pki.oids['aes256-CBC'])
+   {
+      throw {
+         message: 'Cannot read encrypted private key. ' +
+            'Unsupported encryption scheme OID.',
+         oid: oid,
+         supportedOids: ['aes128-CBC', 'aes192-CBC', 'aes256-CBC']
+      };
+   }
+   
+   // set PBE params
+   var salt = capture.kdfSalt;
+   var count = forge.util.createBuffer(capture.kdfIterationCount);
+   count = count.getInt(count.length() << 3);
+   var dkLen;
+   if(oid === pki.oids['aes128-CBC'])
+   {
+      dkLen = 16;
+   }
+   else if(oid === pki.oids['aes192-CBC'])
+   {
+      dkLen = 24;
+   }
+   else if(oid === pki.oids['aes256-CBC'])
+   {
+      dkLen = 32;
+   }
+   
+   // decrypt private key using pbe SHA-1 and AES
+   var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
+   var iv = capture.encIv;
+   var cipher = forge.aes.createDecryptionCipher(dk);
+   cipher.start(iv);
+   cipher.update(encrypted);
+   if(cipher.finish())
+   {
+      rval = asn1.fromDer(cipher.output);
+   }
+   
+   return rval;
+};
+
+/**
+ * Converts a EncryptedPrivateKeyInfo to PEM format.
+ * 
+ * @param epki the EncryptedPrivateKeyInfo.
+ * @param maxline the maximum characters per line, defaults to 64.
+ * 
+ * @return the PEM-formatted encrypted private key.
+ */
+pki.encryptedPrivateKeyToPem = function(epki, maxline)
+{
+   // convert to DER, then base64-encode
+   var out = asn1.toDer(epki);
+   out = forge.util.encode64(out.getBytes(), maxline || 64);
+   return (
+      '-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n' +
+      out +
+      '\r\n-----END ENCRYPTED PRIVATE KEY-----');
+};
+
+/**
+ * Converts a PEM-encoded EncryptedPrivateKeyInfo to ASN.1 format.
+ * 
+ * @param pem the EncryptedPrivateKeyInfo in PEM-format.
+ * 
+ * @return the ASN.1 EncryptedPrivateKeyInfo.
+ */
+pki.encryptedPrivateKeyFromPem = function(pem)
+{
+   // parse DER into asn.1 object
+   var der = pki.pemToDer(pem);
+   return asn1.fromDer(der);
+};
+
+/**
+ * Encrypts an RSA private key.
+ * 
+ * @param rsaKey the RSA key to encrypt.
+ * @param password the password to use.
+ * @param options:
+ *    encAlg the encryption algorithm to use ('aes128', 'aes192', 'aes256').
+ *    count the iteration count to use.
+ *    saltSize the salt size to use.
+ * 
+ * @return the PEM-encoded ASN.1 EncryptedPrivateKeyInfo.
+ */
+pki.encryptRsaPrivateKey = function(rsaKey, password, options)
+{
+   // encrypt PrivateKeyInfo
+   var rval = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(rsaKey));
+   rval = pki.encryptPrivateKeyInfo(rval, password, options);
+   return pki.encryptedPrivateKeyToPem(rval);
+};
+
+/**
+ * Decrypts an RSA private key.
+ * 
+ * @param pem the PEM-formatted EncryptedPrivateKeyInfo to decrypt.
+ * @param password the password to use.
+ * 
+ * @return the RSA key on success, null on failure.
+ */
+pki.decryptRsaPrivateKey = function(pem, password)
+{
+   // get EncryptedPrivateKeyInfo as ASN.1
+   var rval = pki.encryptedPrivateKeyFromPem(pem);
+   rval = pki.decryptPrivateKeyInfo(rval, password);
+   if(rval !== null)
+   {
+      rval = pki.privateKeyFromAsn1(rval);
+   }
+   return rval;
+};
+
+/**
  * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
  * password is provided then the private key will be encrypted.
  * 
@@ -2049,52 +2498,83 @@ pki.wrapRsaPrivateKey = function(rsaKey)
 pki.toPkcs12Asn1 = function(key, cert, password)
 {
    // TODO: tests (pkcs12-related code is untested)
-   // TODO: implement password support
-   // TODO: use 'pkcs8ShroudedKeyBag' when using a password
-   
-   // get the private key and certificate as ASN.1 objects 
-   var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
-   var certAsn1 = pki.certificateToAsn1(cert);
+   // TODO: implement password-based-encryption for the whole package
    
    // create safe bag for private key
-   var keySafeBag =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // bagId
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(oids['keyBag']).getBytes()),
-         // bagValue
-         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-            // PrivateKeyInfo
-            asn1.toDer(
-               pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key))).getBytes())
-         // bagAttributes (OPTIONAL)
-      ]);
+   var keyBag = null;
+   if(key !== null)
+   {
+      var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
+      if(password === null)
+      {
+         // no encryption
+         keyBag =
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               // bagId
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(oids['keyBag']).getBytes()),
+               // bagValue
+               asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+                  // PrivateKeyInfo
+                  asn1.toDer(pkAsn1).getBytes())
+               // bagAttributes (OPTIONAL)
+            ]);
+      }
+      else
+      {
+         // encrypted PrivateKeyInfo
+         keyBag =
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+               // bagId
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                  asn1.oidToDer(oids['pkcs8ShroudedKeyBag']).getBytes()),
+               // bagValue
+               asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+                  // EncryptedPrivateKeyInfo
+                  asn1.toDer(pki.encryptPrivateKeyInfo(
+                     pkAsn1, password)).getBytes())
+               // bagAttributes (OPTIONAL)
+            ]);         
+      }
+   }
    
    // create safe bag for certificate
-   var certSafeBag =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-         // bagId
-         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(oids['certBag']).getBytes()),
-         // bagValue
-         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-            // CertBag
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-               // certId
-               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-                  asn1.oidToDer(oids['x509Certificate']).getBytes()),
-               // certValue (x509Certificate)
-               asn1.create(
-                  asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-                  asn1.toDer(pki.certificateToAsn1(cert)).getBytes())
-               ]))
-         // bagAttributes (OPTIONAL)
-      ]);
+   if(cert !== null)
+   {
+      var certAsn1 = pki.certificateToAsn1(cert);
+      var certSafeBag =
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // bagId
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(oids['certBag']).getBytes()),
+            // bagValue
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+               // CertBag
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+                  // certId
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                     asn1.oidToDer(oids['x509Certificate']).getBytes()),
+                  // certValue (x509Certificate)
+                  asn1.create(
+                     asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+                     asn1.toDer(certAsn1).getBytes())
+                  ]))
+            // bagAttributes (OPTIONAL)
+         ]);
+   }
    
    // create SafeContents
+   var bags = [];
+   if(key !== null)
+   {
+      bags.push(keyBag);
+   }
+   if(cert !== null)
+   {
+      bags.push(certSafeBag);
+   }
    var safeContents =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
-         [keySafeBag, certSafeBag]);
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, bags);
    
    // create AuthenticatedSafe
    var safe = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [

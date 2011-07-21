@@ -78,6 +78,18 @@ oids['secretBag'] = '1.2.840.113549.1.12.10.1.5';
 oids['1.2.840.113549.1.12.10.1.6'] = 'safeContentsBag';
 oids['safeContentsBag'] = '1.2.840.113549.1.12.10.1.6';
 
+// password-based-encryption for pkcs#12
+oids['1.2.840.113549.1.5.13'] = 'pkcs5PBES2';
+oids['pkcs5PBES2'] = '1.2.840.113549.1.5.13';
+oids['1.2.840.113549.1.5.12'] = 'pkcs5PBKDF2';
+oids['pkcs5PBKDF2'] = '1.2.840.113549.1.5.12';
+oids['2.16.840.1.101.3.4.1.2'] = 'aes128-CBC';
+oids['aes128-CBC'] = '2.16.840.1.101.3.4.1.2';
+oids['2.16.840.1.101.3.4.1.22'] = 'aes192-CBC';
+oids['aes192-CBC'] = '2.16.840.1.101.3.4.1.22';
+oids['2.16.840.1.101.3.4.1.42'] = 'aes256-CBC';
+oids['aes256-CBC'] = '2.16.840.1.101.3.4.1.42';
+
 // certificate issuer/subject OIDs
 oids['2.5.4.3'] = 'commonName';
 oids['commonName'] = '2.5.4.3';

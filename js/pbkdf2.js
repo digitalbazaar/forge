@@ -21,6 +21,7 @@ else if(typeof(module) !== 'undefined' && module.exports)
 {
    var forge =
    {
+      hmac: require('./hmac'),
       md: require('./md'),
       util: require('./util')
    };
