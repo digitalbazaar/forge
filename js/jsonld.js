@@ -2110,7 +2110,11 @@ var _isDuckType = function(input, frame)
    if(!(type in frame))
    {
       // get frame properties that must exist on input
-      var props = Object.keys(frame);
+      var props = Object.keys(frame).filter(function(e)
+      {
+         // filter non-keywords
+         return e.indexOf('@') !== 0;
+      });
       if(props.length === 0)
       {
          // input always matches if there are no properties
@@ -2156,6 +2160,10 @@ var _frame = function(subjects, input, frame, embeds, options)
    {
       rval = [];
       frames = frame;
+      if(frames.length === 0)
+      {
+         frames.push({'@embed': false});
+      }
    }
    else
    {
@@ -2172,7 +2180,8 @@ var _frame = function(subjects, input, frame, embeds, options)
       if(frame.constructor !== Object)
       {
          throw {
-            message: 'Invalid JSON-LD frame. Frame type is not a map or array.'
+            message: 'Invalid JSON-LD frame. ' +
+               'Frame must be an object or an array.'
          };
       }
       
@@ -2180,10 +2189,18 @@ var _frame = function(subjects, input, frame, embeds, options)
       values[i] = [];
       for(var n = 0; n < input.length && limit !== 0; ++n)
       {
-         // add input to list if it matches frame specific type or duck-type
-         if(_isType(input[n], frame) || _isDuckType(input[n], frame))
+         // dereference input if it refers to a subject
+         var next = input[n];
+         if(next.constructor === Object && '@iri' in next &&
+            next['@iri'] in subjects)
          {
-            values[i].push(input[n]);
+            next = subjects[next['@iri']];
+         }
+         
+         // add input to list if it matches frame specific type or duck-type
+         if(_isType(next, frame) || _isDuckType(next, frame))
+         {
+            values[i].push(next);
             --limit;
          }
       }
@@ -2215,7 +2232,8 @@ var _frame = function(subjects, input, frame, embeds, options)
             // TODO: possibly support multiple embeds in the future ... and
             // instead only prevent cycles?
             throw {
-               message: 'Multiple embeds of the same subject is not supported.',
+               message: 'More than one embed of the same subject is not ' +
+                  'supported.',
                subject: value[__s]['@iri']
             };
          }

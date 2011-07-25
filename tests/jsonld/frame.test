@@ -42,5 +42,11 @@
       "input": "frame-0007-in.json",
       "frame": "frame-0007-frame.json",
       "expect": "frame-0007-out.json"
+   }, {
+      "name": "array framing cases",
+      "type": "frame",
+      "input": "frame-0008-in.json",
+      "frame": "frame-0008-frame.json",
+      "expect": "frame-0008-out.json"
    }]
 }
