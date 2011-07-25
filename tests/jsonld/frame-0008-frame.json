@@ -4,7 +4,7 @@
    },
    "@type": "ex:Example",
    "ex:literal": [],
-   "ex:embedded": [{}],
+   "ex:embedded": [],
    "ex:single": [],
-   "ex:mixed": []
+   "ex:mixed": [{"@embed": false}]
 }

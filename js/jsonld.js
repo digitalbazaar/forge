@@ -2162,7 +2162,7 @@ var _frame = function(subjects, input, frame, embeds, options)
       frames = frame;
       if(frames.length === 0)
       {
-         frames.push({'@embed': false});
+         frames.push({});
       }
    }
    else
