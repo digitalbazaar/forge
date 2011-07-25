@@ -1,0 +1,10 @@
+{
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "@type": "ex:Example",
+   "ex:literal": [],
+   "ex:embedded": [{}],
+   "ex:single": [],
+   "ex:mixed": []
+}

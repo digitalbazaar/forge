@@ -1,0 +1,26 @@
+{
+   "@subject": "http://example.org/test/#example",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "@type": "ex:Example",
+   "ex:literal": ["str1", "str2", "str3"],
+   "ex:single": ["single"],
+   "ex:embedded": [
+   {
+      "@subject": "http://example.org/test#subject1",
+      "ex:prop": "property"
+   }],
+   "ex:mixed": [
+   {
+      "@iri": "http://example.org/test#iri1"
+   },
+   "literal1",
+   {
+      "@iri": "http://example.org/test#iri2"
+   },
+   "literal2",
+   {
+      "@iri": "http://example.org/test#subject2"
+   }]
+}
