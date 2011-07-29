@@ -1006,7 +1006,11 @@ var _flatten = function(parent, parentProperty, value, subjects)
 {
    var flattened = null;
    
-   if(value.constructor === Array)
+   if(value === null)
+   {
+      // drop null values
+   }
+   else if(value.constructor === Array)
    {
       // list of objects or a disjoint graph
       for(var i in value)
