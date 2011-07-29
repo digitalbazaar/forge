@@ -54,5 +54,11 @@
       "input": "frame-0009-in.json",
       "frame": "frame-0009-frame.json",
       "expect": "frame-0009-out.json"
+   }, {
+      "name": "property CURIE conflict",
+      "type": "frame",
+      "input": "frame-0010-in.json",
+      "frame": "frame-0010-frame.json",
+      "expect": "frame-0010-out.json"
    }]
 }

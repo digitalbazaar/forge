@@ -265,11 +265,11 @@ TestRunner.prototype.run = function(tests, filepath)
          }
          else if(type === 'expand')
          {
-            input = jsonld.removeContext(input);
+            input = jsonld.expand(input);
          }
          else if(type === 'compact')
          {
-            input = jsonld.addContext(test.context, input);
+            input = jsonld.compact(test.context, input);
          }
          else if(type === 'frame')
          {

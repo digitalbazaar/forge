@@ -412,7 +412,9 @@ var _compact = function(ctx, property, value, usedCtx)
    
    if(value === null)
    {
+      // return null, but check coerce type to add to usedCtx
       rval = null;
+      _getCoerceType(ctx, property, usedCtx);
    }
    else if(value.constructor === Array)
    {
@@ -442,10 +444,13 @@ var _compact = function(ctx, property, value, usedCtx)
       {
          if(value[key] !== '@context')
          {
-            // set object to compacted property
-            _setProperty(
-               rval, _compactIri(ctx, key, usedCtx),
-               _compact(ctx, key, value[key], usedCtx));
+            // set object to compacted property, only overwrite existing
+            // properties if the property actually compacted
+            var p = _compactIri(ctx, key, usedCtx);
+            if(p !== key || !(p in rval))
+            {
+               rval[p] = _compact(ctx, key, value[key], usedCtx);
+            }
          }
       }
    }
