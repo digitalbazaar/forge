@@ -240,5 +240,10 @@
       "type": "normalize",
       "input": "normalize-0048-in.json",
       "expect": "normalize-0048-out.json"
+   }, {
+      "name": "remove null",
+      "type": "normalize",
+      "input": "normalize-0049-in.json",
+      "expect": "normalize-0049-out.json"
    }]
 }

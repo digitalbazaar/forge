@@ -584,10 +584,15 @@ var _expand = function(ctx, property, value, expandSubjects)
    var rval;
    
    // TODO: add data format error detection?
-
+   
+   // value is null, nothing to expand
+   if(value === null)
+   {
+      rval = null;
+   }
    // if no property is specified and the value is a string (this means the
    // value is a property itself), expand to an IRI
-   if(property === null && value.constructor === String)
+   else if(property === null && value.constructor === String)
    {
       rval = _expandTerm(ctx, value, null);
    }
@@ -941,7 +946,11 @@ var _createNameGenerator = function(prefix)
  */
 var _collectSubjects = function(input, subjects, bnodes)
 {
-   if(input.constructor === Array)
+   if(input === null)
+   {
+      // nothing to collect
+   }
+   else if(input.constructor === Array)
    {
       for(var i in input)
       {
@@ -1047,19 +1056,25 @@ var _flatten = function(parent, parentProperty, value, subjects)
          // flatten embeds
          for(var key in value)
          {
-            if(value[key].constructor === Array)
+            var v = value[key];
+            
+            // drop null values
+            if(v !== null)
             {
-               subject[key] = [];
-               _flatten(subject[key], null, value[key], subjects);
-               if(subject[key].length === 1)
+               if(v.constructor === Array)
                {
-                  // convert subject[key] to object if only 1 value was added
-                  subject[key] = subject[key][0];
+                  subject[key] = [];
+                  _flatten(subject[key], null, v, subjects);
+                  if(subject[key].length === 1)
+                  {
+                     // convert subject[key] to object if it has only 1
+                     subject[key] = subject[key][0];
+                  }
                }
-            }
-            else
-            {
-               _flatten(subject, key, value[key], subjects);
+               else
+               {
+                  _flatten(subject, key, v, subjects);
+               }
             }
          }
       }
