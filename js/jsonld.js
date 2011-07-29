@@ -57,7 +57,7 @@ var _createDefaultContext = function()
       rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
       owl: 'http://www.w3.org/2002/07/owl#',
       xsd: 'http://www.w3.org/2001/XMLSchema#',
-      dcterms: 'http://purl.org/dc/terms/',
+      dc: 'http://purl.org/dc/terms/',
       foaf: 'http://xmlns.com/foaf/0.1/',
       cal: 'http://www.w3.org/2002/12/cal/ical#',
       vcard: 'http://www.w3.org/2006/vcard/ns#',
