@@ -2323,10 +2323,10 @@ var _frame = function(subjects, input, frame, embeds, options)
                         {
                            if(value[key][i] === null)
                            {
-                              if(!omitOn)
+                              // do not auto-include null in arrays
+                              if(!omitOn && '@default' in f)
                               {
-                                 tmp.push('@default' in f ?
-                                    f['@default'] : null);
+                                 tmp.push(f['@default']);
                               }
                            }
                            else
