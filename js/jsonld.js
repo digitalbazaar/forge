@@ -621,7 +621,8 @@ var _expand = function(ctx, property, value, expandSubjects)
          for(var key in value)
          {
             // preserve frame keywords
-            if(key === '@embed' || key === '@explicit')
+            if(key === '@embed' || key === '@explicit' ||
+               key === '@default' || key === '@omitDefault')
             {
                _setProperty(rval, key, _clone(value[key]));
             }
@@ -2254,7 +2255,7 @@ var _frame = function(subjects, input, frame, embeds, options)
             {
                for(key in value)
                {
-                  // always include subject
+                  // do not remove subject or any key in the frame
                   if(key !== __s && !(key in frame))
                   {
                      delete value[key];
@@ -2268,11 +2269,12 @@ var _frame = function(subjects, input, frame, embeds, options)
                // skip keywords and type query
                if(key.indexOf('@') !== 0 && key !== jsonld.ns.rdf + 'type')
                {
+                  var f = frame[key];
                   if(key in value)
                   {
                      // build input and do recursion
-                     input = (value[key].constructor === Array) ?
-                        value[key] : [value[key]];
+                     var v = value[key];
+                     input = (v.constructor === Array) ? v : [v];
                      for(var n in input)
                      {
                         // replace reference to subject w/subject
@@ -2282,13 +2284,58 @@ var _frame = function(subjects, input, frame, embeds, options)
                            input[n] = subjects[input[n]['@iri']];
                         }
                      }
-                     value[key] = _frame(
-                        subjects, input, frame[key], embeds, options);
+                     value[key] = _frame(subjects, input, f, embeds, options);
                   }
                   else
                   {
                      // add null property to value
                      value[key] = null;
+                  }
+                  
+                  // handle setting default value(s)
+                  if(key in value)
+                  {
+                     // use first subframe if frame is an array
+                     if(f.constructor === Array)
+                     {
+                        f = (f.length > 0) ? f[0] : {};
+                     }
+                     
+                     // determine if omit default is on
+                     var omitOn = ('@omitDefault' in f) ?
+                        f['@omitDefault'] : options.defaults.omitDefaultOn;
+                     
+                     if(value[key] === null)
+                     {
+                        if(omitOn)
+                        {
+                           delete value[key];
+                        }
+                        else if('@default' in f)
+                        {
+                           value[key] = f['@default'];
+                        }
+                     }
+                     else if(value[key].constructor === Array)
+                     {
+                        var tmp = [];
+                        for(var i in value[key])
+                        {
+                           if(value[key][i] === null)
+                           {
+                              if(!omitOn)
+                              {
+                                 tmp.push('@default' in f ?
+                                    f['@default'] : null);
+                              }
+                           }
+                           else
+                           {
+                              tmp.push(value[key][i]);
+                           }
+                        }
+                        value[key] = tmp;
+                     }
                   }
                }
             }
@@ -2342,7 +2389,8 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
       defaults:
       {
          embedOn: true,
-         explicitOn: false
+         explicitOn: false,
+         omitDefaultOn: false
       }
    };
    

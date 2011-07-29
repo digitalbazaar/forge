@@ -1,0 +1,11 @@
+{
+   "@subject": "http://example.org/test/#example",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   },
+   "@type": "ex:Example",
+   "ex:p1": "non-default",
+   "ex:p2": "custom-default",
+   "ex:p3": 3,
+   "ex:p5": null
+}

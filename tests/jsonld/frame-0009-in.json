@@ -1,0 +1,8 @@
+{
+   "@subject": "http://example.org/test/#example",
+   "@type": "ex:Example",
+   "ex:p1": "non-default",
+   "@context": {
+      "ex": "http://example.org/vocab#"
+   }
+}

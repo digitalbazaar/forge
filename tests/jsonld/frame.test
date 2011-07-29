@@ -48,5 +48,11 @@
       "input": "frame-0008-in.json",
       "frame": "frame-0008-frame.json",
       "expect": "frame-0008-out.json"
+   }, {
+      "name": "default value",
+      "type": "frame",
+      "input": "frame-0009-in.json",
+      "frame": "frame-0009-frame.json",
+      "expect": "frame-0009-out.json"
    }]
 }
