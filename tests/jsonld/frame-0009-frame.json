@@ -2,9 +2,16 @@
    "@context": {
       "ex": "http://example.org/vocab#"
    },
-   "@type": "ex:Example",
+   "@type": "ex:Example1",
    "ex:p2": {"@default": "custom-default"},
    "ex:p3": {"@default": 3},
    "ex:p4": {"@omitDefault": true},
-   "ex:p5": {}
+   "ex:p5": {},
+   "ex:p6": {
+      "@type": "ex:Example2",
+      "ex:p3": {"@default": 4}
+   },
+   "ex:p7": [{
+      "@type": "ex:Example3"
+   }]
 }

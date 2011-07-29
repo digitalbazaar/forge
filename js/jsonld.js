@@ -2288,12 +2288,12 @@ var _frame = function(subjects, input, frame, embeds, options)
                   }
                   else
                   {
-                     // add null property to value
-                     value[key] = null;
+                     // add empty array/null property to value
+                     value[key] = (f.constructor === Array) ? [] : null;
                   }
                   
-                  // handle setting default value(s)
-                  if(key in value)
+                  // handle setting default value
+                  if(value[key] === null)
                   {
                      // use first subframe if frame is an array
                      if(f.constructor === Array)
@@ -2304,37 +2304,13 @@ var _frame = function(subjects, input, frame, embeds, options)
                      // determine if omit default is on
                      var omitOn = ('@omitDefault' in f) ?
                         f['@omitDefault'] : options.defaults.omitDefaultOn;
-                     
-                     if(value[key] === null)
+                     if(omitOn)
                      {
-                        if(omitOn)
-                        {
-                           delete value[key];
-                        }
-                        else if('@default' in f)
-                        {
-                           value[key] = f['@default'];
-                        }
+                        delete value[key];
                      }
-                     else if(value[key].constructor === Array)
+                     else if('@default' in f)
                      {
-                        var tmp = [];
-                        for(var i in value[key])
-                        {
-                           if(value[key][i] === null)
-                           {
-                              // do not auto-include null in arrays
-                              if(!omitOn && '@default' in f)
-                              {
-                                 tmp.push(f['@default']);
-                              }
-                           }
-                           else
-                           {
-                              tmp.push(value[key][i]);
-                           }
-                        }
-                        value[key] = tmp;
+                        value[key] = f['@default'];
                      }
                   }
                }
