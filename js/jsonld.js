@@ -1701,6 +1701,9 @@ var _compareSerializations = function(s1, s2)
 jsonld.Processor.prototype.serializeCombos = function(
    s, top, mb, dir, mapped, notMapped)
 {
+   // FIXME: build serialization incrementally here and return if it is
+   // greater than the least serialization already
+   
    // copy mapped nodes
    mapped = _clone(mapped);
    
