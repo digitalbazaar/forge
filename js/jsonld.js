@@ -254,10 +254,8 @@ var _setProperty = function(s, p, o)
 };
 
 /**
- * Clones a string/number or an object and sorts the keys. Deep clone
- * is not performed. This function will deep copy arrays, but that feature
- * isn't needed in this implementation at present. If it is needed in the
- * future, it will have to be implemented here.
+ * Clones an object, array, or string/number. If cloning an object, the keys
+ * will be sorted.
  * 
  * @param value the value to clone.
  * 
@@ -274,14 +272,15 @@ var _clone = function(value)
       for(var i in keys)
       {
          var key = keys[i];
-         if(value[key].constructor === Array)
-         {
-            rval[key] = value[key].slice();
-         }
-         else
-         {
-            rval[key] = value[key];
-         }
+         rval[key] = _clone(value[key]);
+      }
+   }
+   else if(value.constructor === Array)
+   {
+      rval = [];
+      for(var i in value)
+      {
+         rval[i] = _clone(value[i]);
       }
    }
    else
@@ -289,36 +288,6 @@ var _clone = function(value)
       rval = value;
    }
    
-   return rval;
-};
-
-/**
- * Clones a context.
- * 
- * @param ctx the context to clone.
- * 
- * @return the clone of the context.
- */
-var _cloneContext = function(ctx)
-{
-   var rval = {};
-   for(var key in ctx)
-   {
-      // deep-copy @coerce
-      if(key === '@coerce')
-      {
-         rval['@coerce'] = {};
-         for(var type in ctx['@coerce'])
-         {
-            var p = ctx['@coerce'][type];
-            rval['@coerce'][type] = (p.constructor === Array) ? p.slice() : p;
-         }
-      }
-      else
-      {
-         rval[key] = ctx[key];
-      }
-   }
    return rval;
 };
 
@@ -1463,9 +1432,12 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
 MappingBuilder = function()
 {
    this.count = 1;
-   this.mapped = {};
+   this.processed = {};
    this.mapping = {};
-   this.output = {};
+   this.adj = {};
+   this.keyStack = [{ keys: ['s1'], idx: 0 }];
+   this.done = {};
+   this.s = '';
 };
 
 /**
@@ -1477,9 +1449,12 @@ MappingBuilder.prototype.copy = function()
 {
    var rval = new MappingBuilder();
    rval.count = this.count;
-   rval.mapped = _clone(this.mapped);
+   rval.processed = _clone(this.processed);
    rval.mapping = _clone(this.mapping);
-   rval.output = _clone(this.output);
+   rval.adj = _clone(this.adj);
+   rval.keyStack = _clone(this.keyStack);
+   rval.done = _clone(this.done);
+   rval.s = this.s;
    return rval;
 };
 
@@ -1506,32 +1481,6 @@ MappingBuilder.prototype.mapNode = function(iri)
       }
    }
    return this.mapping[iri];
-};
-
-/**
- * Marks a relation serialization as dirty if necessary.
- * 
- * @param iri the IRI of the bnode to check.
- * @param changed the old IRI of the bnode that changed.
- * @param dir the direction to check ('props' or 'refs').
- */
-jsonld.Processor.prototype.markSerializationDirty = function(iri, changed, dir)
-{
-   var s = this.serializations[iri];
-   if(s[dir] !== null && changed in s[dir].m)
-   {
-      s[dir] = null;
-   }
-};
-
-/**
- * Rotates the elements in an array one position.
- * 
- * @param a the array.
- */
-var _rotate = function(a)
-{
-   a.unshift.apply(a, a.splice(1, a.length));
 };
 
 /**
@@ -1578,53 +1527,53 @@ var _serializeProperties = function(b)
 };
 
 /**
- * Recursively creates a relation serialization (partial or full).
+ * Recursively increments the relation serialization for a mapping.
  * 
- * @param keys the keys to serialize in the current output.
- * @param output the current mapping builder output.
- * @param done the already serialized keys.
- * 
- * @return the relation serialization.
+ * @param subjects the subjects in the graph.
+ * @param edges the edges in the graph.
  */
-jsonld.Processor.prototype.recursiveSerializeMapping = function(
-   keys, output, done)
+MappingBuilder.prototype.serialize = function(subjects, edges)
 {
-   var rval = '';
-   for(var i in keys)
+   if(this.keyStack.length > 0)
    {
-      var k = keys[i];
-      if(!(k in output))
+      // continue from top of key stack
+      var next = this.keyStack.pop();
+      for(; next.idx < next.keys.length; ++next.idx)
       {
-         break;
-      }
-      
-      if(k in done)
-      {
-         // mark cycle
-         rval += '_' + k;
-      }
-      else
-      {
-         done[k] = true;
-         var tmp = output[k];
-         for(var t in tmp.k)
+         var k = next.keys[next.idx];
+         if(!(k in this.adj))
          {
-            var s = tmp.k[t]; 
-            rval += s;
-            var iri = tmp.m[s];
-            if(iri in this.subjects)
+            this.keyStack.push(next);
+            break;
+         }
+         
+         if(k in this.done)
+         {
+            // mark cycle
+            this.s += '_' + k;
+         }
+         else
+         {
+            // mark key as serialized
+            this.done[k] = true;
+            
+            // serialize top-level key and its details
+            var s = k;
+            var adj = this.adj[k];
+            var iri = adj.i;
+            if(iri in subjects)
             {
-               var b = this.subjects[iri];
+               var b = subjects[iri];
                
                // serialize properties
-               rval += '<';
-               rval += _serializeProperties(b);
-               rval += '>';
+               s += '<';
+               s += _serializeProperties(b);
+               s += '>';
                
                // serialize references
-               rval += '<';
+               s += '<';
                var first = true;
-               var refs = this.edges.refs[iri].all;
+               var refs = edges.refs[iri].all;
                for(var r in refs)
                {
                   if(first)
@@ -1633,29 +1582,47 @@ jsonld.Processor.prototype.recursiveSerializeMapping = function(
                   }
                   else
                   {
-                     rval += '|';
+                     s += '|';
                   }
-                  rval += _isBlankNodeIri(refs[r].s) ? '_:' : refs[r].s;
+                  s += _isBlankNodeIri(refs[r].s) ? '_:' : refs[r].s;
                }
-               rval += '>';
+               s += '>';
             }
+            
+            // serialize adjacent node keys
+            s += adj.k.join('');
+            this.s += s;
+            this.keyStack.push({ keys: adj.k, idx: 0 });
+            this.serialize(subjects, edges);
          }
-         rval += this.recursiveSerializeMapping(tmp.k, output, done);
       }
    }
-   return rval;
 };
 
 /**
- * Creates a relation serialization (partial or full).
+ * Marks a relation serialization as dirty if necessary.
  * 
- * @param output the current mapping builder output.
- * 
- * @return the relation serialization.
+ * @param iri the IRI of the bnode to check.
+ * @param changed the old IRI of the bnode that changed.
+ * @param dir the direction to check ('props' or 'refs').
  */
-jsonld.Processor.prototype.serializeMapping = function(output)
+jsonld.Processor.prototype.markSerializationDirty = function(iri, changed, dir)
 {
-   return this.recursiveSerializeMapping(['s1'], output, {});
+   var s = this.serializations[iri];
+   if(s[dir] !== null && changed in s[dir].m)
+   {
+      s[dir] = null;
+   }
+};
+
+/**
+ * Rotates the elements in an array one position.
+ * 
+ * @param a the array.
+ */
+var _rotate = function(a)
+{
+   a.unshift.apply(a, a.splice(1, a.length));
 };
 
 /**
@@ -1689,27 +1656,25 @@ var _compareSerializations = function(s1, s2)
 };
 
 /**
- * Recursively serializes adjacent bnode combinations.
+ * Recursively serializes adjacent bnode combinations for a bnode.
  * 
  * @param s the serialization to update.
- * @param top the top of the serialization.
+ * @param iri the IRI of the bnode being serialized.
+ * @param siri the serialization name for the bnode IRI.
  * @param mb the MappingBuilder to use.
  * @param dir the edge direction to use ('props' or 'refs').
  * @param mapped all of the already-mapped adjacent bnodes.
  * @param notMapped all of the not-yet mapped adjacent bnodes.
  */
 jsonld.Processor.prototype.serializeCombos = function(
-   s, top, mb, dir, mapped, notMapped)
+   s, iri, siri, mb, dir, mapped, notMapped)
 {
-   // FIXME: build serialization incrementally here and return if it is
-   // greater than the least serialization already
-   
-   // copy mapped nodes
-   mapped = _clone(mapped);
-   
    // handle recursion
    if(notMapped.length > 0)
    {
+      // copy mapped nodes
+      mapped = _clone(mapped);
+      
       // map first bnode in list
       mapped[mb.mapNode(notMapped[0].s)] = notMapped[0].s;
       
@@ -1720,24 +1685,22 @@ jsonld.Processor.prototype.serializeCombos = function(
       for(var r = 0; r < rotations; ++r)
       {
          var m = (r === 0) ? mb : original.copy();
-         this.serializeCombos(s, top, m, dir, mapped, notMapped);
+         this.serializeCombos(s, iri, siri, m, dir, mapped, notMapped);
          
          // rotate not-mapped for next combination
          _rotate(notMapped);
       }
    }
-   // handle final adjacent node in current combination
+   // no more adjacent bnodes to map, update serialization
    else
    {
       var keys = Object.keys(mapped).sort();
-      mb.output[top] = { k: keys, m: mapped };
+      mb.adj[siri] = { i: iri, k: keys, m: mapped };
+      mb.serialize(this.subjects, this.edges);
       
       // optimize away mappings that are already too large
-      var _s = this.serializeMapping(mb.output);
-      if(s[dir] === null || _compareSerializations(_s, s[dir].s) <= 0)
+      if(s[dir] === null || _compareSerializations(mb.s, s[dir].s) <= 0)
       {
-         var oldCount = mb.count;
-         
          // recurse into adjacent values
          for(var i in keys)
          {
@@ -1745,18 +1708,13 @@ jsonld.Processor.prototype.serializeCombos = function(
             this.serializeBlankNode(s, mapped[k], mb, dir);
          }
          
-         // reserialize if more nodes were mapped
-         if(mb.count > oldCount)
-         {
-            _s = this.serializeMapping(mb.output);
-         }
-         
          // update least serialization if new one has been found
+         mb.serialize(this.subjects, this.edges);
          if(s[dir] === null ||
-            (_compareSerializations(_s, s[dir].s) <= 0 &&
-            _s.length >= s[dir].s.length))
+            (_compareSerializations(mb.s, s[dir].s) <= 0 &&
+            mb.s.length >= s[dir].s.length))
          {
-            s[dir] = { s: _s, m: mb.mapping };
+            s[dir] = { s: mb.s, m: mb.mapping };
          }
       }
    }
@@ -1772,12 +1730,12 @@ jsonld.Processor.prototype.serializeCombos = function(
  */
 jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
 {
-   // only do mapping if iri not already mapped
-   if(!(iri in mb.mapped))
+   // only do mapping if iri not already processed
+   if(!(iri in mb.processed))
    {
-      // iri now mapped
-      mb.mapped[iri] = true;
-      var top = mb.mapNode(iri);
+      // iri now processed
+      mb.processed[iri] = true;
+      var siri = mb.mapNode(iri);
       
       // copy original mapping builder
       var original = mb.copy();
@@ -1822,7 +1780,7 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       for(var i = 0; i < combos; ++i)
       {
          var m = (i === 0) ? mb : original.copy();
-         this.serializeCombos(s, top, mb, dir, mapped, notMapped);         
+         this.serializeCombos(s, iri, siri, mb, dir, mapped, notMapped);         
       }
    }
 };
@@ -2464,7 +2422,7 @@ jsonld.addContext = function(ctx, input)
       {
          for(var i in rval)
          {
-            rval[i]['@context'] = _cloneContext(ctxOut);
+            rval[i]['@context'] = _clone(ctxOut);
          }
       }
       else
@@ -2502,8 +2460,8 @@ jsonld.compact = jsonld.changeContext = function(ctx, input)
 jsonld.mergeContexts = function(ctx1, ctx2)
 {
    // copy contexts
-   var merged = _cloneContext(ctx1);
-   var copy = _cloneContext(ctx2);
+   var merged = _clone(ctx1);
+   var copy = _clone(ctx2);
 
    // if the new context contains any IRIs that are in the merged context,
    // remove them from the merged context, they will be overwritten
