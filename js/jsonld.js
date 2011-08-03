@@ -1494,30 +1494,63 @@ var _serializeProperties = function(b)
 {
    var rval = '';
    
+   var first = true;
    for(var p in b)
    {
       if(p !== '@subject')
       {
-         var first = true;
+         if(first)
+         {
+            first = false;
+         }
+         else
+         {
+            rval += '|';
+         }
+         
+         // property
+         rval += '<' + p + '>';
+         
+         // object(s)
          var objs = (b[p].constructor === Array) ? b[p] : [b[p]];
          for(var oi in objs)
          {
-            if(first)
+            var o = objs[oi];
+            if(o.constructor === Object)
             {
-               first = false;
+               // iri
+               if('@iri' in o)
+               {
+                  if(_isBlankNodeIri(o['@iri']))
+                  {
+                     rval += '_:';
+                  }
+                  else
+                  {
+                     rval += '<' + o['@iri'] + '>';
+                  }
+               }
+               // literal
+               else
+               {
+                  rval += '"' + o['@literal'] + '"';
+                  
+                  // datatype literal
+                  if('@datatype' in o)
+                  {
+                     rval += '^^<' + o['@datatype'] + '>';
+                  }
+                  // language literal
+                  else if('@language' in o)
+                  {
+                     rval += '@' + o['@language'];
+                  }
+               }
             }
+            // plain literal
             else
             {
-               rval += '|';
-            }
-            if(objs[oi].constructor === Object &&
-               '@iri' in objs[oi] && _isBlankNodeIri(objs[oi]['@iri']))
-            {
-               rval += '_:';
-            }
-            else
-            {
-               rval += JSON.stringify(objs[oi]);
+               rval += '"' + o + '"';
             }
          }
       }
@@ -1566,13 +1599,11 @@ MappingBuilder.prototype.serialize = function(subjects, edges)
                var b = subjects[iri];
                
                // serialize properties
-               s += '<';
-               s += _serializeProperties(b);
-               s += '>';
+               s += '[' + _serializeProperties(b) + ']';
                
                // serialize references
-               s += '<';
                var first = true;
+               s += '[';
                var refs = edges.refs[iri].all;
                for(var r in refs)
                {
@@ -1584,9 +1615,11 @@ MappingBuilder.prototype.serialize = function(subjects, edges)
                   {
                      s += '|';
                   }
-                  s += _isBlankNodeIri(refs[r].s) ? '_:' : refs[r].s;
+                  s += '<' + refs[r].p + '>';
+                  s += _isBlankNodeIri(refs[r].s) ?
+                     '_:' : ('<' + refs[r].s + '>');
                }
-               s += '>';
+               s += ']';
             }
             
             // serialize adjacent node keys
