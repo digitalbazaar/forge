@@ -25,6 +25,7 @@
          "xsd:anyURI": "ex:contains"
       },
       "dc": "http://purl.org/dc/elements/1.1/",
-      "ex": "http://example.org/vocab#"
+      "ex": "http://example.org/vocab#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
    }
 }

@@ -8,17 +8,36 @@
 (function()
 {
 
+// used by Exception
+var _setMembers = function(self, obj)
+{
+   self.stack = '';
+   for(var key in obj)
+   {
+      self[key] = obj[key];
+   }
+};
+
 // define forge
 if(typeof(window) !== 'undefined')
 {
    var forge = window.forge = window.forge || {};
    forge.jsonld = {};
+   Exception = function(obj)
+   {
+      _setMembers(this, obj);
+   }
 }
 // define node.js module
 else if(typeof(module) !== 'undefined' && module.exports)
 {
    var forge = {};
    module.exports = forge.jsonld = {};
+   Exception = function(obj)
+   {
+      _setMembers(this, obj);
+      this.stack = new Error().stack;
+   };
 }
 
 // local defines for keywords
@@ -42,42 +61,6 @@ var xsd =
    double: jsonld.ns.xsd + 'double',
    integer: jsonld.ns.xsd + 'integer',
    anyURI: jsonld.ns.xsd + 'anyURI'
-};
-
-/**
- * Creates the JSON-LD default context.
- *
- * @return the JSON-LD default context.
- */
-var _createDefaultContext = function()
-{
-   var ctx =
-   {
-      rdf: jsonld.ns.rdf,
-      rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-      owl: 'http://www.w3.org/2002/07/owl#',
-      xsd: 'http://www.w3.org/2001/XMLSchema#',
-      dc: 'http://purl.org/dc/terms/',
-      foaf: 'http://xmlns.com/foaf/0.1/',
-      cal: 'http://www.w3.org/2002/12/cal/ical#',
-      vcard: 'http://www.w3.org/2006/vcard/ns#',
-      geo: 'http://www.w3.org/2003/01/geo/wgs84_pos#',
-      cc: 'http://creativecommons.org/ns#',
-      sioc: 'http://rdfs.org/sioc/ns#',
-      doap: 'http://usefulinc.com/ns/doap#',
-      com: 'http://purl.org/commerce#',
-      ps: 'http://purl.org/payswarm#',
-      gr: 'http://purl.org/goodrelations/v1#',
-      sig: 'http://purl.org/signature#',
-      ccard: 'http://purl.org/commerce/creditcard#',
-      '@coerce':
-      {
-         'xsd:anyURI': ['foaf:homepage', 'foaf:member'],
-         'xsd:integer': 'foaf:age'
-      },
-      '@vocab': ''
-   };
-   return ctx;
 };
 
 /**
@@ -216,10 +199,14 @@ var _expandTerm = function(ctx, term, usedCtx)
    // 5. The property is a relative IRI, prepend the default vocab.
    else
    {
-      rval = ctx['@vocab'] + term;
-      if(usedCtx !== null)
+      rval = term;
+      if('@vocab' in ctx)
       {
-         usedCtx['@vocab'] = ctx['@vocab'];
+         rval = ctx['@vocab'] + rval;
+         if(usedCtx !== null)
+         {
+            usedCtx['@vocab'] = ctx['@vocab'];
+         }
       }
    }
 
@@ -313,7 +300,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
       rval = xsd.anyURI;
    }
    // check type coercion for property
-   else
+   else if('@coerce' in ctx)
    {
       // force compacted property
       p = _compactIri(ctx, p, null);
@@ -360,7 +347,7 @@ var _getCoerceType = function(ctx, property, usedCtx)
          }
       }
    }
-
+   
    return rval;
 };
 
@@ -480,10 +467,12 @@ var _compact = function(ctx, property, value, usedCtx)
          // if the value type does not match the coerce type, it is an error
          else if(type !== coerce)
          {
-            throw {
+            throw new Exception({
                message: 'Cannot coerce type because the datatype does ' +
-                  'not match.'
-            };
+                  'not match.',
+               type: type,
+               expected: coerce
+            });
          }
          // do reverse type-coercion
          else
@@ -1127,11 +1116,8 @@ jsonld.Processor.prototype.normalize = function(input)
 
    if(input !== null)
    {
-      // get default context
-      var ctx = _createDefaultContext();
-
       // expand input
-      var expanded = _expand(ctx, null, input, true);
+      var expanded = _expand({}, null, input, true);
       
       // assign names to unnamed bnodes
       this.nameBlankNodes(expanded);
@@ -2355,11 +2341,11 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    var ctx = null;
    if('@context' in frame)
    {
-      ctx = jsonld.mergeContexts(_createDefaultContext(), frame['@context']);
+      ctx = _clone(frame['@context']);
    }
    
    // remove context from frame
-   frame = jsonld.removeContext(frame);
+   frame = jsonld.expand(frame);
    
    // create framing options
    // TODO: merge in options from function parameter
@@ -2386,7 +2372,7 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    // apply context
    if(ctx !== null && rval !== null)
    {
-      rval = jsonld.addContext(ctx, rval);
+      rval = jsonld.compact(ctx, rval);
    }
    
    return rval;
@@ -2405,81 +2391,82 @@ jsonld.normalize = function(input)
 };
 
 /**
- * Removes the context from a JSON-LD object.
+ * Removes the context from a JSON-LD object, expanding it to full-form.
  *
  * @param input the JSON-LD object to remove the context from.
  * 
  * @return the context-neutral JSON-LD object.
  */
-jsonld.expand = jsonld.removeContext = function(input)
+jsonld.expand = function(input)
 {
    var rval = null;
    
    if(input !== null)
    {
-      var ctx = _createDefaultContext();
-      rval = _expand(ctx, null, input, false);
+      rval = _expand({}, null, input, false);
    }
 
    return rval;
 };
 
 /**
- * Adds the given context to the given context-neutral JSON-LD object.
- *
- * @param ctx the new context to use.
- * @param input the context-neutral JSON-LD object to add the context to.
- * 
- * @return the JSON-LD object with the new context.
- */
-jsonld.addContext = function(ctx, input)
-{
-   var rval;
-
-   // TODO: should context simplification be optional? (ie: remove context
-   // entries that are not used in the output)
-   
-   ctx = jsonld.mergeContexts(_createDefaultContext(), ctx);
-   
-   // setup output context
-   var ctxOut = {};
-   
-   // compact
-   rval = _compact(ctx, null, input, ctxOut);
-   
-   // add context if used
-   if(Object.keys(ctxOut).length > 0)
-   {
-      // add copy of context to every entry in output array
-      if(rval.constructor === Array)
-      {
-         for(var i in rval)
-         {
-            rval[i]['@context'] = _clone(ctxOut);
-         }
-      }
-      else
-      {
-         rval['@context'] = ctxOut;
-      }
-   }
-
-   return rval;
-};
-
-/**
- * Changes the context of JSON-LD object "input" to "context", returning the
- * output.
+ * Expands the given JSON-LD object and then compacts it using the
+ * given context.
  *
  * @param ctx the new context to use.
  * @param input the input JSON-LD object.
  * 
  * @return the output JSON-LD object.
  */
-jsonld.compact = jsonld.changeContext = function(ctx, input)
+jsonld.compact = function(ctx, input)
 {
-   // remove context and then add new one
-   return jsonld.addContext(ctx, jsonld.removeContext(input));
+   var rval = null;
+   
+   // TODO: should context simplification be optional? (ie: remove context
+   // entries that are not used in the output)
+
+   if(input !== null)
+   {
+      // fully expand input
+      input = jsonld.expand(input);
+      
+      var tmp;
+      if(input.constructor === Array)
+      {
+         rval = [];
+         tmp = input;
+      }
+      else
+      {
+         tmp = [input];
+      }
+      
+      for(var i in tmp)
+      {
+         // setup output context
+         var ctxOut = {};
+         
+         // compact
+         var out = _compact(_clone(ctx), null, tmp[i], ctxOut);
+         
+         // add context if used
+         if(Object.keys(ctxOut).length > 0)
+         {
+            out['@context'] = ctxOut;
+         }
+         
+         if(rval === null)
+         {
+            rval = out;
+         }
+         else
+         {
+            rval.push(out);
+         }
+      }
+   }
+
+   return rval;
 };
 
 /**
@@ -2654,12 +2641,5 @@ jsonld.frame = function(input, frame, options)
 {
    return new jsonld.Processor().frame(input, frame, options);
 };
-
-/**
- * Creates the JSON-LD default context.
- *
- * @return the JSON-LD default context.
- */
-jsonld.createDefaultContext = _createDefaultContext;
 
 })();

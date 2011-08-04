@@ -1,0 +1,8 @@
+{
+   "name": "http://xmlns.com/foaf/0.1/name",
+   "homepage": "http://xmlns.com/foaf/0.1/homepage",
+   "xsd": "http://www.w3.org/2001/XMLSchema#",
+   "@coerce": {
+      "xsd:anyURI": ["homepage"]
+   }
+}

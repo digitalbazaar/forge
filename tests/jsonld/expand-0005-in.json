@@ -6,7 +6,8 @@
       },
       "d": "http://purl.org/dc/elements/1.1/",
       "e": "http://example.org/vocab#",
-      "f": "http://xmlns.com/foaf/0.1/"
+      "f": "http://xmlns.com/foaf/0.1/",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
    },
    "e:bool": true,
    "e:double": 1.23,

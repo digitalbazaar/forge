@@ -3,7 +3,8 @@
       "@coerce": {
          "xsd:anyURI": "eg:p"
       },
-      "eg": "http://example.org/vocab#"
+      "eg": "http://example.org/vocab#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
    },
    "@subject": "_:c1",
    "eg:doc": "Test 'null' in various locations",

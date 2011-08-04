@@ -4,7 +4,8 @@
       "@coerce": {
          "xsd:dateTime": "ex:validFrom"
       },
-      "ex": "http://example.org/vocab#"
+      "ex": "http://example.org/vocab#",
+      "xsd": "http://www.w3.org/2001/XMLSchema#"
    },
    "ex:validFrom": "2011-01-25T00:00:00+0000"
 }
