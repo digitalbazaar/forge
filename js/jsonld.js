@@ -2184,15 +2184,8 @@ var _frame = function(subjects, input, frame, embeds, options)
       values[i] = [];
       for(var n = 0; n < input.length && limit !== 0; ++n)
       {
-         // dereference input if it refers to a subject
-         var next = input[n];
-         if(next.constructor === Object && '@iri' in next &&
-            next['@iri'] in subjects)
-         {
-            next = subjects[next['@iri']];
-         }
-         
          // add input to list if it matches frame specific type or duck-type
+         var next = input[n];
          if(_isType(next, frame) || _isDuckType(next, frame))
          {
             values[i].push(next);
