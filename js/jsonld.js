@@ -2639,4 +2639,75 @@ jsonld.frame = function(input, frame, options)
    return new jsonld.Processor().frame(input, frame, options);
 };
 
+/**
+ * Generates triples given a JSON-LD input. Each triple that is generated
+ * results in a call to the given callback. The callback takes 3 parameters:
+ * subject, property, and object. If the callback returns false then this
+ * method will stop generating triples and return. If the callback is null,
+ * then an array with triple objects containing "s", "p", "o" properties will
+ * be returned.
+ * 
+ * The object or "o" property will be a JSON-LD formatted object.
+ * 
+ * @param input the JSON-LD input.
+ * @param callback the triple callback.
+ * 
+ * @return an array of triple objects if callback is null, null otherwise.
+ */
+jsonld.toTriples = function(input, callback)
+{
+   var rval = null;
+   
+   // normalize input
+   normalized = jsonld.normalize(input);
+   
+   // setup default callback
+   callback = callback || null;
+   if(callback === null)
+   {
+      rval = [];
+      callback = function(s, p, o)
+      {
+         rval.push({'s': s, 'p': p, 'o': o});
+      };
+   }
+   
+   // generate triples
+   var quit = false;
+   for(var i1 in normalized)
+   {
+      var e = normalized[i1];
+      var s = e['@subject']['@iri'];
+      for(var p in e)
+      {
+         if(p !== '@subject')
+         {
+            var obj = e[p];
+            if(obj.constructor !== Array)
+            {
+               obj = [obj];
+            }
+            for(var i2 in obj)
+            {
+               quit = (callback(s, p, obj[i2]) === false);
+               if(quit)
+               {
+                  break;
+               }
+            }
+            if(quit)
+            {
+               break;
+            }
+         }
+      }
+      if(quit)
+      {
+         break;
+      }
+   }
+   
+   return rval;
+};
+
 })();
