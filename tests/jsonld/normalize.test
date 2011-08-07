@@ -250,5 +250,10 @@
       "type": "normalize",
       "input": "normalize-0050-in.json",
       "expect": "normalize-0050-out.json"
+   }, {
+      "name": "merging subjects",
+      "type": "normalize",
+      "input": "normalize-0051-in.json",
+      "expect": "normalize-0051-out.json"
    }]
 }

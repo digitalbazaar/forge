@@ -1,0 +1,7 @@
+[{
+   "@subject": "http://example.org/test#example",
+   "http://example.org/test#property": "object1"
+}, {
+   "@subject": "http://example.org/test#example",
+   "http://example.org/test#property": "object2"
+}]

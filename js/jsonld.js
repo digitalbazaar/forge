@@ -1029,19 +1029,23 @@ var _flatten = function(parent, parentProperty, value, subjects)
             // drop null values
             if(v !== null)
             {
-               if(v.constructor === Array)
+               if(key in subject)
                {
-                  subject[key] = [];
-                  _flatten(subject[key], null, v, subjects);
-                  if(subject[key].length === 1)
+                  if(subject[key].constructor !== Array)
                   {
-                     // convert subject[key] to object if it has only 1
-                     subject[key] = subject[key][0];
+                     subject[key] = [subject[key]];
                   }
                }
                else
                {
-                  _flatten(subject, key, v, subjects);
+                  subject[key] = [];
+               }
+               
+               _flatten(subject[key], null, v, subjects);
+               if(subject[key].length === 1)
+               {
+                  // convert subject[key] to object if it has only 1
+                  subject[key] = subject[key][0];
                }
             }
          }
