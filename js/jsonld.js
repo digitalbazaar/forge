@@ -1803,7 +1803,7 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
       for(var i = 0; i < combos; ++i)
       {
          var m = (i === 0) ? mb : original.copy();
-         this.serializeCombos(s, iri, siri, mb, dir, mapped, notMapped);         
+         this.serializeCombos(s, iri, siri, m, dir, mapped, notMapped);         
       }
    }
 };
