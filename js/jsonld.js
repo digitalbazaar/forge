@@ -18,11 +18,10 @@ var _setMembers = function(self, obj)
    }
 };
 
-// define forge
+// define jsonld
 if(typeof(window) !== 'undefined')
 {
-   var forge = window.forge = window.forge || {};
-   forge.jsonld = {};
+   var jsonld = window.jsonld = window.jsonld || {};
    Exception = function(obj)
    {
       _setMembers(this, obj);
@@ -31,8 +30,8 @@ if(typeof(window) !== 'undefined')
 // define node.js module
 else if(typeof(module) !== 'undefined' && module.exports)
 {
-   var forge = {};
-   module.exports = forge.jsonld = {};
+   var jsonld = {};
+   module.exports = jsonld;
    Exception = function(obj)
    {
       _setMembers(this, obj);
@@ -40,15 +39,10 @@ else if(typeof(module) !== 'undefined' && module.exports)
    };
 }
 
-// local defines for keywords
-var __s = '@subject';
-var __t = '@type';
-
 /*
- * JSON-LD API.
- */ 
-var jsonld = forge.jsonld;
-jsonld.ns =
+ * Globals and helper functions.
+ */
+var ns =
 {
    rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
    xsd: 'http://www.w3.org/2001/XMLSchema#'
@@ -56,161 +50,11 @@ jsonld.ns =
 
 var xsd =
 {
-   anyType: jsonld.ns.xsd + 'anyType',
-   boolean: jsonld.ns.xsd + 'boolean',
-   double: jsonld.ns.xsd + 'double',
-   integer: jsonld.ns.xsd + 'integer',
-   anyURI: jsonld.ns.xsd + 'anyURI'
-};
-
-/**
- * Compacts an IRI into a term or CURIE if it can be. IRIs will not be
- * compacted to relative IRIs if they match the given context's default
- * vocabulary.
- *
- * @param ctx the context to use.
- * @param iri the IRI to compact.
- * @param usedCtx a context to update if a value was used from "ctx".
- *
- * @return the compacted IRI as a term or CURIE or the original IRI.
- */
-var _compactIri = function(ctx, iri, usedCtx)
-{
-   var rval = null;
-   
-   // check the context for a term that could shorten the IRI
-   // (give preference to terms over CURIEs)
-   for(var key in ctx)
-   {
-      // skip special context keys (start with '@')
-      if(key.length > 0 && key[0] !== '@')
-      {
-         // compact to a term
-         if(iri === ctx[key])
-         {
-            rval = key;
-            if(usedCtx !== null)
-            {
-               usedCtx[key] = ctx[key];
-            }
-            break;
-         }
-      }
-   }
-   
-   // term not found, if term is rdf type, use built-in keyword
-   if(rval === null && iri === jsonld.ns.rdf + 'type')
-   {
-      rval = __t;
-   }
-   
-   // term not found, check the context for a CURIE prefix
-   if(rval === null)
-   {
-      for(var key in ctx)
-      {
-         // skip special context keys (start with '@')
-         if(key.length > 0 && key[0] !== '@')
-         {
-            // see if IRI begins with the next IRI from the context
-            var ctxIri = ctx[key];
-            var idx = iri.indexOf(ctxIri);
-            
-            // compact to a CURIE
-            if(idx === 0 && iri.length > ctxIri.length)
-            {
-               rval = key + ':' + iri.substr(ctxIri.length);
-               if(usedCtx !== null)
-               {
-                  usedCtx[key] = ctxIri;
-               }
-               break;
-            }
-         }
-      }
-   }
-
-   // could not compact IRI
-   if(rval === null)
-   {
-      rval = iri;
-   }
-
-   return rval;
-};
-
-/**
- * Expands a term into an absolute IRI. The term may be a regular term, a
- * CURIE, a relative IRI, or an absolute IRI. In any case, the associated
- * absolute IRI will be returned.
- *
- * @param ctx the context to use.
- * @param term the term to expand.
- * @param usedCtx a context to update if a value was used from "ctx".
- *
- * @return the expanded term as an absolute IRI.
- */
-var _expandTerm = function(ctx, term, usedCtx)
-{
-   var rval;
-   
-   // 1. If the property has a colon, then it is a CURIE or an absolute IRI:
-   var idx = term.indexOf(':');
-   if(idx != -1)
-   {
-      // get the potential CURIE prefix
-      var prefix = term.substr(0, idx);
-
-      // 1.1. See if the prefix is in the context:
-      if(prefix in ctx)
-      {
-         // prefix found, expand property to absolute IRI
-         rval = ctx[prefix] + term.substr(idx + 1);
-         if(usedCtx !== null)
-         {
-            usedCtx[prefix] = ctx[prefix];
-         }
-      }
-      // 1.2. Prefix is not in context, property is already an absolute IRI:
-      else
-      {
-         rval = term;
-      }
-   }
-   // 2. If the property is in the context, then it's a term.
-   else if(term in ctx)
-   {
-      rval = ctx[term];
-      if(usedCtx !== null)
-      {
-         usedCtx[term] = rval;
-      }
-   }
-   // 3. The property is the special-case subject.
-   else if(term === __s)
-   {
-      rval = __s;
-   }
-   // 4. The property is the special-case rdf type.
-   else if(term === __t)
-   {
-      rval = jsonld.ns.rdf + 'type';
-   }
-   // 5. The property is a relative IRI, prepend the default vocab.
-   else
-   {
-      rval = term;
-      if('@vocab' in ctx)
-      {
-         rval = ctx['@vocab'] + rval;
-         if(usedCtx !== null)
-         {
-            usedCtx['@vocab'] = ctx['@vocab'];
-         }
-      }
-   }
-
-   return rval;
+   anyType: ns.xsd + 'anyType',
+   boolean: ns.xsd + 'boolean',
+   double: ns.xsd + 'double',
+   integer: ns.xsd + 'integer',
+   anyURI: ns.xsd + 'anyURI'
 };
 
 /**
@@ -279,76 +123,539 @@ var _clone = function(value)
 };
 
 /**
- * Gets the coerce type for the given property.
+ * Gets the keywords from a context.
+ * 
+ * @param ctx the context.
+ * 
+ * @return the keywords.
+ */
+var _getKeywords = function(ctx)
+{
+   // TODO: reduce calls to this function by caching keywords in processor
+   // state
+   
+   var rval =
+   {
+      '@datatype': '@datatype',
+      '@iri': '@iri',
+      '@language': '@language',
+      '@literal' : '@literal',
+      '@subject': '@subject',
+      '@type': '@type'
+   };
+   
+   if(ctx)
+   {
+      // gather keyword aliases from context
+      var keywords = {};
+      for(var key in ctx)
+      {
+         if(ctx[key] in rval)
+         {
+            keywords[ctx[key]] = key;
+         }
+      }
+      
+      // overwrite keywords
+      for(var key in keywords)
+      {
+         rval[key] = keywords[key];
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Compacts an IRI into a term or CURIE if it can be. IRIs will not be
+ * compacted to relative IRIs if they match the given context's default
+ * vocabulary.
  *
  * @param ctx the context to use.
- * @param property the property to get the coerced type for.
+ * @param iri the IRI to compact.
  * @param usedCtx a context to update if a value was used from "ctx".
  *
- * @return the coerce type, null for none.
+ * @return the compacted IRI as a term or CURIE or the original IRI.
  */
-var _getCoerceType = function(ctx, property, usedCtx)
+var _compactIri = function(ctx, iri, usedCtx)
 {
    var rval = null;
-
-   // get expanded property
-   var p = _expandTerm(ctx, property, null);
-
-   // built-in type coercion JSON-LD-isms
-   if(p === __s || p === jsonld.ns.rdf + 'type')
+   
+   // check the context for a term that could shorten the IRI
+   // (give preference to terms over CURIEs)
+   for(var key in ctx)
    {
-      rval = xsd.anyURI;
-   }
-   // check type coercion for property
-   else if('@coerce' in ctx)
-   {
-      // force compacted property
-      p = _compactIri(ctx, p, null);
-      
-      for(var type in ctx['@coerce'])
+      // skip special context keys (start with '@')
+      if(key.length > 0 && key[0] !== '@')
       {
-         // get coerced properties (normalize to an array)
-         var props = ctx['@coerce'][type];
-         if(props.constructor !== Array)
+         // compact to a term
+         if(iri === ctx[key])
          {
-            props = [props];
-         }
-         
-         // look for the property in the array
-         for(var i in props)
-         {
-            // property found
-            if(props[i] === p)
+            rval = key;
+            if(usedCtx !== null)
             {
-               rval = _expandTerm(ctx, type, usedCtx);
+               usedCtx[key] = ctx[key];
+            }
+            break;
+         }
+      }
+   }
+   
+   // term not found, if term is rdf type, use @type keyword
+   if(rval === null && iri === ns.rdf + 'type')
+   {
+      rval = _getKeywords(ctx)['@type'];
+   }
+   
+   // term not found, check the context for a CURIE prefix
+   if(rval === null)
+   {
+      for(var key in ctx)
+      {
+         // skip special context keys (start with '@')
+         if(key.length > 0 && key[0] !== '@')
+         {
+            // see if IRI begins with the next IRI from the context
+            var ctxIri = ctx[key];
+            var idx = iri.indexOf(ctxIri);
+            
+            // compact to a CURIE
+            if(idx === 0 && iri.length > ctxIri.length)
+            {
+               rval = key + ':' + iri.substr(ctxIri.length);
                if(usedCtx !== null)
                {
-                  if(!('@coerce' in usedCtx))
-                  {
-                     usedCtx['@coerce'] = {};
-                  }
-                  
-                  if(!(type in usedCtx['@coerce']))
-                  {
-                     usedCtx['@coerce'][type] = p;
-                  }
-                  else
-                  {
-                     var c = usedCtx['@coerce'][type];
-                     if((c.constructor === Array && c.indexOf(p) == -1) ||
-                        (c.constructor === String && c !== p))
-                     {
-                        _setProperty(usedCtx['@coerce'], type, p);
-                     }
-                  }
+                  usedCtx[key] = ctxIri;
                }
                break;
             }
          }
       }
    }
+
+   // could not compact IRI
+   if(rval === null)
+   {
+      rval = iri;
+   }
+
+   return rval;
+};
+
+/**
+ * Expands a term into an absolute IRI. The term may be a regular term, a
+ * CURIE, a relative IRI, or an absolute IRI. In any case, the associated
+ * absolute IRI will be returned.
+ *
+ * @param ctx the context to use.
+ * @param term the term to expand.
+ * @param usedCtx a context to update if a value was used from "ctx".
+ *
+ * @return the expanded term as an absolute IRI.
+ */
+var _expandTerm = function(ctx, term, usedCtx)
+{
+   var rval;
+   
+   // get JSON-LD keywords
+   var keywords = _getKeywords(ctx);
+   
+   // 1. If the property has a colon, then it is a CURIE or an absolute IRI:
+   var idx = term.indexOf(':');
+   if(idx != -1)
+   {
+      // get the potential CURIE prefix
+      var prefix = term.substr(0, idx);
+
+      // 1.1. See if the prefix is in the context:
+      if(prefix in ctx)
+      {
+         // prefix found, expand property to absolute IRI
+         rval = ctx[prefix] + term.substr(idx + 1);
+         if(usedCtx !== null)
+         {
+            usedCtx[prefix] = ctx[prefix];
+         }
+      }
+      // 1.2. Prefix is not in context, property is already an absolute IRI:
+      else
+      {
+         rval = term;
+      }
+   }
+   // 2. If the property is in the context, then it's a term.
+   else if(term in ctx)
+   {
+      rval = ctx[term];
+      if(usedCtx !== null)
+      {
+         usedCtx[term] = rval;
+      }
+   }
+   // 3. The property is the special-case subject.
+   else if(term === keywords['@subject'])
+   {
+      rval = keywords['@subject'];
+   }
+   // 4. The property is the special-case rdf type.
+   else if(term === keywords['@type'])
+   {
+      rval = ns.rdf + 'type';
+   }
+   // 5. The property is a relative IRI, prepend the default vocab.
+   else
+   {
+      rval = term;
+      if('@vocab' in ctx)
+      {
+         rval = ctx['@vocab'] + rval;
+         if(usedCtx !== null)
+         {
+            usedCtx['@vocab'] = ctx['@vocab'];
+         }
+      }
+   }
+
+   return rval;
+};
+
+/*
+ * JSON-LD API.
+ */
+
+/**
+ * Normalizes a JSON-LD object.
+ *
+ * @param input the JSON-LD object to normalize.
+ * 
+ * @return the normalized JSON-LD object.
+ */
+jsonld.normalize = function(input)
+{
+   return new Processor().normalize(input);
+};
+
+/**
+ * Removes the context from a JSON-LD object, expanding it to full-form.
+ *
+ * @param input the JSON-LD object to remove the context from.
+ * 
+ * @return the context-neutral JSON-LD object.
+ */
+jsonld.expand = function(input)
+{
+   return new Processor().expand({}, null, input, false);
+};
+
+/**
+ * Expands the given JSON-LD object and then compacts it using the
+ * given context.
+ *
+ * @param ctx the new context to use.
+ * @param input the input JSON-LD object.
+ * 
+ * @return the output JSON-LD object.
+ */
+jsonld.compact = function(ctx, input)
+{
+   var rval = null;
+   
+   // TODO: should context simplification be optional? (ie: remove context
+   // entries that are not used in the output)
+
+   if(input !== null)
+   {
+      // fully expand input
+      input = jsonld.expand(input);
+      
+      var tmp;
+      if(input.constructor === Array)
+      {
+         rval = [];
+         tmp = input;
+      }
+      else
+      {
+         tmp = [input];
+      }
+      
+      for(var i in tmp)
+      {
+         // setup output context
+         var ctxOut = {};
+         
+         // compact
+         var out = new Processor().compact(_clone(ctx), null, tmp[i], ctxOut);
+         
+         // add context if used
+         if(Object.keys(ctxOut).length > 0)
+         {
+            out['@context'] = ctxOut;
+         }
+         
+         if(rval === null)
+         {
+            rval = out;
+         }
+         else
+         {
+            rval.push(out);
+         }
+      }
+   }
+
+   return rval;
+};
+
+/**
+ * Merges one context with another.
+ *
+ * @param ctx1 the context to overwrite/append to.
+ * @param ctx2 the new context to merge onto ctx1.
+ *
+ * @return the merged context.
+ */
+jsonld.mergeContexts = function(ctx1, ctx2)
+{
+   // copy contexts
+   var merged = _clone(ctx1);
+   var copy = _clone(ctx2);
+
+   // if the new context contains any IRIs that are in the merged context,
+   // remove them from the merged context, they will be overwritten
+   for(var key in copy)
+   {
+      // ignore special keys starting with '@'
+      if(key.indexOf('@') !== 0)
+      {
+         for(var mkey in merged)
+         {
+            if(merged[mkey] === copy[key])
+            {
+               delete merged[mkey];
+               break;
+            }
+         }
+      }
+   }
+
+   // @coerce must be specially-merged, remove from contexts
+   var coerceExists = ('@coerce' in merged) || ('@coerce' in copy);
+   if(coerceExists)
+   {
+      var c1 = ('@coerce' in merged) ? merged['@coerce'] : {};
+      var c2 = ('@coerce' in copy) ? copy['@coerce'] : {};
+      delete merged['@coerce'];
+      delete copy['@coerce'];
+   }
+
+   // merge contexts
+   for(var key in copy)
+   {
+      merged[key] = copy[key];
+   }
+   
+   // special-merge @coerce
+   if(coerceExists)
+   {
+      for(var type in c1)
+      {
+         // append existing-type properties that don't already exist
+         if(type in c2)
+         {
+            var p1 = c1[type];
+            var p2 = c2[type];
+            
+            // normalize props in c2 to array for single-code-path iterating
+            if(p2.constructor !== Array)
+            {
+               p2 = [p2];
+            }
+            
+            // add unique properties from p2 to p1
+            for(var i in p2)
+            {
+               var p = p2[i];
+               if((p1.constructor !== Array && p1 !== p) ||
+                  (p1.constructor === Array && p1.indexOf(p) == -1))
+               {
+                  if(p1.constructor === Array)
+                  {
+                     p1.push(p);
+                  }
+                  else
+                  {
+                     p1 = c1[type] = [p1, p];
+                  }
+               }
+            }
+         }
+      }
+      
+      // add new types from new @coerce
+      for(var type in c2)
+      {
+         if(!(type in c1))
+         {
+            c1[type] = c2[type]; 
+         }
+      }
+      
+      // ensure there are no property duplicates in @coerce
+      var unique = {};
+      var dups = [];
+      for(var type in c1)
+      {
+         var p = c1[type];
+         if(p.constructor === String)
+         {
+            p = [p];
+         }
+         for(var i in p)
+         {
+            if(!(p[i] in unique))
+            {
+               unique[p[i]] = true;
+            }
+            else if(dups.indexOf(p[i]) == -1)
+            {
+               dups.push(p[i]);
+            }
+         }
+      }
+
+      if(dups.length > 0)
+      {
+         throw {
+            message: 'Invalid type coercion specification. More than one ' +
+               'type specified for at least one property.',
+            duplicates: dups
+         };
+      }
+      
+      merged['@coerce'] = c1;
+   }
+
+   return merged;
+};
+
+/**
+ * Expands a term into an absolute IRI. The term may be a regular term, a
+ * CURIE, a relative IRI, or an absolute IRI. In any case, the associated
+ * absolute IRI will be returned.
+ *
+ * @param ctx the context to use.
+ * @param term the term to expand.
+ *
+ * @return the expanded term as an absolute IRI.
+ */
+jsonld.expandTerm = _expandTerm;
+
+/**
+ * Compacts an IRI into a term or CURIE if it can be. IRIs will not be
+ * compacted to relative IRIs if they match the given context's default
+ * vocabulary.
+ *
+ * @param ctx the context to use.
+ * @param iri the IRI to compact.
+ *
+ * @return the compacted IRI as a term or CURIE or the original IRI.
+ */
+jsonld.compactIri = function(ctx, iri)
+{
+   return _compactIri(ctx, iri, null);
+};
+
+/**
+ * Frames JSON-LD input.
+ * 
+ * @param input the JSON-LD input.
+ * @param frame the frame to use.
+ * @param options framing options to use.
+ * 
+ * @return the framed output.
+ */
+jsonld.frame = function(input, frame, options)
+{
+   return new Processor().frame(input, frame, options);
+};
+
+/**
+ * Generates triples given a JSON-LD input. Each triple that is generated
+ * results in a call to the given callback. The callback takes 3 parameters:
+ * subject, property, and object. If the callback returns false then this
+ * method will stop generating triples and return. If the callback is null,
+ * then an array with triple objects containing "s", "p", "o" properties will
+ * be returned.
+ * 
+ * The object or "o" property will be a JSON-LD formatted object.
+ * 
+ * @param input the JSON-LD input.
+ * @param callback the triple callback.
+ * 
+ * @return an array of triple objects if callback is null, null otherwise.
+ */
+jsonld.toTriples = function(input, callback)
+{
+   var rval = null;
+   
+   // normalize input
+   normalized = jsonld.normalize(input);
+   
+   // setup default callback
+   callback = callback || null;
+   if(callback === null)
+   {
+      rval = [];
+      callback = function(s, p, o)
+      {
+         rval.push({'s': s, 'p': p, 'o': o});
+      };
+   }
+   
+   // generate triples
+   var quit = false;
+   for(var i1 in normalized)
+   {
+      var e = normalized[i1];
+      var s = e['@subject']['@iri'];
+      for(var p in e)
+      {
+         if(p !== '@subject')
+         {
+            var obj = e[p];
+            if(obj.constructor !== Array)
+            {
+               obj = [obj];
+            }
+            for(var i2 in obj)
+            {
+               quit = (callback(s, p, obj[i2]) === false);
+               if(quit)
+               {
+                  break;
+               }
+            }
+            if(quit)
+            {
+               break;
+            }
+         }
+      }
+      if(quit)
+      {
+         break;
+      }
+   }
    
    return rval;
+};
+
+/**
+ * Constructs a new JSON-LD processor.
+ */
+var Processor = function()
+{
 };
 
 /**
@@ -362,15 +669,18 @@ var _getCoerceType = function(ctx, property, usedCtx)
  *
  * @return the compacted value.
  */
-var _compact = function(ctx, property, value, usedCtx)
+Processor.prototype.compact = function(ctx, property, value, usedCtx)
 {
    var rval;
+   
+   // get JSON-LD keywords
+   var keywords = _getKeywords(ctx);
    
    if(value === null)
    {
       // return null, but check coerce type to add to usedCtx
       rval = null;
-      _getCoerceType(ctx, property, usedCtx);
+      this.getCoerceType(ctx, property, usedCtx);
    }
    else if(value.constructor === Array)
    {
@@ -378,16 +688,17 @@ var _compact = function(ctx, property, value, usedCtx)
       rval = [];
       for(var i in value)
       {
-         rval.push(_compact(ctx, property, value[i], usedCtx));
+         rval.push(this.compact(ctx, property, value[i], usedCtx));
       }
    }
    // graph literal/disjoint graph
    else if(
       value.constructor === Object &&
-      __s in value && value[__s].constructor === Array)
+      '@subject' in value && value['@subject'].constructor === Array)
    {
       rval = {};
-      rval[__s] = _compact(ctx, property, value[__s], usedCtx);
+      rval[keywords['@subject']] = this.compact(
+         ctx, property, value['@subject'], usedCtx);
    }
    // value has sub-properties if it doesn't define a literal or IRI value
    else if(
@@ -405,7 +716,7 @@ var _compact = function(ctx, property, value, usedCtx)
             var p = _compactIri(ctx, key, usedCtx);
             if(p !== key || !(p in rval))
             {
-               rval[p] = _compact(ctx, key, value[key], usedCtx);
+               rval[p] = this.compact(ctx, key, value[key], usedCtx);
             }
          }
       }
@@ -413,8 +724,8 @@ var _compact = function(ctx, property, value, usedCtx)
    else
    {
       // get coerce type
-      var coerce = _getCoerceType(ctx, property, usedCtx);
-
+      var coerce = this.getCoerceType(ctx, property, usedCtx);
+      
       // get type from value, to ensure coercion is valid
       var type = null;
       if(value.constructor === Object)
@@ -508,7 +819,15 @@ var _compact = function(ctx, property, value, usedCtx)
             }
          }
       }
-      // no type-coercion, just copy value
+      // no type-coercion, just change keywords/copy value
+      else if(value.constructor === Object)
+      {
+         rval = {};
+         for(var key in value)
+         {
+            rval[keywords[key]] = value[key];
+         }
+      }
       else
       {
          rval = _clone(value);
@@ -519,7 +838,8 @@ var _compact = function(ctx, property, value, usedCtx)
       {
          if(rval.constructor === Object)
          {
-            rval['@iri'] = _compactIri(ctx, rval['@iri'], usedCtx);
+            rval[keywords['@iri']] = _compactIri(
+               ctx, rval[keywords['@iri']], usedCtx);
          }
          else
          {
@@ -542,7 +862,7 @@ var _compact = function(ctx, property, value, usedCtx)
  *
  * @return the expanded value.
  */
-var _expand = function(ctx, property, value, expandSubjects)
+Processor.prototype.expand = function(ctx, property, value, expandSubjects)
 {
    var rval;
    
@@ -565,20 +885,23 @@ var _expand = function(ctx, property, value, expandSubjects)
       rval = [];
       for(var i in value)
       {
-         rval.push(_expand(ctx, property, value[i], expandSubjects));
+         rval.push(this.expand(ctx, property, value[i], expandSubjects));
       }
    }
    else if(value.constructor === Object)
    {
-      // value has sub-properties if it doesn't define a literal or IRI value
-      if(!('@literal' in value || '@iri' in value))
+      // if value has a context, use it
+      if('@context' in value)
       {
-         // if value has a context, use it
-         if('@context' in value)
-         {
-            ctx = jsonld.mergeContexts(ctx, value['@context']);
-         }
-
+         ctx = jsonld.mergeContexts(ctx, value['@context']);
+      }
+      
+      // get JSON-LD keywords
+      var keywords = _getKeywords(ctx);
+      
+      // value has sub-properties if it doesn't define a literal or IRI value
+      if(!(keywords['@literal'] in value || keywords['@iri'] in value))
+      {
          // recursively handle sub-properties that aren't a sub-context
          rval = {};
          for(var key in value)
@@ -594,20 +917,39 @@ var _expand = function(ctx, property, value, expandSubjects)
                // set object to expanded property
                _setProperty(
                   rval, _expandTerm(ctx, key, null),
-                  _expand(ctx, key, value[key], expandSubjects));
+                  this.expand(ctx, key, value[key], expandSubjects));
             }
          }
       }
-      // value is already expanded
+      // only need to expand keywords
       else
       {
-         rval = _clone(value);
+         rval = {};
+         if(keywords['@iri'] in value)
+         {
+            rval['@iri'] = value[keywords['@iri']];
+         }
+         else
+         {
+            rval['@literal'] = value[keywords['@literal']];
+            if(keywords['@language'] in value)
+            {
+               rval['@language'] = value[keywords['@language']];
+            }
+            else if(keywords['@datatype'] in value)
+            {
+               rval['@datatype'] = value[keywords['@datatype']];
+            }
+         }
       }
    }
    else
    {
       // do type coercion
-      var coerce = _getCoerceType(ctx, property, null);
+      var coerce = this.getCoerceType(ctx, property, null);
+
+      // get JSON-LD keywords
+      var keywords = _getKeywords(ctx);
 
       // automatic coercion for basic JSON types
       if(coerce === null &&
@@ -628,7 +970,8 @@ var _expand = function(ctx, property, value, expandSubjects)
       }
 
       // coerce to appropriate datatype, only expand subjects if requested
-      if(coerce !== null && (property !== __s || expandSubjects))
+      if(coerce !== null &&
+         (property !== keywords['@subject'] || expandSubjects))
       {
          rval = {};
          
@@ -640,20 +983,159 @@ var _expand = function(ctx, property, value, expandSubjects)
          // other datatype
          else
          {
-            rval['@datatype'] = coerce;
+            rval[keywords['@datatype']] = coerce;
             if(coerce === xsd.double)
             {
                // do special JSON-LD double format
                value = value.toExponential(6).replace(
                   /(e(?:\+|-))([0-9])$/, '$10$2');
             }
-            rval['@literal'] = '' + value;
+            rval[keywords['@literal']] = '' + value;
          }
       }
       // nothing to coerce
       else
       {
          rval = '' + value;
+      }
+   }
+   
+   return rval;
+};
+
+/**
+ * Normalizes a JSON-LD object.
+ *
+ * @param input the JSON-LD object to normalize.
+ * 
+ * @return the normalized JSON-LD object.
+ */
+Processor.prototype.normalize = function(input)
+{
+   var rval = [];
+
+   // TODO: validate context
+   
+   if(input !== null)
+   {
+      // create name generator state
+      this.ng =
+      {
+         tmp: null,
+         c14n: null
+      };
+      
+      // expand input
+      var expanded = this.expand({}, null, input, true);
+      
+      // assign names to unnamed bnodes
+      this.nameBlankNodes(expanded);
+
+      // flatten
+      var subjects = {};
+      _flatten(null, null, expanded, subjects);
+
+      // append subjects with sorted properties to array
+      for(var key in subjects)
+      {
+         var s = subjects[key];
+         var sorted = {};
+         var keys = Object.keys(s).sort();
+         for(var i in keys)
+         {
+            var k = keys[i];
+            sorted[k] = s[k];
+         }
+         rval.push(sorted);
+      }
+
+      // canonicalize blank nodes
+      this.canonicalizeBlankNodes(rval);
+
+      // sort output
+      rval.sort(function(a, b)
+      {
+         return _compare(a['@subject']['@iri'], b['@subject']['@iri']);
+      });
+   }
+
+   return rval;
+};
+
+/**
+ * Gets the coerce type for the given property.
+ *
+ * @param ctx the context to use.
+ * @param property the property to get the coerced type for.
+ * @param usedCtx a context to update if a value was used from "ctx".
+ *
+ * @return the coerce type, null for none.
+ */
+Processor.prototype.getCoerceType = function(ctx, property, usedCtx)
+{
+   var rval = null;
+
+   // get expanded property
+   var p = _expandTerm(ctx, property, null);
+   
+   // built-in type coercion JSON-LD-isms
+   if(p === '@subject' || p === ns.rdf + 'type')
+   {
+      rval = xsd.anyURI;
+   }
+   // check type coercion for property
+   else if('@coerce' in ctx)
+   {
+      // force compacted property
+      p = _compactIri(ctx, p, null);
+      
+      for(var type in ctx['@coerce'])
+      {
+         // get coerced properties (normalize to an array)
+         var props = ctx['@coerce'][type];
+         if(props.constructor !== Array)
+         {
+            props = [props];
+         }
+         
+         // look for the property in the array
+         for(var i in props)
+         {
+            // property found
+            if(props[i] === p)
+            {
+               rval = _expandTerm(ctx, type, usedCtx);
+               
+               // '@iri' is shortcut for xsd.anyURI
+               if(rval === '@iri')
+               {
+                  rval = xsd.anyURI;
+               }
+               
+               if(usedCtx !== null)
+               {
+                  if(!('@coerce' in usedCtx))
+                  {
+                     usedCtx['@coerce'] = {};
+                  }
+                  
+                  if(!(type in usedCtx['@coerce']))
+                  {
+                     usedCtx['@coerce'][type] = p;
+                  }
+                  else
+                  {
+                     var c = usedCtx['@coerce'][type];
+                     if((c.constructor === Array && c.indexOf(p) == -1) ||
+                        (c.constructor === String && c !== p))
+                     {
+                        _setProperty(usedCtx['@coerce'], type, p);
+                     }
+                  }
+               }
+               break;
+            }
+         }
       }
    }
    
@@ -669,8 +1151,8 @@ var _isNamedBlankNode = function(v)
 {
    // look for "_:" at the beginning of the subject
    return (
-      v.constructor === Object && __s in v &&
-      '@iri' in v[__s] && _isBlankNodeIri(v[__s]['@iri']));
+      v.constructor === Object && '@subject' in v &&
+      '@iri' in v['@subject'] && _isBlankNodeIri(v['@subject']['@iri']));
 };
 
 var _isBlankNode = function(v)
@@ -679,7 +1161,7 @@ var _isBlankNode = function(v)
    return (
       v.constructor === Object &&
       !('@iri' in v || '@literal' in v) &&
-      (!(__s in v) || _isNamedBlankNode(v)));
+      (!('@subject' in v) || _isNamedBlankNode(v)));
 };
 
 /**
@@ -808,7 +1290,7 @@ var _compareBlankNodeObjects = function(a, b)
    3. For each property, compare sorted object values.
    3.1. The bnode with fewer objects is first.
    3.2. For each object value, compare only literals and non-bnodes.
-   3.2.1.  The bnode with fewer non-bnodes is first.
+   3.2.1. The bnode with fewer non-bnodes is first.
    3.2.2. The bnode with a string object is first.
    3.2.3. The bnode with the alphabetically-first string is first.
    3.2.4. The bnode with a @literal is first.
@@ -923,17 +1405,17 @@ var _collectSubjects = function(input, subjects, bnodes)
    }
    else if(input.constructor === Object)
    {
-      if(__s in input)
+      if('@subject' in input)
       {
          // graph literal
-         if(input[__s].constructor == Array)
+         if(input['@subject'].constructor == Array)
          {
-            _collectSubjects(input[__s], subjects, bnodes);
+            _collectSubjects(input['@subject'], subjects, bnodes);
          }
          // named subject
          else
          {
-            subjects[input[__s]['@iri']] = input;
+            subjects[input['@subject']['@iri']] = input;
          }
       }
       // unnamed blank node
@@ -979,7 +1461,7 @@ var _flatten = function(parent, parentProperty, value, subjects)
    else if(value.constructor === Object)
    {
       // graph literal/disjoint graph
-      if(__s in value && value[__s].constructor === Array)
+      if('@subject' in value && value['@subject'].constructor === Array)
       {
          // cannot flatten embedded graph literals
          if(parent !== null)
@@ -990,9 +1472,9 @@ var _flatten = function(parent, parentProperty, value, subjects)
          }
          
          // top-level graph literal
-         for(var key in value[__s])
+         for(var key in value['@subject'])
          {
-            _flatten(parent, parentProperty, value[__s][key], subjects);
+            _flatten(parent, parentProperty, value['@subject'][key], subjects);
          }
       }
       // already-expanded value
@@ -1005,18 +1487,18 @@ var _flatten = function(parent, parentProperty, value, subjects)
       {
          // create or fetch existing subject
          var subject;
-         if(value[__s]['@iri'] in subjects)
+         if(value['@subject']['@iri'] in subjects)
          {
-            // FIXME: __s might be a graph literal (as {})
-            subject = subjects[value[__s]['@iri']];
+            // FIXME: '@subject' might be a graph literal (as {})
+            subject = subjects[value['@subject']['@iri']];
          }
          else
          {
             subject = {};
-            if(__s in value)
+            if('@subject' in value)
             {
-               // FIXME: __s might be a graph literal (as {})
-               subjects[value[__s]['@iri']] = subject;
+               // FIXME: '@subject' might be a graph literal (as {})
+               subjects[value['@subject']['@iri']] = subject;
             }
          }
          flattened = subject;
@@ -1060,13 +1542,13 @@ var _flatten = function(parent, parentProperty, value, subjects)
    // add flattened value to parent
    if(flattened !== null && parent !== null)
    {
-      // remove top-level __s for subjects
+      // remove top-level '@subject' for subjects
       // 'http://mypredicate': {'@subject': {'@iri': 'http://mysubject'}}
       // becomes
       // 'http://mypredicate': {'@iri': 'http://mysubject'}
-      if(flattened.constructor === Object && __s in flattened)
+      if(flattened.constructor === Object && '@subject' in flattened)
       {
-         flattened = flattened[__s];
+         flattened = flattened['@subject'];
       }
 
       if(parent.constructor === Array)
@@ -1093,76 +1575,13 @@ var _flatten = function(parent, parentProperty, value, subjects)
    }
 };
 
-/**
- * Constructs a new JSON-LD processor.
- */
-jsonld.Processor = function()
-{
-   this.ng =
-   {
-      tmp: null,
-      c14n: null
-   };
-};
-
-/**
- * Normalizes a JSON-LD object.
- *
- * @param input the JSON-LD object to normalize.
- * 
- * @return the normalized JSON-LD object.
- */
-jsonld.Processor.prototype.normalize = function(input)
-{
-   var rval = [];
-
-   // TODO: validate context
-
-   if(input !== null)
-   {
-      // expand input
-      var expanded = _expand({}, null, input, true);
-      
-      // assign names to unnamed bnodes
-      this.nameBlankNodes(expanded);
-
-      // flatten
-      var subjects = {};
-      _flatten(null, null, expanded, subjects);
-
-      // append subjects with sorted properties to array
-      for(var key in subjects)
-      {
-         var s = subjects[key];
-         var sorted = {};
-         var keys = Object.keys(s).sort();
-         for(var i in keys)
-         {
-            var k = keys[i];
-            sorted[k] = s[k];
-         }
-         rval.push(sorted);
-      }
-
-      // canonicalize blank nodes
-      this.canonicalizeBlankNodes(rval);
-
-      // sort output
-      rval.sort(function(a, b)
-      {
-         return _compare(a[__s]['@iri'], b[__s]['@iri']);
-      });
-   }
-
-   return rval;
-};
 
 /**
  * Assigns unique names to blank nodes that are unnamed in the given input.
  * 
  * @param input the input to assign names to.
  */
-jsonld.Processor.prototype.nameBlankNodes = function(input)
+Processor.prototype.nameBlankNodes = function(input)
 {
    // create temporary blank node name generator
    var ng = this.ng.tmp = _createNameGenerator('tmp');
@@ -1176,11 +1595,11 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
    for(var i in bnodes)
    {
       var bnode = bnodes[i];
-      if(!(__s in bnode))
+      if(!('@subject' in bnode))
       {
          // generate names until one is unique
          while(ng.next() in subjects);
-         bnode[__s] =
+         bnode['@subject'] =
          {
             '@iri': ng.current()
          };
@@ -1196,12 +1615,12 @@ jsonld.Processor.prototype.nameBlankNodes = function(input)
  * @param b the blank node to rename.
  * @param id the new name to use.
  */
-jsonld.Processor.prototype.renameBlankNode = function(b, id)
+Processor.prototype.renameBlankNode = function(b, id)
 {
-   var old = b[__s]['@iri'];
+   var old = b['@subject']['@iri'];
    
    // update bnode IRI
-   b[__s]['@iri'] = id;
+   b['@subject']['@iri'] = id;
    
    // update subjects map
    var subjects = this.subjects;
@@ -1268,7 +1687,7 @@ jsonld.Processor.prototype.renameBlankNode = function(b, id)
  * 
  * @param input the flat input graph to assign names to.
  */
-jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
+Processor.prototype.canonicalizeBlankNodes = function(input)
 {
    // create serialization state
    this.renamed = {};
@@ -1285,7 +1704,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    var bnodes = [];
    for(var i in input)
    {
-      var iri = input[i][__s]['@iri'];
+      var iri = input[i]['@subject']['@iri'];
       subjects[iri] = input[i];
       edges.refs[iri] =
       {
@@ -1315,13 +1734,13 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
    for(var i in bnodes)
    {
       var bnode = bnodes[i];
-      var iri = bnode[__s]['@iri'];
+      var iri = bnode['@subject']['@iri'];
       if(c14n.inNamespace(iri))
       {
          // generate names until one is unique
          while(ngTmp.next() in subjects);
          this.renameBlankNode(bnode, ngTmp.current());
-         iri = bnode[__s]['@iri'];
+         iri = bnode['@subject']['@iri'];
       }
       this.serializations[iri] =
       {
@@ -1341,7 +1760,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
       
       // name all bnodes according to the first bnode's relation mappings
       var bnode = bnodes.shift();
-      var iri = bnode[__s]['@iri'];
+      var iri = bnode['@subject']['@iri'];
       var dirs = ['props', 'refs'];
       for(var d in dirs)
       {
@@ -1383,7 +1802,7 @@ jsonld.Processor.prototype.canonicalizeBlankNodes = function(input)
          for(var i in tmp)
          {
             var b = tmp[i];
-            var iriB = b[__s]['@iri'];
+            var iriB = b['@subject']['@iri'];
             if(!c14n.inNamespace(iriB))
             {
                // mark serializations related to the named bnodes as dirty
@@ -1629,7 +2048,7 @@ MappingBuilder.prototype.serialize = function(subjects, edges)
  * @param changed the old IRI of the bnode that changed.
  * @param dir the direction to check ('props' or 'refs').
  */
-jsonld.Processor.prototype.markSerializationDirty = function(iri, changed, dir)
+Processor.prototype.markSerializationDirty = function(iri, changed, dir)
 {
    var s = this.serializations[iri];
    if(s[dir] !== null && changed in s[dir].m)
@@ -1689,7 +2108,7 @@ var _compareSerializations = function(s1, s2)
  * @param mapped all of the already-mapped adjacent bnodes.
  * @param notMapped all of the not-yet mapped adjacent bnodes.
  */
-jsonld.Processor.prototype.serializeCombos = function(
+Processor.prototype.serializeCombos = function(
    s, iri, siri, mb, dir, mapped, notMapped)
 {
    // handle recursion
@@ -1751,7 +2170,7 @@ jsonld.Processor.prototype.serializeCombos = function(
  * @param mb the MappingBuilder to use.
  * @param dir the edge direction to use ('props' or 'refs').
  */
-jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
+Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
 {
    // only do mapping if iri not already processed
    if(!(iri in mb.processed))
@@ -1778,6 +2197,45 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
             notMapped.push(adj[i]);
          }
       }
+      
+      /*
+      // TODO: sort notMapped using ShallowCompare
+      var self = this;
+      notMapped.sort(function(a, b)
+      {
+         var rval = self.shallowCompareBlankNodes(
+            self.subjects[a.s], self.subjects[b.s]);
+         return rval;
+      });
+      
+      var same = false;
+      var prev = null;
+      for(var i in notMapped)
+      {
+         var curr = this.subjects[notMapped[i].s];
+         if(prev !== null)
+         {
+            if(this.shallowCompareBlankNodes(prev, curr) === 0)
+            {
+               same = true;
+            }
+            else
+            {
+               if(!same)
+               {
+                  mapped[mb.mapNode(prev['@subject'])] = prev['@subject'];
+                  delete notMapped[i - 1];
+               }
+               if(i === notMapped.length - 1)
+               {
+                  mapped[mb.mapNode(curr['@subject'])];
+                  delete notMapped[i];
+               }
+               same = false;
+            }
+         }
+         prev = curr;
+      }*/
       
       // TODO: ensure this optimization does not alter canonical order
       
@@ -1816,13 +2274,13 @@ jsonld.Processor.prototype.serializeBlankNode = function(s, iri, mb, dir)
  * 
  * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b)
+Processor.prototype.deepCompareBlankNodes = function(a, b)
 {
    var rval = 0;
    
    // compare IRIs
-   var iriA = a[__s]['@iri'];
-   var iriB = b[__s]['@iri'];
+   var iriA = a['@subject']['@iri'];
+   var iriB = b['@subject']['@iri'];
    if(iriA === iriB)
    {
       rval = 0;
@@ -1883,7 +2341,7 @@ jsonld.Processor.prototype.deepCompareBlankNodes = function(a, b)
  * 
  * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
+Processor.prototype.shallowCompareBlankNodes = function(a, b)
 {
    var rval = 0;
    
@@ -1921,8 +2379,8 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
    // step #4
    if(rval === 0)
    {
-      var edgesA = this.edges.refs[a[__s]['@iri']].all;
-      var edgesB = this.edges.refs[b[__s]['@iri']].all;
+      var edgesA = this.edges.refs[a['@subject']['@iri']].all;
+      var edgesB = this.edges.refs[b['@subject']['@iri']].all;
       rval = _compare(edgesA.length, edgesB.length);
    }
    
@@ -1950,7 +2408,7 @@ jsonld.Processor.prototype.shallowCompareBlankNodes = function(a, b)
  * 
  * @return -1 if a < b, 0 if a == b, 1 if a > b.
  */
-jsonld.Processor.prototype.compareEdges = function(a, b)
+Processor.prototype.compareEdges = function(a, b)
 {
    var rval = 0;
    
@@ -2000,7 +2458,7 @@ jsonld.Processor.prototype.compareEdges = function(a, b)
  * an object. The edge direction categories for each IRI will be sorted into
  * groups 'all' and 'bnodes'.
  */
-jsonld.Processor.prototype.collectEdges = function()
+Processor.prototype.collectEdges = function()
 {
    var refs = this.edges.refs;
    var props = this.edges.props;
@@ -2011,7 +2469,7 @@ jsonld.Processor.prototype.collectEdges = function()
       var subject = this.subjects[iri];
       for(var key in subject)
       {
-         if(key !== __s)
+         if(key !== '@subject')
          {
             // normalize to array for single codepath
             var object = subject[key];
@@ -2067,9 +2525,9 @@ var _isType = function(input, frame)
    var rval = false;
    
    // check if type(s) are specified in frame and input
-   var type = jsonld.ns.rdf + 'type';
+   var type = ns.rdf + 'type';
    if(type in frame &&
-      input.constructor === Object && __s in input && type in input)
+      input.constructor === Object && '@subject' in input && type in input)
    {
       var tmp = (input[type].constructor === Array) ?
          input[type] : [input[type]];
@@ -2105,7 +2563,7 @@ var _isDuckType = function(input, frame)
    var rval = false;
    
    // frame must not have a specific type
-   var type = jsonld.ns.rdf + 'type';
+   var type = ns.rdf + 'type';
    if(!(type in frame))
    {
       // get frame properties that must exist on input
@@ -2120,7 +2578,7 @@ var _isDuckType = function(input, frame)
          rval = true;
       }
       // input must be a subject with all the given properties
-      else if(input.constructor === Object && __s in input)
+      else if(input.constructor === Object && '@subject' in input)
       {
          rval = true;
          for(var i in props)
@@ -2212,27 +2670,27 @@ var _frame = function(subjects, input, frame, embeds, options)
          if(!embedOn)
          {
             // if value is a subject, only use subject IRI as reference 
-            if(value.constructor === Object && __s in value)
+            if(value.constructor === Object && '@subject' in value)
             {
-               value = value[__s];
+               value = value['@subject'];
             }
          }
          else if(
             value.constructor === Object &&
-            __s in value && value[__s]['@iri'] in embeds)
+            '@subject' in value && value['@subject']['@iri'] in embeds)
          {
             // TODO: possibly support multiple embeds in the future ... and
             // instead only prevent cycles?
             throw {
                message: 'More than one embed of the same subject is not ' +
                   'supported.',
-               subject: value[__s]['@iri']
+               subject: value['@subject']['@iri']
             };
          }
          // if value is a subject, do embedding and subframing
-         else if(value.constructor === Object && __s in value)
+         else if(value.constructor === Object && '@subject' in value)
          {
-            embeds[value[__s]['@iri']] = true;
+            embeds[value['@subject']['@iri']] = true;
             
             // if explicit is on, remove keys from value that aren't in frame
             var explicitOn = ('@explicit' in frame) ?
@@ -2242,7 +2700,7 @@ var _frame = function(subjects, input, frame, embeds, options)
                for(key in value)
                {
                   // do not remove subject or any key in the frame
-                  if(key !== __s && !(key in frame))
+                  if(key !== '@subject' && !(key in frame))
                   {
                      delete value[key];
                   }
@@ -2253,7 +2711,7 @@ var _frame = function(subjects, input, frame, embeds, options)
             for(key in frame)
             {
                // skip keywords and type query
-               if(key.indexOf('@') !== 0 && key !== jsonld.ns.rdf + 'type')
+               if(key.indexOf('@') !== 0 && key !== ns.rdf + 'type')
                {
                   var f = frame[key];
                   if(key in value)
@@ -2327,7 +2785,7 @@ var _frame = function(subjects, input, frame, embeds, options)
  * 
  * @return the framed output.
  */
-jsonld.Processor.prototype.frame = function(input, frame, options)
+Processor.prototype.frame = function(input, frame, options)
 {
    var rval;
    
@@ -2360,7 +2818,7 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    var subjects = {};
    for(var i in input)
    {
-      subjects[input[i][__s]['@iri']] = input[i];
+      subjects[input[i]['@subject']['@iri']] = input[i];
    }
    
    // frame input
@@ -2370,341 +2828,6 @@ jsonld.Processor.prototype.frame = function(input, frame, options)
    if(ctx !== null && rval !== null)
    {
       rval = jsonld.compact(ctx, rval);
-   }
-   
-   return rval;
-};
-
-/**
- * Normalizes a JSON-LD object.
- *
- * @param input the JSON-LD object to normalize.
- * 
- * @return the normalized JSON-LD object.
- */
-jsonld.normalize = function(input)
-{
-   return new jsonld.Processor().normalize(input);
-};
-
-/**
- * Removes the context from a JSON-LD object, expanding it to full-form.
- *
- * @param input the JSON-LD object to remove the context from.
- * 
- * @return the context-neutral JSON-LD object.
- */
-jsonld.expand = function(input)
-{
-   var rval = null;
-   
-   if(input !== null)
-   {
-      rval = _expand({}, null, input, false);
-   }
-
-   return rval;
-};
-
-/**
- * Expands the given JSON-LD object and then compacts it using the
- * given context.
- *
- * @param ctx the new context to use.
- * @param input the input JSON-LD object.
- * 
- * @return the output JSON-LD object.
- */
-jsonld.compact = function(ctx, input)
-{
-   var rval = null;
-   
-   // TODO: should context simplification be optional? (ie: remove context
-   // entries that are not used in the output)
-
-   if(input !== null)
-   {
-      // fully expand input
-      input = jsonld.expand(input);
-      
-      var tmp;
-      if(input.constructor === Array)
-      {
-         rval = [];
-         tmp = input;
-      }
-      else
-      {
-         tmp = [input];
-      }
-      
-      for(var i in tmp)
-      {
-         // setup output context
-         var ctxOut = {};
-         
-         // compact
-         var out = _compact(_clone(ctx), null, tmp[i], ctxOut);
-         
-         // add context if used
-         if(Object.keys(ctxOut).length > 0)
-         {
-            out['@context'] = ctxOut;
-         }
-         
-         if(rval === null)
-         {
-            rval = out;
-         }
-         else
-         {
-            rval.push(out);
-         }
-      }
-   }
-
-   return rval;
-};
-
-/**
- * Merges one context with another.
- *
- * @param ctx1 the context to overwrite/append to.
- * @param ctx2 the new context to merge onto ctx1.
- *
- * @return the merged context.
- */
-jsonld.mergeContexts = function(ctx1, ctx2)
-{
-   // copy contexts
-   var merged = _clone(ctx1);
-   var copy = _clone(ctx2);
-
-   // if the new context contains any IRIs that are in the merged context,
-   // remove them from the merged context, they will be overwritten
-   for(var key in copy)
-   {
-      // ignore special keys starting with '@'
-      if(key.indexOf('@') !== 0)
-      {
-         for(var mkey in merged)
-         {
-            if(merged[mkey] === copy[key])
-            {
-               delete merged[mkey];
-               break;
-            }
-         }
-      }
-   }
-
-   // @coerce must be specially-merged, remove from contexts
-   var coerceExists = ('@coerce' in merged) || ('@coerce' in copy);
-   if(coerceExists)
-   {
-      var c1 = ('@coerce' in merged) ? merged['@coerce'] : {};
-      var c2 = ('@coerce' in copy) ? copy['@coerce'] : {};
-      delete merged['@coerce'];
-      delete copy['@coerce'];
-   }
-
-   // merge contexts
-   for(var key in copy)
-   {
-      merged[key] = copy[key];
-   }
-   
-   // special-merge @coerce
-   if(coerceExists)
-   {
-      for(var type in c1)
-      {
-         // append existing-type properties that don't already exist
-         if(type in c2)
-         {
-            var p1 = c1[type];
-            var p2 = c2[type];
-            
-            // normalize props in c2 to array for single-code-path iterating
-            if(p2.constructor !== Array)
-            {
-               p2 = [p2];
-            }
-            
-            // add unique properties from p2 to p1
-            for(var i in p2)
-            {
-               var p = p2[i];
-               if((p1.constructor !== Array && p1 !== p) ||
-                  (p1.constructor === Array && p1.indexOf(p) == -1))
-               {
-                  if(p1.constructor === Array)
-                  {
-                     p1.push(p);
-                  }
-                  else
-                  {
-                     p1 = c1[type] = [p1, p];
-                  }
-               }
-            }
-         }
-      }
-      
-      // add new types from new @coerce
-      for(var type in c2)
-      {
-         if(!(type in c1))
-         {
-            c1[type] = c2[type]; 
-         }
-      }
-      
-      // ensure there are no property duplicates in @coerce
-      var unique = {};
-      var dups = [];
-      for(var type in c1)
-      {
-         var p = c1[type];
-         if(p.constructor === String)
-         {
-            p = [p];
-         }
-         for(var i in p)
-         {
-            if(!(p[i] in unique))
-            {
-               unique[p[i]] = true;
-            }
-            else if(dups.indexOf(p[i]) == -1)
-            {
-               dups.push(p[i]);
-            }
-         }
-      }
-
-      if(dups.length > 0)
-      {
-         throw {
-            message: 'Invalid type coercion specification. More than one ' +
-               'type specified for at least one property.',
-            duplicates: dups
-         };
-      }
-      
-      merged['@coerce'] = c1;
-   }
-
-   return merged;
-};
-
-/**
- * Expands a term into an absolute IRI. The term may be a regular term, a
- * CURIE, a relative IRI, or an absolute IRI. In any case, the associated
- * absolute IRI will be returned.
- *
- * @param ctx the context to use.
- * @param term the term to expand.
- *
- * @return the expanded term as an absolute IRI.
- */
-jsonld.expandTerm = _expandTerm;
-
-/**
- * Compacts an IRI into a term or CURIE if it can be. IRIs will not be
- * compacted to relative IRIs if they match the given context's default
- * vocabulary.
- *
- * @param ctx the context to use.
- * @param iri the IRI to compact.
- *
- * @return the compacted IRI as a term or CURIE or the original IRI.
- */
-jsonld.compactIri = function(ctx, iri)
-{
-   return _compactIri(ctx, iri, null);
-};
-
-/**
- * Frames JSON-LD input.
- * 
- * @param input the JSON-LD input.
- * @param frame the frame to use.
- * @param options framing options to use.
- * 
- * @return the framed output.
- */
-jsonld.frame = function(input, frame, options)
-{
-   return new jsonld.Processor().frame(input, frame, options);
-};
-
-/**
- * Generates triples given a JSON-LD input. Each triple that is generated
- * results in a call to the given callback. The callback takes 3 parameters:
- * subject, property, and object. If the callback returns false then this
- * method will stop generating triples and return. If the callback is null,
- * then an array with triple objects containing "s", "p", "o" properties will
- * be returned.
- * 
- * The object or "o" property will be a JSON-LD formatted object.
- * 
- * @param input the JSON-LD input.
- * @param callback the triple callback.
- * 
- * @return an array of triple objects if callback is null, null otherwise.
- */
-jsonld.toTriples = function(input, callback)
-{
-   var rval = null;
-   
-   // normalize input
-   normalized = jsonld.normalize(input);
-   
-   // setup default callback
-   callback = callback || null;
-   if(callback === null)
-   {
-      rval = [];
-      callback = function(s, p, o)
-      {
-         rval.push({'s': s, 'p': p, 'o': o});
-      };
-   }
-   
-   // generate triples
-   var quit = false;
-   for(var i1 in normalized)
-   {
-      var e = normalized[i1];
-      var s = e['@subject']['@iri'];
-      for(var p in e)
-      {
-         if(p !== '@subject')
-         {
-            var obj = e[p];
-            if(obj.constructor !== Array)
-            {
-               obj = [obj];
-            }
-            for(var i2 in obj)
-            {
-               quit = (callback(s, p, obj[i2]) === false);
-               if(quit)
-               {
-                  break;
-               }
-            }
-            if(quit)
-            {
-               break;
-            }
-         }
-      }
-      if(quit)
-      {
-         break;
-      }
    }
    
    return rval;

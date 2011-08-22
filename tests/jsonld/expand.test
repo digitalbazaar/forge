@@ -35,5 +35,10 @@
       "type": "expand",
       "input": "expand-0007-in.json",
       "expect": "expand-0007-out.json"
+   }, {
+      "name": "alias keywords",
+      "type": "expand",
+      "input": "expand-0008-in.json",
+      "expect": "expand-0008-out.json"
    }]
 }

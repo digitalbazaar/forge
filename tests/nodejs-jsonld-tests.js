@@ -8,8 +8,7 @@
 var sys = require('sys');
 var fs = require('fs');
 var path = require('path');
-var forge = require('../js/forge');
-var jsonld = forge.jsonld;
+var jsonld = require('../js/jsonld');
 
 var _sortKeys = function(obj)
 {

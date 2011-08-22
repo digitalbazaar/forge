@@ -54,5 +54,11 @@
       "input": "compact-0009-in.json",
       "context": "compact-0009-context.json",
       "expect": "compact-0009-out.json"
+   }, {
+      "name": "alias keywords",
+      "type": "compact",
+      "input": "compact-0010-in.json",
+      "context": "compact-0010-context.json",
+      "expect": "compact-0010-out.json"
    }]
 }

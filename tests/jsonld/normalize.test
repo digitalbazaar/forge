@@ -255,5 +255,10 @@
       "type": "normalize",
       "input": "normalize-0051-in.json",
       "expect": "normalize-0051-out.json"
+   }, {
+      "name": "alias keywords",
+      "type": "normalize",
+      "input": "normalize-0052-in.json",
+      "expect": "normalize-0052-out.json"
    }]
 }

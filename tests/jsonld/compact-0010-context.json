@@ -1,0 +1,11 @@
+{
+   "uri": "@subject",
+   "rel": "@iri",
+   "@coerce": {
+      "rel": [
+         "http://example.org/test#property1",
+         "http://example.org/test#property2",
+         "http://example.org/test#property3"
+      ]
+   }
+}
