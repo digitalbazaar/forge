@@ -150,7 +150,8 @@ var _getKeywords = function(ctx)
       var keywords = {};
       for(var key in ctx)
       {
-         if(ctx[key] in rval)
+         if(ctx[key].constructor === String &&
+            ctx[key] in rval)
          {
             keywords[ctx[key]] = key;
          }
