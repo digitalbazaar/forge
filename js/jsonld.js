@@ -985,14 +985,14 @@ Processor.prototype.expand = function(ctx, property, value, expandSubjects)
          // other datatype
          else
          {
-            rval[keywords['@datatype']] = coerce;
+            rval['@datatype'] = coerce;
             if(coerce === xsd.double)
             {
                // do special JSON-LD double format
                value = value.toExponential(6).replace(
                   /(e(?:\+|-))([0-9])$/, '$10$2');
             }
-            rval[keywords['@literal']] = '' + value;
+            rval['@literal'] = '' + value;
          }
       }
       // nothing to coerce
