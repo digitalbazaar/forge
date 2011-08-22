@@ -139,7 +139,7 @@ var _getKeywords = function(ctx)
       '@datatype': '@datatype',
       '@iri': '@iri',
       '@language': '@language',
-      '@literal' : '@literal',
+      '@literal': '@literal',
       '@subject': '@subject',
       '@type': '@type'
    };
@@ -650,6 +650,8 @@ jsonld.toTriples = function(input, callback)
    
    return rval;
 };
+
+// TODO: organizational rewrite
 
 /**
  * Constructs a new JSON-LD processor.
