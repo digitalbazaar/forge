@@ -1,6 +1,0 @@
-[{
-   "http://xmlns.com/foaf/0.1/name": "John Doe",
-   "http://xmlns.com/foaf/0.1/homepage": {
-      "@iri": "http://john.doe.org/"
-   }
-}, {}]

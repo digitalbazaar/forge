@@ -1,7 +1,0 @@
-{
-   "@coerce": {
-      "xsd:integer": "ex:int"
-   },
-   "ex": "http://example.org/test#",
-   "xsd": "http://www.w3.org/2001/XMLSchema#"
-}
