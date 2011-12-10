@@ -1,7 +1,7 @@
 var forge = require('../js/forge');
 
 console.log('Generating 1024-bit key-pair...');
-var keys = forge.pki.rsa.generateKeyPair(512);
+var keys = forge.pki.rsa.generateKeyPair(1024);
 console.log('Key-pair created.');
 
 console.log('Creating self-signed certificate...');
