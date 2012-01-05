@@ -70,3 +70,19 @@ console.log(pem.publicKey);
 console.log('\nCertificate:');
 console.log(pem.certificate);
 
+// verify certificate
+var caStore = forge.pki.createCaStore();
+caStore.addCertificate(cert);
+try {
+  forge.pki.verifyCertificateChain(caStore, [cert],
+    function(vfd, depth, chain) {
+      if(vfd === true) {
+        console.log('Certificate verified.');
+      }
+      return true;
+  });
+}
+catch(ex) {
+  console.log('Certificate verification failure: ' +
+    JSON.stringify(ex, null, 2));
+}
