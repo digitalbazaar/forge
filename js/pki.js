@@ -352,14 +352,14 @@ var x509CertificateValidator = {
          value: [{
             name: 'Certificate.TBSCertificate.version.integer',
             tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.BIT_STRING,
+            type: asn1.Type.INTEGER,
             constructed: false,
             capture: 'certVersion'
          }]
       }, {
          name: 'Certificate.TBSCertificate.serialNumber',
          tagClass: asn1.Class.UNIVERSAL,
-         type: asn1.Type.BIT_STRING,
+         type: asn1.Type.INTEGER,
          constructed: false,
          capture: 'certSerialNumber'
       }, {
@@ -420,7 +420,7 @@ var x509CertificateValidator = {
          value: [{
             name: 'Certificate.TBSCertificate.issuerUniqueID.id',
             tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.BIT_STRING,
+            type: asn1.Type.BITSTRING,
             constructed: false,
             capture: 'certIssuerUniqueId'
          }]            
@@ -434,7 +434,7 @@ var x509CertificateValidator = {
          value: [{
             name: 'Certificate.TBSCertificate.subjectUniqueID.id',
             tagClass: asn1.Class.UNIVERSAL,
-            type: asn1.Type.BIT_STRING,
+            type: asn1.Type.BITSTRING,
             constructed: false,
             capture: 'certSubjectUniqueId'
          }]
