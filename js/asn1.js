@@ -611,17 +611,17 @@ asn1.utcTimeToDate = function(utc)
          var mmoffset = parseInt(utc.substr(end + 4, 2), 10);
          
          // calculate offset in milliseconds
-         var offset = hhoffset * 360 + mmoffset;
+         var offset = hhoffset * 60 + mmoffset;
          offset *= 60000;
          
          // apply offset
          if(c === '+')
          {
-            date.setTime(+date + offset);
+            date.setTime(+date - offset);
          }
          else
          {
-            date.setTime(+date - offset);
+            date.setTime(+date + offset);
          }
       }
    }
