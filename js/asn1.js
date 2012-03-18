@@ -691,7 +691,6 @@ asn1.generalizedTimeToDate = function(gentime)
       // calculate offset in milliseconds
       offset = hhoffset * 60 + mmoffset;
       offset *= 60000;
-      console.log(hhoffset, mmoffset, offset);
 
       // apply offset
       if(c === '+')
@@ -705,7 +704,7 @@ asn1.generalizedTimeToDate = function(gentime)
    // check for second fraction
    if(gentime.charAt(14) == '.')
    {
-      fff = parseInt(gentime.substr(15), 10);
+      fff = parseFloat(gentime.substr(14), 10) * 1000;
    }
 
    if(isUTC)
