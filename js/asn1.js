@@ -598,11 +598,14 @@ asn1.utcTimeToDate = function(utc)
          ss = parseInt(utc.substr(10, 2), 10);
          end += 2;
       }
+   }
       
-      // update date
-      date.setUTCFullYear(year, MM, DD);
-      date.setUTCHours(hh, mm, ss, 0);
+   // update date
+   date.setUTCFullYear(year, MM, DD);
+   date.setUTCHours(hh, mm, ss, 0);
       
+   if(end)
+   {
       // get +/- after end of time
       c = utc.charAt(end);
       if(c === '+' || c === '-')
