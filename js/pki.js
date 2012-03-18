@@ -386,19 +386,37 @@ var x509CertificateValidator = {
          type: asn1.Type.SEQUENCE,
          constructed: true,
          value: [{
-            // notBefore (Time) (only UTC time is supported)
+            // notBefore (Time) (UTC time case)
             name: 'Certificate.TBSCertificate.validity.notBefore',
             tagClass: asn1.Class.UNIVERSAL,
             type: asn1.Type.UTCTIME,
             constructed: false,
+            optional: true,
             capture: 'certNotBefore'
+         }, {
+            // notBefore (Time) (generalized time case)
+            name: 'Certificate.TBSCertificate.validity.notBefore (generalized)',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.GENERALIZEDTIME,
+            constructed: false,
+            optional: true,
+            capture: 'certNotBeforeGeneralized'
          }, {
             // notAfter (Time) (only UTC time is supported)
             name: 'Certificate.TBSCertificate.validity.notAfter',
             tagClass: asn1.Class.UNIVERSAL,
             type: asn1.Type.UTCTIME,
             constructed: false,
+            optional: true,
             capture: 'certNotAfter'
+         }, {
+            // notAfter (Time) (only UTC time is supported)
+            name: 'Certificate.TBSCertificate.validity.notAfter',
+            tagClass: asn1.Class.UNIVERSAL,
+            type: asn1.Type.GENERALIZEDTIME,
+            constructed: false,
+            optional: true,
+            capture: 'certNotAfterGeneralized'
          }]
       }, {
          // Name (subject) (RDNSequence)
@@ -1590,8 +1608,40 @@ pki.certificateFromAsn1 = function(obj, computeHash)
    var signature = forge.util.createBuffer(capture.certSignature);
    ++signature.read;
    cert.signature = signature.getBytes();
-   cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
-   cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
+
+   if(capture.certNotBefore !== undefined)
+   {
+      cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
+   }
+   else if(capture.certNotBeforeGeneralized !== undefined)
+   {
+      cert.validity.notBefore = asn1.generalizedTimeToDate
+         (capture.certNotBeforeGeneralized);
+   }
+   else
+   {
+      throw {
+         message: 'Cannot read notBefore time, neither provided as UTCTime ' +
+            'nor as GeneralizedTime.'
+      };
+   }
+
+   if(capture.certNotAfter !== undefined)
+   {
+      cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
+   }
+   else if(capture.certNotAfterGeneralized !== undefined)
+   {
+      cert.validity.notAfter = asn1.generalizedTimeToDate
+         (capture.certNotAfterGeneralized);
+   }
+   else
+   {
+      throw {
+         message: 'Cannot read notAfter time, neither provided as UTCTime ' +
+            'nor as GeneralizedTime.'
+      };
+   }
    
    if(computeHash)
    {

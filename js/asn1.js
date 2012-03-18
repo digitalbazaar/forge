@@ -181,7 +181,8 @@ asn1.Type =
    SET:             17,
    PRINTABLESTRING: 19,
    IA5STRING:       22,
-   UTCTIME:         23
+   UTCTIME:         23,
+   GENERALIZEDTIME: 24,
 };
 
 /**
@@ -628,6 +629,102 @@ asn1.utcTimeToDate = function(utc)
    
    return date;
 };
+
+/**
+ * Converts a GeneralizedTime value to a date.
+ * 
+ * @param gentime the GeneralizedTime value to convert.
+ * 
+ * @return the date.
+ */
+asn1.generalizedTimeToDate = function(gentime)
+{
+   /* The following formats can be used:
+
+      YYYYMMDDHHMMSS
+      YYYYMMDDHHMMSS.fff
+      YYYYMMDDHHMMSSZ
+      YYYYMMDDHHMMSS.fffZ
+      YYYYMMDDHHMMSS+hh'mm'
+      YYYYMMDDHHMMSS.fff+hh'mm'
+      YYYYMMDDHHMMSS-hh'mm'
+      YYYYMMDDHHMMSS.fff-hh'mm'
+
+      Where:
+
+      YYYY is the year
+      MM is the month (01 to 12)
+      DD is the day (01 to 31)
+      hh is the hour (00 to 23)
+      mm are the minutes (00 to 59)
+      ss are the seconds (00 to 59)
+      .fff is the second fraction, accurate to three decimal places
+      Z indicates that local time is GMT, + indicates that local time is
+      later than GMT, and - indicates that local time is earlier than GMT
+      hh' is the absolute value of the offset from GMT in hours
+      mm' is the absolute value of the offset from GMT in minutes
+   */
+   var date = new Date();
+
+   var YYYY = parseInt(gentime.substr(0, 4), 10);
+   var MM = parseInt(gentime.substr(4, 2), 10) - 1; // use 0-11 for month
+   var DD = parseInt(gentime.substr(6, 2), 10);
+   var hh = parseInt(gentime.substr(8, 2), 10);
+   var mm = parseInt(gentime.substr(10, 2), 10);
+   var ss = parseInt(gentime.substr(12, 2), 10);
+   var fff = 0;
+   var offset = 0;
+   var isUTC = false;
+
+   if(gentime.charAt(gentime.length - 1) == 'Z')
+   {
+      isUTC = true;
+   }
+
+   var end = gentime.length - 5, c = gentime.charAt(end);
+   if(c === '+' || c === '-')
+   {
+      // get hours+minutes offset
+      var hhoffset = parseInt(gentime.substr(end + 1, 2), 10);
+      var mmoffset = parseInt(gentime.substr(end + 4, 2), 10);
+
+      // calculate offset in milliseconds
+      offset = hhoffset * 60 + mmoffset;
+      offset *= 60000;
+      console.log(hhoffset, mmoffset, offset);
+
+      // apply offset
+      if(c === '+')
+      {
+         offset *= -1;
+      }
+
+      isUTC = true;
+   }
+
+   // check for second fraction
+   if(gentime.charAt(14) == '.')
+   {
+      fff = parseInt(gentime.substr(15), 10);
+   }
+
+   if(isUTC)
+   {
+      date.setUTCFullYear(YYYY, MM, DD);
+      date.setUTCHours(hh, mm, ss, fff);
+
+      // apply offset
+      date.setTime(+date + offset);
+   }
+   else
+   {
+      date.setFullYear(YYYY, MM, DD);
+      date.setHours(hh, mm, ss, fff);
+   }
+
+   return date;
+};
+
 
 /**
  * Converts a date to a UTCTime value.
