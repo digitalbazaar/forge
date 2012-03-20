@@ -27,7 +27,7 @@ var util = forge.util;
 /**
  * Constructor for a byte buffer.
  * 
- * @param b the bytes to wrap (as a string) (optional).
+ * @param b the bytes to wrap (as a UTF-8 string) (optional).
  */
 util.ByteBuffer = function(b)
 {
@@ -95,11 +95,21 @@ util.ByteBuffer.prototype.fillWithByte = function(b, n)
 /**
  * Puts bytes in this buffer.
  * 
- * @param bytes the bytes (as a string) to put.
+ * @param bytes the bytes (as a UTF-8 encoded string) to put.
  */
 util.ByteBuffer.prototype.putBytes = function(bytes)
 {
    this.data += bytes;
+};
+
+/**
+ * Puts a UTF-16 encoded string into this buffer.
+ * 
+ * @param str the string to put.
+ */
+util.ByteBuffer.prototype.putString = function(str)
+{
+   this.data += util.encodeUtf8(str);
 };
 
 /**
@@ -333,11 +343,11 @@ util.ByteBuffer.prototype.getInt = function(n)
 };
 
 /**
- * Reads bytes out into a string and clears them from the buffer.
+ * Reads bytes out into a UTF-8 string and clears them from the buffer.
  * 
  * @param count the number of bytes to read, undefined, null or 0 for all.
  * 
- * @return a string of bytes.
+ * @return a UTF-8 string of bytes.
  */
 util.ByteBuffer.prototype.getBytes = function(count)
 {
@@ -363,11 +373,12 @@ util.ByteBuffer.prototype.getBytes = function(count)
 };
 
 /**
- * Gets a string of the bytes in this buffer without modifying the read pointer.
+ * Gets a UTF-8 encoded string of the bytes from this buffer without modifying
+ * the read pointer.
  * 
  * @param count the number of bytes to get, omit to get all.
  * 
- * @return an array of bytes.
+ * @return a string full of UTF-8 encoded characters.
  */
 util.ByteBuffer.prototype.bytes = function(count)
 {
@@ -464,6 +475,16 @@ util.ByteBuffer.prototype.toHex = function()
 };
 
 /**
+ * Converts this buffer to a UTF-16 string (standard JavaScript string).
+ * 
+ * @return a UTF-16 string.
+ */
+util.ByteBuffer.prototype.toString = function()
+{
+   return util.decodeUtf8(this.bytes());
+};
+
+/**
  * Creates a buffer that stores bytes.
  * 
  * @param b the bytes to wrap (as a string) (optional).
@@ -535,7 +556,7 @@ util.xorBytes = function(s1, s2, n)
 };
 
 /**
- * Converts a hex string into a string of bytes.
+ * Converts a hex string into a UTF-8 string of bytes.
  * 
  * @param hex the hexadecimal string to convert.
  * 
@@ -560,7 +581,7 @@ util.hexToBytes = function(hex)
 };
 
 /**
- * Converts a byte string into a string of hexadecimal characters.
+ * Converts a UTF-8 byte string into a string of hexadecimal characters.
  * 
  * @param bytes the byte string to convert.
  * 
@@ -621,9 +642,9 @@ var _base64Idx = [
 ];
 
 /**
- * Base64 encodes a string of bytes.
+ * Base64 encodes a UTF-8 string of bytes.
  * 
- * @param input the string of bytes to encode.
+ * @param input the UTF-8 string of bytes to encode.
  * @param maxline the maximum number of encoded bytes per line to use,
  *           defaults to none.
  * 
@@ -666,7 +687,7 @@ util.encode64 = function(input, maxline)
 };
 
 /**
- * Base64 decodes a string into a string of bytes.
+ * Base64 decodes a string into a UTF-8 string of bytes.
  * 
  * @param input the base64-encoded input.
  * 
@@ -702,6 +723,32 @@ util.decode64 = function(input)
    }
    
    return output;
+};
+
+/**
+ * UTF-8 encodes the given UTF-16 encoded string (a standard JavaScript
+ * string). Non-ASCII characters will be encoded as multiple bytes according
+ * to UTF-8.  
+ * 
+ * @param str the string to encode.
+ * 
+ * @return the UTF-8 encoded string.
+ */
+util.encodeUtf8 = function(str)
+{
+   return unescape(encodeURIComponent(str));
+};
+
+/**
+ * Decodes a UTF-8 encoded string into a UTF-16 string.
+ * 
+ * @param str the string to encode.
+ * 
+ * @return the UTF-16 encoded string (standard JavaScript string).
+ */
+util.decodeUtf8 = function(str)
+{
+   return decodeURIComponent(escape(str));
 };
 
 /**

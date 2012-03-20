@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2012 Digital Bazaar, Inc. All rights reserved.
  */
 jQuery(function($)
 {
@@ -348,6 +348,16 @@ jQuery(function($)
       test.check();
    });
    
+   addTest('md5 "c\'è"', function(task, test)
+   {
+      var expect = '8ef7c2941d78fe89f31e614437c9db59';
+      test.expect.html(expect);
+      var md = forge.md.md5.create();
+      md.update("c'è", 'utf8');
+      test.result.html(md.digest().toHex());
+      test.check();
+   });
+   
    addTest('md5 "THIS IS A MESSAGE"',
    function(task, test)
    {
@@ -465,6 +475,16 @@ jQuery(function($)
       test.check();
    });
    
+   addTest('sha-1 "c\'è"', function(task, test)
+   {
+      var expect = '98c9a3f804daa73b68a5660d032499a447350c0d';
+      test.expect.html(expect);
+      var md = forge.md.sha1.create();
+      md.update("c'è", 'utf8');
+      test.result.html(md.digest().toHex());
+      test.check();
+   });
+   
    addTest('sha-1 "THIS IS A MESSAGE"',
    function(task, test)
    {
@@ -505,6 +525,17 @@ jQuery(function($)
       test.expect.html(expect);
       var md = forge.md.sha256.create();
       md.update('abc');
+      test.result.html(md.digest().toHex());
+      test.check();
+   });
+   
+   addTest('sha-256 "c\'è"', function(task, test)
+   {
+      var expect =
+         '1aa15c717afffd312acce2217ce1c2e5dabca53c92165999132ec9ca5decdaca';
+      test.expect.html(expect);
+      var md = forge.md.sha256.create();
+      md.update("c'è", 'utf8');
       test.result.html(md.digest().toHex());
       test.check();
    });
@@ -1028,6 +1059,10 @@ jQuery(function($)
 
    addTest('random', function(task, test)
    {
+     forge.random.getBytes(16);
+     forge.random.getBytes(24);
+     forge.random.getBytes(32);
+     
       var b = forge.random.getBytes(10);
       test.result.html(forge.util.bytesToHex(b));
       if(b.length === 10)
