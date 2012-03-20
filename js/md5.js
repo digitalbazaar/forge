@@ -6,7 +6,7 @@
  * 
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
@@ -201,17 +201,25 @@ md5.create = function()
    md.start();
    
    /**
-    * Updates the digest with the given message bytes.
+    * Updates the digest with the given message input. The given input can
+    * treated as raw input (no encoding will be applied) or an encoding of
+    * 'utf8' maybe given to encode the input using UTF-8.
     * 
-    * @param bytes the bytes to update with.
+    * @param msg the message input to update with.
+    * @param encoding the encoding to use (default: 'raw', other: 'utf8').
     */
-   md.update = function(bytes)
+   md.update = function(msg, encoding)
    {
+      if(encoding === 'utf8')
+      {
+         msg = forge.util.encodeUtf8(msg);
+      }
+      
       // update message length
-      md.messageLength += bytes.length;
+      md.messageLength += msg.length;
       
       // add bytes to input buffer
-      _input.putBytes(bytes);
+      _input.putBytes(msg);
       
       // process bytes
       _update(_state, _w, _input);
