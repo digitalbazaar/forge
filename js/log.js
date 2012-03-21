@@ -5,41 +5,35 @@
  *
  * Copyright (c) 2008-2012 Digital Bazaar, Inc.
  */
-(function()
-{
+(function() {
 
 // define forge
-if(typeof(window) !== 'undefined')
-{
-   var forge = window.forge = window.forge || {};
-   forge.log = {};
+if(typeof(window) !== 'undefined') {
+  var forge = window.forge = window.forge || {};
+  forge.log = {};
 }
 // define node.js module
-else if(typeof(module) !== 'undefined' && module.exports)
-{
-   var forge =
-   {
-      util: require('./util')
-   };
-   module.exports = forge.log = {};
+else if(typeof(module) !== 'undefined' && module.exports) {
+  var forge = {
+    util: require('./util')
+  };
+  module.exports = forge.log = {};
 
-   // define console if not defined
-   if(typeof(console) === 'undefined')
-   {
-      /* FIXME: code executes in browser, why?
-      var sys = require('sys');
-      var console =
-      {
-         log: sys.puts
-      };*/
-   }
+  // define console if not defined
+  if(typeof(console) === 'undefined') {
+    /* FIXME: code executes in browser, why?
+    var sys = require('sys');
+    var console = {
+      log: sys.puts
+    };*/
+  }
 }
 
 /**
  * Application logging system.
  *
  * Each logger level available as it's own function of the form:
- *    forge.log.level(category, args...)
+ *   forge.log.level(category, args...)
  * The category is an arbitrary string, and the args are the same as
  * Firebug's console.log API. By default the call will be output as:
  *   'LEVEL [category] <args[0]>, args[1], ...'
@@ -48,11 +42,11 @@ else if(typeof(module) !== 'undefined' && module.exports)
  * the setCategoryEnabled() function.
  */
 // list of known levels
-forge.log.levels =
-   ['none', 'error', 'warning', 'info', 'debug', 'verbose', 'max'];
+forge.log.levels = [
+  'none', 'error', 'warning', 'info', 'debug', 'verbose', 'max'];
 // info on the levels indexed by name:
-//    index: level index
-//    name: uppercased display name
+//   index: level index
+//   name: uppercased display name
 var sLevelInfo = {};
 // list of loggers
 var sLoggers = [];
@@ -85,14 +79,12 @@ forge.log.NO_LEVEL_CHECK = (1 << 2);
 forge.log.INTERPOLATE = (1 << 3);
 
 // setup each log level
-for(var i = 0; i < forge.log.levels.length; ++i)
-{
-   var level = forge.log.levels[i];
-   sLevelInfo[level] =
-   {
-      index: i,
-      name: level.toUpperCase()
-   };
+for(var i = 0; i < forge.log.levels.length; ++i) {
+  var level = forge.log.levels[i];
+  sLevelInfo[level] = {
+    index: i,
+    name: level.toUpperCase()
+  };
 }
 
 /**
@@ -100,29 +92,24 @@ for(var i = 0; i < forge.log.levels.length; ++i)
  *
  * @param message message object
  */
-forge.log.logMessage = function(message)
-{
-   var len = sLoggers.length;
-   var messageLevelIndex = sLevelInfo[message.level].index;
-   for(var i = 0; i < sLoggers.length; ++i)
-   {
-      var logger = sLoggers[i];
-      if(logger.flags & forge.log.NO_LEVEL_CHECK)
-      {
-         logger.f(message);
+forge.log.logMessage = function(message) {
+  var len = sLoggers.length;
+  var messageLevelIndex = sLevelInfo[message.level].index;
+  for(var i = 0; i < sLoggers.length; ++i) {
+    var logger = sLoggers[i];
+    if(logger.flags & forge.log.NO_LEVEL_CHECK) {
+      logger.f(message);
+    }
+    else {
+      // get logger level
+      var loggerLevelIndex = sLevelInfo[logger.level].index;
+      // check level
+      if(messageLevelIndex <= loggerLevelIndex) {
+        // message critical enough, call logger
+        logger.f(logger, message);
       }
-      else
-      {
-         // get logger level
-         var loggerLevelIndex = sLevelInfo[logger.level].index;
-         // check level
-         if(messageLevelIndex <= loggerLevelIndex)
-         {
-            // message critical enough, call logger
-            logger.f(logger, message);
-         }
-      }
-   }
+    }
+  }
 };
 
 /**
@@ -131,16 +118,14 @@ forge.log.logMessage = function(message)
  *
  * @param message a message log object
  */
-forge.log.prepareStandard = function(message)
-{
-   if(!('standard' in message))
-   {
-      message.standard =
-         sLevelInfo[message.level].name +
-         //' ' + +message.timestamp +
-         ' [' + message.category + '] ' +
-         message.message;
-   }
+forge.log.prepareStandard = function(message) {
+  if(!('standard' in message)) {
+    message.standard =
+      sLevelInfo[message.level].name +
+      //' ' + +message.timestamp +
+      ' [' + message.category + '] ' +
+      message.message;
+  }
 };
 
 /**
@@ -149,73 +134,65 @@ forge.log.prepareStandard = function(message)
  *
  * @param message a message log object.
  */
-forge.log.prepareFull = function(message)
-{
-   if(!('full' in message))
-   {
-      // copy args and insert message at the front
-      var args = [message.message];
-      args = args.concat([] || message['arguments']);
-      // format the message
-      message.full = forge.util.format.apply(this, args);
-   }
+forge.log.prepareFull = function(message) {
+  if(!('full' in message)) {
+    // copy args and insert message at the front
+    var args = [message.message];
+    args = args.concat([] || message['arguments']);
+    // format the message
+    message.full = forge.util.format.apply(this, args);
+  }
 };
 
 /**
  * Applies both preparseStandard() and prepareFull() to a message object and
  * store result in 'standardFull'.
  *
- * @param message a message log object
+ * @param message a message log object.
  */
-forge.log.prepareStandardFull = function(message)
-{
-   if(!('standardFull' in message))
-   {
-      // FIXME implement 'standardFull' logging
-      forge.log.prepareStandard(message);
-      message.standardFull = message.standard;
-   }
+forge.log.prepareStandardFull = function(message) {
+  if(!('standardFull' in message)) {
+    // FIXME implement 'standardFull' logging
+    forge.log.prepareStandard(message);
+    message.standardFull = message.standard;
+  }
 };
 
 // create log level functions
-if(true)
-{
-   // levels for which we want functions
-   var levels = ['error', 'warning', 'info', 'debug', 'verbose'];
-   for(var i = 0; i < levels.length; ++i)
-   {
-      // wrap in a function to ensure proper level var is passed
-      (function(level)
-      {
-         // create function for this level
-         forge.log[level] = function(category, message/*, args...*/)
-         {
-            // convert arguments to real array, remove category and message
-            var args = Array.prototype.slice.call(arguments).slice(2);
-            // create message object
-            // Note: interpolation and standard formatting is done lazily
-            var msg = {
-               timestamp: new Date(),
-               level: level,
-               category: category,
-               message: message,
-               'arguments': args
-               /*standard*/
-               /*full*/
-               /*fullMessage*/
-            };
-            // process this message
-            forge.log.logMessage(msg);
-         };
-      })(levels[i]);
-   }
+if(true) {
+  // levels for which we want functions
+  var levels = ['error', 'warning', 'info', 'debug', 'verbose'];
+  for(var i = 0; i < levels.length; ++i) {
+    // wrap in a function to ensure proper level var is passed
+    (function(level) {
+      // create function for this level
+      forge.log[level] = function(category, message/*, args...*/) {
+        // convert arguments to real array, remove category and message
+        var args = Array.prototype.slice.call(arguments).slice(2);
+        // create message object
+        // Note: interpolation and standard formatting is done lazily
+        var msg = {
+          timestamp: new Date(),
+          level: level,
+          category: category,
+          message: message,
+          'arguments': args
+          /*standard*/
+          /*full*/
+          /*fullMessage*/
+        };
+        // process this message
+        forge.log.logMessage(msg);
+      };
+    })(levels[i]);
+  }
 }
 
 /**
  * Creates a new logger with specified custom logging function.
  *
  * The logging function has a signature of:
- *    function(logger, message)
+ *   function(logger, message)
  * logger: current logger
  * message: object:
  *   level: level id
@@ -225,18 +202,17 @@ if(true)
  *   fullMessage: interpolated message and arguments if INTERPOLATE flag set
  *
  * @param logFunction a logging function which takes a log message object
- *        as a parameter.
+ *          as a parameter.
  *
  * @return a logger object.
  */
-forge.log.makeLogger = function(logFunction)
-{
-   var logger = {
-      flags: 0,
-      f: logFunction
-   };
-   forge.log.setLevel(logger, 'none');
-   return logger;
+forge.log.makeLogger = function(logFunction) {
+  var logger = {
+    flags: 0,
+    f: logFunction
+  };
+  forge.log.setLevel(logger, 'none');
+  return logger;
 };
 
 /**
@@ -247,25 +223,21 @@ forge.log.makeLogger = function(logFunction)
  *
  * @return true if set, false if not.
  */
-forge.log.setLevel = function(logger, level)
-{
-   var rval = false;
-   if(logger && !(logger.flags & forge.log.LEVEL_LOCKED))
-   {
-      for(var i = 0; i < forge.log.levels.length; ++i)
-      {
-         var aValidLevel = forge.log.levels[i];
-         if(level == aValidLevel)
-         {
-            // set level
-            logger.level = level;
-            rval = true;
-            break;
-         }
+forge.log.setLevel = function(logger, level) {
+  var rval = false;
+  if(logger && !(logger.flags & forge.log.LEVEL_LOCKED)) {
+    for(var i = 0; i < forge.log.levels.length; ++i) {
+      var aValidLevel = forge.log.levels[i];
+      if(level == aValidLevel) {
+        // set level
+        logger.level = level;
+        rval = true;
+        break;
       }
-   }
+    }
+  }
 
-   return rval;
+  return rval;
 };
 
 /**
@@ -274,16 +246,13 @@ forge.log.setLevel = function(logger, level)
  * @param logger the target logger.
  * @param lock boolean lock value, default to true.
  */
-forge.log.lock = function(logger, lock)
-{
-   if(typeof lock === 'undefined' || lock)
-   {
-      logger.flags |= forge.log.LEVEL_LOCKED;
-   }
-   else
-   {
-      logger.flags &= ~forge.log.LEVEL_LOCKED;
-   }
+forge.log.lock = function(logger, lock) {
+  if(typeof lock === 'undefined' || lock) {
+    logger.flags |= forge.log.LEVEL_LOCKED;
+  }
+  else {
+    logger.flags &= ~forge.log.LEVEL_LOCKED;
+  }
 };
 
 /**
@@ -291,59 +260,52 @@ forge.log.lock = function(logger, lock)
  *
  * @param logger the logger object.
  */
-forge.log.addLogger = function(logger)
-{
-   sLoggers.push(logger);
+forge.log.addLogger = function(logger) {
+  sLoggers.push(logger);
 };
 
 // setup the console logger if possible, else create fake console.log
-if(typeof(console) !== 'undefined' && 'log' in console)
-{
-   var logger;
-   if(console.error && console.warn && console.info && console.debug)
-   {
-      // looks like Firebug-style logging is available
-      // level handlers map
-      var levelHandlers = {
-         error: console.error,
-         warning: console.warn,
-         info: console.info,
-         debug: console.debug,
-         verbose: console.debug
-      };
-      var f = function(logger, message)
-      {
-         forge.log.prepareStandard(message);
-         var handler = levelHandlers[message.level];
-         // prepend standard message and concat args
-         var args = [message.standard];
-         args = args.concat(message['arguments'].slice());
-         // apply to low-level console function
-         handler.apply(console, args);
-      };
-      logger = forge.log.makeLogger(f);
-   }
-   else
-   {
-      // only appear to have basic console.log
-      var f = function(logger, message)
-      {
-         forge.log.prepareStandardFull(message);
-         console.log(message.standardFull);
-      };
-      logger = forge.log.makeLogger(f);
-   }
-   forge.log.setLevel(logger, 'debug');
-   forge.log.addLogger(logger);
-   sConsoleLogger = logger;
+if(typeof(console) !== 'undefined' && 'log' in console) {
+  var logger;
+  if(console.error && console.warn && console.info && console.debug) {
+    // looks like Firebug-style logging is available
+    // level handlers map
+    var levelHandlers = {
+      error: console.error,
+      warning: console.warn,
+      info: console.info,
+      debug: console.debug,
+      verbose: console.debug
+    };
+    var f = function(logger, message) {
+      forge.log.prepareStandard(message);
+      var handler = levelHandlers[message.level];
+      // prepend standard message and concat args
+      var args = [message.standard];
+      args = args.concat(message['arguments'].slice());
+      // apply to low-level console function
+      handler.apply(console, args);
+    };
+    logger = forge.log.makeLogger(f);
+  }
+  else {
+    // only appear to have basic console.log
+    var f = function(logger, message) {
+      forge.log.prepareStandardFull(message);
+      console.log(message.standardFull);
+    };
+    logger = forge.log.makeLogger(f);
+  }
+  forge.log.setLevel(logger, 'debug');
+  forge.log.addLogger(logger);
+  sConsoleLogger = logger;
 }
-else
-{
-   // define fake console.log to avoid potential script errors on
-   // browsers that do not have console logging
-   console = {
-      log: function() {}
-   };
+else {
+  // define fake console.log to avoid potential script errors on
+  // browsers that do not have console logging
+  console = {
+    log: function() {}
+  };
 }
 
 /*
@@ -358,24 +320,20 @@ else
  * after console.level is processed.  Useful to force a level of verbosity
  * that could otherwise be limited by a user config.
  */
-if(sConsoleLogger !== null)
-{
-   var query = forge.util.getQueryVariables();
-   if('console.level' in query)
-   {
-      // set with last value
-      forge.log.setLevel(
-         sConsoleLogger, query['console.level'].slice(-1)[0]);
-   }
-   if('console.lock' in query)
-   {
-      // set with last value
-      var lock = query['console.lock'].slice(-1)[0];
-      if(lock == 'true')
-      {
-         forge.log.lock(sConsoleLogger);
-      }
-   }
+if(sConsoleLogger !== null) {
+  var query = forge.util.getQueryVariables();
+  if('console.level' in query) {
+    // set with last value
+    forge.log.setLevel(
+      sConsoleLogger, query['console.level'].slice(-1)[0]);
+  }
+  if('console.lock' in query) {
+    // set with last value
+    var lock = query['console.lock'].slice(-1)[0];
+    if(lock == 'true') {
+      forge.log.lock(sConsoleLogger);
+    }
+  }
 }
 
 // provide public access to console logger

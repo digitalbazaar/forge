@@ -124,23 +124,19 @@
  * The full OID (including ASN.1 tag and length of 6 bytes) is:
  * 0x06062A864886F70D
  */
-(function()
-{
+(function() {
 
 // define forge
-if(typeof(window) !== 'undefined')
-{
-   var forge = window.forge = window.forge || {};
-   forge.asn1 = {};
+if(typeof(window) !== 'undefined') {
+  var forge = window.forge = window.forge || {};
+  forge.asn1 = {};
 }
 // define node.js module
-else if(typeof(module) !== 'undefined' && module.exports)
-{
-   var forge =
-   {
-      util: require('./util')
-   };
-   module.exports = forge.asn1 = {};
+else if(typeof(module) !== 'undefined' && module.exports) {
+  var forge = {
+    util: require('./util')
+  };
+  module.exports = forge.asn1 = {};
 }
 
 /* ASN.1 implementation and API */
@@ -149,40 +145,38 @@ var asn1 = forge.asn1;
 /**
  * ASN.1 classes.
  */
-asn1.Class =
-{
-   UNIVERSAL:        0x00,
-   APPLICATION:      0x40,
-   CONTEXT_SPECIFIC: 0x80,
-   PRIVATE:          0xC0
+asn1.Class = {
+  UNIVERSAL:        0x00,
+  APPLICATION:      0x40,
+  CONTEXT_SPECIFIC: 0x80,
+  PRIVATE:          0xC0
 };
 
 /**
  * ASN.1 types. Not all types are supported by this implementation, only
  * those necessary to implement a simple PKI are implemented.
  */
-asn1.Type =
-{
-   NONE:             0,
-   BOOLEAN:          1,
-   INTEGER:          2,
-   BITSTRING:        3,
-   OCTETSTRING:      4,
-   NULL:             5,
-   OID:              6,
-   ODESC:            7,
-   EXTERNAL:         8,
-   REAL:             9,
-   ENUMERATED:      10,
-   EMBEDDED:        11,
-   UTF8:            12,
-   ROID:            13,
-   SEQUENCE:        16,
-   SET:             17,
-   PRINTABLESTRING: 19,
-   IA5STRING:       22,
-   UTCTIME:         23,
-   GENERALIZEDTIME: 24
+asn1.Type = {
+  NONE:             0,
+  BOOLEAN:          1,
+  INTEGER:          2,
+  BITSTRING:        3,
+  OCTETSTRING:      4,
+  NULL:             5,
+  OID:              6,
+  ODESC:            7,
+  EXTERNAL:         8,
+  REAL:             9,
+  ENUMERATED:      10,
+  EMBEDDED:        11,
+  UTF8:            12,
+  ROID:            13,
+  SEQUENCE:        16,
+  SET:             17,
+  PRINTABLESTRING: 19,
+  IA5STRING:       22,
+  UTCTIME:         23,
+  GENERALIZEDTIME: 24
 };
 
 /**
@@ -195,21 +189,19 @@ asn1.Type =
  *
  * @return the asn1 object.
  */
-asn1.create = function(tagClass, type, constructed, value)
-{
-   /* An asn1 object has a tagClass, a type, a constructed flag, and a
-      value. The value's type depends on the constructed flag. If
-      constructed, it will contain a list of other asn1 objects. If not,
-      it will contain the ASN.1 value as an array of bytes formatted
-      according to the ASN.1 data type.
-    */
-   return {
-      tagClass: tagClass,
-      type: type,
-      constructed: constructed,
-      composed: constructed || (value.constructor == Array),
-      value: value
-   };
+asn1.create = function(tagClass, type, constructed, value) {
+  /* An asn1 object has a tagClass, a type, a constructed flag, and a
+    value. The value's type depends on the constructed flag. If
+    constructed, it will contain a list of other asn1 objects. If not,
+    it will contain the ASN.1 value as an array of bytes formatted
+    according to the ASN.1 data type. */
+  return {
+    tagClass: tagClass,
+    type: type,
+    constructed: constructed,
+    composed: constructed || (value.constructor == Array),
+    value: value
+  };
 };
 
 /**
@@ -219,24 +211,21 @@ asn1.create = function(tagClass, type, constructed, value)
  *
  * @return the length of the ASN.1 value.
  */
-var _getValueLength = function(b)
-{
-   // see if the length is "short form" or "long form" (bit 8 set)
-   var b2 = b.getByte();
-   var length;
-   var longForm = b2 & 0x80;
-   if(!longForm)
-   {
-      // length is just the first byte
-      length = b2;
-   }
-   else
-   {
-      // the number of bytes the length is specified in bits 7 through 1
-      // and each length byte is in big-endian base-256
-      length = b.getInt((b2 & 0x7F) << 3);
-   }
-   return length;
+var _getValueLength = function(b) {
+  // see if the length is "short form" or "long form" (bit 8 set)
+  var b2 = b.getByte();
+  var length;
+  var longForm = b2 & 0x80;
+  if(!longForm) {
+    // length is just the first byte
+    length = b2;
+  }
+  else {
+    // the number of bytes the length is specified in bits 7 through 1
+    // and each length byte is in big-endian base-256
+    length = b.getInt((b2 & 0x7F) << 3);
+  }
+  return length;
 };
 
 /**
@@ -246,115 +235,102 @@ var _getValueLength = function(b)
  *
  * @return the parsed asn1 object.
  */
-asn1.fromDer = function(bytes)
-{
-   // wrap in buffer if needed
-   if(bytes.constructor == String)
-   {
-      bytes = forge.util.createBuffer(bytes);
-   }
+asn1.fromDer = function(bytes) {
+  // wrap in buffer if needed
+  if(bytes.constructor == String) {
+    bytes = forge.util.createBuffer(bytes);
+  }
 
-   // minimum length for ASN.1 DER structure is 2
-   if(bytes.length() < 2)
-   {
-      throw {
-         message: 'Too few bytes to parse DER.',
-         bytes: bytes.length()
-      };
-   }
+  // minimum length for ASN.1 DER structure is 2
+  if(bytes.length() < 2) {
+    throw {
+      message: 'Too few bytes to parse DER.',
+      bytes: bytes.length()
+    };
+  }
 
-   // get the first byte
-   var b1 = bytes.getByte();
+  // get the first byte
+  var b1 = bytes.getByte();
 
-   // get the tag class
-   var tagClass = (b1 & 0xC0);
+  // get the tag class
+  var tagClass = (b1 & 0xC0);
 
-   // get the type (bits 1-5)
-   var type = b1 & 0x1F;
+  // get the type (bits 1-5)
+  var type = b1 & 0x1F;
 
-   // get the value length
-   var length = _getValueLength(bytes);
+  // get the value length
+  var length = _getValueLength(bytes);
 
-   // ensure there are enough bytes to get the value
-   if(bytes.length() < length)
-   {
-      throw {
-         message: 'Too few bytes to read ASN.1 value.',
-         detail: bytes.length() + ' < ' + length
-      };
-   }
+  // ensure there are enough bytes to get the value
+  if(bytes.length() < length) {
+    throw {
+      message: 'Too few bytes to read ASN.1 value.',
+      detail: bytes.length() + ' < ' + length
+    };
+  }
 
-   // prepare to get value
-   var value;
+  // prepare to get value
+  var value;
 
-   // constructed flag is bit 6 (32 = 0x20) of the first byte
-   var constructed = ((b1 & 0x20) == 0x20);
+  // constructed flag is bit 6 (32 = 0x20) of the first byte
+  var constructed = ((b1 & 0x20) == 0x20);
 
-   // determine if the value is composed of other ASN.1 objects (if its
-   // constructed it will be and if its a BITSTRING it may be)
-   var composed = constructed;
-   if(!composed && tagClass === asn1.Class.UNIVERSAL &&
-      type === asn1.Type.BITSTRING && length > 1)
-   {
-      /* The first octet gives the number of bits by which the length of the
-         bit string is less than the next multiple of eight (this is called
-         the "number of unused bits").
+  // determine if the value is composed of other ASN.1 objects (if its
+  // constructed it will be and if its a BITSTRING it may be)
+  var composed = constructed;
+  if(!composed && tagClass === asn1.Class.UNIVERSAL &&
+    type === asn1.Type.BITSTRING && length > 1) {
+    /* The first octet gives the number of bits by which the length of the
+      bit string is less than the next multiple of eight (this is called
+      the "number of unused bits").
 
-         The second and following octets give the value of the bit string
-         converted to an octet string.
-       */
-      // if there are no unused bits, maybe the bitstring holds ASN.1 objs
-      var read = bytes.read;
-      var unused = bytes.getByte();
-      if(unused === 0)
-      {
-         // if the first byte indicates UNIVERSAL or CONTEXT_SPECIFIC,
-         // and the length is valid, assume we've got an ASN.1 object
-         b1 = bytes.getByte();
-         var tc = (b1 & 0xC0);
-         if(tc === asn1.Class.UNIVERSAL ||
-            tc === asn1.Class.CONTEXT_SPECIFIC)
-         {
-            try
-            {
-               var len = _getValueLength(bytes);
-               composed = (len === length - (bytes.read - read));
-               if(composed)
-               {
-                  // adjust read/length to account for unused bits byte
-                  ++read;
-                  --length;
-               }
-            }
-            catch(ex) {}
-         }
+      The second and following octets give the value of the bit string
+      converted to an octet string. */
+    // if there are no unused bits, maybe the bitstring holds ASN.1 objs
+    var read = bytes.read;
+    var unused = bytes.getByte();
+    if(unused === 0) {
+      // if the first byte indicates UNIVERSAL or CONTEXT_SPECIFIC,
+      // and the length is valid, assume we've got an ASN.1 object
+      b1 = bytes.getByte();
+      var tc = (b1 & 0xC0);
+      if(tc === asn1.Class.UNIVERSAL ||
+        tc === asn1.Class.CONTEXT_SPECIFIC) {
+        try {
+          var len = _getValueLength(bytes);
+          composed = (len === length - (bytes.read - read));
+          if(composed) {
+            // adjust read/length to account for unused bits byte
+            ++read;
+            --length;
+          }
+        }
+        catch(ex) {}
       }
-      // restore read pointer
-      bytes.read = read;
-   }
+    }
+    // restore read pointer
+    bytes.read = read;
+  }
 
-   if(composed)
-   {
-      // parse child asn1 objects from the value
-      value = [];
-      var start = bytes.length();
-      while(length > 0)
-      {
-         value.push(asn1.fromDer(bytes));
-         length -= start - bytes.length();
-         start = bytes.length();
-      }
-   }
-   else
-   {
-      // TODO: do DER to OID conversion and vice-versa in .toDer?
+  if(composed) {
+    // parse child asn1 objects from the value
+    value = [];
+    var start = bytes.length();
+    while(length > 0) {
+      value.push(asn1.fromDer(bytes));
+      length -= start - bytes.length();
+      start = bytes.length();
+    }
+  }
+  else {
+    // TODO: do DER to OID conversion and vice-versa in .toDer?
 
-      // asn1 not composed, get raw value
-      value = bytes.getBytes(length);
-   }
+    // asn1 not composed, get raw value
+    value = bytes.getBytes(length);
+  }
 
-   // create and return asn1 object
-   return asn1.create(tagClass, type, constructed, value);
+  // create and return asn1 object
+  return asn1.create(tagClass, type, constructed, value);
 };
 
 /**
@@ -364,83 +340,73 @@ asn1.fromDer = function(bytes)
  *
  * @return the buffer of bytes.
  */
-asn1.toDer = function(obj)
-{
-   var bytes = forge.util.createBuffer();
+asn1.toDer = function(obj) {
+  var bytes = forge.util.createBuffer();
 
-   // build the first byte
-   var b1 = obj.tagClass | obj.type;
+  // build the first byte
+  var b1 = obj.tagClass | obj.type;
 
-   // for storing the ASN.1 value
-   var value = forge.util.createBuffer();
+  // for storing the ASN.1 value
+  var value = forge.util.createBuffer();
 
-   // if composed, use each child asn1 object's DER bytes as value
-   if(obj.composed)
-   {
-      // turn on 6th bit (0x20 = 32) to indicate asn1 is constructed
-      // from other asn1 objects
-      if(obj.constructed)
-      {
-         b1 |= 0x20;
-      }
-      // if type is a bit string, add unused bits of 0x00
-      else
-      {
-         value.putByte(0x00);
-      }
+  // if composed, use each child asn1 object's DER bytes as value
+  if(obj.composed) {
+    // turn on 6th bit (0x20 = 32) to indicate asn1 is constructed
+    // from other asn1 objects
+    if(obj.constructed) {
+      b1 |= 0x20;
+    }
+    // if type is a bit string, add unused bits of 0x00
+    else {
+      value.putByte(0x00);
+    }
 
-      // add all of the child DER bytes together
-      for(var i = 0; i < obj.value.length; ++i)
-      {
-         value.putBuffer(asn1.toDer(obj.value[i]));
-      }
-   }
-   // use asn1.value directly
-   else
-   {
-      value.putBytes(obj.value);
-   }
+    // add all of the child DER bytes together
+    for(var i = 0; i < obj.value.length; ++i) {
+      value.putBuffer(asn1.toDer(obj.value[i]));
+    }
+  }
+  // use asn1.value directly
+  else {
+    value.putBytes(obj.value);
+  }
 
-   // add tag byte
-   bytes.putByte(b1);
+  // add tag byte
+  bytes.putByte(b1);
 
-   // use "short form" encoding
-   if(value.length() <= 127)
-   {
-      // one byte describes the length
-      // bit 8 = 0 and bits 7-1 = length
-      bytes.putByte(value.length() & 0x7F);
-   }
-   // use "long form" encoding
-   else
-   {
-      // 2 to 127 bytes describe the length
-      // first byte: bit 8 = 1 and bits 7-1 = # of additional bytes
-      // other bytes: length in base 256, big-endian
-      var len = value.length();
-      var lenBytes = '';
-      do
-      {
-         lenBytes += String.fromCharCode(len & 0xFF);
-         len = len >>> 8;
-      }
-      while(len > 0);
+  // use "short form" encoding
+  if(value.length() <= 127) {
+    // one byte describes the length
+    // bit 8 = 0 and bits 7-1 = length
+    bytes.putByte(value.length() & 0x7F);
+  }
+  // use "long form" encoding
+  else {
+    // 2 to 127 bytes describe the length
+    // first byte: bit 8 = 1 and bits 7-1 = # of additional bytes
+    // other bytes: length in base 256, big-endian
+    var len = value.length();
+    var lenBytes = '';
+    do {
+      lenBytes += String.fromCharCode(len & 0xFF);
+      len = len >>> 8;
+    }
+    while(len > 0);
 
-      // set first byte to # bytes used to store the length and turn on
-      // bit 8 to indicate long-form length is used
-      bytes.putByte(lenBytes.length | 0x80);
+    // set first byte to # bytes used to store the length and turn on
+    // bit 8 to indicate long-form length is used
+    bytes.putByte(lenBytes.length | 0x80);
 
-      // concatenate length bytes in reverse since they were generated
-      // little endian and we need big endian
-      for(var i = lenBytes.length - 1; i >= 0; --i)
-      {
-         bytes.putByte(lenBytes.charCodeAt(i));
-      }
-   }
+    // concatenate length bytes in reverse since they were generated
+    // little endian and we need big endian
+    for(var i = lenBytes.length - 1; i >= 0; --i) {
+      bytes.putByte(lenBytes.charCodeAt(i));
+    }
+  }
 
-   // concatenate value bytes
-   bytes.putBuffer(value);
-   return bytes;
+  // concatenate value bytes
+  bytes.putBuffer(value);
+  return bytes;
 };
 
 /**
@@ -451,46 +417,41 @@ asn1.toDer = function(obj)
  *
  * @return the byte buffer.
  */
-asn1.oidToDer = function(oid)
-{
-   // split OID into individual values
-   var values = oid.split('.');
-   var bytes = forge.util.createBuffer();
+asn1.oidToDer = function(oid) {
+  // split OID into individual values
+  var values = oid.split('.');
+  var bytes = forge.util.createBuffer();
 
-   // first byte is 40 * value1 + value2
-   bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
-   // other bytes are each value in base 128 with 8th bit set except for
-   // the last byte for each value
-   var last, valueBytes, value, b;
-   for(var i = 2; i < values.length; ++i)
-   {
-      // produce value bytes in reverse because we don't know how many
-      // bytes it will take to store the value
-      last = true;
-      valueBytes = [];
-      value = parseInt(values[i], 10);
-      do
-      {
-         b = value & 0x7F;
-         value = value >>> 7;
-         // if value is not last, then turn on 8th bit
-         if(!last)
-         {
-            b |= 0x80;
-         }
-         valueBytes.push(b);
-         last = false;
+  // first byte is 40 * value1 + value2
+  bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
+  // other bytes are each value in base 128 with 8th bit set except for
+  // the last byte for each value
+  var last, valueBytes, value, b;
+  for(var i = 2; i < values.length; ++i) {
+    // produce value bytes in reverse because we don't know how many
+    // bytes it will take to store the value
+    last = true;
+    valueBytes = [];
+    value = parseInt(values[i], 10);
+    do {
+      b = value & 0x7F;
+      value = value >>> 7;
+      // if value is not last, then turn on 8th bit
+      if(!last) {
+        b |= 0x80;
       }
-      while(value > 0);
+      valueBytes.push(b);
+      last = false;
+    }
+    while(value > 0);
 
-      // add value bytes in reverse (needs to be in big endian)
-      for(var n = valueBytes.length - 1; n >= 0; --n)
-      {
-         bytes.putByte(valueBytes[n]);
-      }
-   }
+    // add value bytes in reverse (needs to be in big endian)
+    for(var n = valueBytes.length - 1; n >= 0; --n) {
+      bytes.putByte(valueBytes[n]);
+    }
+  }
 
-   return bytes;
+  return bytes;
 };
 
 /**
@@ -502,41 +463,36 @@ asn1.oidToDer = function(oid)
  *
  * @return the OID dot-separated string.
  */
-asn1.derToOid = function(bytes)
-{
-   var oid;
+asn1.derToOid = function(bytes) {
+  var oid;
 
-   // wrap in buffer if needed
-   if(bytes.constructor == String)
-   {
-      bytes = forge.util.createBuffer(bytes);
-   }
+  // wrap in buffer if needed
+  if(bytes.constructor == String) {
+    bytes = forge.util.createBuffer(bytes);
+  }
 
-   // first byte is 40 * value1 + value2
-   var b = bytes.getByte();
-   oid = Math.floor(b / 40) + '.' + (b % 40);
+  // first byte is 40 * value1 + value2
+  var b = bytes.getByte();
+  oid = Math.floor(b / 40) + '.' + (b % 40);
 
-   // other bytes are each value in base 128 with 8th bit set except for
-   // the last byte for each value
-   var value = 0;
-   while(bytes.length() > 0)
-   {
-      b = bytes.getByte();
-      value = value << 7;
-      // not the last byte for the value
-      if(b & 0x80)
-      {
-         value += b & 0x7F;
-      }
-      // last byte
-      else
-      {
-         oid += '.' + (value + b);
-         value = 0;
-      }
-   }
+  // other bytes are each value in base 128 with 8th bit set except for
+  // the last byte for each value
+  var value = 0;
+  while(bytes.length() > 0) {
+    b = bytes.getByte();
+    value = value << 7;
+    // not the last byte for the value
+    if(b & 0x80) {
+      value += b & 0x7F;
+    }
+    // last byte
+    else {
+      oid += '.' + (value + b);
+      value = 0;
+    }
+  }
 
-   return oid;
+  return oid;
 };
 
 /**
@@ -549,88 +505,80 @@ asn1.derToOid = function(bytes)
  *
  * @return the date.
  */
-asn1.utcTimeToDate = function(utc)
-{
-   /* The following formats can be used:
+asn1.utcTimeToDate = function(utc) {
+  /* The following formats can be used:
 
-      YYMMDDhhmmZ
-      YYMMDDhhmm+hh'mm'
-      YYMMDDhhmm-hh'mm'
-      YYMMDDhhmmssZ
-      YYMMDDhhmmss+hh'mm'
-      YYMMDDhhmmss-hh'mm'
+    YYMMDDhhmmZ
+    YYMMDDhhmm+hh'mm'
+    YYMMDDhhmm-hh'mm'
+    YYMMDDhhmmssZ
+    YYMMDDhhmmss+hh'mm'
+    YYMMDDhhmmss-hh'mm'
 
-      Where:
+    Where:
 
-      YY is the least significant two digits of the year
-      MM is the month (01 to 12)
-      DD is the day (01 to 31)
-      hh is the hour (00 to 23)
-      mm are the minutes (00 to 59)
-      ss are the seconds (00 to 59)
-      Z indicates that local time is GMT, + indicates that local time is
-      later than GMT, and - indicates that local time is earlier than GMT
-      hh' is the absolute value of the offset from GMT in hours
-      mm' is the absolute value of the offset from GMT in minutes
-   */
-   var date = new Date();
+    YY is the least significant two digits of the year
+    MM is the month (01 to 12)
+    DD is the day (01 to 31)
+    hh is the hour (00 to 23)
+    mm are the minutes (00 to 59)
+    ss are the seconds (00 to 59)
+    Z indicates that local time is GMT, + indicates that local time is
+    later than GMT, and - indicates that local time is earlier than GMT
+    hh' is the absolute value of the offset from GMT in hours
+    mm' is the absolute value of the offset from GMT in minutes */
+  var date = new Date();
 
-   // if YY >= 50 use 19xx, if YY < 50 use 20xx
-   var year = parseInt(utc.substr(0, 2), 10);
-   year = (year >= 50) ? 1900 + year : 2000 + year;
-   var MM = parseInt(utc.substr(2, 2), 10) - 1; // use 0-11 for month
-   var DD = parseInt(utc.substr(4, 2), 10);
-   var hh = parseInt(utc.substr(6, 2), 10);
-   var mm = parseInt(utc.substr(8, 2), 10);
-   var ss = 0;
+  // if YY >= 50 use 19xx, if YY < 50 use 20xx
+  var year = parseInt(utc.substr(0, 2), 10);
+  year = (year >= 50) ? 1900 + year : 2000 + year;
+  var MM = parseInt(utc.substr(2, 2), 10) - 1; // use 0-11 for month
+  var DD = parseInt(utc.substr(4, 2), 10);
+  var hh = parseInt(utc.substr(6, 2), 10);
+  var mm = parseInt(utc.substr(8, 2), 10);
+  var ss = 0;
 
-   // not just YYMMDDhhmmZ
-   if(utc.length > 11)
-   {
-      // get character after minutes
-      var c = utc.charAt(10);
-      var end = 10;
+  // not just YYMMDDhhmmZ
+  if(utc.length > 11) {
+    // get character after minutes
+    var c = utc.charAt(10);
+    var end = 10;
 
-      // see if seconds are present
-      if(c !== '+' && c !== '-')
-      {
-         // get seconds
-         ss = parseInt(utc.substr(10, 2), 10);
-         end += 2;
+    // see if seconds are present
+    if(c !== '+' && c !== '-') {
+      // get seconds
+      ss = parseInt(utc.substr(10, 2), 10);
+      end += 2;
+    }
+  }
+
+  // update date
+  date.setUTCFullYear(year, MM, DD);
+  date.setUTCHours(hh, mm, ss, 0);
+
+  if(end) {
+    // get +/- after end of time
+    c = utc.charAt(end);
+    if(c === '+' || c === '-') {
+      // get hours+minutes offset
+      var hhoffset = parseInt(utc.substr(end + 1, 2), 10);
+      var mmoffset = parseInt(utc.substr(end + 4, 2), 10);
+
+      // calculate offset in milliseconds
+      var offset = hhoffset * 60 + mmoffset;
+      offset *= 60000;
+
+      // apply offset
+      if(c === '+') {
+        date.setTime(+date - offset);
       }
-   }
-
-   // update date
-   date.setUTCFullYear(year, MM, DD);
-   date.setUTCHours(hh, mm, ss, 0);
-
-   if(end)
-   {
-      // get +/- after end of time
-      c = utc.charAt(end);
-      if(c === '+' || c === '-')
-      {
-         // get hours+minutes offset
-         var hhoffset = parseInt(utc.substr(end + 1, 2), 10);
-         var mmoffset = parseInt(utc.substr(end + 4, 2), 10);
-
-         // calculate offset in milliseconds
-         var offset = hhoffset * 60 + mmoffset;
-         offset *= 60000;
-
-         // apply offset
-         if(c === '+')
-         {
-            date.setTime(+date - offset);
-         }
-         else
-         {
-            date.setTime(+date + offset);
-         }
+      else {
+        date.setTime(+date + offset);
       }
-   }
+    }
+  }
 
-   return date;
+  return date;
 };
 
 /**
@@ -640,91 +588,83 @@ asn1.utcTimeToDate = function(utc)
  *
  * @return the date.
  */
-asn1.generalizedTimeToDate = function(gentime)
-{
-   /* The following formats can be used:
+asn1.generalizedTimeToDate = function(gentime) {
+  /* The following formats can be used:
 
-      YYYYMMDDHHMMSS
-      YYYYMMDDHHMMSS.fff
-      YYYYMMDDHHMMSSZ
-      YYYYMMDDHHMMSS.fffZ
-      YYYYMMDDHHMMSS+hh'mm'
-      YYYYMMDDHHMMSS.fff+hh'mm'
-      YYYYMMDDHHMMSS-hh'mm'
-      YYYYMMDDHHMMSS.fff-hh'mm'
+    YYYYMMDDHHMMSS
+    YYYYMMDDHHMMSS.fff
+    YYYYMMDDHHMMSSZ
+    YYYYMMDDHHMMSS.fffZ
+    YYYYMMDDHHMMSS+hh'mm'
+    YYYYMMDDHHMMSS.fff+hh'mm'
+    YYYYMMDDHHMMSS-hh'mm'
+    YYYYMMDDHHMMSS.fff-hh'mm'
 
-      Where:
+    Where:
 
-      YYYY is the year
-      MM is the month (01 to 12)
-      DD is the day (01 to 31)
-      hh is the hour (00 to 23)
-      mm are the minutes (00 to 59)
-      ss are the seconds (00 to 59)
-      .fff is the second fraction, accurate to three decimal places
-      Z indicates that local time is GMT, + indicates that local time is
-      later than GMT, and - indicates that local time is earlier than GMT
-      hh' is the absolute value of the offset from GMT in hours
-      mm' is the absolute value of the offset from GMT in minutes
-   */
-   var date = new Date();
+    YYYY is the year
+    MM is the month (01 to 12)
+    DD is the day (01 to 31)
+    hh is the hour (00 to 23)
+    mm are the minutes (00 to 59)
+    ss are the seconds (00 to 59)
+    .fff is the second fraction, accurate to three decimal places
+    Z indicates that local time is GMT, + indicates that local time is
+    later than GMT, and - indicates that local time is earlier than GMT
+    hh' is the absolute value of the offset from GMT in hours
+    mm' is the absolute value of the offset from GMT in minutes */
+  var date = new Date();
 
-   var YYYY = parseInt(gentime.substr(0, 4), 10);
-   var MM = parseInt(gentime.substr(4, 2), 10) - 1; // use 0-11 for month
-   var DD = parseInt(gentime.substr(6, 2), 10);
-   var hh = parseInt(gentime.substr(8, 2), 10);
-   var mm = parseInt(gentime.substr(10, 2), 10);
-   var ss = parseInt(gentime.substr(12, 2), 10);
-   var fff = 0;
-   var offset = 0;
-   var isUTC = false;
+  var YYYY = parseInt(gentime.substr(0, 4), 10);
+  var MM = parseInt(gentime.substr(4, 2), 10) - 1; // use 0-11 for month
+  var DD = parseInt(gentime.substr(6, 2), 10);
+  var hh = parseInt(gentime.substr(8, 2), 10);
+  var mm = parseInt(gentime.substr(10, 2), 10);
+  var ss = parseInt(gentime.substr(12, 2), 10);
+  var fff = 0;
+  var offset = 0;
+  var isUTC = false;
 
-   if(gentime.charAt(gentime.length - 1) == 'Z')
-   {
-      isUTC = true;
-   }
+  if(gentime.charAt(gentime.length - 1) == 'Z') {
+    isUTC = true;
+  }
 
-   var end = gentime.length - 5, c = gentime.charAt(end);
-   if(c === '+' || c === '-')
-   {
-      // get hours+minutes offset
-      var hhoffset = parseInt(gentime.substr(end + 1, 2), 10);
-      var mmoffset = parseInt(gentime.substr(end + 4, 2), 10);
+  var end = gentime.length - 5, c = gentime.charAt(end);
+  if(c === '+' || c === '-') {
+    // get hours+minutes offset
+    var hhoffset = parseInt(gentime.substr(end + 1, 2), 10);
+    var mmoffset = parseInt(gentime.substr(end + 4, 2), 10);
 
-      // calculate offset in milliseconds
-      offset = hhoffset * 60 + mmoffset;
-      offset *= 60000;
+    // calculate offset in milliseconds
+    offset = hhoffset * 60 + mmoffset;
+    offset *= 60000;
 
-      // apply offset
-      if(c === '+')
-      {
-         offset *= -1;
-      }
+    // apply offset
+    if(c === '+') {
+      offset *= -1;
+    }
 
-      isUTC = true;
-   }
+    isUTC = true;
+  }
 
-   // check for second fraction
-   if(gentime.charAt(14) == '.')
-   {
-      fff = parseFloat(gentime.substr(14), 10) * 1000;
-   }
+  // check for second fraction
+  if(gentime.charAt(14) == '.') {
+    fff = parseFloat(gentime.substr(14), 10) * 1000;
+  }
 
-   if(isUTC)
-   {
-      date.setUTCFullYear(YYYY, MM, DD);
-      date.setUTCHours(hh, mm, ss, fff);
+  if(isUTC) {
+    date.setUTCFullYear(YYYY, MM, DD);
+    date.setUTCHours(hh, mm, ss, fff);
 
-      // apply offset
-      date.setTime(+date + offset);
-   }
-   else
-   {
-      date.setFullYear(YYYY, MM, DD);
-      date.setHours(hh, mm, ss, fff);
-   }
+    // apply offset
+    date.setTime(+date + offset);
+  }
+  else {
+    date.setFullYear(YYYY, MM, DD);
+    date.setHours(hh, mm, ss, fff);
+  }
 
-   return date;
+  return date;
 };
 
 
@@ -739,31 +679,28 @@ asn1.generalizedTimeToDate = function(gentime)
  *
  * @return the UTCTime value.
  */
-asn1.dateToUtcTime = function(date)
-{
-   var rval = '';
+asn1.dateToUtcTime = function(date) {
+  var rval = '';
 
-   // create format YYMMDDhhmmssZ
-   var format = [];
-   format.push(('' + date.getUTCFullYear()).substr(2));
-   format.push('' + (date.getUTCMonth() + 1));
-   format.push('' + date.getUTCDate());
-   format.push('' + date.getUTCHours());
-   format.push('' + date.getUTCMinutes());
-   format.push('' + date.getUTCSeconds());
+  // create format YYMMDDhhmmssZ
+  var format = [];
+  format.push(('' + date.getUTCFullYear()).substr(2));
+  format.push('' + (date.getUTCMonth() + 1));
+  format.push('' + date.getUTCDate());
+  format.push('' + date.getUTCHours());
+  format.push('' + date.getUTCMinutes());
+  format.push('' + date.getUTCSeconds());
 
-   // ensure 2 digits are used for each format entry
-   for(var i = 0; i < format.length; ++i)
-   {
-      if(format[i].length < 2)
-      {
-         rval += '0';
-      }
-      rval += format[i];
-   }
-   rval += 'Z';
+  // ensure 2 digits are used for each format entry
+  for(var i = 0; i < format.length; ++i) {
+    if(format[i].length < 2) {
+      rval += '0';
+    }
+    rval += format[i];
+  }
+  rval += 'Z';
 
-   return rval;
+  return rval;
 };
 
 /**
@@ -786,89 +723,72 @@ asn1.dateToUtcTime = function(date)
  *
  * @return true on success, false on failure.
  */
-asn1.validate = function(obj, v, capture, errors)
-{
-   var rval = false;
+asn1.validate = function(obj, v, capture, errors) {
+  var rval = false;
 
-   // ensure tag class and type are the same if specified
-   if((obj.tagClass === v.tagClass || typeof(v.tagClass) === 'undefined') &&
-      (obj.type === v.type || typeof(v.type) === 'undefined'))
-   {
-      // ensure constructed flag is the same if specified
-      if(obj.constructed === v.constructed ||
-         typeof(v.constructed) === 'undefined')
-      {
-         rval = true;
+  // ensure tag class and type are the same if specified
+  if((obj.tagClass === v.tagClass || typeof(v.tagClass) === 'undefined') &&
+    (obj.type === v.type || typeof(v.type) === 'undefined')) {
+    // ensure constructed flag is the same if specified
+    if(obj.constructed === v.constructed ||
+      typeof(v.constructed) === 'undefined') {
+      rval = true;
 
-         // handle sub values
-         if(v.value && v.value.constructor == Array)
-         {
-            var j = 0;
-            for(var i = 0; rval && i < v.value.length; ++i)
-            {
-               rval = v.value[i].optional || false;
-               if(obj.value[j])
-               {
-                  rval = asn1.validate(
-                     obj.value[j], v.value[i], capture, errors);
-                  if(rval)
-                  {
-                     ++j;
-                  }
-                  else if(v.value[i].optional)
-                  {
-                     rval = true;
-                  }
-               }
-               if(!rval && errors)
-               {
-                  errors.push(
-                     '[' + v.name + '] ' +
-                     'Tag class "' + v.tagClass + '", type "' +
-                     v.type + '" expected value length "' +
-                     v.value.length + '", got "' +
-                     obj.value.length + '"');
-               }
+      // handle sub values
+      if(v.value && v.value.constructor == Array) {
+        var j = 0;
+        for(var i = 0; rval && i < v.value.length; ++i) {
+          rval = v.value[i].optional || false;
+          if(obj.value[j]) {
+            rval = asn1.validate(obj.value[j], v.value[i], capture, errors);
+            if(rval) {
+              ++j;
             }
-         }
+            else if(v.value[i].optional) {
+              rval = true;
+            }
+          }
+          if(!rval && errors) {
+            errors.push(
+              '[' + v.name + '] ' +
+              'Tag class "' + v.tagClass + '", type "' +
+              v.type + '" expected value length "' +
+              v.value.length + '", got "' +
+              obj.value.length + '"');
+          }
+        }
+      }
 
-         if(rval && capture)
-         {
-            if(v.capture)
-            {
-               capture[v.capture] = obj.value;
-            }
-            if(v.captureAsn1)
-            {
-               capture[v.captureAsn1] = obj;
-            }
-         }
+      if(rval && capture) {
+        if(v.capture) {
+          capture[v.capture] = obj.value;
+        }
+        if(v.captureAsn1) {
+          capture[v.captureAsn1] = obj;
+        }
       }
-      else if(errors)
-      {
-         errors.push(
-            '[' + v.name + '] ' +
-            'Expected constructed "' + v.constructed + '", got "' +
-            obj.constructed + '"');
-      }
-   }
-   else if(errors)
-   {
-      if(obj.tagClass !== v.tagClass)
-      {
-         errors.push(
-            '[' + v.name + '] ' +
-            'Expected tag class "' + v.tagClass + '", got "' +
-            obj.tagClass + '"');
-      }
-      if(obj.type !== v.type)
-      {
-         errors.push(
-            '[' + v.name + '] ' +
-            'Expected type "' + v.type + '", got "' + obj.type + '"');
-      }
-   }
-   return rval;
+    }
+    else if(errors) {
+      errors.push(
+        '[' + v.name + '] ' +
+        'Expected constructed "' + v.constructed + '", got "' +
+        obj.constructed + '"');
+    }
+  }
+  else if(errors) {
+    if(obj.tagClass !== v.tagClass) {
+      errors.push(
+        '[' + v.name + '] ' +
+        'Expected tag class "' + v.tagClass + '", got "' +
+        obj.tagClass + '"');
+    }
+    if(obj.type !== v.type) {
+      errors.push(
+        '[' + v.name + '] ' +
+        'Expected type "' + v.type + '", got "' + obj.type + '"');
+    }
+  }
+  return rval;
 };
 
 // regex for testing for non-latin characters
@@ -883,147 +803,134 @@ var _nonLatinRegex = /[^\\u0000-\\u00ff]/;
  *
  * @return the string.
  */
-asn1.prettyPrint = function(obj, level, indentation)
-{
-   var rval = '';
+asn1.prettyPrint = function(obj, level, indentation) {
+  var rval = '';
 
-   // set default level and indentation
-   level = level || 0;
-   indentation = indentation || 2;
+  // set default level and indentation
+  level = level || 0;
+  indentation = indentation || 2;
 
-   // start new line for deep levels
-   if(level > 0)
-   {
-      rval += '\n';
-   }
+  // start new line for deep levels
+  if(level > 0) {
+    rval += '\n';
+  }
 
-   // create indent
-   var indent = '';
-   for(var i = 0; i < level * indentation; ++i)
-   {
-      indent += ' ';
-   }
+  // create indent
+  var indent = '';
+  for(var i = 0; i < level * indentation; ++i) {
+    indent += ' ';
+  }
 
-   // print class:type
-   rval += indent + 'Tag: ';
-   switch(obj.tagClass)
-   {
-      case asn1.Class.UNIVERSAL:
-         rval += 'Universal:';
-         break;
-      case asn1.Class.APPLICATION:
-         rval += 'Application:';
-         break;
-      case asn1.Class.CONTEXT_SPECIFIC:
-         rval += 'Context-Specific:';
-         break;
-      case asn1.Class.PRIVATE:
-         rval += 'Private:';
-         break;
-   }
+  // print class:type
+  rval += indent + 'Tag: ';
+  switch(obj.tagClass) {
+  case asn1.Class.UNIVERSAL:
+    rval += 'Universal:';
+    break;
+  case asn1.Class.APPLICATION:
+    rval += 'Application:';
+    break;
+  case asn1.Class.CONTEXT_SPECIFIC:
+    rval += 'Context-Specific:';
+    break;
+  case asn1.Class.PRIVATE:
+    rval += 'Private:';
+    break;
+  }
 
-   if(obj.tagClass === asn1.Class.UNIVERSAL)
-   {
-      // known types
-      switch(obj.type)
-      {
-         case asn1.Type.NONE:
-            rval += 'None';
-            break;
-         case asn1.Type.BOOLEAN:
-            rval += 'Boolean';
-            break;
-         case asn1.Type.BITSTRING:
-            rval += 'Bit string';
-            break;
-         case asn1.Type.INTEGER:
-            rval += 'Integer';
-            break;
-         case asn1.Type.OCTETSTRING:
-            rval += 'Octet string';
-            break;
-         case asn1.Type.NULL:
-            rval += 'Null';
-            break;
-         case asn1.Type.OID:
-            rval += 'Object Identifier';
-            break;
-         case asn1.Type.ODESC:
-            rval += 'Object Descriptor';
-            break;
-         case asn1.Type.EXTERNAL:
-            rval += 'External or Instance of';
-            break;
-         case asn1.Type.REAL:
-            rval += 'Real';
-            break;
-         case asn1.Type.ENUMERATED:
-            rval += 'Enumerated';
-            break;
-         case asn1.Type.EMBEDDED:
-            rval += 'Embedded PDV';
-            break;
-         case asn1.Type.ROID:
-            rval += 'Relative Object Identifier';
-            break;
-         case asn1.Type.SEQUENCE:
-            rval += 'Sequence';
-            break;
-         case asn1.Type.SET:
-            rval += 'Set';
-            break;
-         case asn1.Type.PRINTABLESTRING:
-            rval += 'Printable String';
-            break;
-         case asn1.Type.IA5String:
-            rval += 'IA5String (ASCII)';
-            break;
-         case asn1.Type.UTCTIME:
-            rval += 'UTC time';
-            break;
-         default:
-            rval += obj.type;
-            break;
-      }
-   }
-   else
-   {
+  if(obj.tagClass === asn1.Class.UNIVERSAL) {
+    // known types
+    switch(obj.type) {
+    case asn1.Type.NONE:
+      rval += 'None';
+      break;
+    case asn1.Type.BOOLEAN:
+      rval += 'Boolean';
+      break;
+    case asn1.Type.BITSTRING:
+      rval += 'Bit string';
+      break;
+    case asn1.Type.INTEGER:
+      rval += 'Integer';
+      break;
+    case asn1.Type.OCTETSTRING:
+      rval += 'Octet string';
+      break;
+    case asn1.Type.NULL:
+      rval += 'Null';
+      break;
+    case asn1.Type.OID:
+      rval += 'Object Identifier';
+      break;
+    case asn1.Type.ODESC:
+      rval += 'Object Descriptor';
+      break;
+    case asn1.Type.EXTERNAL:
+      rval += 'External or Instance of';
+      break;
+    case asn1.Type.REAL:
+      rval += 'Real';
+      break;
+    case asn1.Type.ENUMERATED:
+      rval += 'Enumerated';
+      break;
+    case asn1.Type.EMBEDDED:
+      rval += 'Embedded PDV';
+      break;
+    case asn1.Type.ROID:
+      rval += 'Relative Object Identifier';
+      break;
+    case asn1.Type.SEQUENCE:
+      rval += 'Sequence';
+      break;
+    case asn1.Type.SET:
+      rval += 'Set';
+      break;
+    case asn1.Type.PRINTABLESTRING:
+      rval += 'Printable String';
+      break;
+    case asn1.Type.IA5String:
+      rval += 'IA5String (ASCII)';
+      break;
+    case asn1.Type.UTCTIME:
+      rval += 'UTC time';
+      break;
+    default:
       rval += obj.type;
-   }
+      break;
+    }
+  }
+  else {
+    rval += obj.type;
+  }
 
-   rval += '\n';
-   rval += indent + 'Constructed: ' + obj.constructed + '\n';
+  rval += '\n';
+  rval += indent + 'Constructed: ' + obj.constructed + '\n';
 
-   if(obj.composed)
-   {
-      rval += indent + 'Sub values: ' + obj.value.length;
-      for(var i = 0; i < obj.value.length; ++i)
-      {
-         rval += asn1.prettyPrint(obj.value[i], level + 1, indentation);
-         if((i + 1) < obj.value.length)
-         {
-            rval += ',';
-         }
+  if(obj.composed) {
+    rval += indent + 'Sub values: ' + obj.value.length;
+    for(var i = 0; i < obj.value.length; ++i) {
+      rval += asn1.prettyPrint(obj.value[i], level + 1, indentation);
+      if((i + 1) < obj.value.length) {
+        rval += ',';
       }
-   }
-   else
-   {
-      rval += indent + 'Value: ';
-      if(_nonLatinRegex.test(obj.value))
-      {
-         rval += '0x' + forge.util.createBuffer(obj.value).toHex();
-      }
-      else if(obj.value.length === 0)
-      {
-         rval += '[null]';
-      }
-      else
-      {
-         rval += obj.value;
-      }
-   }
+    }
+  }
+  else {
+    rval += indent + 'Value: ';
+    // FIXME: choose output (hex vs. printable) based on asn1.Type
+    if(_nonLatinRegex.test(obj.value)) {
+      rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
+    }
+    else if(obj.value.length === 0) {
+      rval += '[null]';
+    }
+    else {
+      rval += obj.value;
+    }
+  }
 
-   return rval;
+  return rval;
 };
 
 })();

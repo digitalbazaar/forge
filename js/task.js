@@ -7,25 +7,21 @@
  *
  * Copyright (c) 2009-2012 Digital Bazaar, Inc.
  */
-(function()
-{
+(function() {
 
 // define forge
-if(typeof(window) !== 'undefined')
-{
-   var forge = window.forge = window.forge || {};
-   forge.task = {};
+if(typeof(window) !== 'undefined') {
+  var forge = window.forge = window.forge || {};
+  forge.task = {};
 }
 // define node.js module
-else if(typeof(module) !== 'undefined' && module.exports)
-{
-   var forge =
-   {
-      debug: require('./debug'),
-      log: require('./log'),
-      util: require('./util')
-   };
-   module.exports = forge.task = {};
+else if(typeof(module) !== 'undefined' && module.exports) {
+  var forge = {
+    debug: require('./debug'),
+    log: require('./log'),
+    util: require('./util')
+  };
+  module.exports = forge.task = {};
 }
 
 // logging category
@@ -167,68 +163,65 @@ sStateTable[ERROR][FAIL] = ERROR;
  * Creates a new task.
  *
  * @param options options for this task
- *    run: the run function for the task (required)
- *    name: the run function for the task (optional)
- *    parent: parent of this task (optional)
+ *   run: the run function for the task (required)
+ *   name: the run function for the task (optional)
+ *   parent: parent of this task (optional)
  *
  * @return the empty task.
  */
-var Task = function(options)
-{
-   // task id
-   this.id = -1;
+var Task = function(options) {
+  // task id
+  this.id = -1;
 
-   // task name
-   this.name = options.name || sNoTaskName;
+  // task name
+  this.name = options.name || sNoTaskName;
 
-   // task has no parent
-   this.parent = options.parent || null;
+  // task has no parent
+  this.parent = options.parent || null;
 
-   // save run function
-   this.run = options.run;
+  // save run function
+  this.run = options.run;
 
-   // create a queue of subtasks to run
-   this.subtasks = [];
+  // create a queue of subtasks to run
+  this.subtasks = [];
 
-   // error flag
-   this.error = false;
+  // error flag
+  this.error = false;
 
-   // state of the task
-   this.state = READY;
+  // state of the task
+  this.state = READY;
 
-   // number of times the task has been blocked (also the number
-   // of permits needed to be released to continue running)
-   this.blocks = 0;
+  // number of times the task has been blocked (also the number
+  // of permits needed to be released to continue running)
+  this.blocks = 0;
 
-   // timeout id when sleeping
-   this.timeoutId = null;
+  // timeout id when sleeping
+  this.timeoutId = null;
 
-   // no swap time yet
-   this.swapTime = null;
+  // no swap time yet
+  this.swapTime = null;
 
-   // no user data
-   this.userData = null;
+  // no user data
+  this.userData = null;
 
-   // initialize task
-   // FIXME: deal with overflow
-   this.id = sNextTaskId++;
-   sTasks[this.id] = this;
-   if(sVL >= 1)
-   {
-      forge.log.verbose(cat, '[%s][%s] init', this.id, this.name, this);
-   }
+  // initialize task
+  // FIXME: deal with overflow
+  this.id = sNextTaskId++;
+  sTasks[this.id] = this;
+  if(sVL >= 1) {
+    forge.log.verbose(cat, '[%s][%s] init', this.id, this.name, this);
+  }
 };
 
 /**
  * Logs debug information on this task and the system state.
  */
-Task.prototype.debug = function(msg)
-{
-   msg = msg || '';
-   forge.log.debug(cat, msg,
-      '[%s][%s] task:', this.id, this.name, this,
-      'subtasks:', this.subtasks.length,
-      'queue:', sTaskQueues);
+Task.prototype.debug = function(msg) {
+  msg = msg || '';
+  forge.log.debug(cat, msg,
+    '[%s][%s] task:', this.id, this.name, this,
+    'subtasks:', this.subtasks.length,
+    'queue:', sTaskQueues);
 };
 
 /**
@@ -236,36 +229,34 @@ Task.prototype.debug = function(msg)
  *
  * @param name human readable name for this task (optional).
  * @param subrun a function to run that takes the current task as
- *               its first parameter.
+ *          its first parameter.
  *
  * @return the current task (useful for chaining next() calls).
  */
-Task.prototype.next = function(name, subrun)
-{
-   // juggle parameters if it looks like no name is given
-   if(typeof(name) === 'function')
-   {
-      subrun = name;
+Task.prototype.next = function(name, subrun) {
+  // juggle parameters if it looks like no name is given
+  if(typeof(name) === 'function') {
+    subrun = name;
 
-      // inherit parent's name
-      name = this.name;
-   }
-   // create subtask, set parent to this task, propagate callbacks
-   var subtask = new Task({
-      run: subrun,
-      name: name,
-      parent: this
-   });
-   // start subtasks running
-   subtask.state = RUNNING;
-   subtask.type = this.type;
-   subtask.successCallback = this.successCallback || null;
-   subtask.failureCallback = this.failureCallback || null;
+    // inherit parent's name
+    name = this.name;
+  }
+  // create subtask, set parent to this task, propagate callbacks
+  var subtask = new Task({
+    run: subrun,
+    name: name,
+    parent: this
+  });
+  // start subtasks running
+  subtask.state = RUNNING;
+  subtask.type = this.type;
+  subtask.successCallback = this.successCallback || null;
+  subtask.failureCallback = this.failureCallback || null;
 
-   // queue a new subtask
-   this.subtasks.push(subtask);
+  // queue a new subtask
+  this.subtasks.push(subtask);
 
-   return this;
+  return this;
 };
 
 /**
@@ -274,87 +265,75 @@ Task.prototype.next = function(name, subrun)
  *
  * @param name human readable name for this task (optional).
  * @param subrun functions to run that take the current task as
- *               their first parameter.
+ *          their first parameter.
  *
  * @return the current task (useful for chaining next() calls).
  */
-Task.prototype.parallel = function(name, subrun)
-{
-   // juggle parameters if it looks like no name is given
-   if(name.constructor == Array)
-   {
-      subrun = name;
+Task.prototype.parallel = function(name, subrun) {
+  // juggle parameters if it looks like no name is given
+  if(name.constructor == Array) {
+    subrun = name;
 
-      // inherit parent's name
-      name = this.name;
-   }
-   // Wrap parallel tasks in a regular task so they are started at the
-   // proper time.
-   return this.next(name, function(task)
-   {
-      // block waiting for subtasks
-      var ptask = task;
-      ptask.block(subrun.length);
+    // inherit parent's name
+    name = this.name;
+  }
+  // Wrap parallel tasks in a regular task so they are started at the
+  // proper time.
+  return this.next(name, function(task) {
+    // block waiting for subtasks
+    var ptask = task;
+    ptask.block(subrun.length);
 
-      // we pass the iterator from the loop below as a parameter
-      // to a function because it is otherwise included in the
-      // closure and changes as the loop changes -- causing i
-      // to always be set to its highest value
-      var startParallelTask = function(pname, pi)
-      {
-         forge.task.start(
-         {
-            type: pname,
-            run: function(task)
-            {
-               subrun[pi](task);
-            },
-            success: function(task)
-            {
-               ptask.unblock();
-            },
-            failure: function(task)
-            {
-               ptask.unblock();
-            }
-         });
-      };
+    // we pass the iterator from the loop below as a parameter
+    // to a function because it is otherwise included in the
+    // closure and changes as the loop changes -- causing i
+    // to always be set to its highest value
+    var startParallelTask = function(pname, pi) {
+      forge.task.start({
+        type: pname,
+        run: function(task) {
+           subrun[pi](task);
+        },
+        success: function(task) {
+           ptask.unblock();
+        },
+        failure: function(task) {
+           ptask.unblock();
+        }
+      });
+    };
 
-      for(var i = 0; i < subrun.length; i++)
-      {
-         // Type must be unique so task starts in parallel:
-         //    name + private string + task id + sub-task index
-         // start tasks in parallel and unblock when the finish
-         var pname = name + '__parallel-' + task.id + '-' + i;
-         var pi = i;
-         startParallelTask(pname, pi);
-      }
-   });
+    for(var i = 0; i < subrun.length; i++) {
+      // Type must be unique so task starts in parallel:
+      //    name + private string + task id + sub-task index
+      // start tasks in parallel and unblock when the finish
+      var pname = name + '__parallel-' + task.id + '-' + i;
+      var pi = i;
+      startParallelTask(pname, pi);
+    }
+  });
 };
 
 /**
  * Stops a running task.
  */
-Task.prototype.stop = function()
-{
-   this.state = sStateTable[this.state][STOP];
+Task.prototype.stop = function() {
+  this.state = sStateTable[this.state][STOP];
 };
 
 /**
  * Starts running a task.
  */
-Task.prototype.start = function()
-{
-   this.error = false;
-   this.state = sStateTable[this.state][START];
+Task.prototype.start = function() {
+  this.error = false;
+  this.state = sStateTable[this.state][START];
 
-   // try to restart
-   if(this.state === RUNNING)
-   {
-      this.start = new Date();
-      this.run(this);
-      runNext(this, 0);
-   }
+  // try to restart
+  if(this.state === RUNNING) {
+    this.start = new Date();
+    this.run(this);
+    runNext(this, 0);
+  }
 };
 
 /**
@@ -364,14 +343,12 @@ Task.prototype.start = function()
  *
  * @param n number of permits to wait for (default: 1).
  */
-Task.prototype.block = function(n)
-{
-   n = typeof(n) === 'undefined' ? 1 : n;
-   this.blocks += n;
-   if(this.blocks > 0)
-   {
-      this.state = sStateTable[this.state][BLOCK];
-   }
+Task.prototype.block = function(n) {
+  n = typeof(n) === 'undefined' ? 1 : n;
+  this.blocks += n;
+  if(this.blocks > 0) {
+    this.state = sStateTable[this.state][BLOCK];
+  }
 };
 
 /**
@@ -387,16 +364,14 @@ Task.prototype.block = function(n)
  *
  * @return the current block count (task is unblocked when count is 0)
  */
-Task.prototype.unblock = function(n)
-{
-   n = typeof(n) === 'undefined' ? 1 : n;
-   this.blocks -= n;
-   if(this.blocks === 0 && this.state !== DONE)
-   {
-      this.state = RUNNING;
-      runNext(this, 0);
-   }
-   return this.blocks;
+Task.prototype.unblock = function(n) {
+  n = typeof(n) === 'undefined' ? 1 : n;
+  this.blocks -= n;
+  if(this.blocks === 0 && this.state !== DONE) {
+    this.state = RUNNING;
+    runNext(this, 0);
+  }
+  return this.blocks;
 };
 
 /**
@@ -404,17 +379,15 @@ Task.prototype.unblock = function(n)
  *
  * @param n number of milliseconds to sleep (default: 0).
  */
-Task.prototype.sleep = function(n)
-{
-   n = typeof(n) === 'undefined' ? 0 : n;
-   this.state = sStateTable[this.state][SLEEP];
-   var task = this;
-   this.timeoutId = setTimeout(function()
-   {
-      task.timeoutId = null;
-      task.state = RUNNING;
-      runNext(task, 0);
-   }, n);
+Task.prototype.sleep = function(n) {
+  n = typeof(n) === 'undefined' ? 0 : n;
+  this.state = sStateTable[this.state][SLEEP];
+  var task = this;
+  this.timeoutId = setTimeout(function() {
+    task.timeoutId = null;
+    task.state = RUNNING;
+    runNext(task, 0);
+  }, n);
 };
 
 /**
@@ -426,41 +399,36 @@ Task.prototype.sleep = function(n)
  *
  * @param cond the condition variable to wait on.
  */
-Task.prototype.wait = function(cond)
-{
-   cond.wait(this);
+Task.prototype.wait = function(cond) {
+  cond.wait(this);
 };
 
 /**
  * If sleeping, wakeup and continue running tasks.
  */
-Task.prototype.wakeup = function()
-{
-   if(this.state === SLEEPING)
-   {
-      cancelTimeout(this.timeoutId);
-      this.timeoutId = null;
-      this.state = RUNNING;
-      runNext(this, 0);
-   }
+Task.prototype.wakeup = function() {
+  if(this.state === SLEEPING) {
+    cancelTimeout(this.timeoutId);
+    this.timeoutId = null;
+    this.state = RUNNING;
+    runNext(this, 0);
+  }
 };
 
 /**
  * Cancel all remaining subtasks of this task.
  */
-Task.prototype.cancel = function()
-{
-   this.state = sStateTable[this.state][CANCEL];
-   // remove permits needed
-   this.permitsNeeded = 0;
-   // cancel timeouts
-   if(this.timeoutId !== null)
-   {
-      cancelTimeout(this.timeoutId);
-      this.timeoutId = null;
-   }
-   // remove subtasks
-   this.subtasks = [];
+Task.prototype.cancel = function() {
+  this.state = sStateTable[this.state][CANCEL];
+  // remove permits needed
+  this.permitsNeeded = 0;
+  // cancel timeouts
+  if(this.timeoutId !== null) {
+    cancelTimeout(this.timeoutId);
+    this.timeoutId = null;
+  }
+  // remove subtasks
+  this.subtasks = [];
 };
 
 /**
@@ -478,47 +446,41 @@ Task.prototype.cancel = function()
  *
  * @param next the task to continue at, or null to abort entirely.
  */
-Task.prototype.fail = function(next)
-{
-   // set error flag
-   this.error = true;
+Task.prototype.fail = function(next) {
+  // set error flag
+  this.error = true;
 
-   // finish task
-   finish(this, true);
+  // finish task
+  finish(this, true);
 
-   if(next)
-   {
-      // propagate task info
-      next.error = this.error;
-      next.swapTime = this.swapTime;
-      next.userData = this.userData;
+  if(next) {
+    // propagate task info
+    next.error = this.error;
+    next.swapTime = this.swapTime;
+    next.userData = this.userData;
 
-      // do next task as specified
-      runNext(next, 0);
-   }
-   else
-   {
-      if(this.parent !== null)
-      {
-         // finish root task (ensures it is removed from task queue)
-         var parent = this.parent;
-         while(parent.parent !== null)
-         {
-            // propagate task info
-            parent.error = this.error;
-            parent.swapTime = this.swapTime;
-            parent.userData = this.userData;
-            parent = parent.parent;
-         }
-         finish(parent, true);
+    // do next task as specified
+    runNext(next, 0);
+  }
+  else {
+    if(this.parent !== null) {
+      // finish root task (ensures it is removed from task queue)
+      var parent = this.parent;
+      while(parent.parent !== null) {
+        // propagate task info
+        parent.error = this.error;
+        parent.swapTime = this.swapTime;
+        parent.userData = this.userData;
+        parent = parent.parent;
       }
+      finish(parent, true);
+    }
 
-      // call failure callback if one exists
-      if(this.failureCallback)
-      {
-         this.failureCallback(this);
-      }
-   }
+    // call failure callback if one exists
+    if(this.failureCallback) {
+      this.failureCallback(this);
+    }
+  }
 };
 
 /**
@@ -526,19 +488,16 @@ Task.prototype.fail = function(next)
  *
  * @param task the task to start.
  */
-var start = function(task)
-{
-   task.error = false;
-   task.state = sStateTable[task.state][START];
-   setTimeout(function()
-   {
-      if(task.state === RUNNING)
-      {
-         task.swapTime = +new Date();
-         task.run(task);
-         runNext(task, 0);
-      }
-   }, 0);
+var start = function(task) {
+  task.error = false;
+  task.state = sStateTable[task.state][START];
+  setTimeout(function() {
+    if(task.state === RUNNING) {
+      task.swapTime = +new Date();
+      task.run(task);
+      runNext(task, 0);
+    }
+  }, 0);
 };
 
 /**
@@ -547,71 +506,61 @@ var start = function(task)
  * @param task the task to process.
  * @param recurse the recursion count.
  */
-var runNext = function(task, recurse)
-{
-   // get time since last context swap (ms), if enough time has passed set
-   // swap to true to indicate that doNext was performed asynchronously
-   // also, if recurse is too high do asynchronously
-   var swap =
-      (recurse > sMaxRecursions) ||
-      (+new Date() - task.swapTime) > sTimeSlice;
+var runNext = function(task, recurse) {
+  // get time since last context swap (ms), if enough time has passed set
+  // swap to true to indicate that doNext was performed asynchronously
+  // also, if recurse is too high do asynchronously
+  var swap =
+    (recurse > sMaxRecursions) ||
+    (+new Date() - task.swapTime) > sTimeSlice;
 
-   var doNext = function(recurse)
-   {
-      recurse++;
-      if(task.state === RUNNING)
-      {
-         if(swap)
-         {
-            // update swap time
-            task.swapTime = +new Date();
-         }
-
-         if(task.subtasks.length > 0)
-         {
-            // run next subtask
-            var subtask = task.subtasks.shift();
-            subtask.error = task.error;
-            subtask.swapTime = task.swapTime;
-            subtask.userData = task.userData;
-            subtask.run(subtask);
-            if(!subtask.error)
-            {
-               runNext(subtask, recurse);
-            }
-         }
-         else
-         {
-            finish(task);
-
-            if(!task.error)
-            {
-               // chain back up and run parent
-               if(task.parent !== null)
-               {
-                  // propagate task info
-                  task.parent.error = task.error;
-                  task.parent.swapTime = task.swapTime;
-                  task.parent.userData = task.userData;
-
-                  // no subtasks left, call run next subtask on parent
-                  runNext(task.parent, recurse);
-               }
-            }
-         }
+  var doNext = function(recurse) {
+    recurse++;
+    if(task.state === RUNNING) {
+      if(swap) {
+        // update swap time
+        task.swapTime = +new Date();
       }
-   };
 
-   if(swap)
-   {
-      // we're swapping, so run asynchronously
-      setTimeout(doNext, 0);
-   }
-   else
-   {
-      // not swapping, so run synchronously
-      doNext(recurse);
-   }
+      if(task.subtasks.length > 0) {
+        // run next subtask
+        var subtask = task.subtasks.shift();
+        subtask.error = task.error;
+        subtask.swapTime = task.swapTime;
+        subtask.userData = task.userData;
+        subtask.run(subtask);
+        if(!subtask.error)
+        {
+           runNext(subtask, recurse);
+        }
+      }
+      else {
+        finish(task);
+
+        if(!task.error) {
+          // chain back up and run parent
+          if(task.parent !== null) {
+            // propagate task info
+            task.parent.error = task.error;
+            task.parent.swapTime = task.swapTime;
+            task.parent.userData = task.userData;
+
+            // no subtasks left, call run next subtask on parent
+            runNext(task.parent, recurse);
+          }
+        }
+      }
+    }
+  };
+
+  if(swap) {
+    // we're swapping, so run asynchronously
+    setTimeout(doNext, 0);
+  }
+  else {
+    // not swapping, so run synchronously
+    doNext(recurse);
+  }
 };
 
 /**
@@ -620,88 +569,73 @@ var runNext = function(task, recurse)
  * @param task the task to finish.
  * @param suppressCallbacks true to suppress callbacks.
  */
-var finish = function(task, suppressCallbacks)
-{
-   // subtask is now done
-   task.state = DONE;
+var finish = function(task, suppressCallbacks) {
+  // subtask is now done
+  task.state = DONE;
 
-   delete sTasks[task.id];
-   if(sVL >= 1)
-   {
-      forge.log.verbose(cat, '[%s][%s] finish',
-         task.id, task.name, task);
-   }
+  delete sTasks[task.id];
+  if(sVL >= 1) {
+    forge.log.verbose(cat, '[%s][%s] finish',
+      task.id, task.name, task);
+  }
 
-   // only do queue processing for root tasks
-   if(task.parent === null)
-   {
-      // report error if queue is missing
-      if(!(task.type in sTaskQueues))
-      {
-         forge.log.error(cat,
-            '[%s][%s] task queue missing [%s]',
+  // only do queue processing for root tasks
+  if(task.parent === null) {
+    // report error if queue is missing
+    if(!(task.type in sTaskQueues)) {
+      forge.log.error(cat,
+        '[%s][%s] task queue missing [%s]',
+        task.id, task.name, task.type);
+    }
+    // report error if queue is empty
+    else if(sTaskQueues[task.type].length === 0) {
+      forge.log.error(cat,
+        '[%s][%s] task queue empty [%s]',
+        task.id, task.name, task.type);
+    }
+    // report error if this task isn't the first in the queue
+    else if(sTaskQueues[task.type][0] !== task) {
+      forge.log.error(cat,
+        '[%s][%s] task not first in queue [%s]',
+        task.id, task.name, task.type);
+    }
+    else {
+      // remove ourselves from the queue
+      sTaskQueues[task.type].shift();
+      // clean up queue if it is empty
+      if(sTaskQueues[task.type].length === 0) {
+        if(sVL >= 1) {
+          forge.log.verbose(cat, '[%s][%s] delete queue [%s]',
             task.id, task.name, task.type);
+        }
+        /* Note: Only a task can delete a queue of its own type. This
+         is used as a way to synchronize tasks. If a queue for a certain
+         task type exists, then a task of that type is running.
+         */
+        delete sTaskQueues[task.type];
       }
-      // report error if queue is empty
-      else if(sTaskQueues[task.type].length === 0)
-      {
-         forge.log.error(cat,
-            '[%s][%s] task queue empty [%s]',
-            task.id, task.name, task.type);
+      // dequeue the next task and start it
+      else {
+        if(sVL >= 1) {
+          forge.log.verbose(cat,
+            '[%s][%s] queue start next [%s] remain:%s',
+            task.id, task.name, task.type,
+            sTaskQueues[task.type].length);
+        }
+        sTaskQueues[task.type][0].start();
       }
-      // report error if this task isn't the first in the queue
-      else if(sTaskQueues[task.type][0] !== task)
-      {
-         forge.log.error(cat,
-            '[%s][%s] task not first in queue [%s]',
-            task.id, task.name, task.type);
-      }
-      else
-      {
-         // remove ourselves from the queue
-         sTaskQueues[task.type].shift();
-         // clean up queue if it is empty
-         if(sTaskQueues[task.type].length === 0)
-         {
-            if(sVL >= 1)
-            {
-               forge.log.verbose(cat, '[%s][%s] delete queue [%s]',
-                  task.id, task.name, task.type);
-            }
-            /*
-             Note: Only a task can delete a queue of its own type. This
-             is used as a way to synchronize tasks. If a queue for a certain
-             task type exists, then a task of that type is running.
-             */
-            delete sTaskQueues[task.type];
-         }
-         // dequeue the next task and start it
-         else
-         {
-            if(sVL >= 1)
-            {
-               forge.log.verbose(cat,
-                  '[%s][%s] queue start next [%s] remain:%s',
-                  task.id, task.name, task.type,
-                  sTaskQueues[task.type].length);
-            }
-            sTaskQueues[task.type][0].start();
-         }
-      }
+    }
 
-      if(!suppressCallbacks)
-      {
-         // call final callback if one exists
-         if(task.error && task.failureCallback)
-         {
-            task.failureCallback(task);
-         }
-         else if(!task.error && task.successCallback)
-         {
-            task.successCallback(task);
-         }
+    if(!suppressCallbacks) {
+      // call final callback if one exists
+      if(task.error && task.failureCallback) {
+        task.failureCallback(task);
       }
-   }
+      else if(!task.error && task.successCallback) {
+        task.successCallback(task);
+      }
+    }
+  }
 };
 
 /* Tasks API */
@@ -720,43 +654,39 @@ var finish = function(task, suppressCallbacks)
  * (each function takes a task object as its first parameter):
  *
  * {
- *    type: the type of task.
- *    run: the function to run to execute the task.
- *    success: a callback to call when the task succeeds (optional).
- *    failure: a callback to call when the task fails (optional).
+ *   type: the type of task.
+ *   run: the function to run to execute the task.
+ *   success: a callback to call when the task succeeds (optional).
+ *   failure: a callback to call when the task fails (optional).
  * }
  *
  * @param options the object as described above.
  */
-forge.task.start = function(options)
-{
-   // create a new task
-   var task = new Task({
-      run: options.run,
-      name: options.name || sNoTaskName
-   });
-   task.type = options.type;
-   task.successCallback = options.success || null;
-   task.failureCallback = options.failure || null;
+forge.task.start = function(options) {
+  // create a new task
+  var task = new Task({
+    run: options.run,
+    name: options.name || sNoTaskName
+  });
+  task.type = options.type;
+  task.successCallback = options.success || null;
+  task.failureCallback = options.failure || null;
 
-   // append the task onto the appropriate queue
-   if(!(task.type in sTaskQueues))
-   {
-      if(sVL >= 1)
-      {
-         forge.log.verbose(cat, '[%s][%s] create queue [%s]',
-            task.id, task.name, task.type);
-      }
-      // create the queue with the new task
-      sTaskQueues[task.type] = [task];
-      start(task);
-   }
-   else
-   {
-      // push the task onto the queue, it will be run after a task
-      // with the same type completes
-      sTaskQueues[options.type].push(task);
-   }
+  // append the task onto the appropriate queue
+  if(!(task.type in sTaskQueues)) {
+    if(sVL >= 1) {
+      forge.log.verbose(cat, '[%s][%s] create queue [%s]',
+        task.id, task.name, task.type);
+    }
+    // create the queue with the new task
+    sTaskQueues[task.type] = [task];
+    start(task);
+  }
+  else {
+    // push the task onto the queue, it will be run after a task
+    // with the same type completes
+    sTaskQueues[options.type].push(task);
+  }
 };
 
 /**
@@ -764,14 +694,12 @@ forge.task.start = function(options)
  *
  * @param type the type of task to cancel.
  */
-forge.task.cancel = function(type)
-{
-   // find the task queue
-   if(type in sTaskQueues)
-   {
-      // empty all but the current task from the queue
-      sTaskQueues[type] = [sTaskQueues[type][0]];
-   }
+forge.task.cancel = function(type) {
+  // find the task queue
+  if(type in sTaskQueues) {
+    // empty all but the current task from the queue
+    sTaskQueues[type] = [sTaskQueues[type][0]];
+  }
 };
 
 /**
@@ -781,46 +709,41 @@ forge.task.cancel = function(type)
  *
  * @return the condition variable.
  */
-forge.task.createCondition = function()
-{
-   var cond =
-   {
-      // all tasks that are blocked
-      tasks: {}
-   };
+forge.task.createCondition = function() {
+  var cond = {
+    // all tasks that are blocked
+    tasks: {}
+  };
 
-   /**
-    * Causes the given task to block until notify is called. If the task
-    * is already waiting on this condition then this is a no-op.
-    *
-    * @param task the task to cause to wait.
-    */
-   cond.wait = function(task)
-   {
-      // only block once
-      if(!(task.id in cond.tasks))
-      {
-         task.block();
-         cond.tasks[task.id] = task;
-      }
-   };
+  /**
+   * Causes the given task to block until notify is called. If the task
+   * is already waiting on this condition then this is a no-op.
+   *
+   * @param task the task to cause to wait.
+   */
+  cond.wait = function(task) {
+    // only block once
+    if(!(task.id in cond.tasks))
+    {
+       task.block();
+       cond.tasks[task.id] = task;
+    }
+  };
 
-   /**
-    * Notifies all waiting tasks to wake up.
-    */
-   cond.notify = function()
-   {
-      // since unblock() will run the next task from here, make sure to
-      // clear the condition's blocked task list before unblocking
-      var tmp = cond.tasks;
-      cond.tasks = {};
-      for(var id in tmp)
-      {
-         tmp[id].unblock();
-      }
-   };
+  /**
+   * Notifies all waiting tasks to wake up.
+   */
+  cond.notify = function() {
+    // since unblock() will run the next task from here, make sure to
+    // clear the condition's blocked task list before unblocking
+    var tmp = cond.tasks;
+    cond.tasks = {};
+    for(var id in tmp) {
+      tmp[id].unblock();
+    }
+  };
 
-   return cond;
+  return cond;
 };
 
 })();

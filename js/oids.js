@@ -5,21 +5,18 @@
  *
  * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
-(function()
-{
+(function() {
 
 var oids = {};
 
 // define forge
-if(typeof(window) !== 'undefined')
-{
-   var forge = window.forge = window.forge || {};
+if(typeof(window) !== 'undefined') {
+  var forge = window.forge = window.forge || {};
 }
 // define node.js module
-else if(typeof(module) !== 'undefined' && module.exports)
-{
-   var forge = {};
-   module.exports = oids;
+else if(typeof(module) !== 'undefined' && module.exports) {
+  var forge = {};
+  module.exports = oids;
 }
 forge.pki = forge.pki || {};
 forge.pki.oids = oids;
