@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function($)
 {
@@ -91,7 +91,7 @@ var xhrApi = {};
 
 /**
  * Initializes flash XHR support.
- * 
+ *
  * @param options:
  *    url: the default base URL to connect to if xhr URLs are relative,
  *       ie: https://myserver.com.
@@ -120,12 +120,12 @@ var xhrApi = {};
 xhrApi.init = function(options)
 {
    forge.log.debug(cat, 'initializing', options);
-   
+
    // update default policy port and max connections
    _policyPort = options.policyPort || _policyPort;
    _policyUrl = options.policyUrl || _policyUrl;
    _maxConnections = options.connections || _maxConnections;
-   
+
    // create the flash socket pool
    _sp = net.createSocketPool({
       flashId: options.flashId,
@@ -133,7 +133,7 @@ xhrApi.init = function(options)
       policyUrl: _policyUrl,
       msie: options.msie || false
    });
-   
+
    // create default http client
    _client = http.createClient({
       url: options.url || (
@@ -152,7 +152,7 @@ xhrApi.init = function(options)
       getSignature: options.getSignature
    });
    _clients[_client.url.full] = _client;
-   
+
    forge.log.debug(cat, 'ready');
 };
 
@@ -168,7 +168,7 @@ xhrApi.cleanup = function()
    }
    _clients = {};
    _client = null;
-   
+
    // destroy socket pool
    _sp.destroy();
    _sp = null;
@@ -176,7 +176,7 @@ xhrApi.cleanup = function()
 
 /**
  * Sets a cookie.
- * 
+ *
  * @param cookie the cookie with parameters:
  *    name: the name of the cookie.
  *    value: the value of the cookie.
@@ -194,7 +194,7 @@ xhrApi.setCookie = function(cookie)
 {
    // default cookie expiration to never
    cookie.maxAge = cookie.maxAge || -1;
-   
+
    // if the cookie's domain is set, use the appropriate client
    if(cookie.domain)
    {
@@ -220,19 +220,19 @@ xhrApi.setCookie = function(cookie)
 
 /**
  * Gets a cookie.
- * 
+ *
  * @param name the name of the cookie.
  * @param path an optional path for the cookie (if there are multiple cookies
  *           with the same name but different paths).
  * @param domain an optional domain for the cookie (if not using the default
  *           domain).
- * 
+ *
  * @return the cookie, cookies (if multiple matches), or null if not found.
  */
 xhrApi.getCookie = function(name, path, domain)
 {
    var rval = null;
-   
+
    if(domain)
    {
       // get the cookies from the applicable domains
@@ -265,25 +265,25 @@ xhrApi.getCookie = function(name, path, domain)
       // get cookie from default domain
       rval = _client.getCookie(name, path);
    }
-   
+
    return rval;
 };
 
 /**
  * Removes a cookie.
- * 
+ *
  * @param name the name of the cookie.
  * @param path an optional path for the cookie (if there are multiple cookies
  *           with the same name but different paths).
  * @param domain an optional domain for the cookie (if not using the default
  *           domain).
- * 
+ *
  * @return true if a cookie was removed, false if not.
  */
 xhrApi.removeCookie = function(name, path, domain)
 {
    var rval = false;
-   
+
    if(domain)
    {
       // remove the cookies from the applicable domains
@@ -304,7 +304,7 @@ xhrApi.removeCookie = function(name, path, domain)
       // remove cookie from default domain
       rval = _client.removeCookie(name, path);
    }
-   
+
    return rval;
 };
 
@@ -312,7 +312,7 @@ xhrApi.removeCookie = function(name, path, domain)
  * Creates a new XmlHttpRequest. By default the base URL, flash policy port,
  * etc, will be used. However, an XHR can be created to point at another
  * cross-domain URL.
- * 
+ *
  * @param options:
  *    logWarningOnError: If true and an HTTP error status code is received then
  *       log a warning, otherwise log a verbose message.
@@ -348,7 +348,7 @@ xhrApi.removeCookie = function(name, path, domain)
  *       false to only keep cookies in javascript.
  *    primeTlsSockets: true to immediately connect TLS sockets on their
  *       creation so that they will cache TLS sessions for reuse.
- * 
+ *
  * @return the XmlHttpRequest.
  */
 xhrApi.create = function(options)
@@ -364,7 +364,7 @@ xhrApi.create = function(options)
       logVerbose: function(){},
       url: null
    }, options || {});
-   
+
    // private xhr state
    var _state =
    {
@@ -381,7 +381,7 @@ xhrApi.create = function(options)
       // errorFlag, true if a network error occurred
       errorFlag: false
    };
-   
+
    // private log functions
    var _log =
    {
@@ -390,7 +390,7 @@ xhrApi.create = function(options)
       debug: options.logDebug || forge.log.debug,
       verbose: options.logVerbose || forge.log.verbose
    };
-   
+
    // create public xhr interface
    var xhr =
    {
@@ -407,7 +407,7 @@ xhrApi.create = function(options)
       // readonly, returns the HTTP status message (i.e. 'Not Found')
       statusText: ''
    };
-   
+
    // determine which http client to use
    if(options.url === null)
    {
@@ -426,7 +426,7 @@ xhrApi.create = function(options)
             }
          };
       }
-      
+
       // find client
       if(url.full in _clients)
       {
@@ -454,10 +454,10 @@ xhrApi.create = function(options)
          _clients[url.full] = _state.client;
       }
    }
-   
+
    /**
     * Opens the request. This method will create the HTTP request to send.
-    * 
+    *
     * @param method the HTTP method (i.e. 'GET').
     * @param url the relative url (the HTTP request path).
     * @param async always true, ignored.
@@ -468,7 +468,7 @@ xhrApi.create = function(options)
    {
       // 1. validate Document if one is associated
       // TODO: not implemented (not used yet)
-      
+
       // 2. validate method token
       // 3. change method to uppercase if it matches a known
       // method (here we just require it to be uppercase, and
@@ -494,9 +494,9 @@ xhrApi.create = function(options)
             //throw new SyntaxError('Invalid method: ' + method);
             throw SYNTAX_ERR;
       }
-      
+
       // TODO: other validation steps in algorithm are not implemented
-      
+
       // 19. set send flag to false
       // set response body to null
       // empty list of request headers
@@ -507,30 +507,30 @@ xhrApi.create = function(options)
       _state.sendFlag = false;
       xhr.responseText = '';
       xhr.responseXML = null;
-      
+
       // custom: reset status and statusText
       xhr.status = 0;
       xhr.statusText = '';
-      
+
       // create the HTTP request
       _state.request = http.createRequest({
          method: method,
          path: url
       });
-      
+
       // 20. set state to OPENED
       xhr.readyState = OPENED;
-      
+
       // 21. dispatch onreadystatechange
       if(xhr.onreadystatechange)
       {
          xhr.onreadystatechange();
       }
    };
-   
+
    /**
     * Adds an HTTP header field to the request.
-    * 
+    *
     * @param header the name of the header field.
     * @param value the value of the header field.
     */
@@ -542,16 +542,16 @@ xhrApi.create = function(options)
          // FIXME: handle exceptions properly
          throw INVALID_STATE_ERR;
       }
-      
+
       // TODO: other validation steps in spec aren't implemented
-      
+
       // set header
       _state.request.setField(header, value);
    };
-   
+
    /**
     * Sends the request and any associated data.
-    * 
+    *
     * @param data a string or Document object to send, null to send no data.
     */
    xhr.send = function(data)
@@ -563,7 +563,7 @@ xhrApi.create = function(options)
          // FIXME: handle exceptions properly
          throw INVALID_STATE_ERR;
       }
-      
+
       // 3. ignore data if method is GET or HEAD
       if(data &&
          _state.request.method !== 'GET' &&
@@ -595,23 +595,23 @@ xhrApi.create = function(options)
             }
          }
       }
-      
+
       // 4. release storage mutex (not used)
-      
+
       // 5. set error flag to false
       _state.errorFlag = false;
-      
+
       // 6. if asynchronous is true (must be in this implementation)
-      
+
       // 6.1 set send flag to true
       _state.sendFlag = true;
-      
+
       // 6.2 dispatch onreadystatechange
       if(xhr.onreadystatechange)
       {
          xhr.onreadystatechange();
       }
-      
+
       // create send options
       var options = {};
       options.request = _state.request;
@@ -619,10 +619,10 @@ xhrApi.create = function(options)
       {
          // make cookies available for ease of use/iteration
          xhr.cookies = _state.client.cookies;
-         
+
          // TODO: update document.cookie with any cookies where the
          // script's domain matches
-         
+
          // headers received
          xhr.readyState = HEADERS_RECEIVED;
          xhr.status = e.response.code;
@@ -705,30 +705,30 @@ xhrApi.create = function(options)
       {
          var req = _state.request;
          _log.error(cat, req.method + ' ' + req.path, e);
-         
+
          // 1. set response body to null
          xhr.responseText = '';
          xhr.responseXML = null;
-         
+
          // 2. set error flag to true (and reset status)
          _state.errorFlag = true;
          xhr.status = 0;
          xhr.statusText = '';
-         
+
          // 3. set state to done
          xhr.readyState = DONE;
-         
+
          // 4. asyc flag is always true, so dispatch onreadystatechange
          if(xhr.onreadystatechange)
          {
             xhr.onreadystatechange();
          }
       };
-      
+
       // 7. send request
       _state.client.send(options);
    };
-   
+
    /**
     * Aborts the request.
     */
@@ -737,20 +737,20 @@ xhrApi.create = function(options)
       // 1. abort send
       // 2. stop network activity
       _state.request.abort();
-      
+
       // 3. set response to null
       xhr.responseText = '';
       xhr.responseXML = null;
-      
+
       // 4. set error flag to true (and reset status)
       _state.errorFlag = true;
       xhr.status = 0;
       xhr.statusText = '';
-      
+
       // 5. clear user headers
       _state.request = null;
       _state.response = null;
-      
+
       // 6. if state is DONE or UNSENT, or if OPENED and send flag is false
       if(xhr.readyState == DONE || xhr.readyState == UNSENT ||
          (xhr.readyState == OPENED && !_state.sendFlag))
@@ -762,24 +762,24 @@ xhrApi.create = function(options)
       {
          // 6.1 set state to DONE
          xhr.readyState = DONE;
-         
+
          // 6.2 set send flag to false
          _state.sendFlag = false;
-         
+
          // 6.3 dispatch onreadystatechange
          if(xhr.onreadystatechange)
          {
             xhr.onreadystatechange();
          }
-         
+
          // 7. set state to UNSENT
          xhr.readyState = UNSENT;
       }
    };
-   
+
    /**
     * Gets all response headers as a string.
-    * 
+    *
     * @return the HTTP-encoded response header fields.
     */
    xhr.getAllResponseHeaders = function()
@@ -798,12 +798,12 @@ xhrApi.create = function(options)
       }
       return rval;
    };
-   
+
    /**
     * Gets a single header field value or, if there are multiple
     * fields with the same name, a comma-separated list of header
     * values.
-    * 
+    *
     * @return the header field value(s) or null.
     */
    xhr.getResponseHeader = function(header)
@@ -822,7 +822,7 @@ xhrApi.create = function(options)
       }
       return rval;
    };
-   
+
    return xhr;
 };
 

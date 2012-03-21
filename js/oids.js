@@ -3,12 +3,12 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
 
-var oids = {}; 
+var oids = {};
 
 // define forge
 if(typeof(window) !== 'undefined')
@@ -114,14 +114,14 @@ oids['2.5.29.2'] = 'keyAttributes'; // obsolete use .37 or .15
 oids['2.5.29.3'] = 'certificatePolicies'; // deprecated, use .32
 oids['2.5.29.4'] = 'keyUsageRestriction'; // obsolete use .37 or .15
 oids['2.5.29.5'] = 'policyMapping'; // deprecated use .33
-oids['2.5.29.6'] = 'subtreesConstraint'; // obsolete use .30 
+oids['2.5.29.6'] = 'subtreesConstraint'; // obsolete use .30
 oids['2.5.29.7'] = 'subjectAltName'; // deprecated use .17
 oids['2.5.29.8'] = 'issuerAltName'; // deprecated use .18
-oids['2.5.29.9'] = 'subjectDirectoryAttributes'; 
+oids['2.5.29.9'] = 'subjectDirectoryAttributes';
 oids['2.5.29.10'] = 'basicConstraints'; // deprecated use .19
 oids['2.5.29.11'] = 'nameConstraints'; // deprecated use .30
 oids['2.5.29.12'] = 'policyConstraints'; // deprecated use .36
-oids['2.5.29.13'] = 'basicConstraints'; // deprecated use .19 
+oids['2.5.29.13'] = 'basicConstraints'; // deprecated use .19
 oids['2.5.29.14'] = 'subjectKeyIdentifier';
 oids['subjectKeyIdentifier'] = '2.5.29.14';
 oids['2.5.29.15'] = 'keyUsage';

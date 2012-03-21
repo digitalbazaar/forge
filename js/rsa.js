@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -35,24 +35,24 @@ var asn1 = forge.asn1;
 
 /*
  * RSA encryption and decryption, see RFC 2313.
- */ 
+ */
 forge.pki = forge.pki || {};
 forge.pki.rsa = forge.pki.rsa || {};
 var pki = forge.pki;
 
 /**
  * Performs x^c mod n (RSA encryption or decryption operation).
- * 
+ *
  * @param x the number to raise and mod.
  * @param key the key to use.
  * @param pub true if the key is public, false if private.
- * 
+ *
  * @return the result of x^c mod n.
  */
 var _modPow = function(x, key, pub)
 {
    var y;
-   
+
    if(pub)
    {
       y = x.modPow(key.e, key.n);
@@ -72,77 +72,77 @@ var _modPow = function(x, key, pub)
       {
          key.qInv = key.q.modInverse(key.p);
       }
-      
+
       /* Chinese remainder theorem (CRT) states:
-         
+
          Suppose n1, n2, ..., nk are positive integers which are pairwise
          coprime (n1 and n2 have no common factors other than 1). For any
          integers x1, x2, ..., xk there exists an integer x solving the
          system of simultaneous congruences (where ~= means modularly
          congruent so a ~= b mod n means a mod n = b mod n):
-         
+
          x ~= x1 mod n1
          x ~= x2 mod n2
          ...
          x ~= xk mod nk
-         
+
          This system of congruences has a single simultaneous solution x
          between 0 and n - 1. Furthermore, each xk solution and x itself
          is congruent modulo the product n = n1*n2*...*nk.
          So x1 mod n = x2 mod n = xk mod n = x mod n.
-         
+
          The single simultaneous solution x can be solved with the following
          equation:
-         
+
          x = sum(xi*ri*si) mod n where ri = n/ni and si = ri^-1 mod ni.
-         
+
          Where x is less than n, xi = x mod ni.
-         
+
          For RSA we are only concerned with k = 2. The modulus n = pq, where
          p and q are coprime. The RSA decryption algorithm is:
-         
+
          y = x^d mod n
-         
+
          Given the above:
-         
+
          x1 = x^d mod p
          r1 = n/p = q
          s1 = q^-1 mod p
          x2 = x^d mod q
          r2 = n/q = p
          s2 = p^-1 mod q
-         
+
          So y = (x1r1s1 + x2r2s2) mod n
               = ((x^d mod p)q(q^-1 mod p) + (x^d mod q)p(p^-1 mod q)) mod n
-         
+
          According to Fermat's Little Theorem, if the modulus P is prime,
          for any integer A not evenly divisible by P, A^(P-1) ~= 1 mod P.
          Since A is not divisible by P it follows that if:
          N ~= M mod (P - 1), then A^N mod P = A^M mod P. Therefore:
-         
+
          A^N mod P = A^(M mod (P - 1)) mod P. (The latter takes less effort
          to calculate). In order to calculate x^d mod p more quickly the
          exponent d mod (p - 1) is stored in the RSA private key (the same
          is done for x^d mod q). These values are referred to as dP and dQ
          respectively. Therefore we now have:
-         
+
          y = ((x^dP mod p)q(q^-1 mod p) + (x^dQ mod q)p(p^-1 mod q)) mod n
-         
+
          Since we'll be reducing x^dP by modulo p (same for q) we can also
          reduce x by p (and q respectively) before hand. Therefore, let
-         
+
          xp = ((x mod p)^dP mod p), and
          xq = ((x mod q)^dQ mod q), yielding:
-         
+
          y = (xp*q*(q^-1 mod p) + xq*p*(p^-1 mod q)) mod n
-         
+
          This can be further reduced to a simple algorithm that only
          requires 1 inverse (the q inverse is used) to be used and stored.
          The algorithm is called Garner's algorithm. If qInv is the
          inverse of q, we simply calculate:
-         
+
          y = (qInv*(xp - xq) mod p) * q + xq
-         
+
          However, there are two further complications. First, we need to
          ensure that xp > xq to prevent signed BigIntegers from being used
          so we add p until this is true (since we will be mod'ing with
@@ -153,42 +153,42 @@ var _modPow = function(x, key, pub)
          and multiplying x by r^e before calculating y and then multiplying
          y by r^-1 afterwards.
        */
-      
+
       // TODO: do cryptographic blinding
-      
+
       // calculate xp and xq
       var xp = x.mod(key.p).modPow(key.dP, key.p);
       var xq = x.mod(key.q).modPow(key.dQ, key.q);
-      
+
       // xp must be larger than xq to avoid signed bit usage
       while(xp.compareTo(xq) < 0)
       {
          xp = xp.add(key.p);
       }
-      
+
       // do last step
       y = xp.subtract(xq)
          .multiply(key.qInv).mod(key.p)
          .multiply(key.q).add(xq);
    }
-   
+
    return y;
 };
 
 /**
  * Performs RSA encryption.
- * 
+ *
  * @param m the message to encrypt as a byte string.
  * @param key the RSA key to use.
  * @param bt the block type to use (0x01 for private key, 0x02 for public).
- * 
+ *
  * @return the encrypted bytes as a string.
  */
 pki.rsa.encrypt = function(m, key, bt)
 {
    // get the length of the modulus in bytes
    var k = key.n.bitLength() >>> 3;
-   
+
    if(m.length > (k - 11))
    {
       throw {
@@ -197,28 +197,28 @@ pki.rsa.encrypt = function(m, key, bt)
          max: (k - 11)
       };
    }
-   
+
    /* A block type BT, a padding string PS, and the data D shall be
       formatted into an octet string EB, the encryption block:
-      
+
       EB = 00 || BT || PS || 00 || D
-      
+
       The block type BT shall be a single octet indicating the structure of
       the encryption block. For this version of the document it shall have
       value 00, 01, or 02. For a private-key operation, the block type
       shall be 00 or 01. For a public-key operation, it shall be 02.
-      
+
       The padding string PS shall consist of k-3-||D|| octets. For block
       type 00, the octets shall have value 00; for block type 01, they
       shall have value FF; and for block type 02, they shall be
       pseudorandomly generated and nonzero. This makes the length of the
       encryption block EB equal to k. */
-   
+
    // build the encryption block
    var eb = forge.util.createBuffer();
    eb.putByte(0x00);
    eb.putByte(bt);
-   
+
    // create the padding, get key type
    var pub;
    var padNum = k - 3 - m.length;
@@ -241,18 +241,18 @@ pki.rsa.encrypt = function(m, key, bt)
          eb.putByte(padByte);
       }
    }
-   
+
    // zero followed by message
    eb.putByte(0x00);
    eb.putBytes(m);
-   
+
    // load encryption block as big integer 'x'
    // FIXME: hex conversion inefficient, get BigInteger w/byte strings
    var x = new BigInteger(eb.toHex(), 16);
-   
+
    // do RSA encryption
    var y = _modPow(x, key, pub);
-   
+
    // convert y into the encrypted data byte string, if y is shorter in
    // bytes than k, then prepend zero bytes to fill up ed
    // FIXME: hex conversion inefficient, get BigInteger w/byte strings
@@ -270,21 +270,21 @@ pki.rsa.encrypt = function(m, key, bt)
 
 /**
  * Performs RSA decryption.
- * 
+ *
  * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
  * @param pub true for a public key operation, false for private.
  * @param ml the message length, if known.
- * 
+ *
  * @return the decrypted message as a byte string.
  */
 pki.rsa.decrypt = function(ed, key, pub, ml)
 {
    var m = forge.util.createBuffer();
-   
+
    // get the length of the modulus in bytes
    var k = Math.ceil(key.n.bitLength() / 8);
-   
+
    // error if the length of the encrypted data ED is not k
    if(ed.length != k)
    {
@@ -294,14 +294,14 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
          expected: k
       };
    }
-   
+
    // convert encrypted data into a big integer
    // FIXME: hex conversion inefficient, get BigInteger w/byte strings
    var y = new BigInteger(forge.util.createBuffer(ed).toHex(), 16);
-   
+
    // do RSA decryption
    var x = _modPow(y, key, pub);
-   
+
    // create the encryption block, if x is shorter in bytes than k, then
    // prepend zero bytes to fill up eb
    // FIXME: hex conversion inefficient, get BigInteger w/byte strings
@@ -314,9 +314,9 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
       --zeros;
    }
    eb.putBytes(forge.util.hexToBytes(xhex));
-   
+
    /* It is an error if any of the following conditions occurs:
-   
+
       1. The encryption block EB cannot be parsed unambiguously.
       2. The padding string PS consists of fewer than eight octets
          or is inconsisent with the block type BT.
@@ -324,7 +324,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
          type BT is not 00 or 01, or the decryption process is a
          private-key operation and the block type is not 02.
     */
-   
+
    // parse the encryption block
    var first = eb.getByte();
    var bt = eb.getByte();
@@ -337,7 +337,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
          message: 'Encryption block is invalid.'
       };
    }
-   
+
    var padNum = 0;
    if(bt === 0x00)
    {
@@ -381,7 +381,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
          ++padNum;
       }
    }
-   
+
    // zero must be 0x00 and padNum must be (k - 3 - message length)
    var zero = eb.getByte();
    if(zero !== 0x00 || padNum !== (k - 3 - eb.length()))
@@ -390,7 +390,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
          message: 'Encryption block is invalid.'
       };
    }
-   
+
    // return message
    return eb.getBytes();
 };
@@ -399,10 +399,10 @@ pki.rsa.decrypt = function(ed, key, pub, ml)
  * Creates an RSA key-pair generation state object. It is used to allow
  * key-generation to be performed in steps. It also allows for a UI to
  * display progress updates.
- * 
+ *
  * @param bits the size for the private key in bits, defaults to 1024.
  * @param e the public exponent to use, defaults to 65537.
- * 
+ *
  * @return the state object to use to generate the key-pair.
  */
 pki.rsa.createKeyPairGenerationState = function(bits, e)
@@ -413,7 +413,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e)
       bits = parseInt(bits, 10);
    }
    bits = bits || 1024;
-   
+
    // create prng with api that matches BigInteger secure random
    var rng =
    {
@@ -429,7 +429,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e)
          var tmp2 = +new Date();
       }
    };
-   
+
    var rval =
    {
       state: 0,
@@ -449,7 +449,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e)
       keys: null
    };
    rval.six.fromInt(6);
-   
+
    return rval;
 };
 
@@ -479,17 +479,17 @@ pki.rsa.createKeyPairGenerationState = function(bits, e)
  * };
  * // TODO: turn on progress indicator here
  * setTimeout(step, 0);
- * 
+ *
  * @param state the state to use.
  * @param n the maximum number of milliseconds to run the algorithm for, 0
  *           to run the algorithm to completion.
- * 
+ *
  * @return true if the key-generation completed, false if not.
  */
 pki.rsa.stepKeyPairGenerationState = function(state, n)
 {
    // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
-   
+
    // keep stepping until time limit is reached or done
    var t1 = +new Date();
    var t2;
@@ -501,7 +501,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
       {
          var bits = (state.p === null) ? state.pBits : state.qBits;
          var bits1 = bits - 1;
-         
+
          // get a random number
          if(state.pqState === 0)
          {
@@ -530,7 +530,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
                prime. Then each time the number is determined not to be
                prime we add 2 if the number was at 6k - 1 or we add 4 if
                the number was at 6k + 1. */
-            // FIXME: need to use a faster strategy than this ... 
+            // FIXME: need to use a faster strategy than this ...
             // this is the bottleneck
             if(state.addNext === null)
             {
@@ -542,11 +542,11 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
                   state.num.mod.dAddOffset(2);
                   r = 5;
                }
-               
+
                // set add next
                state.addNext = (r === 1) ? 2 : 4;
             }
-            
+
             // do primality test
             var pp = state.num.isProbablePrime(1);
             if(pp)
@@ -566,7 +566,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
                }
                else
                {
-                  state.addNext = (state.addNext === 4) ? 2 : 4; 
+                  state.addNext = (state.addNext === 4) ? 2 : 4;
                }
                ++state.itrs;
             }
@@ -597,7 +597,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
                {
                   state.q = state.num;
                }
-               
+
                // advance state if both p and q are ready
                if(state.p !== null && state.q !== null)
                {
@@ -618,7 +618,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
          }
          ++state.state;
       }
-      // compute phi: (p - 1)(q - 1) (Euler's totient function) 
+      // compute phi: (p - 1)(q - 1) (Euler's totient function)
       else if(state.state === 2)
       {
          state.p1 = state.p.subtract(BigInteger.ONE);
@@ -646,7 +646,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
       else if(state.state === 4)
       {
          state.n = state.p.multiply(state.q);
-         
+
          // ensure n is right number of bits
          if(state.n.bitLength() === state.bits)
          {
@@ -673,13 +673,13 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
             publicKey: forge.pki.rsa.setPublicKey(state.n, state.e)
          };
       }
-      
+
       // update timing
       t2 = +new Date();
       total += t2 - t1;
       t1 = t2;
    }
-   
+
    return state.keys !== null;
 };
 
@@ -688,10 +688,10 @@ pki.rsa.stepKeyPairGenerationState = function(state, n)
  * a key-pair in steps (to allow for progress updates and to prevent
  * blocking or warnings in slow browsers) then use the key-pair generation
  * state functions.
- * 
+ *
  * @param bits the size for the private key in bits, defaults to 1024.
  * @param e the public exponent to use, defaults to 65537.
- * 
+ *
  * @return an object with privateKey and publicKey properties.
  */
 pki.rsa.generateKeyPair = function(bits, e)
@@ -703,10 +703,10 @@ pki.rsa.generateKeyPair = function(bits, e)
 
 /**
  * Sets an RSA public key from BigIntegers modulus and exponent.
- * 
+ *
  * @param n the modulus.
  * @param e the exponent.
- * 
+ *
  * @return the public key.
  */
 pki.rsa.setPublicKey = function(n, e)
@@ -716,56 +716,56 @@ pki.rsa.setPublicKey = function(n, e)
       n: n,
       e: e
    };
-   
+
    /**
     * Encrypts the given data with this public key.
-    * 
+    *
     * @param data the byte string to encrypt.
-    * 
+    *
     * @return the encrypted byte string.
     */
    key.encrypt = function(data)
    {
       return pki.rsa.encrypt(data, key, 0x02);
    };
-   
+
    /**
     * Verifies the given signature against the given digest.
-    * 
+    *
     * Once RSA-decrypted, the signature is an OCTET STRING that holds
     * a DigestInfo.
-    * 
+    *
     * DigestInfo ::= SEQUENCE {
     *    digestAlgorithm DigestAlgorithmIdentifier,
     *    digest Digest
     * }
     * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
     * Digest ::= OCTET STRING
-    * 
+    *
     * @param digest the message digest hash to compare against the signature.
     * @param signature the signature to verify.
-    * 
+    *
     * @return true if the signature was verified, false if not.
     */
    key.verify = function(digest, signature)
    {
       // do rsa decryption
       var d = pki.rsa.decrypt(signature, key, true);
-      
+
       // d is ASN.1 BER-encoded DigestInfo
       var obj = asn1.fromDer(d);
-      
+
       // compare the given digest to the decrypted one
       return digest === obj.value[1].value;
    };
-   
+
    return key;
 };
 
 /**
  * Sets an RSA private key from BigIntegers modulus, exponent, primes,
  * prime exponents, and modular multiplicative inverse.
- * 
+ *
  * @param n the modulus.
  * @param e the public exponent.
  * @param d the private exponent ((inverse of e) mod n).
@@ -774,7 +774,7 @@ pki.rsa.setPublicKey = function(n, e)
  * @param dP exponent1 (d mod (p-1)).
  * @param dQ exponent2 (d mod (q-1)).
  * @param qInv ((inverse of q) mod p)
- * 
+ *
  * @return the private key.
  */
 pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
@@ -790,34 +790,34 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
       dQ: dQ,
       qInv: qInv
    };
-   
+
    /**
     * Decrypts the given data with this private key.
-    * 
+    *
     * @param data the byte string to decrypt.
-    * 
+    *
     * @return the decrypted byte string.
     */
    key.decrypt = function(data)
    {
       return pki.rsa.decrypt(data, key, false);
    };
-   
+
    /**
     * Signs the given digest, producing a signature.
-    * 
+    *
     * First the digest is stored in a DigestInfo object. Then that object
     * is RSA-encrypted to produce the signature.
-    * 
+    *
     * DigestInfo ::= SEQUENCE {
     *    digestAlgorithm DigestAlgorithmIdentifier,
     *    digest Digest
     * }
     * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
     * Digest ::= OCTET STRING
-    * 
+    *
     * @param md the message digest object with the hash to sign.
-    * 
+    *
     * @return the signature as a byte string.
     */
    key.sign = function(md)
@@ -836,7 +836,7 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
          };
       }
       var oidBytes = asn1.oidToDer(oid).getBytes();
-      
+
       // create the digest info
       var digestInfo = asn1.create(
          asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
@@ -851,14 +851,14 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv)
          false, md.digest().getBytes());
       digestInfo.value.push(digestAlgorithm);
       digestInfo.value.push(digest);
-      
+
       // encode digest info
       var d = asn1.toDer(digestInfo).getBytes();
-      
+
       // do rsa encryption
       return pki.rsa.encrypt(d, key, 0x01);
    };
-   
+
    return key;
 };
 

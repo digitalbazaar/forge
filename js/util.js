@@ -1,9 +1,9 @@
 /**
  * Utility functions for web applications.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -26,7 +26,7 @@ var util = forge.util;
 
 /**
  * Constructor for a byte buffer.
- * 
+ *
  * @param b the bytes to wrap (as a UTF-8 string) (optional).
  */
 util.ByteBuffer = function(b)
@@ -39,7 +39,7 @@ util.ByteBuffer = function(b)
 
 /**
  * Gets the number of bytes in this buffer.
- * 
+ *
  * @return the number of bytes in this buffer.
  */
 util.ByteBuffer.prototype.length = function()
@@ -49,7 +49,7 @@ util.ByteBuffer.prototype.length = function()
 
 /**
  * Gets whether or not this buffer is empty.
- * 
+ *
  * @return true if this buffer is empty, false if not.
  */
 util.ByteBuffer.prototype.isEmpty = function()
@@ -59,7 +59,7 @@ util.ByteBuffer.prototype.isEmpty = function()
 
 /**
  * Puts a byte in this buffer.
- * 
+ *
  * @param b the byte to put.
  */
 util.ByteBuffer.prototype.putByte = function(b)
@@ -69,7 +69,7 @@ util.ByteBuffer.prototype.putByte = function(b)
 
 /**
  * Puts a byte in this buffer N times.
- * 
+ *
  * @param b the byte to put.
  * @param n the number of bytes of value b to put.
  */
@@ -94,7 +94,7 @@ util.ByteBuffer.prototype.fillWithByte = function(b, n)
 
 /**
  * Puts bytes in this buffer.
- * 
+ *
  * @param bytes the bytes (as a UTF-8 encoded string) to put.
  */
 util.ByteBuffer.prototype.putBytes = function(bytes)
@@ -104,7 +104,7 @@ util.ByteBuffer.prototype.putBytes = function(bytes)
 
 /**
  * Puts a UTF-16 encoded string into this buffer.
- * 
+ *
  * @param str the string to put.
  */
 util.ByteBuffer.prototype.putString = function(str)
@@ -114,7 +114,7 @@ util.ByteBuffer.prototype.putString = function(str)
 
 /**
  * Puts a 16-bit integer in this buffer in big-endian order.
- * 
+ *
  * @param i the 16-bit integer.
  */
 util.ByteBuffer.prototype.putInt16 = function(i)
@@ -126,7 +126,7 @@ util.ByteBuffer.prototype.putInt16 = function(i)
 
 /**
  * Puts a 24-bit integer in this buffer in big-endian order.
- * 
+ *
  * @param i the 24-bit integer.
  */
 util.ByteBuffer.prototype.putInt24 = function(i)
@@ -139,7 +139,7 @@ util.ByteBuffer.prototype.putInt24 = function(i)
 
 /**
  * Puts a 32-bit integer in this buffer in big-endian order.
- * 
+ *
  * @param i the 32-bit integer.
  */
 util.ByteBuffer.prototype.putInt32 = function(i)
@@ -153,7 +153,7 @@ util.ByteBuffer.prototype.putInt32 = function(i)
 
 /**
  * Puts a 16-bit integer in this buffer in little-endian order.
- * 
+ *
  * @param i the 16-bit integer.
  */
 util.ByteBuffer.prototype.putInt16Le = function(i)
@@ -165,7 +165,7 @@ util.ByteBuffer.prototype.putInt16Le = function(i)
 
 /**
  * Puts a 24-bit integer in this buffer in little-endian order.
- * 
+ *
  * @param i the 24-bit integer.
  */
 util.ByteBuffer.prototype.putInt24Le = function(i)
@@ -178,7 +178,7 @@ util.ByteBuffer.prototype.putInt24Le = function(i)
 
 /**
  * Puts a 32-bit integer in this buffer in little-endian order.
- * 
+ *
  * @param i the 32-bit integer.
  */
 util.ByteBuffer.prototype.putInt32Le = function(i)
@@ -192,7 +192,7 @@ util.ByteBuffer.prototype.putInt32Le = function(i)
 
 /**
  * Puts an n-bit integer in this buffer in big-endian order.
- * 
+ *
  * @param i the n-bit integer.
  * @param n the number of bits in the integer.
  */
@@ -208,7 +208,7 @@ util.ByteBuffer.prototype.putInt = function(i, n)
 
 /**
  * Puts the given buffer into this buffer.
- * 
+ *
  * @param buffer the buffer to put into this one.
  */
 util.ByteBuffer.prototype.putBuffer = function(buffer)
@@ -218,7 +218,7 @@ util.ByteBuffer.prototype.putBuffer = function(buffer)
 
 /**
  * Gets a byte from this buffer and advances the read pointer by 1.
- * 
+ *
  * @return the byte.
  */
 util.ByteBuffer.prototype.getByte = function()
@@ -229,7 +229,7 @@ util.ByteBuffer.prototype.getByte = function()
 /**
  * Gets a uint16 from this buffer in big-endian order and advances the read
  * pointer by 2.
- * 
+ *
  * @return the uint16.
  */
 util.ByteBuffer.prototype.getInt16 = function()
@@ -244,7 +244,7 @@ util.ByteBuffer.prototype.getInt16 = function()
 /**
  * Gets a uint24 from this buffer in big-endian order and advances the read
  * pointer by 3.
- * 
+ *
  * @return the uint24.
  */
 util.ByteBuffer.prototype.getInt24 = function()
@@ -260,7 +260,7 @@ util.ByteBuffer.prototype.getInt24 = function()
 /**
  * Gets a uint32 from this buffer in big-endian order and advances the read
  * pointer by 4.
- * 
+ *
  * @return the word.
  */
 util.ByteBuffer.prototype.getInt32 = function()
@@ -277,7 +277,7 @@ util.ByteBuffer.prototype.getInt32 = function()
 /**
  * Gets a uint16 from this buffer in little-endian order and advances the read
  * pointer by 2.
- * 
+ *
  * @return the uint16.
  */
 util.ByteBuffer.prototype.getInt16Le = function()
@@ -292,7 +292,7 @@ util.ByteBuffer.prototype.getInt16Le = function()
 /**
  * Gets a uint24 from this buffer in little-endian order and advances the read
  * pointer by 3.
- * 
+ *
  * @return the uint24.
  */
 util.ByteBuffer.prototype.getInt24Le = function()
@@ -308,7 +308,7 @@ util.ByteBuffer.prototype.getInt24Le = function()
 /**
  * Gets a uint32 from this buffer in little-endian order and advances the read
  * pointer by 4.
- * 
+ *
  * @return the word.
  */
 util.ByteBuffer.prototype.getInt32Le = function()
@@ -325,9 +325,9 @@ util.ByteBuffer.prototype.getInt32Le = function()
 /**
  * Gets an n-bit integer from this buffer in big-endian order and advances the
  * read pointer by n/8.
- * 
+ *
  * @param n the number of bits in the integer.
- * 
+ *
  * @return the integer.
  */
 util.ByteBuffer.prototype.getInt = function(n)
@@ -344,9 +344,9 @@ util.ByteBuffer.prototype.getInt = function(n)
 
 /**
  * Reads bytes out into a UTF-8 string and clears them from the buffer.
- * 
+ *
  * @param count the number of bytes to read, undefined, null or 0 for all.
- * 
+ *
  * @return a UTF-8 string of bytes.
  */
 util.ByteBuffer.prototype.getBytes = function(count)
@@ -375,9 +375,9 @@ util.ByteBuffer.prototype.getBytes = function(count)
 /**
  * Gets a UTF-8 encoded string of the bytes from this buffer without modifying
  * the read pointer.
- * 
+ *
  * @param count the number of bytes to get, omit to get all.
- * 
+ *
  * @return a string full of UTF-8 encoded characters.
  */
 util.ByteBuffer.prototype.bytes = function(count)
@@ -389,9 +389,9 @@ util.ByteBuffer.prototype.bytes = function(count)
 
 /**
  * Gets a byte at the given index without modifying the read pointer.
- * 
+ *
  * @param i the byte index.
- * 
+ *
  * @return the byte.
  */
 util.ByteBuffer.prototype.at = function(i)
@@ -401,7 +401,7 @@ util.ByteBuffer.prototype.at = function(i)
 
 /**
  * Gets the last byte without modifying the read pointer.
- * 
+ *
  * @return the last byte.
  */
 util.ByteBuffer.prototype.last = function()
@@ -411,7 +411,7 @@ util.ByteBuffer.prototype.last = function()
 
 /**
  * Creates a copy of this buffer.
- * 
+ *
  * @return the copy.
  */
 util.ByteBuffer.prototype.copy = function()
@@ -444,7 +444,7 @@ util.ByteBuffer.prototype.clear = function()
 
 /**
  * Shortens this buffer by triming bytes off of the end of this buffer.
- * 
+ *
  * @param count the number of bytes to trim off.
  */
 util.ByteBuffer.prototype.truncate = function(count)
@@ -456,7 +456,7 @@ util.ByteBuffer.prototype.truncate = function(count)
 
 /**
  * Converts this buffer to a hexadecimal string.
- * 
+ *
  * @return a hexadecimal string.
  */
 util.ByteBuffer.prototype.toHex = function()
@@ -476,7 +476,7 @@ util.ByteBuffer.prototype.toHex = function()
 
 /**
  * Converts this buffer to a UTF-16 string (standard JavaScript string).
- * 
+ *
  * @return a UTF-16 string.
  */
 util.ByteBuffer.prototype.toString = function()
@@ -486,7 +486,7 @@ util.ByteBuffer.prototype.toString = function()
 
 /**
  * Creates a buffer that stores bytes.
- * 
+ *
  * @param b the bytes to wrap (as a string) (optional).
  */
 util.createBuffer = function(b)
@@ -497,11 +497,11 @@ util.createBuffer = function(b)
 /**
  * Fills a string with a particular value. If you want the string to be a byte
  * string, pass in String.fromCharCode(theByte).
- * 
+ *
  * @param c the character to fill the string with, use String.fromCharCode
  *           to fill the string with a byte value.
  * @param n the number of characters of value c to fill with.
- * 
+ *
  * @return the filled string.
  */
 util.fillString = function(c, n)
@@ -525,11 +525,11 @@ util.fillString = function(c, n)
 /**
  * Performs a per byte XOR between two byte strings and returns the result as a
  * string of bytes.
- * 
+ *
  * @param s1 first string of bytes.
  * @param s2 second string of bytes.
  * @param n the number of bytes to XOR.
- * 
+ *
  * @return the XOR'd result.
  */
 util.xorBytes = function(s1, s2, n)
@@ -557,9 +557,9 @@ util.xorBytes = function(s1, s2, n)
 
 /**
  * Converts a hex string into a UTF-8 string of bytes.
- * 
+ *
  * @param hex the hexadecimal string to convert.
- * 
+ *
  * @return the string of bytes.
  */
 util.hexToBytes = function(hex)
@@ -582,9 +582,9 @@ util.hexToBytes = function(hex)
 
 /**
  * Converts a UTF-8 byte string into a string of hexadecimal characters.
- * 
+ *
  * @param bytes the byte string to convert.
- * 
+ *
  * @return the string of hexadecimal characters.
  */
 util.bytesToHex = function(bytes)
@@ -594,9 +594,9 @@ util.bytesToHex = function(bytes)
 
 /**
  * Converts an 32-bit integer to 4-big-endian byte string.
- * 
+ *
  * @param i the integer.
- * 
+ *
  * @return the byte string.
  */
 util.int32ToBytes = function(i)
@@ -643,11 +643,11 @@ var _base64Idx = [
 
 /**
  * Base64 encodes a UTF-8 string of bytes.
- * 
+ *
  * @param input the UTF-8 string of bytes to encode.
  * @param maxline the maximum number of encoded bytes per line to use,
  *           defaults to none.
- * 
+ *
  * @return the base64-encoded output.
  */
 util.encode64 = function(input, maxline)
@@ -661,7 +661,7 @@ util.encode64 = function(input, maxline)
       chr1 = input.charCodeAt(i++);
       chr2 = input.charCodeAt(i++);
       chr3 = input.charCodeAt(i++);
-      
+
       // encode 4 character group
       line += _base64.charAt(chr1 >> 2);
       line += _base64.charAt(((chr1 & 3) << 4) | (chr2 >> 4));
@@ -674,7 +674,7 @@ util.encode64 = function(input, maxline)
          line += _base64.charAt(((chr2 & 15) << 2) | (chr3 >> 6));
          line += isNaN(chr3) ? '=' : _base64.charAt(chr3 & 63);
       }
-      
+
       if(maxline && line.length > maxline)
       {
          output += line.substr(0, maxline) + '\r\n';
@@ -682,33 +682,33 @@ util.encode64 = function(input, maxline)
       }
    }
    output += line;
-   
-   return output;      
+
+   return output;
 };
 
 /**
  * Base64 decodes a string into a UTF-8 string of bytes.
- * 
+ *
  * @param input the base64-encoded input.
- * 
+ *
  * @return the raw bytes.
  */
 util.decode64 = function(input)
 {
    // remove all non-base64 characters
    input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
-   
+
    var output = '';
    var enc1, enc2, enc3, enc4;
    var i = 0;
-   
+
    while(i < input.length)
    {
       enc1 = _base64Idx[input.charCodeAt(i++) - 43];
       enc2 = _base64Idx[input.charCodeAt(i++) - 43];
       enc3 = _base64Idx[input.charCodeAt(i++) - 43];
       enc4 = _base64Idx[input.charCodeAt(i++) - 43];
-      
+
       output += String.fromCharCode((enc1 << 2) | (enc2 >> 4));
       if(enc3 !== 64)
       {
@@ -721,17 +721,17 @@ util.decode64 = function(input)
          }
       }
    }
-   
+
    return output;
 };
 
 /**
  * UTF-8 encodes the given UTF-16 encoded string (a standard JavaScript
  * string). Non-ASCII characters will be encoded as multiple bytes according
- * to UTF-8.  
- * 
+ * to UTF-8.
+ *
  * @param str the string to encode.
- * 
+ *
  * @return the UTF-8 encoded string.
  */
 util.encodeUtf8 = function(str)
@@ -741,9 +741,9 @@ util.encodeUtf8 = function(str)
 
 /**
  * Decodes a UTF-8 encoded string into a UTF-16 string.
- * 
+ *
  * @param str the string to encode.
- * 
+ *
  * @return the UTF-16 encoded string (standard JavaScript string).
  */
 util.decodeUtf8 = function(str)
@@ -753,18 +753,18 @@ util.decodeUtf8 = function(str)
 
 /**
  * Deflates the given data using a flash interface.
- * 
+ *
  * @param api the flash interface.
  * @param bytes the data.
  * @param raw true to return only raw deflate data, false to include zlib
  *           header and trailer.
- * 
+ *
  * @return the deflated data as a string.
  */
 util.deflate = function(api, bytes, raw)
 {
    bytes = util.decode64(api.deflate(util.encode64(bytes)).rval);
-   
+
    // strip zlib header and trailer if necessary
    if(raw)
    {
@@ -780,18 +780,18 @@ util.deflate = function(api, bytes, raw)
       // zlib trailer is 4 bytes of adler-32
       bytes = bytes.substring(start, bytes.length - 4);
    }
-   
+
    return bytes;
 };
 
 /**
  * Inflates the given data using a flash interface.
- * 
+ *
  * @param api the flash interface.
  * @param bytes the data.
  * @param raw true if the incoming data has no zlib header or trailer and is
  *           raw DEFLATE data.
- * 
+ *
  * @return the inflated data as a string, null on error.
  */
 util.inflate = function(api, bytes, raw)
@@ -803,7 +803,7 @@ util.inflate = function(api, bytes, raw)
 
 /**
  * Sets a storage object.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
  * @param obj the storage object, null to remove.
@@ -816,7 +816,7 @@ var _setStorageObject = function(api, id, obj)
          message: 'WebStorage not available.'
       };
    }
-   
+
    var rval;
    if(obj === null)
    {
@@ -828,7 +828,7 @@ var _setStorageObject = function(api, id, obj)
       obj = util.encode64(JSON.stringify(obj));
       rval = api.setItem(id, obj);
    }
-   
+
    // handle potential flash error
    if(typeof(rval) !== 'undefined' && rval.rval !== true)
    {
@@ -838,10 +838,10 @@ var _setStorageObject = function(api, id, obj)
 
 /**
  * Gets a storage object.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
- * 
+ *
  * @return the storage object entry or null if none exists.
  */
 var _getStorageObject = function(api, id)
@@ -852,15 +852,15 @@ var _getStorageObject = function(api, id)
          message: 'WebStorage not available.'
       };
    }
-   
+
    // get the existing entry
    var rval = api.getItem(id);
-   
+
    /* Note: We check api.init because we can't do (api == localStorage)
       on IE because of "Class doesn't support Automation" exception. Only
       the flash api has an init method so this works too, but we need a
       better solution in the future. */
-   
+
    // flash returns item wrapped in an object, handle special case
    if(api.init)
    {
@@ -878,20 +878,20 @@ var _getStorageObject = function(api, id)
          rval = rval.rval;
       }
    }
-   
+
    // handle decoding
    if(rval !== null)
    {
       // base64-decode and json-decode data
       rval = JSON.parse(util.decode64(rval));
    }
-   
+
    return rval;
 };
 
 /**
  * Stores an item in local storage.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
  * @param key the key for the item.
@@ -908,18 +908,18 @@ var _setItem = function(api, id, key, data)
    }
    // update key
    obj[key] = data;
-   
+
    // set storage object
    _setStorageObject(api, id, obj);
 };
 
 /**
  * Gets an item from local storage.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
  * @param key the key for the item.
- * 
+ *
  * @return the item.
  */
 var _getItem = function(api, id, key)
@@ -931,13 +931,13 @@ var _getItem = function(api, id, key)
       // return data at key
       rval = (key in rval) ? rval[key] : null;
    }
-   
+
    return rval;
 };
 
 /**
  * Removes an item from local storage.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
  * @param key the key for the item.
@@ -950,7 +950,7 @@ var _removeItem = function(api, id, key)
    {
       // remove key
       delete obj[key];
-      
+
       // see if entry has no keys remaining
       var empty = true;
       for(var prop in tmp)
@@ -963,7 +963,7 @@ var _removeItem = function(api, id, key)
          // remove entry entirely if no keys are left
          obj = null;
       }
-      
+
       // set storage object
       _setStorageObject(api, id, obj);
    }
@@ -971,7 +971,7 @@ var _removeItem = function(api, id, key)
 
 /**
  * Clears the local disk storage identified by the given ID.
- * 
+ *
  * @param api the storage interface.
  * @param id the storage ID to use.
  */
@@ -982,23 +982,23 @@ var _clearItems = function(api, id)
 
 /**
  * Calls a storage function.
- * 
+ *
  * @param func the function to call.
  * @param args the arguments for the function.
  * @param location the location argument.
- * 
+ *
  * @return the return value from the function.
  */
 var _callStorageFunction = function(func, args, location)
 {
    var rval = null;
-   
+
    // default storage types
    if(typeof(location) === 'undefined')
    {
       location = ['web', 'flash'];
    }
-   
+
    // apply storage types in order of preference
    var type;
    var done = false;
@@ -1038,37 +1038,37 @@ var _callStorageFunction = function(func, args, location)
          break;
       }
    }
-   
+
    if(!done)
    {
       throw exception;
    }
-   
+
    return rval;
 };
 
 /**
  * Stores an item on local disk.
- * 
+ *
  * The available types of local storage include 'flash', 'web', and 'both'.
- * 
+ *
  * The type 'flash' refers to flash local storage (SharedObject). In order
  * to use flash local storage, the 'api' parameter must be valid. The type
  * 'web' refers to WebStorage, if supported by the browser. The type 'both'
  * refers to storing using both 'flash' and 'web', not just one or the
  * other.
- * 
+ *
  * The location array should list the storage types to use in order of
  * preference:
- * 
+ *
  * ['flash']: flash only storage
  * ['web']: web only storage
  * ['both']: try to store in both
  * ['flash','web']: store in flash first, but if not available, 'web'
  * ['web','flash']: store in web first, but if not available, 'flash'
- * 
+ *
  * The location array defaults to: ['web', 'flash']
- *  
+ *
  * @param api the flash interface, null to use only WebStorage.
  * @param id the storage ID to use.
  * @param key the key for the item.
@@ -1082,14 +1082,14 @@ util.setItem = function(api, id, key, data, location)
 
 /**
  * Gets an item on local disk.
- * 
+ *
  * Set setItem() for details on storage types.
- * 
+ *
  * @param api the flash interface, null to use only WebStorage.
  * @param id the storage ID to use.
  * @param key the key for the item.
  * @param location an array with the preferred types of storage to use.
- * 
+ *
  * @return the item.
  */
 util.getItem = function(api, id, key, location)
@@ -1099,9 +1099,9 @@ util.getItem = function(api, id, key, location)
 
 /**
  * Removes an item on local disk.
- * 
+ *
  * Set setItem() for details on storage types.
- * 
+ *
  * @param api the flash interface.
  * @param id the storage ID to use.
  * @param key the key for the item.
@@ -1114,9 +1114,9 @@ util.removeItem = function(api, id, key, location)
 
 /**
  * Clears the local disk storage identified by the given ID.
- * 
+ *
  * Set setItem() for details on storage types.
- * 
+ *
  * @param api the flash interface if flash is available.
  * @param id the storage ID to use.
  * @param location an array with the preferred types of storage to use.
@@ -1128,9 +1128,9 @@ util.clearItems = function(api, id, location)
 
 /**
  * Parses the scheme, host, and port from an http(s) url.
- * 
+ *
  * @param str the url string.
- * 
+ *
  * @return the parsed url object or null if the url is invalid.
  */
 util.parseUrl = function(str)
@@ -1151,7 +1151,7 @@ util.parseUrl = function(str)
       url.fullHost = url.host;
       if(url.port)
       {
-         if(url.port !== 80 && url.scheme === 'http') 
+         if(url.port !== 80 && url.scheme === 'http')
          {
             url.fullHost += ':' + url.port;
          }
@@ -1213,7 +1213,7 @@ var _queryVariables = null;
  * @param query the query string to parse (optional, default to cached
  *        results from parsing window location search query).
  *
- * @return object mapping keys to variables. 
+ * @return object mapping keys to variables.
  */
 util.getQueryVariables = function(query)
 {
@@ -1247,7 +1247,7 @@ util.getQueryVariables = function(query)
       }
       return rval;
    };
-   
+
    var rval;
    if(typeof(query) === 'undefined')
    {
@@ -1284,7 +1284,7 @@ util.getQueryVariables = function(query)
  *       path: ["bar", "baz"],
  *       query: {"k1": ["v1"], "k2": ["v2"]}
  *    }
- * 
+ *
  * @return object with a path array and query object.
  */
 util.parseFragment = function(fragment)
@@ -1307,7 +1307,7 @@ util.parseFragment = function(fragment)
    }
    // convert query into object
    var query = (fq == '') ? {} : util.getQueryVariables(fq);
-   
+
    return {
       pathString: fp,
       queryString: fq,
@@ -1332,7 +1332,7 @@ util.parseFragment = function(fragment)
  *       getQuery(k, i): get part or all of a query key array,
  *       getQueryLast(k, _default): get last element of a query key array.
  *    }
- * 
+ *
  * @return object with request parameters.
  */
 util.makeRequest = function(reqString)
@@ -1346,9 +1346,9 @@ util.makeRequest = function(reqString)
       query: frag.queryString,
       /**
        * Get path or element in path.
-       * 
+       *
        * @param i optional path index.
-       * 
+       *
        * @return path or part of path if i provided.
        */
       getPath: function(i)
@@ -1357,10 +1357,10 @@ util.makeRequest = function(reqString)
       },
       /**
        * Get query, values for a key, or value for a key index.
-       * 
+       *
        * @param k optional query key.
        * @param i optional query key index.
-       * 
+       *
        * @return query, values for a key, or value for a key index.
        */
       getQuery: function(k, i)
@@ -1402,18 +1402,18 @@ util.makeRequest = function(reqString)
  * Makes a URI out of a path, an object with query parameters, and a
  * fragment. Uses jQuery.param() internally for query string creation.
  * If the path is an array, it will be joined with '/'.
- * 
+ *
  * @param path string path or array of strings.
  * @param query object with query parameters. (optional)
  * @param fragment fragment string. (optional)
- * 
+ *
  * @return string object with request parameters.
  */
 util.makeLink = function(path, query, fragment)
 {
    // join path parts if needed
    path = jQuery.isArray(path) ? path.join('/') : path;
-    
+
    var qstr = jQuery.param(query || {});
    fragment = fragment || '';
    return path +
@@ -1626,10 +1626,10 @@ util.formatNumber = function(number, decimals, dec_point, thousands_sep)
     // +     bugfix by: Michael White (http://crestidg.com)
     // +     bugfix by: Benjamin Lupton
     // +     bugfix by: Allan Jensen (http://www.winternet.no)
-    // +    revised by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)    
+    // +    revised by: Jonas Raoni Soares Silva (http://www.jsfromhell.com)
     // *     example 1: number_format(1234.5678, 2, '.', '');
-    // *     returns 1: 1234.57 
- 
+    // *     returns 1: 1234.57
+
     var n = number, c = isNaN(decimals = Math.abs(decimals)) ? 2 : decimals;
     var d = dec_point === undefined ? ',' : dec_point;
     var t = thousands_sep === undefined ?
@@ -1643,7 +1643,7 @@ util.formatNumber = function(number, decimals, dec_point, thousands_sep)
 
 /**
  * Formats a byte size.
- * 
+ *
  * http://snipplr.com/view/5949/format-humanize-file-byte-size-presentation-in-javascript/
  */
 util.formatSize = function(size)

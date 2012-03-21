@@ -3,8 +3,8 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
- * 
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ *
  * An API for storing data using the Abstract Syntax Notation Number One
  * format using DER (Distinguished Encoding Rules) encoding. This encoding is
  * commonly used to store data for PKI, i.e. X.509 Certificates, and this
@@ -20,7 +20,7 @@
  * The RSA algorithm creates public and private keys that are often stored in
  * X.509 or PKCS#X formats -- which use ASN.1 (encoded in DER format). This
  * class provides the most basic functionality required to store and load DSA
- * keys that are encoded according to ASN.1. 
+ * keys that are encoded according to ASN.1.
  *
  * The most common binary encodings for ASN.1 are BER (Basic Encoding Rules)
  * and DER (Distinguished Encoding Rules). DER is just a subset of BER that
@@ -31,7 +31,7 @@
  * list of ASN.1 structures.
  *
  * Each ASN.1 structure using BER is (Tag-Length-Value):
- * 
+ *
  * | byte 0 | bytes X | bytes Y |
  * |--------|---------|----------
  * |  tag   | length  |  value  |
@@ -103,23 +103,23 @@
  * bytes[1] = value & 0xFF;        // least significant byte last
  *
  * On the ASN.1 UNIVERSAL Object Identifier (OID) type:
- * 
+ *
  * An OID can be written like: "value1.value2.value3...valueN"
- * 
+ *
  * The DER encoding rules:
- * 
- * The first byte has the value 40 * value1 + value2. 
+ *
+ * The first byte has the value 40 * value1 + value2.
  * The following bytes, if any, encode the remaining values. Each value is
  * encoded in base 128, most significant digit first (big endian), with as
  * few digits as possible, and the most significant bit of each byte set
  * to 1 except the last in each value's encoding. For example: Given the
  * OID "1.2.840.113549", its DER encoding is (remember each byte except the
  * last one in each encoding is OR'd with 0x80):
- * 
+ *
  * byte 1: 40 * 1 + 2 = 42 = 0x2A.
  * bytes 2-3: 128 * 6 + 72 = 840 = 6 72 = 6 72 = 0x0648 = 0x8648
  * bytes 4-6: 16384 * 6 + 128 * 119 + 13 = 6 119 13 = 0x06770D = 0x86F70D
- * 
+ *
  * The final value is: 0x2A864886F70D.
  * The full OID (including ASN.1 tag and length of 6 bytes) is:
  * 0x06062A864886F70D
@@ -182,17 +182,17 @@ asn1.Type =
    PRINTABLESTRING: 19,
    IA5STRING:       22,
    UTCTIME:         23,
-   GENERALIZEDTIME: 24,
+   GENERALIZEDTIME: 24
 };
 
 /**
  * Creates a new asn1 object.
- * 
+ *
  * @param tagClass the tag class for the object.
  * @param type the data type (tag number) for the object.
  * @param constructed true if the asn1 object is in constructed form.
  * @param value the value for the object, if it is not constructed.
- * 
+ *
  * @return the asn1 object.
  */
 asn1.create = function(tagClass, type, constructed, value)
@@ -214,9 +214,9 @@ asn1.create = function(tagClass, type, constructed, value)
 
 /**
  * Gets the length of an ASN.1 value.
- * 
+ *
  * @param b the ASN.1 byte buffer.
- * 
+ *
  * @return the length of the ASN.1 value.
  */
 var _getValueLength = function(b)
@@ -241,9 +241,9 @@ var _getValueLength = function(b)
 
 /**
  * Parses an asn1 object from a byte buffer in DER format.
- * 
+ *
  * @param bytes the byte buffer to parse from.
- * 
+ *
  * @return the parsed asn1 object.
  */
 asn1.fromDer = function(bytes)
@@ -253,7 +253,7 @@ asn1.fromDer = function(bytes)
    {
       bytes = forge.util.createBuffer(bytes);
    }
-   
+
    // minimum length for ASN.1 DER structure is 2
    if(bytes.length() < 2)
    {
@@ -262,19 +262,19 @@ asn1.fromDer = function(bytes)
          bytes: bytes.length()
       };
    }
-   
+
    // get the first byte
    var b1 = bytes.getByte();
-   
+
    // get the tag class
    var tagClass = (b1 & 0xC0);
-   
+
    // get the type (bits 1-5)
    var type = b1 & 0x1F;
-   
+
    // get the value length
    var length = _getValueLength(bytes);
-   
+
    // ensure there are enough bytes to get the value
    if(bytes.length() < length)
    {
@@ -283,13 +283,13 @@ asn1.fromDer = function(bytes)
          detail: bytes.length() + ' < ' + length
       };
    }
-   
+
    // prepare to get value
    var value;
-   
+
    // constructed flag is bit 6 (32 = 0x20) of the first byte
    var constructed = ((b1 & 0x20) == 0x20);
-   
+
    // determine if the value is composed of other ASN.1 objects (if its
    // constructed it will be and if its a BITSTRING it may be)
    var composed = constructed;
@@ -299,7 +299,7 @@ asn1.fromDer = function(bytes)
       /* The first octet gives the number of bits by which the length of the
          bit string is less than the next multiple of eight (this is called
          the "number of unused bits").
-         
+
          The second and following octets give the value of the bit string
          converted to an octet string.
        */
@@ -332,7 +332,7 @@ asn1.fromDer = function(bytes)
       // restore read pointer
       bytes.read = read;
    }
-   
+
    if(composed)
    {
       // parse child asn1 objects from the value
@@ -348,32 +348,32 @@ asn1.fromDer = function(bytes)
    else
    {
       // TODO: do DER to OID conversion and vice-versa in .toDer?
-      
+
       // asn1 not composed, get raw value
       value = bytes.getBytes(length);
    }
-   
+
    // create and return asn1 object
    return asn1.create(tagClass, type, constructed, value);
 };
 
 /**
  * Converts the given asn1 object to a buffer of bytes in DER format.
- * 
+ *
  * @param asn1 the asn1 object to convert to bytes.
- * 
+ *
  * @return the buffer of bytes.
  */
 asn1.toDer = function(obj)
 {
    var bytes = forge.util.createBuffer();
-   
+
    // build the first byte
    var b1 = obj.tagClass | obj.type;
-   
+
    // for storing the ASN.1 value
    var value = forge.util.createBuffer();
-   
+
    // if composed, use each child asn1 object's DER bytes as value
    if(obj.composed)
    {
@@ -388,7 +388,7 @@ asn1.toDer = function(obj)
       {
          value.putByte(0x00);
       }
-      
+
       // add all of the child DER bytes together
       for(var i = 0; i < obj.value.length; ++i)
       {
@@ -400,10 +400,10 @@ asn1.toDer = function(obj)
    {
       value.putBytes(obj.value);
    }
-   
+
    // add tag byte
    bytes.putByte(b1);
-   
+
    // use "short form" encoding
    if(value.length() <= 127)
    {
@@ -425,11 +425,11 @@ asn1.toDer = function(obj)
          len = len >>> 8;
       }
       while(len > 0);
-      
+
       // set first byte to # bytes used to store the length and turn on
       // bit 8 to indicate long-form length is used
       bytes.putByte(lenBytes.length | 0x80);
-      
+
       // concatenate length bytes in reverse since they were generated
       // little endian and we need big endian
       for(var i = lenBytes.length - 1; i >= 0; --i)
@@ -437,7 +437,7 @@ asn1.toDer = function(obj)
          bytes.putByte(lenBytes.charCodeAt(i));
       }
    }
-   
+
    // concatenate value bytes
    bytes.putBuffer(value);
    return bytes;
@@ -446,9 +446,9 @@ asn1.toDer = function(obj)
 /**
  * Converts an OID dot-separated string to a byte buffer. The byte buffer
  * contains only the DER-encoded value, not any tag or length bytes.
- * 
+ *
  * @param oid the OID dot-separated string.
- * 
+ *
  * @return the byte buffer.
  */
 asn1.oidToDer = function(oid)
@@ -456,7 +456,7 @@ asn1.oidToDer = function(oid)
    // split OID into individual values
    var values = oid.split('.');
    var bytes = forge.util.createBuffer();
-   
+
    // first byte is 40 * value1 + value2
    bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
    // other bytes are each value in base 128 with 8th bit set except for
@@ -482,14 +482,14 @@ asn1.oidToDer = function(oid)
          last = false;
       }
       while(value > 0);
-      
+
       // add value bytes in reverse (needs to be in big endian)
       for(var n = valueBytes.length - 1; n >= 0; --n)
       {
          bytes.putByte(valueBytes[n]);
       }
    }
-   
+
    return bytes;
 };
 
@@ -497,25 +497,25 @@ asn1.oidToDer = function(oid)
  * Converts a DER-encoded byte buffer to an OID dot-separated string. The
  * byte buffer should contain only the DER-encoded value, not any tag or
  * length bytes.
- * 
+ *
  * @param bytes the byte buffer.
- * 
+ *
  * @return the OID dot-separated string.
  */
 asn1.derToOid = function(bytes)
 {
    var oid;
-   
+
    // wrap in buffer if needed
    if(bytes.constructor == String)
    {
       bytes = forge.util.createBuffer(bytes);
    }
-   
+
    // first byte is 40 * value1 + value2
    var b = bytes.getByte();
    oid = Math.floor(b / 40) + '.' + (b % 40);
-   
+
    // other bytes are each value in base 128 with 8th bit set except for
    // the last byte for each value
    var value = 0;
@@ -535,33 +535,33 @@ asn1.derToOid = function(bytes)
          value = 0;
       }
    }
-   
+
    return oid;
 };
 
 /**
  * Converts a UTCTime value to a date.
- * 
+ *
  * Note: GeneralizedTime has 4 digits for the year and is used for X.509
  * dates passed 2049. Parsing that structure hasn't been implemented yet.
- * 
+ *
  * @param utc the UTCTime value to convert.
- * 
+ *
  * @return the date.
  */
 asn1.utcTimeToDate = function(utc)
 {
    /* The following formats can be used:
-      
+
       YYMMDDhhmmZ
       YYMMDDhhmm+hh'mm'
       YYMMDDhhmm-hh'mm'
       YYMMDDhhmmssZ
       YYMMDDhhmmss+hh'mm'
       YYMMDDhhmmss-hh'mm'
-      
+
       Where:
-      
+
       YY is the least significant two digits of the year
       MM is the month (01 to 12)
       DD is the day (01 to 31)
@@ -574,7 +574,7 @@ asn1.utcTimeToDate = function(utc)
       mm' is the absolute value of the offset from GMT in minutes
    */
    var date = new Date();
-   
+
    // if YY >= 50 use 19xx, if YY < 50 use 20xx
    var year = parseInt(utc.substr(0, 2), 10);
    year = (year >= 50) ? 1900 + year : 2000 + year;
@@ -583,14 +583,14 @@ asn1.utcTimeToDate = function(utc)
    var hh = parseInt(utc.substr(6, 2), 10);
    var mm = parseInt(utc.substr(8, 2), 10);
    var ss = 0;
-   
+
    // not just YYMMDDhhmmZ
    if(utc.length > 11)
    {
       // get character after minutes
       var c = utc.charAt(10);
       var end = 10;
-      
+
       // see if seconds are present
       if(c !== '+' && c !== '-')
       {
@@ -599,11 +599,11 @@ asn1.utcTimeToDate = function(utc)
          end += 2;
       }
    }
-      
+
    // update date
    date.setUTCFullYear(year, MM, DD);
    date.setUTCHours(hh, mm, ss, 0);
-      
+
    if(end)
    {
       // get +/- after end of time
@@ -613,11 +613,11 @@ asn1.utcTimeToDate = function(utc)
          // get hours+minutes offset
          var hhoffset = parseInt(utc.substr(end + 1, 2), 10);
          var mmoffset = parseInt(utc.substr(end + 4, 2), 10);
-         
+
          // calculate offset in milliseconds
          var offset = hhoffset * 60 + mmoffset;
          offset *= 60000;
-         
+
          // apply offset
          if(c === '+')
          {
@@ -629,15 +629,15 @@ asn1.utcTimeToDate = function(utc)
          }
       }
    }
-   
+
    return date;
 };
 
 /**
  * Converts a GeneralizedTime value to a date.
- * 
+ *
  * @param gentime the GeneralizedTime value to convert.
- * 
+ *
  * @return the date.
  */
 asn1.generalizedTimeToDate = function(gentime)
@@ -730,19 +730,19 @@ asn1.generalizedTimeToDate = function(gentime)
 
 /**
  * Converts a date to a UTCTime value.
- * 
+ *
  * Note: GeneralizedTime has 4 digits for the year and is used for X.509
  * dates passed 2049. Converting to a GeneralizedTime hasn't been
  * implemented yet.
- * 
+ *
  * @param date the date to convert.
- * 
+ *
  * @return the UTCTime value.
  */
 asn1.dateToUtcTime = function(date)
 {
    var rval = '';
-   
+
    // create format YYMMDDhhmmssZ
    var format = [];
    format.push(('' + date.getUTCFullYear()).substr(2));
@@ -751,7 +751,7 @@ asn1.dateToUtcTime = function(date)
    format.push('' + date.getUTCHours());
    format.push('' + date.getUTCMinutes());
    format.push('' + date.getUTCSeconds());
-   
+
    // ensure 2 digits are used for each format entry
    for(var i = 0; i < format.length; ++i)
    {
@@ -762,7 +762,7 @@ asn1.dateToUtcTime = function(date)
       rval += format[i];
    }
    rval += 'Z';
-   
+
    return rval;
 };
 
@@ -771,25 +771,25 @@ asn1.dateToUtcTime = function(date)
  * given ASN.1 structure. Only tag classes and types are checked. An
  * optional map may also be provided to capture ASN.1 values while the
  * structure is checked.
- * 
+ *
  * To capture an ASN.1 value, set an object in the validator's 'capture'
  * parameter to the key to use in the capture map. To capture the full
  * ASN.1 object, specify 'captureAsn1'.
- * 
+ *
  * Objects in the validator may set a field 'optional' to true to indicate
  * that it isn't necessary to pass validation.
- * 
+ *
  * @param obj the ASN.1 object to validate.
  * @param v the ASN.1 structure validator.
  * @param capture an optional map to capture values in.
  * @param errors an optional array for storing validation errors.
- * 
+ *
  * @return true on success, false on failure.
  */
 asn1.validate = function(obj, v, capture, errors)
 {
    var rval = false;
-   
+
    // ensure tag class and type are the same if specified
    if((obj.tagClass === v.tagClass || typeof(v.tagClass) === 'undefined') &&
       (obj.type === v.type || typeof(v.type) === 'undefined'))
@@ -799,7 +799,7 @@ asn1.validate = function(obj, v, capture, errors)
          typeof(v.constructed) === 'undefined')
       {
          rval = true;
-         
+
          // handle sub values
          if(v.value && v.value.constructor == Array)
          {
@@ -831,7 +831,7 @@ asn1.validate = function(obj, v, capture, errors)
                }
             }
          }
-         
+
          if(rval && capture)
          {
             if(v.capture)
@@ -876,34 +876,34 @@ var _nonLatinRegex = /[^\\u0000-\\u00ff]/;
 
 /**
  * Pretty prints an ASN.1 object to a string.
- * 
+ *
  * @param obj the object to write out.
  * @param level the level in the tree.
  * @param indentation the indentation to use.
- * 
+ *
  * @return the string.
  */
 asn1.prettyPrint = function(obj, level, indentation)
 {
    var rval = '';
-   
+
    // set default level and indentation
    level = level || 0;
    indentation = indentation || 2;
-   
+
    // start new line for deep levels
    if(level > 0)
    {
       rval += '\n';
    }
-   
+
    // create indent
    var indent = '';
    for(var i = 0; i < level * indentation; ++i)
    {
       indent += ' ';
    }
-   
+
    // print class:type
    rval += indent + 'Tag: ';
    switch(obj.tagClass)
@@ -921,7 +921,7 @@ asn1.prettyPrint = function(obj, level, indentation)
          rval += 'Private:';
          break;
    }
-   
+
    if(obj.tagClass === asn1.Class.UNIVERSAL)
    {
       // known types
@@ -990,10 +990,10 @@ asn1.prettyPrint = function(obj, level, indentation)
    {
       rval += obj.type;
    }
-   
+
    rval += '\n';
    rval += indent + 'Constructed: ' + obj.constructed + '\n';
-   
+
    if(obj.composed)
    {
       rval += indent + 'Sub values: ' + obj.value.length;
@@ -1022,7 +1022,7 @@ asn1.prettyPrint = function(obj, level, indentation)
          rval += obj.value;
       }
    }
-   
+
    return rval;
 };
 

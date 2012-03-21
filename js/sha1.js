@@ -1,12 +1,12 @@
 /**
  * Secure Hash Algorithm with 160-bit digest (SHA-1) implementation.
- * 
+ *
  * This implementation is currently limited to message lengths (in bytes) that
  * are up to 32-bits in size.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -43,14 +43,14 @@ var _init = function()
    // create padding
    _padding = String.fromCharCode(128);
    _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
-   
+
    // now initialized
    _initialized = true;
 };
 
 /**
  * Updates a SHA-1 state with the given byte buffer.
- * 
+ *
  * @param s the SHA-1 state to update.
  * @param w the array to use to store words.
  * @param bytes the byte buffer to update with.
@@ -65,14 +65,14 @@ var _update = function(s, w, bytes)
       // the w array will be populated with sixteen 32-bit big-endian words
       // and then extended into 80 32-bit words according to SHA-1 algorithm
       // and for 32-79 using Max Locktyukhin's optimization
-      
+
       // initialize hash value for this chunk
       a = s.h0;
       b = s.h1;
       c = s.h2;
       d = s.h3;
       e = s.h4;
-      
+
       // round 1
       for(i = 0; i < 16; ++i)
       {
@@ -154,21 +154,21 @@ var _update = function(s, w, bytes)
          b = a;
          a = t;
       }
-      
+
       // update hash state
       s.h0 += a;
       s.h1 += b;
       s.h2 += c;
       s.h3 += d;
       s.h4 += e;
-      
+
       len -= 64;
    }
 };
 
 /**
  * Creates a SHA-1 message digest object.
- * 
+ *
  * @return a message digest object.
  */
 sha1.create = function()
@@ -178,16 +178,16 @@ sha1.create = function()
    {
       _init();
    }
-   
+
    // SHA-1 state contains five 32-bit integers
    var _state = null;
-   
+
    // input buffer
    var _input = forge.util.createBuffer();
-   
+
    // used for word storage
    var _w = new Array(80);
-   
+
    // message digest object
    var md =
    {
@@ -197,7 +197,7 @@ sha1.create = function()
       // length of message so far (does not including padding)
       messageLength: 0
    };
-   
+
    /**
     * Starts the digest.
     */
@@ -216,12 +216,12 @@ sha1.create = function()
    };
    // start digest automatically for first time
    md.start();
-   
+
    /**
     * Updates the digest with the given message input. The given input can
     * treated as raw input (no encoding will be applied) or an encoding of
     * 'utf8' maybe given to encode the input using UTF-8.
-    * 
+    *
     * @param msg the message input to update with.
     * @param encoding the encoding to use (default: 'raw', other: 'utf8').
     */
@@ -231,26 +231,26 @@ sha1.create = function()
       {
          msg = forge.util.encodeUtf8(msg);
       }
-      
+
       // update message length
       md.messageLength += msg.length;
-      
+
       // add bytes to input buffer
       _input.putBytes(msg);
-      
+
       // process bytes
       _update(_state, _w, _input);
-      
+
       // compact input buffer every 2K or if empty
       if(_input.read > 2048 || _input.length() === 0)
       {
          _input.compact();
       }
    };
-   
+
    /**
     * Produces the digest.
-    * 
+    *
     * @return a byte buffer containing the digest value.
     */
    md.digest = function()
@@ -259,19 +259,19 @@ sha1.create = function()
          add the appropriate SHA-1 padding. Then we do the final update
          on a copy of the state so that if the user wants to get
          intermediate digests they can do so. */
-      
+
       /* Determine the number of bytes that must be added to the message
          to ensure its length is congruent to 448 mod 512. In other words,
          a 64-bit integer that gives the length of the message will be
          appended to the message and whatever the length of the message is
          plus 64 bits must be a multiple of 512. So the length of the
          message must be congruent to 448 mod 512 because 512 - 64 = 448.
-         
+
          In order to fill up the message length it must be filled with
          padding that begins with 1 bit followed by all 0 bits. Padding
          must *always* be present, so if the message length is already
          congruent to 448 mod 512, then 512 padding bits must be added. */
-      
+
       // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
       // _padding starts with 1 byte with first bit is set in it which
       // is byte value 128, then there may be up to 63 other pad bytes
@@ -279,7 +279,7 @@ sha1.create = function()
       var padBytes = forge.util.createBuffer();
       padBytes.putBytes(_input.bytes());
       padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
-      
+
       /* Now append length of the message. The length is appended in bits
          as a 64-bit number in big-endian order. Since we store the length
          in bytes, we must multiply it by 8 (or left shift by 3). So here
@@ -305,7 +305,7 @@ sha1.create = function()
       rval.putInt32(s2.h4);
       return rval;
    };
-   
+
    return md;
 };
 

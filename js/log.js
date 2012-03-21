@@ -3,9 +3,9 @@
  *
  * @author David I. Lehn <dlehn@digitalbazaar.com>
  *
- * Copyright (c) 2008-2011 Digital Bazaar, Inc.  All rights reserved.
+ * Copyright (c) 2008-2012 Digital Bazaar, Inc.
  */
-(function() 
+(function()
 {
 
 // define forge
@@ -22,7 +22,7 @@ else if(typeof(module) !== 'undefined' && module.exports)
       util: require('./util')
    };
    module.exports = forge.log = {};
-   
+
    // define console if not defined
    if(typeof(console) === 'undefined')
    {
@@ -37,7 +37,7 @@ else if(typeof(module) !== 'undefined' && module.exports)
 
 /**
  * Application logging system.
- * 
+ *
  * Each logger level available as it's own function of the form:
  *    forge.log.level(category, args...)
  * The category is an arbitrary string, and the args are the same as
@@ -213,7 +213,7 @@ if(true)
 
 /**
  * Creates a new logger with specified custom logging function.
- * 
+ *
  * The logging function has a signature of:
  *    function(logger, message)
  * logger: current logger
@@ -223,7 +223,7 @@ if(true)
  *   message: string message
  *   arguments: Array of extra arguments
  *   fullMessage: interpolated message and arguments if INTERPOLATE flag set
- * 
+ *
  * @param logFunction a logging function which takes a log message object
  *        as a parameter.
  *
@@ -264,7 +264,7 @@ forge.log.setLevel = function(logger, level)
          }
       }
    }
-   
+
    return rval;
 };
 
@@ -352,7 +352,7 @@ else
  * console.level=<level-name>
  * Set's the console log level by name.  Useful to override defaults and
  * allow more verbose logging before a user config is loaded.
- * 
+ *
  * console.lock=<true|false>
  * Lock the console log level at whatever level it is set at.  This is run
  * after console.level is processed.  Useful to force a level of verbosity

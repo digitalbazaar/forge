@@ -2,16 +2,16 @@
  * An API for getting cryptographically-secure random bytes. The bytes are
  * generated using the Fortuna algorithm devised by Bruce Schneier and
  * Niels Ferguson.
- * 
+ *
  * Getting strong random bytes is not yet easy to do in javascript. The only
  * truish random entropy that can be collected is from the mouse, keyboard, or
  * from timing with respect to page loads, etc. This generator makes a poor
  * attempt at providing random bytes when those sources haven't yet provided
  * enough entropy to initially seed or to reseed the PRNG.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2012 Digital Bazaar, Inc.
  */
 (function($)
 {
@@ -48,7 +48,7 @@ prng_aes.formatKey = function(key)
    key[1] = tmp.getInt32();
    key[2] = tmp.getInt32();
    key[3] = tmp.getInt32();
-   
+
    // return the expanded key
    return forge.aes._expandKey(key, false);
 };
@@ -111,7 +111,7 @@ if($ !== null)
       _ctx.collectInt(e.clientX, 16);
       _ctx.collectInt(e.clientY, 16);
    });
-   
+
    // set up keyboard entropy capture
    $().keypress(function(e)
    {
@@ -125,9 +125,9 @@ if($ !== null)
  * Gets random bytes. This method tries to make the bytes more
  * unpredictable by drawing from data that can be collected from
  * the user of the browser, ie mouse movement.
- * 
+ *
  * @param count the number of random bytes to get.
- * 
+ *
  * @return the random bytes in a string.
  */
 forge.random.getBytes = function(count)

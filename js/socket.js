@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -20,7 +20,7 @@ var net =
 
 /**
  * Creates a flash socket pool.
- * 
+ *
  * @param options:
  *           flashId: the dom ID for the flash object element.
  *           policyPort: the default policy port for sockets, 0 to use the
@@ -28,19 +28,19 @@ var net =
  *           policyUrl: the default policy file URL for sockets (if provided
  *              used instead of a policy port).
  *           msie: true if the browser is msie, false if not.
- * 
+ *
  * @return the created socket pool.
  */
 net.createSocketPool = function(options)
 {
    // set default
    options.msie = options.msie || false;
-   
+
    // initialize the flash interface
    var spId = options.flashId;
    var api = document.getElementById(spId);
    api.init({marshallExceptions: !options.msie});
-   
+
    // create socket pool entry
    var sp =
    {
@@ -56,7 +56,7 @@ net.createSocketPool = function(options)
       policyUrl: options.policyUrl || null
    };
    net.socketPools[spId] = sp;
-   
+
    // create event handler, subscribe to flash events
    if(options.msie === true)
    {
@@ -124,7 +124,7 @@ net.createSocketPool = function(options)
    api.subscribe('socketData', handler);
    api.subscribe('ioError', handler);
    api.subscribe('securityError', handler);
-   
+
    /**
     * Destroys a socket pool. The socket pool still needs to be cleaned
     * up via net.cleanup().
@@ -139,10 +139,10 @@ net.createSocketPool = function(options)
       sp.sockets = {};
       api.cleanup();
    };
-   
+
    /**
     * Creates a new socket.
-    * 
+    *
     * @param options:
     *           connected: function(event) called when the socket connects.
     *           closed: function(event) called when the socket closes.
@@ -154,10 +154,10 @@ net.createSocketPool = function(options)
    {
       // default to empty options
       options = options || {};
-      
-      // create flash socket 
+
+      // create flash socket
       var id = api.create();
-      
+
       // create javascript socket wrapper
       var socket =
       {
@@ -168,7 +168,7 @@ net.createSocketPool = function(options)
          data: options.data || function(e){},
          error: options.error || function(e){}
       };
-      
+
       /**
        * Destroys this socket.
        */
@@ -177,16 +177,16 @@ net.createSocketPool = function(options)
          api.destroy(id);
          delete sp.sockets[id];
       };
-      
+
       /**
        * Connects this socket.
-       * 
+       *
        * @param options:
        *           host: the host to connect to.
        *           port: the port to connect to.
        *           policyPort: the policy port to use (if non-default), 0 to
        *              use the flash default.
-       *           policyUrl: the policy file URL to use (instead of port). 
+       *           policyUrl: the policy file URL to use (instead of port).
        */
       socket.connect = function(options)
       {
@@ -201,7 +201,7 @@ net.createSocketPool = function(options)
          }
          api.connect(id, options.host, options.port, policyPort, policyUrl);
       };
-      
+
       /**
        * Closes this socket.
        */
@@ -214,33 +214,33 @@ net.createSocketPool = function(options)
             bytesAvailable: 0
          });
       };
-      
+
       /**
        * Determines if the socket is connected or not.
-       * 
+       *
        * @return true if connected, false if not.
        */
       socket.isConnected = function()
       {
          return api.isConnected(id);
       };
-      
+
       /**
        * Writes bytes to this socket.
-       * 
+       *
        * @param bytes the bytes (as a string) to write.
-       * 
+       *
        * @return true on success, false on failure.
        */
       socket.send = function(bytes)
       {
          return api.send(id, forge.util.encode64(bytes));
       };
-      
+
       /**
        * Reads bytes from this socket (non-blocking). Fewer than the number
        * of bytes requested may be read if enough bytes are not available.
-       * 
+       *
        * This method should be called from the data handler if there are
        * enough bytes available. To see how many bytes are available, check
        * the 'bytesAvailable' property on the event in the data handler or
@@ -248,9 +248,9 @@ net.createSocketPool = function(options)
        * msie, then the bytesAvailable() function should be used to avoid
        * race conditions. Otherwise, using the property on the data handler's
        * event may be quicker.
-       * 
+       *
        * @param count the maximum number of bytes to read.
-       * 
+       *
        * @return the bytes read (as a string) or null on error.
        */
       socket.receive = function(count)
@@ -258,28 +258,28 @@ net.createSocketPool = function(options)
          var rval = api.receive(id, count).rval;
          return (rval === null) ? null : forge.util.decode64(rval);
       };
-      
+
       /**
        * Gets the number of bytes available for receiving on the socket.
-       * 
+       *
        * @return the number of bytes available for receiving.
        */
       socket.bytesAvailable = function()
       {
          return api.getBytesAvailable(id);
       };
-      
+
       // store and return socket
       sp.sockets[id] = socket;
       return socket;
    };
-   
+
    return sp;
 };
 
 /**
  * Destroys a flash socket pool.
- * 
+ *
  * @param options:
  *           flashId: the dom ID for the flash object element.
  */
@@ -294,7 +294,7 @@ net.destroySocketPool = function(options)
 
 /**
  * Creates a new socket.
- * 
+ *
  * @param options:
  *           flashId: the dom ID for the flash object element.
  *           connected: function(event) called when the socket connects.
@@ -302,7 +302,7 @@ net.destroySocketPool = function(options)
  *           data: function(event) called when socket data has arrived, it
  *              can be read from the socket using receive().
  *           error: function(event) called when a socket error occurs.
- * 
+ *
  * @return the created socket.
  */
 net.createSocket = function(options)

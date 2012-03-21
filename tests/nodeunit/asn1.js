@@ -1,17 +1,20 @@
-var forge = require("../../js/forge");
+var forge = require('../../js/forge');
 
 exports.testGeneralizedTimeToDate = function(test) {
    d = new Date();
-   var localOffset = d.getTimezoneOffset() * 60000;
+   var localOffset;
 
    // test local time case
    d = forge.asn1.generalizedTimeToDate('20110223123400');
+   localOffset = d.getTimezoneOffset() * 60000;
    test.equal(d.getTime(), 1298464440000 + localOffset);
 
    d = forge.asn1.generalizedTimeToDate('20110223123400.1');
+   localOffset = d.getTimezoneOffset() * 60000;
    test.equal(d.getTime(), 1298464440100 + localOffset);
 
    d = forge.asn1.generalizedTimeToDate('20110223123400.123');
+   localOffset = d.getTimezoneOffset() * 60000;
    test.equal(d.getTime(), 1298464440123 + localOffset);
 
    // test utc time case
