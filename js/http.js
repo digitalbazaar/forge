@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
  */
 (function()
 {
@@ -29,9 +29,9 @@ var _normalize = function(name)
 
 /**
  * Gets the local storage ID for the given client.
- * 
+ *
  * @param client the client to get the local storage ID for.
- * 
+ *
  * @return the local storage ID to use.
  */
 var _getStorageId = function(client)
@@ -47,7 +47,7 @@ var _getStorageId = function(client)
 
 /**
  * Loads persistent cookies from disk for the given client.
- * 
+ *
  * @param client the client.
  */
 var _loadCookies = function(client)
@@ -73,7 +73,7 @@ var _loadCookies = function(client)
 
 /**
  * Saves persistent cookies on disk for the given client.
- * 
+ *
  * @param client the client.
  */
 var _saveCookies = function(client)
@@ -94,14 +94,14 @@ var _saveCookies = function(client)
          //forge.log.error(cat, ex);
       }
    }
-   
+
    // FIXME: remove me
    _loadCookies(client);
 };
 
 /**
  * Clears persistent cookies on disk for the given client.
- * 
+ *
  * @param client the client.
  */
 var _clearCookies = function(client)
@@ -157,7 +157,7 @@ var _doRequest = function(client, socket)
 
 /**
  * Handles the next request or marks a socket as idle.
- * 
+ *
  * @param client the http client.
  * @param socket the socket.
  */
@@ -165,7 +165,7 @@ var _handleNextRequest = function(client, socket)
 {
    // clear buffer
    socket.buffer.clear();
-   
+
    // get pending request
    var pending = null;
    while(pending === null && client.requests.length > 0)
@@ -176,7 +176,7 @@ var _handleNextRequest = function(client, socket)
          pending = null;
       }
    }
-   
+
    // mark socket idle if no pending requests
    if(pending === null)
    {
@@ -198,7 +198,7 @@ var _handleNextRequest = function(client, socket)
 
 /**
  * Sets up a socket for use with an http client.
- * 
+ *
  * @param client the parent http client.
  * @param socket the socket to set up.
  * @param tlsOptions if the socket must use TLS, the TLS options.
@@ -207,7 +207,7 @@ var _initSocket = function(client, socket, tlsOptions)
 {
    // no socket options yet
    socket.options = null;
-   
+
    // set up handlers
    socket.connected = function(e)
    {
@@ -349,7 +349,7 @@ var _initSocket = function(client, socket, tlsOptions)
       });
       socket.close();
    };
-   
+
    // wrap socket for TLS
    if(tlsOptions)
    {
@@ -367,7 +367,7 @@ var _initSocket = function(client, socket, tlsOptions)
          deflate: tlsOptions.deflate || null,
          inflate: tlsOptions.inflate || null
       });
-      
+
       socket.options = null;
       socket.buffer = forge.util.createBuffer();
       client.sockets.push(socket);
@@ -401,15 +401,15 @@ var _initSocket = function(client, socket, tlsOptions)
  * Checks to see if the given cookie has expired. If the cookie's max-age
  * plus its created time is less than the time now, it has expired, unless
  * its max-age is set to -1 which indicates it will never expire.
- * 
+ *
  * @param cookie the cookie to check.
- * 
+ *
  * @return true if it has expired, false if not.
  */
 var _hasCookieExpired = function(cookie)
 {
    var rval = false;
-   
+
    if(cookie.maxAge !== -1)
    {
       var now = _getUtcTime(new Date());
@@ -419,13 +419,13 @@ var _hasCookieExpired = function(cookie)
          rval = true;
       }
    }
-   
+
    return rval;
 };
 
 /**
  * Adds cookies in the given client to the given request.
- * 
+ *
  * @param client the client.
  * @param request the request.
  */
@@ -453,7 +453,7 @@ var _writeCookies = function(client, request)
          }
       }
    }
-   
+
    // clean up expired cookies
    for(var i = 0; i < expired.length; ++i)
    {
@@ -464,7 +464,7 @@ var _writeCookies = function(client, request)
 
 /**
  * Gets cookies from the given response and adds the to the given client.
- * 
+ *
  * @param client the client.
  * @param response the response.
  */
@@ -487,7 +487,7 @@ var _readCookies = function(client, response)
 /**
  * Creates an http client that uses forge.net sockets as a backend and
  * forge.tls for security.
- * 
+ *
  * @param options:
  *    url: the url to connect to (scheme://host:port).
  *       socketPool: the flash socket pool to use.
@@ -513,7 +513,7 @@ var _readCookies = function(client, response)
  *       storage, false to only keep cookies in javascript.
  *    primeTlsSockets: true to immediately connect TLS sockets on
  *       their creation so that they will cache TLS sessions for reuse.
- * 
+ *
  * @return the client.
  */
 http.createClient = function(options)
@@ -524,7 +524,7 @@ http.createClient = function(options)
    {
       caStore = forge.pki.createCaStore(options.caCerts);
    }
-   
+
    // get scheme, host, and port from url
    options.url = (options.url ||
       window.location.protocol + '//' + window.location.host);
@@ -538,10 +538,10 @@ http.createClient = function(options)
          }
       };
    }
-   
+
    // default to 1 connection
    options.connections = options.connections || 1;
-   
+
    // create client
    var sp = options.socketPool;
    var client =
@@ -567,27 +567,27 @@ http.createClient = function(options)
       cookies: {},
       // default to flash storage of cookies
       persistCookies: (typeof(options.persistCookies) === 'undefined') ?
-         true : options.persistCookies 
+         true : options.persistCookies
    };
-   
+
    // add client to debug storage
    if(forge.debug)
    {
       forge.debug.get('forge.http', 'clients').push(client);
    }
-   
+
    // load cookies from disk
    _loadCookies(client);
-   
+
    /**
     * A default certificate verify function that checks a certificate common
     * name against the client's URL host.
-    * 
+    *
     * @param c the TLS connection.
     * @param verified true if cert is verified, otherwise alert number.
     * @param depth the chain depth.
     * @param certs the cert chain.
-    * 
+    *
     * @return true if verified and the common name matches the host, error
     *         otherwise.
     */
@@ -606,7 +606,7 @@ http.createClient = function(options)
       }
       return verified;
    };
-   
+
    // determine if TLS is used
    var tlsOptions = null;
    if(client.secure)
@@ -622,7 +622,7 @@ http.createClient = function(options)
          getSignature: options.getSignature || null,
          prime: options.primeTlsSockets || false
       };
-      
+
       // if socket pool uses a flash api, then add deflate support to TLS
       if(sp.flashApi !== null)
       {
@@ -637,17 +637,17 @@ http.createClient = function(options)
          };
       }
    }
-   
+
    // create and initialize sockets
    for(var i = 0; i < options.connections; ++i)
    {
       _initSocket(client, sp.createSocket(), tlsOptions);
    }
-   
+
    /**
     * Sends a request. A method 'abort' will be set on the request that
     * can be called to attempt to abort the request.
-    * 
+    *
     * @param options:
     *           request: the request to send.
     *           connected: a callback for when the connection is open.
@@ -663,7 +663,7 @@ http.createClient = function(options)
       {
          options.request.setField('Host', client.url.fullHost);
       }
-      
+
       // set default dummy handlers
       var opts = {};
       opts.request = options.request;
@@ -680,13 +680,13 @@ http.createClient = function(options)
       };
       opts.bodyReady = options.bodyReady || function(){};
       opts.error = options.error || function(){};
-      
+
       // create response
       opts.response = http.createResponse();
       opts.response.time = 0;
       opts.response.flashApi = client.socketPool.flashApi;
       opts.request.flashApi = client.socketPool.flashApi;
-      
+
       // create abort function
       opts.request.abort = function()
       {
@@ -698,10 +698,10 @@ http.createClient = function(options)
          opts.bodyReady = function(){};
          opts.error = function(){};
       };
-      
+
       // add cookies to request
       _writeCookies(client, opts.request);
-      
+
       // queue request options if there are no idle sockets
       if(client.idle.length === 0)
       {
@@ -734,7 +734,7 @@ http.createClient = function(options)
          _doRequest(client, socket);
       }
    };
-   
+
    /**
     * Destroys this client.
     */
@@ -751,16 +751,16 @@ http.createClient = function(options)
       client.sockets = [];
       client.idle = [];
    };
-   
+
    /**
     * Sets a cookie for use with all connections made by this client. Any
     * cookie with the same name will be replaced. If the cookie's value
     * is undefined, null, or the blank string, the cookie will be removed.
-    * 
+    *
     * If the cookie's domain doesn't match this client's url host or the
     * cookie's secure flag doesn't match this client's url scheme, then
     * setting the cookie will fail with an exception.
-    * 
+    *
     * @param cookie the cookie with parameters:
     *    name: the name of the cookie.
     *    value: the value of the cookie.
@@ -796,7 +796,7 @@ http.createClient = function(options)
             cookie.domain = cookie.domain || null;
             cookie.version = cookie.version || null;
             cookie.created = _getUtcTime(new Date());
-            
+
             // do secure check
             if(cookie.secure !== client.secure)
             {
@@ -817,7 +817,7 @@ http.createClient = function(options)
                   cookie: cookie
                };
             }
-            
+
             // add new cookie
             if(!(cookie.name in client.cookies))
             {
@@ -825,22 +825,22 @@ http.createClient = function(options)
             }
             client.cookies[cookie.name][cookie.path] = cookie;
             rval = true;
-            
+
             // save cookies
             _saveCookies(client);
          }
       }
-      
+
       return rval;
    };
-   
+
    /**
     * Gets a cookie by its name.
-    * 
+    *
     * @param name the name of the cookie to retrieve.
     * @param path an optional path for the cookie (if there are multiple
     *           cookies with the same name but different paths).
-    * 
+    *
     * @return the cookie or null if not found.
     */
    client.getCookie = function(name, path)
@@ -849,7 +849,7 @@ http.createClient = function(options)
       if(name in client.cookies)
       {
          var paths = client.cookies[name];
-         
+
          // get path-specific cookie
          if(path)
          {
@@ -870,14 +870,14 @@ http.createClient = function(options)
       }
       return rval;
    };
-   
+
    /**
     * Removes a cookie.
-    * 
+    *
     * @param name the name of the cookie to remove.
     * @param path an optional path for the cookie (if there are multiple
     *           cookies with the same name but different paths).
-    * 
+    *
     * @return true if a cookie was removed, false if not.
     */
    client.removeCookie = function(name, path)
@@ -920,7 +920,7 @@ http.createClient = function(options)
       }
       return rval;
    };
-   
+
    /**
     * Clears all cookies stored in this client.
     */
@@ -929,20 +929,20 @@ http.createClient = function(options)
       client.cookies = {};
       _clearCookies(client);
    };
-   
+
    if(forge.log)
    {
       forge.log.debug('forge.http', 'created client', options);
    }
-   
+
    return client;
 };
 
 /**
  * Trims the whitespace off of the beginning and end of a string.
- * 
+ *
  * @param str the string to trim.
- * 
+ *
  * @return the trimmed string.
  */
 var _trimString = function(str)
@@ -952,7 +952,7 @@ var _trimString = function(str)
 
 /**
  * Creates an http header object.
- * 
+ *
  * @return the http header object.
  */
 var _createHeader = function()
@@ -991,9 +991,9 @@ var _createHeader = function()
 
 /**
  * Gets the time in utc seconds given a date.
- * 
+ *
  * @param d the date to use.
- * 
+ *
  * @return the time in utc seconds.
  */
 var _getUtcTime = function(d)
@@ -1004,7 +1004,7 @@ var _getUtcTime = function(d)
 
 /**
  * Creates an http request.
- * 
+ *
  * @param options:
  *           version: the version.
  *           method: the method.
@@ -1012,7 +1012,7 @@ var _getUtcTime = function(d)
  *           body: the body.
  *           headers: custom header fields to add,
  *              ie: [{'Content-Length': 0}].
- * 
+ *
  * @return the http request.
  */
 http.createRequest = function(options)
@@ -1025,7 +1025,7 @@ http.createRequest = function(options)
    request.body = options.body || null;
    request.bodyDeflated = false;
    request.flashApi = null;
-   
+
    // add custom headers
    var headers = options.headers || [];
    for(var i = 0; i < headers.length; ++i)
@@ -1035,10 +1035,10 @@ http.createRequest = function(options)
          request.appendField(name, headers[i][name]);
       }
    }
-   
+
    /**
     * Adds a cookie to the request 'Cookie' header.
-    * 
+    *
     * @param cookie a cookie to add.
     */
    request.addCookie = function(cookie)
@@ -1050,19 +1050,19 @@ http.createRequest = function(options)
          // separate cookies by semi-colons
          value = field + '; ';
       }
-      
+
       // get current time in utc seconds
       var now = _getUtcTime(new Date());
-      
+
       // output cookie name and value
       value += cookie.name + '=' + cookie.value;
       request.setField('Cookie', value);
    };
-   
+
    /**
     * Converts an http request into a string that can be sent as a
     * HTTP request. Does not include any data.
-    * 
+    *
     * @return the string representation of the request.
     */
    request.toString = function()
@@ -1075,7 +1075,7 @@ http.createRequest = function(options)
        Accept: image/gif, text/html
        User-Agent: Mozilla 4.0
        */
-      
+
       // set default headers
       if(request.getField('User-Agent') === null)
       {
@@ -1090,14 +1090,14 @@ http.createRequest = function(options)
          request.setField('Connection', 'keep-alive');
          request.setField('Keep-Alive', '115');
       }
-      
+
       // add Accept-Encoding if not specified
       if(request.flashApi !== null &&
          request.getField('Accept-Encoding') === null)
       {
          request.setField('Accept-Encoding', 'deflate');
       }
-      
+
       // if the body isn't null, deflate it if its larger than 100 bytes
       if(request.flashApi !== null && request.body !== null &&
          request.getField('Content-Encoding') === null &&
@@ -1114,12 +1114,12 @@ http.createRequest = function(options)
          // set content length for body
          request.setField('Content-Length', request.body.length);
       }
-      
+
       // build start line
       var rval =
          request.method.toUpperCase() + ' ' + request.path + ' ' +
          request.version + '\r\n';
-      
+
       // add each header
       for(var name in request.fields)
       {
@@ -1131,16 +1131,16 @@ http.createRequest = function(options)
       }
       // final terminating CRLF
       rval += '\r\n';
-      
+
       return rval;
    };
-   
+
    return request;
 };
 
 /**
  * Creates an empty http response header.
- * 
+ *
  * @return the empty http response header.
  */
 http.createResponse = function()
@@ -1149,7 +1149,7 @@ http.createResponse = function()
    var _first = true;
    var _chunkSize = 0;
    var _chunksFinished = false;
-   
+
    // create response
    var response = _createHeader();
    response.version = null;
@@ -1159,12 +1159,12 @@ http.createResponse = function()
    response.headerReceived = false;
    response.bodyReceived = false;
    response.flashApi = null;
-   
+
    /**
     * Reads a line that ends in CRLF from a byte buffer.
-    * 
+    *
     * @param b the byte buffer.
-    * 
+    *
     * @return the line or null if none was found.
     */
    var _readCrlf = function(b)
@@ -1179,10 +1179,10 @@ http.createResponse = function()
       }
       return line;
    };
-   
+
    /**
     * Parses a header field and appends it to the response.
-    * 
+    *
     * @param line the header field line.
     */
    var _parseHeader = function(line)
@@ -1192,12 +1192,12 @@ http.createResponse = function()
       response.appendField(
          name, (tmp < line.length) ? line.substring(tmp) : '');
    };
-   
+
    /**
     * Reads an http response header from a buffer of bytes.
-    * 
+    *
     * @param b the byte buffer to parse the header from.
-    * 
+    *
     * @return true if the whole header was read, false if not.
     */
    response.readHeader = function(b)
@@ -1244,16 +1244,16 @@ http.createResponse = function()
             }
          }
       }
-      
+
       return response.headerReceived;
    };
-   
+
    /**
     * Reads some chunked http response entity-body from the given buffer of
     * bytes.
-    * 
+    *
     * @param b the byte buffer to read from.
-    * 
+    *
     * @return true if the whole body was read, false if not.
     */
    var _readChunkedBody = function(b)
@@ -1262,23 +1262,23 @@ http.createResponse = function()
       Chunked transfer-encoding sends data in a series of chunks,
       followed by a set of 0-N http trailers.
       The format is as follows:
-      
+
       chunk-size (in hex) CRLF
       chunk data (with "chunk-size" many bytes) CRLF
       ... (N many chunks)
       chunk-size (of 0 indicating the last chunk) CRLF
       N many http trailers followed by CRLF
       blank line + CRLF (terminates the trailers)
-      
+
       If there are no http trailers, then after the chunk-size of 0,
       there is still a single CRLF (indicating the blank line + CRLF
       that terminates the trailers). In other words, you always terminate
       the trailers with blank line + CRLF, regardless of 0-N trailers.
       */
-      
+
       /* From RFC-2616, section 3.6.1, here is the pseudo-code for
       implementing chunked transfer-encoding:
-      
+
       length := 0
       read chunk-size, chunk-extension (if any) and CRLF
       while (chunk-size > 0) {
@@ -1295,7 +1295,7 @@ http.createResponse = function()
       Content-Length := length
       Remove "chunked" from Transfer-Encoding
       */
-      
+
       var line = '';
       while(line !== null && b.length() > 0)
       {
@@ -1308,7 +1308,7 @@ http.createResponse = function()
             {
                break;
             }
-            
+
             // read chunk data, skip CRLF
             response.body += b.getBytes(_chunkSize);
             b.getBytes(2);
@@ -1349,22 +1349,22 @@ http.createResponse = function()
             }
          }
       }
-      
+
       return response.bodyReceived;
    };
-   
+
    /**
     * Reads an http response body from a buffer of bytes.
-    * 
+    *
     * @param b the byte buffer to read from.
-    * 
+    *
     * @return true if the whole body was read, false if not.
     */
    response.readBody = function(b)
    {
       var contentLength = response.getField('Content-Length');
       var transferEncoding = response.getField('Transfer-Encoding');
-      
+
       // read specified length
       if(contentLength !== null && contentLength >= 0)
       {
@@ -1405,12 +1405,12 @@ http.createResponse = function()
          response.body = null;
          response.bodyReceived = true;
       }
-      
+
       if(response.bodyReceived)
       {
          response.time = +new Date() - response.time;
       }
-      
+
       if(response.flashApi !== null &&
          response.bodyReceived && response.body !== null &&
          response.getField('Content-Encoding') === 'deflate')
@@ -1419,30 +1419,30 @@ http.createResponse = function()
          response.body = forge.util.inflate(
             response.flashApi, response.body);
       }
-      
+
       return response.bodyReceived;
    };
-   
+
    /**
     * Parses an array of cookies from the 'Set-Cookie' field, if present.
-    * 
+    *
     * @return the array of cookies.
     */
    response.getCookies = function()
    {
       var rval = [];
-      
+
       // get Set-Cookie field
       if('Set-Cookie' in response.fields)
       {
          var field = response.fields['Set-Cookie'];
-         
+
          // get current local time in seconds
          var now = +new Date() / 1000;
-         
+
          // regex for parsing 'name1=value1; name2=value2; name3'
          var regex = /\s*([^=]*)=?([^;]*)(;|$)/g;
-         
+
          // examples:
          // Set-Cookie: cookie1_name=cookie1_value; max-age=0; path=/
          // Set-Cookie: c2=v2; expires=Thu, 21-Aug-2008 23:47:25 GMT; path=/
@@ -1460,7 +1460,7 @@ http.createResponse = function()
                {
                   var name = _trimString(m[1]);
                   var value = _trimString(m[2]);
-                  
+
                   // cookie_name=value
                   if(first)
                   {
@@ -1502,36 +1502,36 @@ http.createResponse = function()
             rval.push(cookie);
          }
       }
-      
+
       return rval;
    };
-        
+
    return response;
 };
 
 /**
  * Parses the scheme, host, and port from an http(s) url.
- * 
+ *
  * @param str the url string.
- * 
+ *
  * @return the parsed url object or null if the url is invalid.
  */
 http.parseUrl = forge.util.parseUrl;
 
 /**
  * Returns true if the given url is within the given cookie's domain.
- * 
+ *
  * @param url the url to check.
  * @param cookie the cookie or cookie domain to check.
  */
 http.withinCookieDomain = function(url, cookie)
 {
    var rval = false;
-   
+
    // cookie may be null, a cookie object, or a domain string
    var domain = (cookie === null || cookie.constructor == String) ?
       cookie : cookie.domain;
-   
+
    // any domain will do
    if(domain === null)
    {
@@ -1545,7 +1545,7 @@ http.withinCookieDomain = function(url, cookie)
       {
          url = http.parseUrl(url);
       }
-      
+
       // add '.' to front of URL host to match against domain
       var host = '.' + url.host;
 
@@ -1556,7 +1556,7 @@ http.withinCookieDomain = function(url, cookie)
          rval = true;
       }
    }
-   
+
    return rval;
 };
 

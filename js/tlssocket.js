@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2009-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -22,7 +22,7 @@ else if(typeof(exports) !== 'undefined')
 
 /**
  * Wraps a forge.net socket with a TLS layer.
- * 
+ *
  * @param options:
  *    sessionId: a session ID to reuse, null for a new connection if no session
  *       cache is provided or it is empty.
@@ -40,14 +40,14 @@ else if(typeof(exports) !== 'undefined')
  *       the deflate algorithm if the server supports it.
  *    inflate: function(inBytes) if provided, will inflate TLS records using
  *       the deflate algorithm if the server supports it.
- * 
+ *
  * @return the TLS-wrapped socket.
  */
 forge.tls.wrapSocket = function(options)
 {
    // get raw socket
    var socket = options.socket;
-   
+
    // create TLS socket
    var tlsSocket =
    {
@@ -58,7 +58,7 @@ forge.tls.wrapSocket = function(options)
       data: socket.data || function(e){},
       error: socket.error || function(e){}
    };
-   
+
    // create TLS connection
    var c = forge.tls.createConnection({
       server: false,
@@ -117,13 +117,13 @@ forge.tls.wrapSocket = function(options)
          socket.close();
       }
    });
-   
+
    // handle doing handshake after connecting
    socket.connected = function(e)
    {
       c.handshake(options.sessionId);
    };
-   
+
    // handle closing TLS connection
    socket.closed = function(e)
    {
@@ -138,7 +138,7 @@ forge.tls.wrapSocket = function(options)
          });
       }
       c.close();
-      
+
       // call socket handler
       tlsSocket.closed({
          id: socket.id,
@@ -146,7 +146,7 @@ forge.tls.wrapSocket = function(options)
          bytesAvailable: 0
       });
    };
-   
+
    // handle error on socket
    socket.error = function(e)
    {
@@ -159,7 +159,7 @@ forge.tls.wrapSocket = function(options)
       });
       c.close();
    };
-   
+
    // handle receiving raw TLS data from socket
    var _requiredBytes = 0;
    socket.data = function(e)
@@ -184,7 +184,7 @@ forge.tls.wrapSocket = function(options)
          }
       }
    };
-   
+
    /**
     * Destroys this socket.
     */
@@ -192,37 +192,37 @@ forge.tls.wrapSocket = function(options)
    {
       socket.destroy();
    };
-   
+
    /**
     * Sets this socket's TLS session cache. This should be called before
     * the socket is connected or after it is closed.
-    * 
+    *
     * The cache is an object mapping session IDs to internal opaque state.
     * An application might need to change the cache used by a particular
     * tlsSocket between connections if it accesses multiple TLS hosts.
-    * 
+    *
     * @param cache the session cache to use.
     */
    tlsSocket.setSessionCache = function(cache)
    {
       c.sessionCache = tls.createSessionCache(cache);
    };
-   
+
    /**
     * Connects this socket.
-    * 
+    *
     * @param options:
     *           host: the host to connect to.
     *           port: the port to connect to.
     *           policyPort: the policy port to use (if non-default), 0 to
     *              use the flash default.
-    *           policyUrl: the policy file URL to use (instead of port). 
+    *           policyUrl: the policy file URL to use (instead of port).
     */
    tlsSocket.connect = function(options)
    {
       socket.connect(options);
    };
-   
+
    /**
     * Closes this socket.
     */
@@ -230,59 +230,59 @@ forge.tls.wrapSocket = function(options)
    {
       c.close();
    };
-   
+
    /**
     * Determines if the socket is connected or not.
-    * 
+    *
     * @return true if connected, false if not.
     */
    tlsSocket.isConnected = function()
    {
       return c.isConnected && socket.isConnected();
    };
-   
+
    /**
     * Writes bytes to this socket.
-    * 
+    *
     * @param bytes the bytes (as a string) to write.
-    * 
+    *
     * @return true on success, false on failure.
     */
    tlsSocket.send = function(bytes)
    {
       return c.prepare(bytes);
    };
-   
+
    /**
     * Reads bytes from this socket (non-blocking). Fewer than the number of
     * bytes requested may be read if enough bytes are not available.
-    * 
+    *
     * This method should be called from the data handler if there are enough
     * bytes available. To see how many bytes are available, check the
     * 'bytesAvailable' property on the event in the data handler or call the
     * bytesAvailable() function on the socket. If the browser is msie, then the
     * bytesAvailable() function should be used to avoid race conditions.
     * Otherwise, using the property on the data handler's event may be quicker.
-    * 
+    *
     * @param count the maximum number of bytes to read.
-    * 
+    *
     * @return the bytes read (as a string) or null on error.
     */
    tlsSocket.receive = function(count)
    {
       return c.data.getBytes(count);
    };
-   
+
    /**
     * Gets the number of bytes available for receiving on the socket.
-    * 
+    *
     * @return the number of bytes available for receiving.
     */
    tlsSocket.bytesAvailable = function()
    {
       return c.data.length();
    };
-   
+
    return tlsSocket;
 };
 

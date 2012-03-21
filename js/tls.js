@@ -3,34 +3,34 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2011 Digital Bazaar, Inc. All rights reserved.
- * 
+ * Copyright (c) 2009-2012 Digital Bazaar, Inc.
+ *
  * The TLS Handshake Protocol involves the following steps:
  *
  * - Exchange hello messages to agree on algorithms, exchange random values,
  * and check for session resumption.
- * 
+ *
  * - Exchange the necessary cryptographic parameters to allow the client and
  * server to agree on a premaster secret.
- * 
+ *
  * - Exchange certificates and cryptographic information to allow the client
  * and server to authenticate themselves.
- * 
+ *
  * - Generate a master secret from the premaster secret and exchanged random
  * values.
- * 
+ *
  * - Provide security parameters to the record layer.
- * 
+ *
  * - Allow the client and server to verify that their peer has calculated the
  * same security parameters and that the handshake occurred without tampering
  * by an attacker.
- * 
+ *
  * Up to 4 different messages may be sent during a key exchange. The server
  * certificate, the server key exchange, the client certificate, and the
  * client key exchange.
- * 
+ *
  * A typical handshake (from the client's perspective).
- * 
+ *
  * 1. Client sends ClientHello.
  * 2. Client receives ServerHello.
  * 3. Client receives optional Certificate.
@@ -46,91 +46,91 @@
  * 13. Client sends/receives application data.
  *
  * To reuse an existing session:
- * 
+ *
  * 1. Client sends ClientHello with session ID for reuse.
  * 2. Client receives ServerHello with same session ID if reusing.
  * 3. Client receives ChangeCipherSpec message if reusing.
  * 4. Client receives Finished.
  * 5. Client sends ChangeCipherSpec.
  * 6. Client sends Finished.
- * 
+ *
  * Note: Client ignores HelloRequest if in the middle of a handshake.
- * 
+ *
  * Record Layer:
- * 
+ *
  * The record layer fragments information blocks into TLSPlaintext records
  * carrying data in chunks of 2^14 bytes or less. Client message boundaries are
  * not preserved in the record layer (i.e., multiple client messages of the
  * same ContentType MAY be coalesced into a single TLSPlaintext record, or a
  * single message MAY be fragmented across several records).
- * 
+ *
  * struct {
  *    uint8 major;
  *    uint8 minor;
  * } ProtocolVersion;
- * 
+ *
  * struct {
  *    ContentType type;
  *    ProtocolVersion version;
  *    uint16 length;
  *    opaque fragment[TLSPlaintext.length];
  * } TLSPlaintext;
- * 
+ *
  * type:
  *    The higher-level protocol used to process the enclosed fragment.
- * 
+ *
  * version:
  *    The version of the protocol being employed. TLS Version 1.2 uses version
  *    {3, 3}. TLS Version 1.0 uses version {3, 1}. Note that a client that
  *    supports multiple versions of TLS may not know what version will be
  *    employed before it receives the ServerHello.
- * 
+ *
  * length:
  *    The length (in bytes) of the following TLSPlaintext.fragment. The length
  *    MUST NOT exceed 2^14 = 16384 bytes.
- * 
+ *
  * fragment:
  *    The application data. This data is transparent and treated as an
  *    independent block to be dealt with by the higher-level protocol specified
  *    by the type field.
- * 
+ *
  * Implementations MUST NOT send zero-length fragments of Handshake, Alert, or
  * ChangeCipherSpec content types. Zero-length fragments of Application data
  * MAY be sent as they are potentially useful as a traffic analysis
  * countermeasure.
- * 
+ *
  * Note: Data of different TLS record layer content types MAY be interleaved.
  * Application data is generally of lower precedence for transmission than
  * other content types. However, records MUST be delivered to the network in
  * the same order as they are protected by the record layer. Recipients MUST
  * receive and process interleaved application layer traffic during handshakes
  * subsequent to the first one on a connection.
- * 
+ *
  * struct {
  *    ContentType type;       // same as TLSPlaintext.type
  *    ProtocolVersion version;// same as TLSPlaintext.version
  *    uint16 length;
  *    opaque fragment[TLSCompressed.length];
  * } TLSCompressed;
- * 
+ *
  * length:
  *    The length (in bytes) of the following TLSCompressed.fragment.
  *    The length MUST NOT exceed 2^14 + 1024.
- * 
+ *
  * fragment:
  *    The compressed form of TLSPlaintext.fragment.
- * 
+ *
  * Note: A CompressionMethod.null operation is an identity operation; no fields
  * are altered. In this implementation, since no compression is supported,
  * uncompressed records are always the same as compressed records.
- * 
+ *
  * Encryption Information:
- * 
+ *
  * The encryption and MAC functions translate a TLSCompressed structure into a
  * TLSCiphertext. The decryption functions reverse the process. The MAC of the
  * record also includes a sequence number so that missing, extra, or repeated
  * messages are detectable.
- * 
+ *
  * struct {
  *    ContentType type;
  *    ProtocolVersion version;
@@ -141,25 +141,25 @@
  *       case aead:   GenericAEADCipher;
  *    } fragment;
  * } TLSCiphertext;
- * 
+ *
  * type:
  *    The type field is identical to TLSCompressed.type.
- * 
+ *
  * version:
  *    The version field is identical to TLSCompressed.version.
- * 
+ *
  * length:
  *    The length (in bytes) of the following TLSCiphertext.fragment.
  *    The length MUST NOT exceed 2^14 + 2048.
- * 
+ *
  * fragment:
  *    The encrypted form of TLSCompressed.fragment, with the MAC.
- * 
+ *
  * Note: Only CBC Block Ciphers are supported by this implementation.
- * 
+ *
  * The TLSCompressed.fragment structures are converted to/from block
  * TLSCiphertext.fragment structures.
- * 
+ *
  * struct {
  *    opaque IV[SecurityParameters.record_iv_length];
  *    block-ciphered struct {
@@ -169,9 +169,9 @@
  *        uint8 padding_length;
  *    };
  * } GenericBlockCipher;
- * 
+ *
  * The MAC is generated as described in Section 6.2.3.1.
- * 
+ *
  * IV:
  *    The Initialization Vector (IV) SHOULD be chosen at random, and MUST be
  *    unpredictable. Note that in versions of TLS prior to 1.1, there was no
@@ -180,7 +180,7 @@
  *    described in [CBCATT]. For block ciphers, the IV length is of length
  *    SecurityParameters.record_iv_length, which is equal to the
  *    SecurityParameters.block_size.
- * 
+ *
  * padding:
  *    Padding that is added to force the length of the plaintext to be an
  *    integral multiple of the block cipher's block length. The padding MAY be
@@ -260,54 +260,54 @@ else if(typeof(module) !== 'undefined' && module.exports)
 /**
  * Generates pseudo random bytes by mixing the result of two hash functions,
  * MD5 and SHA-1.
- * 
+ *
  * prf_TLS1(secret, label, seed) =
  *    P_MD5(S1, label + seed) XOR P_SHA-1(S2, label + seed);
- * 
+ *
  * Each P_hash function functions as follows:
- * 
+ *
  * P_hash(secret, seed) = HMAC_hash(secret, A(1) + seed) +
  *                        HMAC_hash(secret, A(2) + seed) +
  *                        HMAC_hash(secret, A(3) + seed) + ...
  * A() is defined as:
  *   A(0) = seed
  *   A(i) = HMAC_hash(secret, A(i-1))
- * 
+ *
  * The '+' operator denotes concatenation.
- * 
+ *
  * As many iterations A(N) as are needed are performed to generate enough
  * pseudo random byte output. If an iteration creates more data than is
  * necessary, then it is truncated.
- * 
+ *
  * Therefore:
  * A(1) = HMAC_hash(secret, A(0))
  *      = HMAC_hash(secret, seed)
  * A(2) = HMAC_hash(secret, A(1))
  *      = HMAC_hash(secret, HMAC_hash(secret, seed))
- * 
+ *
  * Therefore:
  * P_hash(secret, seed) =
  *    HMAC_hash(secret, HMAC_hash(secret, A(0)) + seed) +
  *    HMAC_hash(secret, HMAC_hash(secret, A(1)) + seed) +
  *    ...
- * 
+ *
  * Therefore:
  * P_hash(secret, seed) =
  *    HMAC_hash(secret, HMAC_hash(secret, seed) + seed) +
  *    HMAC_hash(secret, HMAC_hash(secret, HMAC_hash(secret, seed)) + seed) +
  *    ...
- * 
+ *
  * @param secret the secret to use.
  * @param label the label to use.
  * @param seed the seed value to use.
  * @param length the number of bytes to generate.
- * 
+ *
  * @return the pseudo random bytes in a byte buffer.
  */
 var prf_TLS1 = function(secret, label, seed, length)
 {
    var rval = forge.util.createBuffer();
-   
+
    /* For TLS 1.0, the secret is split in half, into two secrets of equal
       length. If the secret has an odd length then the last byte of the first
       half will be the same as the first byte of the second. The length of the
@@ -320,12 +320,12 @@ var prf_TLS1 = function(secret, label, seed, length)
    var ai = forge.util.createBuffer();
    var hmac = forge.hmac.create();
    seed = label + seed;
-   
+
    // determine the number of iterations that must be performed to generate
    // enough output bytes, md5 creates 16 byte hashes, sha1 creates 20
    var md5itr = Math.ceil(length / 16);
    var sha1itr = Math.ceil(length / 20);
-   
+
    // do md5 iterations
    hmac.start('MD5', s1);
    var md5bytes = forge.util.createBuffer();
@@ -336,13 +336,13 @@ var prf_TLS1 = function(secret, label, seed, length)
       hmac.start(null, null);
       hmac.update(ai.getBytes());
       ai.putBuffer(hmac.digest());
-      
+
       // HMAC_hash(secret, A(i) + seed)
       hmac.start(null, null);
       hmac.update(ai.bytes() + seed);
       md5bytes.putBuffer(hmac.digest());
    }
-   
+
    // do sha1 iterations
    hmac.start('SHA1', s2);
    var sha1bytes = forge.util.createBuffer();
@@ -354,28 +354,28 @@ var prf_TLS1 = function(secret, label, seed, length)
       hmac.start(null, null);
       hmac.update(ai.getBytes());
       ai.putBuffer(hmac.digest());
-      
+
       // HMAC_hash(secret, A(i) + seed)
       hmac.start(null, null);
       hmac.update(ai.bytes() + seed);
       sha1bytes.putBuffer(hmac.digest());
    }
-   
+
    // XOR the md5 bytes with the sha1 bytes
    rval.putBytes(forge.util.xorBytes(
       md5bytes.getBytes(), sha1bytes.getBytes(), length));
-   
+
    return rval;
 };
 
 /**
  * Generates pseudo random bytes using a SHA256 algorithm. For TLS 1.2.
- * 
+ *
  * @param secret the secret to use.
  * @param label the label to use.
  * @param seed the seed value to use.
  * @param length the number of bytes to generate.
- * 
+ *
  * @return the pseudo random bytes in a byte buffer.
  */
 var prf_sha256 = function(secret, label, seed, length)
@@ -385,11 +385,11 @@ var prf_sha256 = function(secret, label, seed, length)
 
 /**
  * Gets a MAC for a record using the SHA-1 hash algorithm.
- * 
+ *
  * @param key the mac key.
  * @param state the sequence number (array of two 32-bit integers).
  * @param record the record.
- * 
+ *
  * @return the sha-1 hash (20 bytes) for the given record.
  */
 var hmac_sha1 = function(key, seqNum, record)
@@ -419,17 +419,17 @@ var hmac_sha1 = function(key, seqNum, record)
 /**
  * Compresses the TLSPlaintext record into a TLSCompressed record using the
  * deflate algorithm.
- * 
+ *
  * @param c the TLS connection.
  * @param record the TLSPlaintext record to compress.
  * @param s the ConnectionState to use.
- * 
+ *
  * @return true on success, false on failure.
  */
 var deflate = function(c, record, s)
 {
    var rval = false;
-   
+
    try
    {
       var bytes = c.deflate(record.fragment.getBytes());
@@ -441,24 +441,24 @@ var deflate = function(c, record, s)
    {
       // deflate error, fail out
    }
-   
+
    return rval;
 };
 
 /**
  * Decompresses the TLSCompressed record into a TLSPlaintext record using the
  * deflate algorithm.
- * 
+ *
  * @param c the TLS connection.
  * @param record the TLSCompressed record to decompress.
  * @param s the ConnectionState to use.
- * 
+ *
  * @return true on success, false on failure.
  */
 var inflate = function(c, record, s)
 {
    var rval = false;
-   
+
    try
    {
       var bytes = c.inflate(record.fragment.getBytes());
@@ -470,44 +470,44 @@ var inflate = function(c, record, s)
    {
       // inflate error, fail out
    }
-   
+
    return rval;
 };
 
 /**
  * Encrypts the TLSCompressed record into a TLSCipherText record using AES-128
  * in CBC mode.
- * 
+ *
  * @param record the TLSCompressed record to encrypt.
  * @param s the ConnectionState to use.
- * 
+ *
  * @return true on success, false on failure.
  */
 var encrypt_aes_128_cbc_sha1 = function(record, s)
 {
    var rval = false;
-   
+
    // append MAC to fragment, update sequence number
    var mac = s.macFunction(s.macKey, s.sequenceNumber, record);
    record.fragment.putBytes(mac);
    s.updateSequenceNumber();
-   
+
    // TODO: TLS 1.1 & 1.2 use an explicit IV every time to protect against
    // CBC attacks
    // var iv = forge.random.getBytes(16);
-   
+
    // use the pre-generated IV when initializing for TLS 1.0, otherwise use the
    // residue from the previous encryption
    var iv = s.cipherState.init ? null : s.cipherState.iv;
    s.cipherState.init = true;
-   
+
    // start cipher
    var cipher = s.cipherState.cipher;
    cipher.start(iv);
-   
+
    // TODO: TLS 1.1 & 1.2 write IV into output
    //cipher.output.putBytes(iv);
-   
+
    // do encryption (default padding is appropriate)
    cipher.update(record.fragment);
    if(cipher.finish(encrypt_aes_128_cbc_sha1_padding))
@@ -517,17 +517,17 @@ var encrypt_aes_128_cbc_sha1 = function(record, s)
       record.length = record.fragment.length();
       rval = true;
    }
-   
+
    return rval;
 };
 
 /**
  * Handles padding for aes_128_cbc_sha1 in encrypt mode.
- * 
+ *
  * @param blockSize the block size.
  * @param input the input buffer.
  * @param decrypt true in decrypt mode, false in encrypt mode.
- * 
+ *
  * @return true on success, false on failure.
  */
 var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt)
@@ -535,18 +535,18 @@ var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt)
    /* The encrypted data length (TLSCiphertext.length) is one more than the sum
    of SecurityParameters.block_length, TLSCompressed.length,
    SecurityParameters.mac_length, and padding_length.
-   
+
    The padding may be any length up to 255 bytes long, as long as it results in
    the TLSCiphertext.length being an integral multiple of the block length.
    Lengths longer than necessary might be desirable to frustrate attacks on a
    protocol based on analysis of the lengths of exchanged messages. Each uint8
    in the padding data vector must be filled with the padding length value.
-   
+
    The padding length should be such that the total size of the
    GenericBlockCipher structure is a multiple of the cipher's block length.
    Legal values range from zero to 255, inclusive. This length specifies the
    length of the padding field exclusive of the padding_length field itself.
-   
+
    This is slightly different from PKCS#7 because the padding value is 1
    less than the actual number of padding bytes if you include the
    padding_length uint8 itself as a padding byte.
@@ -565,11 +565,11 @@ var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt)
 
 /**
  * Handles padding for aes_128_cbc_sha1 in decrypt mode.
- * 
+ *
  * @param blockSize the block size.
  * @param output the output buffer.
  * @param decrypt true in decrypt mode, false in encrypt mode.
- * 
+ *
  * @return true on success, false on failure.
  */
 var decrypt_aes_128_cbc_sha1_padding = function(blockSize, output, decrypt)
@@ -601,47 +601,47 @@ var decrypt_aes_128_cbc_sha1_padding = function(blockSize, output, decrypt)
 /**
  * Decrypts a TLSCipherText record into a TLSCompressed record using
  * AES-128 in CBC mode.
- * 
+ *
  * @param record the TLSCipherText record to decrypt.
  * @param s the ConnectionState to use.
- * 
+ *
  * @return true on success, false on failure.
  */
 var decrypt_aes_128_cbc_sha1 = function(record, s)
 {
    var rval = false;
-   
+
    // TODO: TLS 1.1 & 1.2 use an explicit IV every time to protect against
    // CBC attacks
    //var iv = record.fragment.getBytes(16);
-   
+
    // use pre-generated IV when initializing for TLS 1.0, otherwise use the
    // residue from the previous decryption
    var iv = s.cipherState.init ? null : s.cipherState.iv;
    s.cipherState.init = true;
-   
+
    // start cipher
    var cipher = s.cipherState.cipher;
    cipher.start(iv);
-   
+
    // do decryption
    cipher.update(record.fragment);
    rval = cipher.finish(decrypt_aes_128_cbc_sha1_padding);
-   
+
    // even if decryption fails, keep going to minimize timing attacks
-   
+
    // decrypted data:
    // first (len - 20) bytes = application data
    // last 20 bytes          = MAC
    var macLen = s.macLength;
-   
+
    // create a zero'd out mac
    var mac = '';
    for(var i = 0; i < macLen; ++i)
    {
       mac += String.fromCharCode(0);
    }
-   
+
    // get fragment and mac
    var len = cipher.output.length();
    if(len >= macLen)
@@ -656,7 +656,7 @@ var decrypt_aes_128_cbc_sha1 = function(record, s)
    }
    record.fragment = forge.util.createBuffer(record.fragment);
    record.length = record.fragment.length();
-   
+
    // see if data integrity checks out, update sequence number
    var mac2 = s.macFunction(s.macKey, s.sequenceNumber, record);
    s.updateSequenceNumber();
@@ -666,7 +666,7 @@ var decrypt_aes_128_cbc_sha1 = function(record, s)
 
 /**
  * Reads a TLS variable-length vector from a byte buffer.
- * 
+ *
  * Variable-length vectors are defined by specifying a subrange of legal
  * lengths, inclusively, using the notation <floor..ceiling>. When these are
  * encoded, the actual length precedes the vector's contents in the byte
@@ -674,10 +674,10 @@ var decrypt_aes_128_cbc_sha1 = function(record, s)
  * as required to hold the vector's specified maximum (ceiling) length. A
  * variable-length vector with an actual length field of zero is referred to
  * as an empty vector.
- * 
+ *
  * @param b the byte buffer.
  * @param lenBytes the number of bytes required to store the length.
- * 
+ *
  * @return the resulting byte buffer.
  */
 var readVector = function(b, lenBytes)
@@ -698,14 +698,14 @@ var readVector = function(b, lenBytes)
          len = b.getInt32();
          break;
    }
-   
+
    // read vector bytes into a new buffer
    return forge.util.createBuffer(b.getBytes(len));
 };
 
 /**
  * Writes a TLS variable-length vector to a byte buffer.
- * 
+ *
  * @param b the byte buffer.
  * @param lenBytes the number of bytes required to store the length.
  * @param v the byte buffer vector.
@@ -727,7 +727,7 @@ var tls = {};
 /**
  * Version: TLS 1.2 = 3.3, TLS 1.1 = 3.2, TLS 1.0 = 3.1. Both TLS 1.1 and
  * TLS 1.2 were still too new (ie: openSSL didn't implement them) at the time
- * of this implementation so TLS 1.0 was implemented instead. 
+ * of this implementation so TLS 1.0 was implemented instead.
  */
 tls.Version =
 {
@@ -850,9 +850,9 @@ tls.HandshakeType =
 
 /**
  * TLS Alert Protocol.
- * 
+ *
  * enum { warning(1), fatal(2), (255) } AlertLevel;
- * 
+ *
  * enum {
  *    close_notify(0),
  *    unexpected_message(10),
@@ -883,7 +883,7 @@ tls.HandshakeType =
  * struct {
  *    AlertLevel level;
  *    AlertDescription description;
- * } Alert;   
+ * } Alert;
  */
 tls.Alert = {};
 tls.Alert.Level =
@@ -920,7 +920,7 @@ tls.Alert.Description =
 
 /**
  * Supported cipher suites.
- * 
+ *
  * TODO: Make cipher suites modular.
  */
 tls.CipherSuites =
@@ -931,9 +931,9 @@ tls.CipherSuites =
 
 /**
  * Gets a supported cipher suite from 2 bytes.
- * 
+ *
  * @param twoBytes two bytes in a string.
- * 
+ *
  * @return the matching supported cipher suite or null.
  */
 tls.getCipherSuite = function(twoBytes)
@@ -954,7 +954,7 @@ tls.getCipherSuite = function(twoBytes)
 
 /**
  * Called when an unexpected record is encountered.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  */
@@ -977,7 +977,7 @@ tls.handleUnexpected = function(c, record)
 
 /**
  * Called when a client receives a HelloRequest record.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -995,24 +995,24 @@ tls.handleHelloRequest = function(c, record, length)
       }));
       tls.flush(c);
    }
-   
+
    // continue
    c.process();
 };
 
 /**
  * Parses a hello message from a ClientHello or ServerHello record.
- * 
+ *
  * @param record the record to parse.
- * 
+ *
  * @return the parsed message.
  */
 tls.parseHelloMessage = function(c, record, length)
 {
    var msg = null;
-   
+
    var client = (c.entity == tls.ConnectionEnd.client);
-   
+
    // minimum of 38 bytes in message
    if(length < 38)
    {
@@ -1051,7 +1051,7 @@ tls.parseHelloMessage = function(c, record, length)
          msg.cipher_suites = readVector(b, 2);
          msg.compression_methods = readVector(b, 1);
       }
-      
+
       // read extensions if there are any
       if(b.length() > 0)
       {
@@ -1072,7 +1072,7 @@ tls.parseHelloMessage = function(c, record, length)
             for(var i = 0; i < msg.extensions.length; ++i)
             {
                var ext = msg.extensions[i];
-               
+
                // support SNI extension
                if(ext.type[0] === 0x00 && ext.type[1] === 0x00)
                {
@@ -1082,14 +1082,14 @@ tls.parseHelloMessage = function(c, record, length)
                   {
                      // read server name type
                      var snType = snl.getByte();
-                     
+
                      // only HostName type (0x00) is known, break out if
                      // another type is detected
                      if(snType !== 0x00)
                      {
                         break;
                      }
-                     
+
                      // add host name to server name list
                      c.session.serverNameList.push(
                         readVector(snl, 2).getBytes());
@@ -1098,7 +1098,7 @@ tls.parseHelloMessage = function(c, record, length)
             }
          }
       }
-      
+
       // TODO: support other versions
       if(msg.version.major !== tls.Version.major ||
          msg.version.minor !== tls.Version.minor)
@@ -1112,7 +1112,7 @@ tls.parseHelloMessage = function(c, record, length)
             }
          });
       }
-      
+
       // get the chosen (ServerHello) cipher suite
       if(client)
       {
@@ -1135,7 +1135,7 @@ tls.parseHelloMessage = function(c, record, length)
             }
          }
       }
-      
+
       // cipher suite not supported
       if(c.session.cipherSuite === null)
       {
@@ -1149,7 +1149,7 @@ tls.parseHelloMessage = function(c, record, length)
             cipherSuite: forge.util.bytesToHex(msg.cipher_suite)
          });
       }
-      
+
       // TODO: handle compression methods
       if(client)
       {
@@ -1161,14 +1161,14 @@ tls.parseHelloMessage = function(c, record, length)
          c.session.compressionMethod = tls.CompressionMethod.none;
       }
    }
-   
+
    return msg;
 };
 
 /**
  * Creates security parameters for the given connection based on the given
  * hello message.
- * 
+ *
  * @param c the TLS connection.
  * @param msg the hello message.
  */
@@ -1176,9 +1176,9 @@ tls.createSecurityParameters = function(c, msg)
 {
    /* Note: security params are from TLS 1.2, some values like prf_algorithm
    are ignored for TLS 1.0 and the builtin as specified in the spec is used. */
-   
+
    // TODO: handle other options from server when more supported
-   
+
    // only AES CBC is presently supported, so just change the key length based
    // on the chosen cipher suite
    var keyLength;
@@ -1191,13 +1191,13 @@ tls.createSecurityParameters = function(c, msg)
          keyLength = 32;
          break;
    }
-   
+
    // get client and server randoms
    var client = (c.entity === tls.ConnectionEnd.client);
    var msgRandom = msg.random.bytes();
    var cRandom = client ? c.session.sp.client_random : msgRandom;
    var sRandom = client ? msgRandom : tls.createRandom().getBytes();
-   
+
    // create new security parameters
    c.session.sp =
    {
@@ -1222,12 +1222,12 @@ tls.createSecurityParameters = function(c, msg)
 
 /**
  * Called when a client receives a ServerHello record.
- * 
+ *
  * When a ServerHello message will be sent:
  *    The server will send this message in response to a client hello message
  *    when it was able to find an acceptable set of algorithms. If it cannot
  *    find such a match, it will respond with a handshake failure alert.
- * 
+ *
  * uint24 length;
  * struct {
  *    ProtocolVersion server_version;
@@ -1242,7 +1242,7 @@ tls.createSecurityParameters = function(c, msg)
  *          Extension extensions<0..2^16-1>;
  *   };
  * } ServerHello;
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1254,14 +1254,14 @@ tls.handleServerHello = function(c, record, length)
    {
       // get the session ID from the message
       var sessionId = msg.session_id.bytes();
-      
+
       // if the session ID matches the cached one, resume the session
       if(sessionId === c.session.id)
       {
          // resuming session, expect a ChangeCipherSpec next
          c.expect = SCC;
          c.session.resuming = true;
-         
+
          // get new server random
          c.session.sp.server_random = msg.random.bytes();
       }
@@ -1270,14 +1270,14 @@ tls.handleServerHello = function(c, record, length)
          // not resuming, expect a server Certificate message next
          c.expect = SCE;
          c.session.resuming = false;
-         
+
          // create new security parameters
          tls.createSecurityParameters(c, msg);
       }
-      
+
       // set new session ID
       c.session.id = sessionId;
-      
+
       // continue
       c.process();
    }
@@ -1285,13 +1285,13 @@ tls.handleServerHello = function(c, record, length)
 
 /**
  * Called when a server receives a ClientHello record.
- * 
+ *
  * When a ClientHello message will be sent:
  *    When a client first connects to a server it is required to send the
  *    client hello as its first message. The client can also send a client
  *    hello in response to a hello request or on its own initiative in order
  *    to renegotiate the security parameters in an existing connection.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1303,7 +1303,7 @@ tls.handleClientHello = function(c, record, length)
    {
       // get the session ID from the message
       var sessionId = msg.session_id.bytes();
-      
+
       // see if the given session ID is in the cache
       var session = null;
       if(c.sessionCache)
@@ -1315,25 +1315,25 @@ tls.handleClientHello = function(c, record, length)
             sessionId = '';
          }
       }
-      
+
       // no session found to resume, generate a new session ID
       if(sessionId.length === 0)
       {
          sessionId = forge.random.getBytes(32);
       }
-      
+
       // update session
       c.session.id = sessionId;
       c.session.clientHelloVersion = msg.version;
       c.session.sp = session ? session.sp : {};
-      
+
       // if a session is set, resume it
       if(session !== null)
       {
          // resuming session, expect a ChangeCipherSpec next
          c.expect = CCC;
          c.session.resuming = true;
-         
+
          // get new client random
          c.session.sp.client_random = msg.random.bytes();
       }
@@ -1342,21 +1342,21 @@ tls.handleClientHello = function(c, record, length)
          // not resuming, expect a Certificate or ClientKeyExchange
          c.expect = (c.verifyClient !== false) ? CCE : CKE;
          c.session.resuming = false;
-         
+
          // create new security parameters
          tls.createSecurityParameters(c, msg);
       }
-      
+
       // connection now open
       c.open = true;
-      
+
       // queue server hello
       tls.queue(c, tls.createRecord(
       {
          type: tls.ContentType.handshake,
          data: tls.createServerHello(c)
       }));
-      
+
       if(c.session.resuming)
       {
          // queue change cipher spec message
@@ -1365,13 +1365,13 @@ tls.handleClientHello = function(c, record, length)
             type: tls.ContentType.change_cipher_spec,
             data: tls.createChangeCipherSpec()
          }));
-         
+
          // create pending state
          c.state.pending = tls.createConnectionState(c);
-         
+
          // change current write state to pending write state
          c.state.current.write = c.state.pending.write;
-         
+
          // queue finished
          tls.queue(c, tls.createRecord(
          {
@@ -1387,14 +1387,14 @@ tls.handleClientHello = function(c, record, length)
             type: tls.ContentType.handshake,
             data: tls.createCertificate(c)
          }));
-         
+
          // queue server key exchange
          tls.queue(c, tls.createRecord(
          {
             type: tls.ContentType.handshake,
             data: tls.createServerKeyExchange(c)
          }));
-         
+
          // request client certificate if set
          if(c.verifyClient !== false)
          {
@@ -1405,7 +1405,7 @@ tls.handleClientHello = function(c, record, length)
                data: tls.createCertificateRequest(c)
             }));
          }
-         
+
          // queue server hello done
          tls.queue(c, tls.createRecord(
          {
@@ -1413,10 +1413,10 @@ tls.handleClientHello = function(c, record, length)
             data: tls.createServerHelloDone(c)
          }));
       }
-      
+
       // send records
       tls.flush(c);
-      
+
       // continue
       c.process();
    }
@@ -1424,7 +1424,7 @@ tls.handleClientHello = function(c, record, length)
 
 /**
  * Called when a client receives a Certificate record.
- * 
+ *
  * When this message will be sent:
  *    The server must send a certificate whenever the agreed-upon key exchange
  *    method is not an anonymous one. This message will always immediately
@@ -1437,12 +1437,12 @@ tls.handleClientHello = function(c, record, length)
  *    otherwise specified, the signing algorithm for the certificate must be
  *    the same as the algorithm for the certificate key. Unless otherwise
  *    specified, the public key may be of any length.
- * 
+ *
  * opaque ASN.1Cert<1..2^24-1>;
  * struct {
  *    ASN.1Cert certificate_list<1..2^24-1>;
  * } Certificate;
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1468,7 +1468,7 @@ tls.handleCertificate = function(c, record, length)
       {
          certificate_list: readVector(b, 3)
       };
-      
+
       /* The sender's certificate will be first in the list (chain), each
          subsequent one that follows will certify the previous one, but root
          certificates (self-signed) that specify the certificate authority may
@@ -1499,7 +1499,7 @@ tls.handleCertificate = function(c, record, length)
             }
          });
       }
-      
+
       if(!c.fail)
       {
          // ensure at least 1 certificate was provided if in client-mode
@@ -1537,14 +1537,14 @@ tls.handleCertificate = function(c, record, length)
             {
                c.session.clientCertificate = certs[0];
             }
-            
+
             if(tls.verifyCertificateChain(c, certs))
             {
                // expect a ServerKeyExchange or ClientKeyExchange message next
                c.expect = client ? SKE : CKE;
             }
          }
-         
+
          // continue
          c.process();
       }
@@ -1553,7 +1553,7 @@ tls.handleCertificate = function(c, record, length)
 
 /**
  * Called when a client receives a ServerKeyExchange record.
- * 
+ *
  * When this message will be sent:
  *    This message will be sent immediately after the server certificate
  *    message (or the server hello message, if this is an anonymous
@@ -1562,18 +1562,18 @@ tls.handleCertificate = function(c, record, length)
  *    The server key exchange message is sent by the server only when the
  *    server certificate message (if sent) does not contain enough data to
  *    allow the client to exchange a premaster secret.
- * 
+ *
  * Meaning of this message:
  *    This message conveys cryptographic information to allow the client to
  *    communicate the premaster secret: either an RSA public key to encrypt
  *    the premaster secret with, or a Diffie-Hellman public key with which the
  *    client can complete a key exchange (with the result being the premaster
  *    secret.)
- * 
+ *
  * enum {
  *    dhe_dss, dhe_rsa, dh_anon, rsa, dh_dss, dh_rsa
  * } KeyExchangeAlgorithm;
- * 
+ *
  * struct {
  *    opaque dh_p<1..2^16-1>;
  *    opaque dh_g<1..2^16-1>;
@@ -1598,7 +1598,7 @@ tls.handleCertificate = function(c, record, length)
  *          struct {};
  *    };
  * } ServerKeyExchange;
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1622,7 +1622,7 @@ tls.handleServerKeyExchange = function(c, record, length)
    {
       // expect an optional CertificateRequest message next
       c.expect = SCR;
-      
+
       // continue
       c.process();
    }
@@ -1630,7 +1630,7 @@ tls.handleServerKeyExchange = function(c, record, length)
 
 /**
  * Called when a client receives a ClientKeyExchange record.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1657,7 +1657,7 @@ tls.handleClientKeyExchange = function(c, record, length)
       {
          enc_pre_master_secret: readVector(b, 2).getBytes()
       };
-      
+
       // do rsa decryption
       var privateKey = null;
       if(c.getPrivateKey)
@@ -1699,7 +1699,7 @@ tls.handleClientKeyExchange = function(c, record, length)
             var sp = c.session.sp;
             sp.pre_master_secret = privateKey.decrypt(
                msg.enc_pre_master_secret);
-            
+
             // ensure client hello version matches first 2 bytes
             var version = c.session.clientHelloVersion;
             if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
@@ -1720,8 +1720,8 @@ tls.handleClientKeyExchange = function(c, record, length)
             sp.pre_master_secret = forge.random.getBytes(48);
          };
       }
-   }   
-   
+   }
+
    if(!c.fail)
    {
       // expect a CertificateVerify message if a Certificate was received that
@@ -1730,11 +1730,11 @@ tls.handleClientKeyExchange = function(c, record, length)
       c.expect = CCC;
       if(c.session.clientCertificate !== null)
       {
-         // only RSA support, so expect CertificateVerify 
+         // only RSA support, so expect CertificateVerify
          // TODO: support Diffie-Helman?
          c.expect = CCV;
       }
-      
+
       // continue
       c.process();
    }
@@ -1742,27 +1742,27 @@ tls.handleClientKeyExchange = function(c, record, length)
 
 /**
  * Called when a client receives a CertificateRequest record.
- * 
+ *
  * When this message will be sent:
  *    A non-anonymous server can optionally request a certificate from the
  *    client, if appropriate for the selected cipher suite. This message, if
  *    sent, will immediately follow the Server Key Exchange message (if it is
  *    sent; otherwise, the Server Certificate message).
- * 
+ *
  * enum {
  *    rsa_sign(1), dss_sign(2), rsa_fixed_dh(3), dss_fixed_dh(4),
  *    rsa_ephemeral_dh_RESERVED(5), dss_ephemeral_dh_RESERVED(6),
  *    fortezza_dms_RESERVED(20), (255)
  * } ClientCertificateType;
- * 
+ *
  * opaque DistinguishedName<1..2^16-1>;
- * 
+ *
  * struct {
  *    ClientCertificateType certificate_types<1..2^8-1>;
  *    SignatureAndHashAlgorithm supported_signature_algorithms<2^16-1>;
  *    DistinguishedName certificate_authorities<0..2^16-1>;
  * } CertificateRequest;
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1790,13 +1790,13 @@ tls.handleCertificateRequest = function(c, record, length)
          certificate_types: readVector(b, 1),
          certificate_authorities: readVector(b, 2)
       };
-      
+
       // save certificate request in session
       c.session.certificateRequest = msg;
-      
+
       // expect a ServerHelloDone message next
       c.expect = SHD;
-      
+
       // continue
       c.process();
    }
@@ -1804,7 +1804,7 @@ tls.handleCertificateRequest = function(c, record, length)
 
 /**
  * Called when a server receives a CertificateVerify record.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1831,20 +1831,20 @@ tls.handleCertificateVerify = function(c, record, length)
       b.read -= 4;
       var msgBytes = b.bytes();
       b.read += 4;
-      
+
       msg =
       {
          signature: readVector(b, 2).getBytes()
       };
-      
+
       // TODO: add support for DSA
-      
+
       // generate data to verify
       var verify = forge.util.createBuffer();
       verify.putBuffer(c.session.md5.digest());
       verify.putBuffer(c.session.sha1.digest());
       verify = verify.getBytes();
-      
+
       try
       {
          var cert = c.session.clientCertificate;
@@ -1856,7 +1856,7 @@ tls.handleCertificateVerify = function(c, record, length)
                message: 'CertificateVerify signature does not match.'
             };
          }
-         
+
          // digest message now that it has been handled
          c.session.md5.update(msgBytes);
          c.session.sha1.update(msgBytes);
@@ -1872,12 +1872,12 @@ tls.handleCertificateVerify = function(c, record, length)
             }
          });
       }
-      
+
       if(!c.fail)
       {
          // expect ChangeCipherSpec
          c.expect = CCC;
-         
+
          // continue
          c.process();
       }
@@ -1886,7 +1886,7 @@ tls.handleCertificateVerify = function(c, record, length)
 
 /**
  * Called when a client receives a ServerHelloDone record.
- * 
+ *
  * When this message will be sent:
  *    The server hello done message is sent by the server to indicate the end
  *    of the server hello and associated messages. After sending this message
@@ -1900,9 +1900,9 @@ tls.handleCertificateVerify = function(c, record, length)
  *    Upon receipt of the server hello done message the client should verify
  *    that the server provided a valid certificate if required and check that
  *    the server hello parameters are acceptable.
- * 
+ *
  * struct {} ServerHelloDone;
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1932,7 +1932,7 @@ tls.handleServerHelloDone = function(c, record, length)
             description: tls.Alert.Description.insufficient_security
          }
       };
-      
+
       // call application callback
       var ret = c.verify(c, error.alert.description, depth, []);
       if(ret === true)
@@ -1963,12 +1963,12 @@ tls.handleServerHelloDone = function(c, record, length)
                error.alert.description = ret;
             }
          }
-         
+
          // send error
          c.error(c, error);
       }
    }
-   
+
    // create client certificate message if requested
    if(!c.fail && c.session.certificateRequest !== null)
    {
@@ -1979,7 +1979,7 @@ tls.handleServerHelloDone = function(c, record, length)
       });
       tls.queue(c, record);
    }
-   
+
    if(!c.fail)
    {
       // create client key exchange message
@@ -1989,10 +1989,10 @@ tls.handleServerHelloDone = function(c, record, length)
          data: tls.createClientKeyExchange(c)
       });
       tls.queue(c, record);
-      
+
       // expect no messages until the following callback has been called
       c.expect = SER;
-      
+
       // create callback to handle client signature (for client-certs)
       var callback = function(c, signature)
       {
@@ -2006,37 +2006,37 @@ tls.handleServerHelloDone = function(c, record, length)
                data: tls.createCertificateVerify(c, signature)
             }));
          }
-         
+
          // create change cipher spec message
          tls.queue(c, tls.createRecord(
          {
             type: tls.ContentType.change_cipher_spec,
             data: tls.createChangeCipherSpec()
          }));
-         
+
          // create pending state
          c.state.pending = tls.createConnectionState(c);
-         
+
          // change current write state to pending write state
          c.state.current.write = c.state.pending.write;
-         
+
          // create finished message
          tls.queue(c, tls.createRecord(
          {
             type: tls.ContentType.handshake,
             data: tls.createFinished(c)
          }));
-         
+
          // expect a server ChangeCipherSpec message next
          c.expect = SCC;
-         
+
          // send records
          tls.flush(c);
-         
+
          // continue
          c.process();
       };
-      
+
       // if there is no certificate request or no client certificate, do
       // callback immediately
       if(c.session.certificateRequest === null ||
@@ -2048,19 +2048,19 @@ tls.handleServerHelloDone = function(c, record, length)
       else
       {
          tls.getClientSignature(c, callback);
-      }         
+      }
    }
 };
 
 /**
  * Called when a ChangeCipherSpec record is received.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  */
 tls.handleChangeCipherSpec = function(c, record)
 {
-   if(record.fragment.getByte() != 0x01)      
+   if(record.fragment.getByte() != 0x01)
    {
       c.error(c, {
          message: 'Invalid ChangeCipherSpec message received.',
@@ -2076,15 +2076,15 @@ tls.handleChangeCipherSpec = function(c, record)
       // create pending state if:
       // 1. Resuming session in client mode OR
       // 2. NOT resuming session in server mode
-      var client = (c.entity === tls.ConnectionEnd.client); 
+      var client = (c.entity === tls.ConnectionEnd.client);
       if((c.session.resuming && client) || (!c.session.resuming && !client))
       {
          c.state.pending = tls.createConnectionState(c);
       }
-      
+
       // change current read state to pending read state
       c.state.current.read = c.state.pending.read;
-      
+
       // clear pending state if:
       // 1. NOT resuming session in client mode OR
       // 2. resuming a session in server mode
@@ -2092,10 +2092,10 @@ tls.handleChangeCipherSpec = function(c, record)
       {
          c.state.pending = null;
       }
-      
+
       // expect a Finished record next
       c.expect = client ? SFI : CFI;
-      
+
       // continue
       c.process();
    }
@@ -2103,7 +2103,7 @@ tls.handleChangeCipherSpec = function(c, record)
 
 /**
  * Called when a Finished record is received.
- * 
+ *
  * When this message will be sent:
  *    A finished message is always sent immediately after a change
  *    cipher spec message to verify that the key exchange and
@@ -2118,24 +2118,24 @@ tls.handleChangeCipherSpec = function(c, record)
  *    has sent its Finished message and received and validated the
  *    Finished message from its peer, it may begin to send and receive
  *    application data over the connection.
- * 
+ *
  * struct {
  *    opaque verify_data[verify_data_length];
  * } Finished;
- * 
+ *
  * verify_data
  *    PRF(master_secret, finished_label, Hash(handshake_messages))
  *       [0..verify_data_length-1];
- * 
+ *
  * finished_label
  *    For Finished messages sent by the client, the string
  *    "client finished". For Finished messages sent by the server, the
  *    string "server finished".
- * 
+ *
  * verify_data_length depends on the cipher suite. If it is not specified
  * by the cipher suite, then it is 12. Versions of TLS < 1.2 always used
  * 12 bytes.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -2149,19 +2149,19 @@ tls.handleFinished = function(c, record, length)
    b.read -= 4;
    var msgBytes = b.bytes();
    b.read += 4;
-   
+
    // message contains only verify_data
    var vd = record.fragment.getBytes();
-   
+
    // ensure verify data is correct
    b = forge.util.createBuffer();
    b.putBuffer(c.session.md5.digest());
    b.putBuffer(c.session.sha1.digest());
-   
+
    // set label based on entity type
    var client = (c.entity === tls.ConnectionEnd.client);
    var label = client ? 'server finished' : 'client finished';
-   
+
    // TODO: determine prf function and verify length for TLS 1.2
    var sp = c.session.sp;
    var vdl = 12;
@@ -2183,7 +2183,7 @@ tls.handleFinished = function(c, record, length)
       // digest finished message now that it has been handled
       c.session.md5.update(msgBytes);
       c.session.sha1.update(msgBytes);
-      
+
       // resuming session as client or NOT resuming session as server
       if((c.session.resuming && client) || (!c.session.resuming && !client))
       {
@@ -2193,11 +2193,11 @@ tls.handleFinished = function(c, record, length)
             type: tls.ContentType.change_cipher_spec,
             data: tls.createChangeCipherSpec()
          }));
-         
+
          // change current write state to pending write state, clear pending
          c.state.current.write = c.state.pending.write;
          c.state.pending = null;
-         
+
          // create finished message
          tls.queue(c, tls.createRecord(
          {
@@ -2205,18 +2205,18 @@ tls.handleFinished = function(c, record, length)
             data: tls.createFinished(c)
          }));
       }
-      
+
       // expect application data next
       c.expect = client ? SAD : CAD;
-      
+
       // handshake complete
       c.handshaking = false;
       ++c.handshakes;
-      
+
       // save access to peer certificate
       c.peerCertificate = client ?
          c.session.serverCertificate : c.session.clientCertificate;
-      
+
       // preserve session if using session cache (it will be cached
       // if the connection is successfully shutdown later)
       if(c.sessionCache)
@@ -2233,14 +2233,14 @@ tls.handleFinished = function(c, record, length)
       {
          c.session = null;
       }
-      
+
       // send records
       tls.flush(c);
-      
+
       // now connected
       c.isConnected = true;
       c.connected(c);
-      
+
       // continue
       c.process();
    }
@@ -2248,7 +2248,7 @@ tls.handleFinished = function(c, record, length)
 
 /**
  * Called when an Alert record is received.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  */
@@ -2261,7 +2261,7 @@ tls.handleAlert = function(c, record)
       level: b.getByte(),
       description: b.getByte()
    };
-   
+
    // TODO: consider using a table?
    // get appropriate message
    var msg;
@@ -2340,7 +2340,7 @@ tls.handleAlert = function(c, record)
          msg = 'Unknown error.';
          break;
    }
-   
+
    // close connection on close_notify, not an error
    if(alert.description === tls.Alert.Description.close_notify)
    {
@@ -2357,7 +2357,7 @@ tls.handleAlert = function(c, record)
             'server' : 'client',
          alert: alert
       });
-      
+
       // continue
       c.process();
    }
@@ -2365,7 +2365,7 @@ tls.handleAlert = function(c, record)
 
 /**
  * Called when a Handshake record is received.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  */
@@ -2375,7 +2375,7 @@ tls.handleHandshake = function(c, record)
    var b = record.fragment;
    var type = b.getByte();
    var length = b.getInt24();
-   
+
    // see if the record fragment doesn't yet contain the full message
    if(length > b.length())
    {
@@ -2384,7 +2384,7 @@ tls.handleHandshake = function(c, record)
       c.fragmented = record;
       record.fragment = forge.util.createBuffer();
       b.read -= 4;
-      
+
       // continue
       c.process();
    }
@@ -2394,14 +2394,14 @@ tls.handleHandshake = function(c, record)
       // before type and length
       c.fragmented = null;
       b.read -= 4;
-      
+
       // save the handshake bytes for digestion after handler is found
       // (include type and length of handshake msg)
       var bytes = b.bytes(length + 4);
-      
+
       // restore read pointer
       b.read += 4;
-      
+
       // handle expected message
       if(type in hsTable[c.entity][c.expect])
       {
@@ -2420,7 +2420,7 @@ tls.handleHandshake = function(c, record)
                sha1: forge.md.sha1.create()
             };
          }
-         
+
          /* Update handshake messages digest. Finished and CertificateVerify
             messages are not digested here. They can't be digested as part of
             the verify_data that they contain. These messages are manually
@@ -2433,7 +2433,7 @@ tls.handleHandshake = function(c, record)
             c.session.md5.update(bytes);
             c.session.sha1.update(bytes);
          }
-         
+
          // handle specific handshake type record
          hsTable[c.entity][c.expect][type](c, record, length);
       }
@@ -2447,7 +2447,7 @@ tls.handleHandshake = function(c, record)
 
 /**
  * Called when a client receives an ApplicationData record.
- * 
+ *
  * @param c the connection.
  * @param record the record.
  */
@@ -2456,7 +2456,7 @@ tls.handleApplicationData = function(c, record)
    // buffer data, notify that its ready
    c.data.putBuffer(record.fragment);
    c.dataReady(c);
-   
+
    // continue
    c.process();
 };
@@ -2465,30 +2465,30 @@ tls.handleApplicationData = function(c, record)
  * The transistional state tables for receiving TLS records. It maps the
  * current TLS engine state and a received record to a function to handle the
  * record and update the state.
- * 
+ *
  * For instance, if the current state is SHE, then the TLS engine is expecting
  * a ServerHello record. Once a record is received, the handler function is
  * looked up using the state SHE and the record's content type.
- * 
+ *
  * The resulting function will either be an error handler or a record handler.
  * The function will take whatever action is appropriate and update the state
  * for the next record.
- * 
+ *
  * The states are all based on possible server record types. Note that the
  * client will never specifically expect to receive a HelloRequest or an alert
  * from the server so there is no state that reflects this. These messages may
  * occur at any time.
- * 
+ *
  * There are two tables for mapping states because there is a second tier of
  * types for handshake messages. Once a record with a content type of handshake
  * is received, the handshake record handler will look up the handshake type in
  * the secondary map to get its appropriate handler.
- * 
+ *
  * Valid message orders are as follows:
  *
  * =======================FULL HANDSHAKE======================
  * Client                                               Server
- * 
+ *
  * ClientHello                  -------->
  *                                                 ServerHello
  *                                                Certificate*
@@ -2503,7 +2503,7 @@ tls.handleApplicationData = function(c, record)
  *                                          [ChangeCipherSpec]
  *                              <--------             Finished
  * Application Data             <------->     Application Data
- * 
+ *
  * =====================SESSION RESUMPTION=====================
  * Client                                                Server
  *
@@ -2513,7 +2513,7 @@ tls.handleApplicationData = function(c, record)
  *                               <--------             Finished
  * [ChangeCipherSpec]
  * Finished                      -------->
- * Application Data              <------->     Application Data   
+ * Application Data              <------->     Application Data
  */
 // client expect states (indicate which records are expected to be received)
 var SHE = 0; // rcv server hello
@@ -2610,9 +2610,9 @@ hsTable[tls.ConnectionEnd.server] = [
 
 /**
  * Generates the master_secret and keys using the given security parameters.
- * 
+ *
  * The security parameters for a TLS connection state are defined as such:
- * 
+ *
  * struct {
  *    ConnectionEnd          entity;
  *    PRFAlgorithm           prf_algorithm;
@@ -2627,17 +2627,17 @@ hsTable[tls.ConnectionEnd.server] = [
  *    uint8                  mac_key_length;
  *    CompressionMethod      compression_algorithm;
  *    opaque                 master_secret[48];
- *    opaque                 client_random[32]; 
+ *    opaque                 client_random[32];
  *    opaque                 server_random[32];
  * } SecurityParameters;
- * 
+ *
  * Note that this definition is from TLS 1.2. In TLS 1.0 some of these
  * parameters are ignored because, for instance, the PRFAlgorithm is a
  * builtin-fixed algorithm combining iterations of MD5 and SHA-1 in TLS 1.0.
- * 
+ *
  * The Record Protocol requires an algorithm to generate keys required by the
  * current connection state.
- * 
+ *
  * The master secret is expanded into a sequence of secure bytes, which is then
  * split to a client write MAC key, a server write MAC key, a client write
  * encryption key, and a server write encryption key. In TLS 1.0 a client write
@@ -2650,7 +2650,7 @@ hsTable[tls.ConnectionEnd.server] = [
  * entropy source.
  *
  * To generate the key material, compute:
- * 
+ *
  * master_secret = PRF(pre_master_secret, "master secret",
  *                     ClientHello.random + ServerHello.random)
  *
@@ -2677,10 +2677,10 @@ hsTable[tls.ConnectionEnd.server] = [
  * most material is AES_256_CBC_SHA256. It requires 2 x 32 byte keys and 2 x 32
  * byte MAC keys, for a total 128 bytes of key material. In TLS 1.0 it also
  * requires 2 x 16 byte IVs, so it actually takes 160 bytes of key material.
- * 
+ *
  * @param c the connection.
  * @param sp the security parameters to use.
- * 
+ *
  * @return the security keys.
  */
 tls.generateKeys = function(c, sp)
@@ -2688,11 +2688,11 @@ tls.generateKeys = function(c, sp)
    // TLS_RSA_WITH_AES_128_CBC_SHA (required to be compliant with TLS 1.2) &
    // TLS_RSA_WITH_AES_128_CBC_SHA are the only cipher suites implemented
    // at present
-   
+
    // TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA is required to be compliant with
    // TLS 1.0 but we don't care right now because AES is better and we have
    // an implementation for it
-   
+
    // TODO: TLS 1.2 implementation
    /*
    // determine the PRF
@@ -2709,10 +2709,10 @@ tls.generateKeys = function(c, sp)
          };
          break;
    }
-   
+
    // concatenate client and server random
    var random = sp.client_random + sp.server_random;
-   
+
    // only create master secret if session is new
    if(!c.session.resuming)
    {
@@ -2721,12 +2721,12 @@ tls.generateKeys = function(c, sp)
          prf(sp.pre_master_secret, 'master secret', random, 48).bytes();
       sp.pre_master_secret = null;
    }
-   
+
    // generate the amount of key material needed
    random = sp.server_random + sp.client_random;
    var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
    var km = prf(sp.master_secret.bytes(), 'key expansion', random, length);
-   
+
    // split the key material into the MAC and encryption keys
    return {
       client_write_MAC_key: km.getBytes(sp.mac_key_length),
@@ -2735,13 +2735,13 @@ tls.generateKeys = function(c, sp)
       server_write_key: km.getBytes(sp.enc_key_length)
    };
    */
-   
+
    // TLS 1.0 implementation
    var prf = prf_TLS1;
-   
+
    // concatenate server and client random
    var random = sp.client_random + sp.server_random;
-   
+
    // only create master secret if session is new
    if(!c.session.resuming)
    {
@@ -2750,7 +2750,7 @@ tls.generateKeys = function(c, sp)
          prf(sp.pre_master_secret, 'master secret', random, 48).bytes();
       sp.pre_master_secret = null;
    }
-   
+
    // generate the amount of key material needed
    random = sp.server_random + sp.client_random;
    var length =
@@ -2758,7 +2758,7 @@ tls.generateKeys = function(c, sp)
       2 * sp.enc_key_length +
       2 * sp.fixed_iv_length;
    var km = prf(sp.master_secret, 'key expansion', random, length);
-   
+
    // split the key material into the MAC and encryption keys
    return {
       client_write_MAC_key: km.getBytes(sp.mac_key_length),
@@ -2773,19 +2773,19 @@ tls.generateKeys = function(c, sp)
 /**
  * Creates a new initialized TLS connection state. A connection state has
  * a read mode and a write mode.
- * 
+ *
  * compression state:
  *    The current state of the compression algorithm.
- * 
+ *
  * cipher state:
  *    The current state of the encryption algorithm. This will consist of the
  *    scheduled key for that connection. For stream ciphers, this will also
  *    contain whatever state information is necessary to allow the stream to
  *    continue to encrypt or decrypt data.
- * 
+ *
  * MAC key:
  *    The MAC key for the connection.
- * 
+ *
  * sequence number:
  *    Each connection state contains a sequence number, which is maintained
  *    separately for read and write states. The sequence number MUST be set to
@@ -2795,15 +2795,15 @@ tls.generateKeys = function(c, sp)
  *    it must renegotiate instead. A sequence number is incremented after each
  *    record: specifically, the first record transmitted under a particular
  *    connection state MUST use sequence number 0.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the new initialized TLS connection state.
  */
 tls.createConnectionState = function(c)
 {
    var client = (c.entity === tls.ConnectionEnd.client);
-   
+
    var createMode = function()
    {
       var mode =
@@ -2837,7 +2837,7 @@ tls.createConnectionState = function(c)
       read: createMode(),
       write: createMode()
    };
-   
+
    // update function in read mode will decrypt then decompress a record
    state.read.update = function(c, record)
    {
@@ -2868,7 +2868,7 @@ tls.createConnectionState = function(c)
       }
       return !c.fail;
    };
-   
+
    // update function in write mode will compress then encrypt a record
    state.write.update = function(c, record)
    {
@@ -2900,14 +2900,14 @@ tls.createConnectionState = function(c)
       }
       return !c.fail;
    };
-   
+
    // handle security parameters
    if(c.session)
    {
       // generate keys
       var sp = c.session.sp;
       sp.keys = tls.generateKeys(c, sp);
-      
+
       // mac setup
       state.read.macKey = client ?
          sp.keys.server_write_MAC_key : sp.keys.client_write_MAC_key;
@@ -2924,7 +2924,7 @@ tls.createConnectionState = function(c)
                 message: 'Unsupported MAC algorithm.'
              };
       }
-      
+
       // cipher setup
       switch(sp.bulk_cipher_algorithm)
       {
@@ -2960,7 +2960,7 @@ tls.createConnectionState = function(c)
                message: 'Unsupported cipher type.'
             };
       }
-      
+
       // compression setup
       switch(sp.compression_algorithm)
       {
@@ -2976,18 +2976,18 @@ tls.createConnectionState = function(c)
             };
       }
    }
-   
+
    return state;
 };
 
 /**
  * Creates a Random structure.
- * 
+ *
  * struct {
  *    uint32 gmt_unix_time;
  *    opaque random_bytes[28];
  * } Random;
- * 
+ *
  * gmt_unix_time:
  *    The current time and date in standard UNIX 32-bit format (seconds since
  *    the midnight starting Jan 1, 1970, UTC, ignoring leap seconds) according
@@ -2998,7 +2998,7 @@ tls.createConnectionState = function(c)
  *    current worldwide time base, UTC.
  * random_bytes:
  *    28 bytes generated by a secure random number generator.
- * 
+ *
  * @return the Random structure as a byte array.
  */
 tls.createRandom = function()
@@ -3014,11 +3014,11 @@ tls.createRandom = function()
 
 /**
  * Creates a TLS record with the given type and data.
- * 
+ *
  * @param options:
  *    type: the record type.
  *    data: the plain text data in a byte buffer.
- * 
+ *
  * @return the created record.
  */
 tls.createRecord = function(options)
@@ -3039,11 +3039,11 @@ tls.createRecord = function(options)
 
 /**
  * Creates a TLS alert record.
- * 
+ *
  * @param alert:
  *    level: the TLS alert level.
  *    description: the TLS alert description.
- * 
+ *
  * @return the created alert record.
  */
 tls.createAlert = function(alert)
@@ -3058,7 +3058,7 @@ tls.createAlert = function(alert)
 };
 
 /* The structure of a TLS handshake message.
- * 
+ *
  * struct {
  *    HandshakeType msg_type;    // handshake type
  *    uint24 length;             // bytes in message
@@ -3079,11 +3079,11 @@ tls.createAlert = function(alert)
 
 /**
  * Creates a ClientHello message.
- * 
+ *
  * opaque SessionID<0..32>;
  * enum { null(0), deflate(1), (255) } CompressionMethod;
  * uint8 CipherSuite[2];
- * 
+ *
  * struct {
  *    ProtocolVersion client_version;
  *    Random random;
@@ -3097,30 +3097,30 @@ tls.createAlert = function(alert)
  *            Extension extensions<0..2^16-1>;
  *    };
  * } ClientHello;
- * 
+ *
  * The extension format for extended client hellos and server hellos is:
- * 
+ *
  * struct {
  *    ExtensionType extension_type;
  *    opaque extension_data<0..2^16-1>;
  * } Extension;
- * 
+ *
  * Here:
- * 
+ *
  * - "extension_type" identifies the particular extension type.
  * - "extension_data" contains information specific to the particular
  * extension type.
- * 
+ *
  * The extension types defined in this document are:
- * 
+ *
  * enum {
  *    server_name(0), max_fragment_length(1),
  *    client_certificate_url(2), trusted_ca_keys(3),
  *    truncated_hmac(4), status_request(5), (65535)
  * } ExtensionType;
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the ClientHello byte buffer.
  */
 tls.createClientHello = function(c)
@@ -3134,7 +3134,7 @@ tls.createClientHello = function(c)
       cipherSuites.putByte(cs[1]);
    }
    var cSuites = cipherSuites.length();
-   
+
    // create supported compression methods, null always supported, but
    // also support deflate if connection has inflate and deflate methods
    var compressionMethods = forge.util.createBuffer();
@@ -3148,7 +3148,7 @@ tls.createClientHello = function(c)
    }
    */
    var cMethods = compressionMethods.length();
-   
+
    // create TLS SNI (server name indication) extension if virtual host
    // has been specified, see RFC 3546
    var extensions = forge.util.createBuffer();
@@ -3158,25 +3158,25 @@ tls.createClientHello = function(c)
       var ext = forge.util.createBuffer();
       ext.putByte(0x00); // type server_name (ExtensionType is 2 bytes)
       ext.putByte(0x00);
-      
+
       /* In order to provide the server name, clients MAY include an
        * extension of type "server_name" in the (extended) client hello.
        * The "extension_data" field of this extension SHALL contain
        * "ServerNameList" where:
-       * 
+       *
        * struct {
        *    NameType name_type;
        *    select(name_type) {
        *       case host_name: HostName;
        *    } name;
        * } ServerName;
-       * 
+       *
        * enum {
        *    host_name(0), (255)
        * } NameType;
-       * 
+       *
        * opaque HostName<1..2^16-1>;
-       * 
+       *
        * struct {
        *    ServerName server_name_list<1..2^16-1>
        * } ServerNameList;
@@ -3184,7 +3184,7 @@ tls.createClientHello = function(c)
       var serverName = forge.util.createBuffer();
       serverName.putByte(0x00); // type host_name
       writeVector(serverName, 2, forge.util.createBuffer(c.virtualHost));
-      
+
       // ServerNameList is in extension_data
       var snList = forge.util.createBuffer();
       writeVector(snList, 2, serverName);
@@ -3197,7 +3197,7 @@ tls.createClientHello = function(c)
       // add extension vector length
       extLength += 2;
    }
-   
+
    // determine length of the handshake message
    // cipher suites and compression methods size will need to be
    // updated if more get added to the list
@@ -3209,7 +3209,7 @@ tls.createClientHello = function(c)
       2 + cSuites +          // cipher suites vector
       1 + cMethods +         // compression methods vector
       extLength;             // extensions vector
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.client_hello);
@@ -3229,9 +3229,9 @@ tls.createClientHello = function(c)
 
 /**
  * Creates a ServerHello message.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the ServerHello byte buffer.
  */
 tls.createServerHello = function(c)
@@ -3244,7 +3244,7 @@ tls.createServerHello = function(c)
       4 + 28 +               // random time and random bytes
       2 +                    // chosen cipher suite
       1;                     // chosen compression method
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.server_hello);
@@ -3261,7 +3261,7 @@ tls.createServerHello = function(c)
 
 /**
  * Creates a Certificate message.
- * 
+ *
  * When this message will be sent:
  *    This is the first message the client can send after receiving a server
  *    hello done message and the first message the server can send after
@@ -3270,22 +3270,22 @@ tls.createServerHello = function(c)
  *    client should send a certificate message containing no certificates. If
  *    client authentication is required by the server for the handshake to
  *    continue, it may respond with a fatal handshake failure alert.
- * 
+ *
  * opaque ASN.1Cert<1..2^24-1>;
  *
  * struct {
  *     ASN.1Cert certificate_list<0..2^24-1>;
  * } Certificate;
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the Certificate byte buffer.
  */
 tls.createCertificate = function(c)
 {
    // TODO: support sending more than 1 certificate?
    // TODO: check certificate request to ensure types are supported
-   
+
    // get a certificate (a certificate as a PEM string)
    var client = (c.entity === tls.ConnectionEnd.client);
    var cert = null;
@@ -3295,7 +3295,7 @@ tls.createCertificate = function(c)
          c, client ?
          c.session.certificateRequest : c.session.serverNameList);
    }
-   
+
    // buffer to hold cert
    var certBuffer = forge.util.createBuffer();
    if(cert !== null)
@@ -3306,7 +3306,7 @@ tls.createCertificate = function(c)
          var der = forge.pki.pemToDer(cert);
          var asn1 = forge.asn1.fromDer(der.bytes());
          writeVector(certBuffer, 3, der);
-         
+
          // save certificate
          cert = forge.pki.certificateFromAsn1(asn1);
          if(client)
@@ -3331,10 +3331,10 @@ tls.createCertificate = function(c)
          });
       }
    }
-   
+
    // determine length of the handshake message
    var length = 3 + certBuffer.length(); // cert vector
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.certificate);
@@ -3345,7 +3345,7 @@ tls.createCertificate = function(c)
 
 /**
  * Creates a ClientKeyExchange message.
- * 
+ *
  * When this message will be sent:
  *    This message is always sent by the client. It will immediately follow the
  *    client certificate message, if it is sent. Otherwise it will be the first
@@ -3361,7 +3361,7 @@ tls.createCertificate = function(c)
  *    respond with a certificate which contained a Diffie-Hellman public key
  *    whose parameters (group and generator) matched those specified by the
  *    server in its certificate, this message will not contain any data.
- * 
+ *
  * Meaning of this message:
  *    If RSA is being used for key agreement and authentication, the client
  *    generates a 48-byte premaster secret, encrypts it using the public key
@@ -3369,14 +3369,14 @@ tls.createCertificate = function(c)
  *    server key exchange message, and sends the result in an encrypted
  *    premaster secret message. This structure is a variant of the client
  *    key exchange message, not a message in itself.
- * 
+ *
  * struct {
  *    select(KeyExchangeAlgorithm) {
  *       case rsa: EncryptedPreMasterSecret;
  *       case diffie_hellman: ClientDiffieHellmanPublic;
  *    } exchange_keys;
  * } ClientKeyExchange;
- * 
+ *
  * struct {
  *    ProtocolVersion client_version;
  *    opaque random[46];
@@ -3385,42 +3385,42 @@ tls.createCertificate = function(c)
  * struct {
  *    public-key-encrypted PreMasterSecret pre_master_secret;
  * } EncryptedPreMasterSecret;
- * 
+ *
  * A public-key-encrypted element is encoded as a vector <0..2^16-1>.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the ClientKeyExchange byte buffer.
  */
 tls.createClientKeyExchange = function(c)
 {
    // create buffer to encrypt
    var b = forge.util.createBuffer();
-   
+
    // add highest client-supported protocol to help server avoid version
    // rollback attacks
    b.putByte(tls.Version.major);
    b.putByte(tls.Version.minor);
-   
+
    // generate and add 46 random bytes
    b.putBytes(forge.random.getBytes(46));
-   
+
    // save pre-master secret
    var sp = c.session.sp;
    sp.pre_master_secret = b.getBytes();
-   
+
    // RSA-encrypt the pre-master secret
    var key = c.session.serverCertificate.publicKey;
    b = key.encrypt(sp.pre_master_secret);
-   
+
    /* Note: The encrypted pre-master secret will be stored in a
       public-key-encrypted opaque vector that has the length prefixed using
       2 bytes, so include those 2 bytes in the handshake message length. This
       is done as a minor optimization instead of calling writeVector(). */
-   
+
    // determine length of the handshake message
    var length = b.length + 2;
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.client_key_exchange);
@@ -3433,19 +3433,19 @@ tls.createClientKeyExchange = function(c)
 
 /**
  * Creates a ServerKeyExchange message.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the ServerKeyExchange byte buffer.
  */
 tls.createServerKeyExchange = function(c)
 {
    // this implementation only supports RSA, no Diffie-Hellman support,
    // so this record is empty
-   
+
    // determine length of the handshake message
    var length = 0;
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.server_key_exchange);
@@ -3456,7 +3456,7 @@ tls.createServerKeyExchange = function(c)
 /**
  * Gets the signed data used to verify a client-side certificate. See
  * tls.createCertificateVerify() for details.
- * 
+ *
  * @param c the connection.
  * @param callback the callback to call once the signed data is ready.
  */
@@ -3467,7 +3467,7 @@ tls.getClientSignature = function(c, callback)
    b.putBuffer(c.session.md5.digest());
    b.putBuffer(c.session.sha1.digest());
    b = b.getBytes();
-   
+
    // create default signing function as necessary
    c.getSignature = c.getSignature || function(c, b, callback)
    {
@@ -3510,32 +3510,32 @@ tls.getClientSignature = function(c, callback)
       }
       callback(c, b);
    };
-   
+
    // get client signature
    c.getSignature(c, b, callback);
 };
 
 /**
  * Creates a CertificateVerify message.
- * 
+ *
  * Meaning of this message:
  *    This structure conveys the client's Diffie-Hellman public value
  *    (Yc) if it was not already included in the client's certificate.
  *    The encoding used for Yc is determined by the enumerated
  *    PublicValueEncoding. This structure is a variant of the client
  *    key exchange message, not a message in itself.
- *   
+ *
  * When this message will be sent:
  *    This message is used to provide explicit verification of a client
  *    certificate. This message is only sent following a client
  *    certificate that has signing capability (i.e. all certificates
  *    except those containing fixed Diffie-Hellman parameters). When
  *    sent, it will immediately follow the client key exchange message.
- * 
+ *
  * struct {
  *    Signature signature;
  * } CertificateVerify;
- *   
+ *
  * CertificateVerify.signature.md5_hash
  *    MD5(handshake_messages);
  *
@@ -3546,7 +3546,7 @@ tls.getClientSignature = function(c, callback)
  * received starting at client hello up to but not including this
  * message, including the type and length fields of the handshake
  * messages.
- * 
+ *
  * select(SignatureAlgorithm) {
  *    case anonymous: struct { };
  *    case rsa:
@@ -3559,7 +3559,7 @@ tls.getClientSignature = function(c, callback)
  *          opaque sha_hash[20];
  *       };
  * } Signature;
- * 
+ *
  * In digital signing, one-way hash functions are used as input for a
  * signing algorithm. A digitally-signed element is encoded as an opaque
  * vector <0..2^16-1>, where the length is specified by the signing
@@ -3568,13 +3568,13 @@ tls.getClientSignature = function(c, callback)
  * In RSA signing, a 36-byte structure of two hashes (one SHA and one
  * MD5) is signed (encrypted with the private key). It is encoded with
  * PKCS #1 block type 0 or type 1 as described in [PKCS1].
- * 
+ *
  * In DSS, the 20 bytes of the SHA hash are run directly through the
  * Digital Signing Algorithm with no additional hashing.
- * 
+ *
  * @param c the connection.
  * @param signature the signature to include in the message.
- * 
+ *
  * @return the CertificateVerify byte buffer.
  */
 tls.createCertificateVerify = function(c, signature)
@@ -3583,10 +3583,10 @@ tls.createCertificateVerify = function(c, signature)
       vector that has the length prefixed using 2 bytes, so include those
       2 bytes in the handshake message length. This is done as a minor
       optimization instead of calling writeVector(). */
-   
+
    // determine length of the handshake message
    var length = signature.length + 2;
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.certificate_verify);
@@ -3599,19 +3599,19 @@ tls.createCertificateVerify = function(c, signature)
 
 /**
  * Creates a CertificateRequest message.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the CertificateRequest byte buffer.
  */
 tls.createCertificateRequest = function(c)
 {
    // TODO: support other certificate types
    var certTypes = forge.util.createBuffer();
-   
+
    // common RSA certificate type
    certTypes.putByte(0x01);
-   
+
    // TODO: verify that this data format is correct
    // add distinguished names from CA store
    var cAs = forge.util.createBuffer();
@@ -3621,14 +3621,14 @@ tls.createCertificateRequest = function(c)
       var dn = forge.pki.distinguishedNameToAsn1(cert.subject);
       cAs.putBuffer(forge.asn1.toDer(dn));
    }
-   
+
    // TODO: TLS 1.1 and 1.2 have different formats
-   
+
    // determine length of the handshake message
    var length =
       1 + certTypes.length() +
       2 + cAs.length();
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.certificate_request);
@@ -3640,9 +3640,9 @@ tls.createCertificateRequest = function(c)
 
 /**
  * Creates a ServerHelloDone message.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the ServerHelloDone byte buffer.
  */
 tls.createServerHelloDone = function(c)
@@ -3656,16 +3656,16 @@ tls.createServerHelloDone = function(c)
 
 /**
  * Creates a ChangeCipherSpec message.
- * 
+ *
  * The change cipher spec protocol exists to signal transitions in
  * ciphering strategies. The protocol consists of a single message,
  * which is encrypted and compressed under the current (not the pending)
  * connection state. The message consists of a single byte of value 1.
- * 
+ *
  * struct {
  *    enum { change_cipher_spec(1), (255) } type;
  * } ChangeCipherSpec;
- * 
+ *
  * @return the ChangeCipherSpec byte buffer.
  */
 tls.createChangeCipherSpec = function()
@@ -3677,7 +3677,7 @@ tls.createChangeCipherSpec = function()
 
 /**
  * Creates a Finished message.
- * 
+ *
  * struct {
  *    opaque verify_data[12];
  * } Finished;
@@ -3697,9 +3697,9 @@ tls.createChangeCipherSpec = function()
  *    handshake layer and does not include record layer headers.
  *    This is the concatenation of all the Handshake structures as
  *    defined in 7.4 exchanged thus far.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return the Finished byte buffer.
  */
 tls.createFinished = function(c)
@@ -3708,7 +3708,7 @@ tls.createFinished = function(c)
    var b = forge.util.createBuffer();
    b.putBuffer(c.session.md5.digest());
    b.putBuffer(c.session.sha1.digest());
-   
+
    // TODO: determine prf function and verify length for TLS 1.2
    var client = (c.entity === tls.ConnectionEnd.client);
    var sp = c.session.sp;
@@ -3716,7 +3716,7 @@ tls.createFinished = function(c)
    var prf = prf_TLS1;
    var label = client ? 'client finished' : 'server finished';
    b = prf(sp.master_secret, label, b.getBytes(), vdl);
-   
+
    // build record fragment
    var rval = forge.util.createBuffer();
    rval.putByte(tls.HandshakeType.finished);
@@ -3727,7 +3727,7 @@ tls.createFinished = function(c)
 
 /**
  * Fragments, compresses, encrypts, and queues a record for delivery.
- * 
+ *
  * @param c the connection.
  * @param record the record to queue.
  */
@@ -3741,7 +3741,7 @@ tls.queue = function(c, record)
       c.session.sha1.update(bytes);
       bytes = null;
    }
-   
+
    // handle record fragmentation
    var records;
    if(record.fragment.length() <= tls.MaxFragment)
@@ -3772,7 +3772,7 @@ tls.queue = function(c, record)
          }));
       }
    }
-   
+
    // compress and encrypt all fragmented records
    for(var i = 0; i < records.length && !c.fail; ++i)
    {
@@ -3790,9 +3790,9 @@ tls.queue = function(c, record)
 /**
  * Flushes all queued records to the output buffer and calls the
  * tlsDataReady() handler on the given connection.
- * 
+ *
  * @param c the connection.
- * 
+ *
  * @return true on success, false on failure.
  */
 tls.flush = function(c)
@@ -3800,7 +3800,7 @@ tls.flush = function(c)
    for(var i = 0; i < c.records.length; ++i)
    {
       var record = c.records[i];
-      
+
       // add record header and fragment
       c.tlsData.putByte(record.type);
       c.tlsData.putByte(record.version.major);
@@ -3814,9 +3814,9 @@ tls.flush = function(c)
 
 /**
  * Maps a pki.certificateError to a tls.Alert.Description.
- * 
+ *
  * @param error the error to map.
- * 
+ *
  * @return the alert description.
  */
 var _certErrorToAlertDesc = function(error)
@@ -3843,9 +3843,9 @@ var _certErrorToAlertDesc = function(error)
 
 /**
  * Maps a tls.Alert.Description to a pki.certificateError.
- * 
+ *
  * @param desc the alert description.
- * 
+ *
  * @return the certificate error.
  */
 var _alertDescToCertError = function(desc)
@@ -3873,11 +3873,11 @@ var _alertDescToCertError = function(desc)
 /**
  * Verifies a certificate chain against the given connection's
  * Certificate Authority store.
- * 
+ *
  * @param c the TLS connection.
  * @param chain the certificate chain to verify, with the root or highest
  *           authority at the end.
- * 
+ *
  * @return true if successful, false if not.
  */
 tls.verifyCertificateChain = function(c, chain)
@@ -3889,7 +3889,7 @@ tls.verifyCertificateChain = function(c, chain)
          function verify(vfd, depth, chain) {
             // convert pki.certificateError to tls alert description
             var desc = _certErrorToAlertDesc(vfd);
-            
+
             // call application callback
             var ret = c.verify(c, vfd, depth, chain);
             if(ret !== true)
@@ -3915,14 +3915,14 @@ tls.verifyCertificateChain = function(c, chain)
                   }
                   throw error;
                }
-               
+
                // convert tls alert description to pki.certificateError
                if(ret !== vfd)
                {
                   ret = _alertDescToCertError(ret);
                }
             }
-            
+
             return ret;
       });
    }
@@ -3950,26 +3950,26 @@ tls.verifyCertificateChain = function(c, chain)
            description: _certErrorToAlertDesc(ex.error)
          };
       }
-      
+
       // send error
       c.error(c, ex);
    }
-   
+
    return !c.fail;
 };
 
 /**
  * Creates a new TLS session cache.
- * 
+ *
  * @param cache optional map of session ID to cached session.
  * @param capacity the maximum size for the cache (default: 100).
- * 
+ *
  * @return the new TLS session cache.
  */
 tls.createSessionCache = function(cache, capacity)
 {
    var rval = null;
-   
+
    // assume input is already a session cache object
    if(cache && cache.getSession && cache.setSession && cache.order)
    {
@@ -3982,11 +3982,11 @@ tls.createSessionCache = function(cache, capacity)
       rval.cache = cache || {};
       rval.capacity = Math.max(capacity || 100, 1);
       rval.order = [];
-      
+
       // store order for sessions, delete session overflow
       for(var key in cache)
       {
-         if(rval.order.length <= capacity) 
+         if(rval.order.length <= capacity)
          {
             rval.order.push(key);
          }
@@ -3995,13 +3995,13 @@ tls.createSessionCache = function(cache, capacity)
             delete cache[key];
          }
       }
-      
+
       // get a session from a session ID (or get any session)
       rval.getSession = function(sessionId)
       {
          var session = null;
          var key = null;
-         
+
          // if session ID provided, use it
          if(sessionId)
          {
@@ -4012,7 +4012,7 @@ tls.createSessionCache = function(cache, capacity)
          {
             key = rval.order[0];
          }
-         
+
          if(key !== null && key in rval.cache)
          {
             // get cached session and remove from cache
@@ -4027,10 +4027,10 @@ tls.createSessionCache = function(cache, capacity)
                }
             }
          }
-         
+
          return session;
       };
-      
+
       // set a session in the cache
       rval.setSession = function(sessionId, session)
       {
@@ -4046,17 +4046,17 @@ tls.createSessionCache = function(cache, capacity)
          rval.cache[key] = session;
       };
    }
-   
+
    return rval;
 };
 
 /**
  * Creates a new TLS connection.
- * 
+ *
  * See public createConnection() docs for more details.
- * 
+ *
  * @param options the options for this connection.
- * 
+ *
  * @return the new TLS connection.
  */
 tls.createConnection = function(options)
@@ -4079,7 +4079,7 @@ tls.createConnection = function(options)
       // create empty CA store
       caStore = forge.pki.createCaStore();
    }
-   
+
    // setup default cipher suites
    var cipherSuites = options.cipherSuites || null;
    if(cipherSuites === null)
@@ -4088,15 +4088,15 @@ tls.createConnection = function(options)
       cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA);
       cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA);
    }
-   
+
    // set default entity
    var entity = (options.server || false) ?
       tls.ConnectionEnd.server : tls.ConnectionEnd.client;
-   
+
    // create session cache if requested
    var sessionCache = options.sessionCache ?
-      tls.createSessionCache(options.sessionCache) : null; 
-   
+      tls.createSessionCache(options.sessionCache) : null;
+
    // create TLS connection
    var c =
    {
@@ -4123,14 +4123,14 @@ tls.createConnection = function(options)
          // set origin if not set
          ex.origin = ex.origin ||
             ((c.entity === tls.ConnectionEnd.client) ? 'client' : 'server');
-         
+
          // send TLS alert
          if(ex.send)
          {
             tls.queue(c, tls.createAlert(ex.alert));
             tls.flush(c);
          }
-         
+
          // error is fatal by default
          var fatal = (ex.fatal !== false);
          if(fatal)
@@ -4138,10 +4138,10 @@ tls.createConnection = function(options)
             // set fail flag
             c.fail = true;
          }
-         
+
          // call error handler first
          options.error(c, ex);
-         
+
          if(fatal)
          {
             // fatal error, close connection, do not clear fail
@@ -4151,10 +4151,10 @@ tls.createConnection = function(options)
       deflate: options.deflate || null,
       inflate: options.inflate || null
    };
-   
+
    /**
     * Resets a closed TLS connection for reuse. Called in c.close().
-    * 
+    *
     * @param clearFail true to clear the fail flag (default: true).
     */
    c.reset = function(clearFail)
@@ -4180,13 +4180,13 @@ tls.createConnection = function(options)
       c.data.clear();
       c.state.current = tls.createConnectionState(c);
    };
-   
+
    // do initial reset of connection
    c.reset();
-   
+
    /**
     * Updates the current TLS engine state based on the given record.
-    * 
+    *
     * @param c the TLS connection.
     * @param record the TLS record to act on.
     */
@@ -4205,24 +4205,24 @@ tls.createConnection = function(options)
          tls.handleUnexpected(c, record);
       }
    };
-   
+
    /**
     * Reads the record header and initializes the next record on the given
     * connection.
-    * 
+    *
     * @param c the TLS connection with the next record.
-    * 
+    *
     * @return 0 if the input data could be processed, otherwise the
     *         number of bytes required for data to be processed.
     */
    var _readRecordHeader = function(c)
    {
       var rval = 0;
-      
+
       // get input buffer and its length
       var b = c.input;
       var len = b.length();
-      
+
       // need at least 5 bytes to initialize a record
       if(len < 5)
       {
@@ -4244,7 +4244,7 @@ tls.createConnection = function(options)
             fragment: forge.util.createBuffer(),
             ready: false
          };
-         
+
          // check record version
          if(c.record.version.major != tls.Version.major ||
             c.record.version.minor != tls.Version.minor)
@@ -4259,23 +4259,23 @@ tls.createConnection = function(options)
             });
          }
       }
-      
+
       return rval;
    };
-   
+
    /**
     * Reads the next record's contents and appends its message to any
     * previously fragmented message.
-    * 
+    *
     * @param c the TLS connection with the next record.
-    * 
+    *
     * @return 0 if the input data could be processed, otherwise the
     *         number of bytes required for data to be processed.
     */
    var _readRecord = function(c)
    {
       var rval = 0;
-      
+
       // ensure there is enough input data to get the entire record
       var b = c.input;
       var len = b.length();
@@ -4289,7 +4289,7 @@ tls.createConnection = function(options)
       {
          // fill record fragment
          c.record.fragment.putBytes(b.getBytes(c.record.length));
-         
+
          // update record using current read state
          var s = c.state.current.read;
          if(s.update(c, c.record))
@@ -4320,20 +4320,20 @@ tls.createConnection = function(options)
                   });
                }
             }
-            
+
             // record is now ready
             c.record.ready = true;
          }
       }
-      
+
       return rval;
    };
-   
+
    /**
     * Performs a handshake using the TLS Handshake Protocol, as a client.
-    * 
+    *
     * This method should only be called if the connection is in client mode.
-    * 
+    *
     * @param sessionId the session ID to use, null to start a new one.
     */
    c.handshake = function(sessionId)
@@ -4363,13 +4363,13 @@ tls.createConnection = function(options)
          {
             c.fail = false;
          }
-         
+
          // now handshaking
          c.handshaking = true;
-         
+
          // default to blank (new session)
          sessionId = sessionId || '';
-         
+
          // if a session ID was specified, try to find it in the cache
          var session = null;
          if(sessionId.length > 0)
@@ -4378,14 +4378,14 @@ tls.createConnection = function(options)
             {
                session = c.sessionCache.getSession(sessionId);
             }
-            
+
             // matching session not found in cache, clear session ID
             if(session === null)
             {
                sessionId = '';
             }
          }
-         
+
          // no session given, grab a session from the cache, if available
          if(sessionId.length === 0 && c.sessionCache)
          {
@@ -4395,7 +4395,7 @@ tls.createConnection = function(options)
                sessionId = session.id;
             }
          }
-         
+
          // set up session
          c.session =
          {
@@ -4409,13 +4409,13 @@ tls.createConnection = function(options)
             md5: forge.md.md5.create(),
             sha1: forge.md.sha1.create()
          };
-         
+
          // generate new client random
          c.session.sp.client_random = tls.createRandom().getBytes();
-         
+
          // connection now open
          c.open = true;
-         
+
          // send hello
          tls.queue(c, tls.createRecord(
          {
@@ -4425,26 +4425,26 @@ tls.createConnection = function(options)
          tls.flush(c);
       }
    };
-   
+
    /**
     * Called when TLS protocol data has been received from somewhere and should
     * be processed by the TLS engine.
-    * 
+    *
     * @param data the TLS protocol data, as a string, to process.
-    * 
+    *
     * @return 0 if the data could be processed, otherwise the number of bytes
     *         required for data to be processed.
     */
    c.process = function(data)
    {
       var rval = 0;
-      
+
       // buffer input data
       if(data)
       {
          c.input.putBytes(data);
       }
-      
+
       // process next record if no failure, process will be called after
       // each record is handled (since handling can be asynchronous)
       if(!c.fail)
@@ -4455,36 +4455,36 @@ tls.createConnection = function(options)
          {
             c.record = null;
          }
-         
+
          // if there is no pending record, try to read record header
          if(c.record === null)
          {
             rval = _readRecordHeader(c);
          }
-         
+
          // read the next record (if record not yet ready)
          if(!c.fail && c.record !== null && !c.record.ready)
          {
             rval = _readRecord(c);
          }
-         
+
          // record ready to be handled, update engine state
          if(!c.fail && c.record !== null && c.record.ready)
          {
             _update(c, c.record);
          }
       }
-      
+
       return rval;
    };
-   
+
    /**
     * Requests that application data be packaged into a TLS record. The
     * tlsDataReady handler will be called when the TLS record(s) have been
     * prepared.
-    * 
+    *
     * @param data the application data, as a string, to be sent.
-    * 
+    *
     * @return true on success, false on failure.
     */
    c.prepare = function(data)
@@ -4496,10 +4496,10 @@ tls.createConnection = function(options)
       }));
       return tls.flush(c);
    };
-   
+
    /**
     * Closes the connection (sends a close_notify alert).
-    * 
+    *
     * @param clearFail true to clear the fail flag (default: true).
     */
    c.close = function(clearFail)
@@ -4509,18 +4509,18 @@ tls.createConnection = function(options)
       {
          c.sessionCache.setSession(c.session.id, c.session);
       }
-      
+
       if(c.open)
       {
          // connection no longer open, clear input
          c.open = false;
          c.input.clear();
-         
+
          // if connected or handshaking, send an alert
          if(c.isConnected || c.handshaking)
          {
             c.isConnected = c.handshaking = false;
-            
+
             // send close_notify alert
             tls.queue(c, tls.createAlert(
             {
@@ -4529,15 +4529,15 @@ tls.createConnection = function(options)
             }));
             tls.flush(c);
          }
-         
+
          // call handler
          c.closed(c);
       }
-      
+
       // reset TLS connection, do not clear fail flag
       c.reset(clearFail);
    };
-   
+
    return c;
 };
 
@@ -4561,19 +4561,19 @@ forge.tls.createSessionCache = tls.createSessionCache;
  * is a TCP/IP connection or establish one. A TLS connection is totally
  * abstracted away from the layer is runs on top of, it merely establishes a
  * secure channel between a client" and a "server".
- * 
+ *
  * A TLS connection contains 4 connection states: pending read and write, and
  * current read and write.
- * 
+ *
  * At initialization, the current read and write states will be null. Only once
  * the security parameters have been set and the keys have been generated can
  * the pending states be converted into current states. Current states will be
  * updated for each record processed.
- * 
+ *
  * A custom certificate verify callback may be provided to check information
  * like the common name on the server's certificate. It will be called for
  * every certificate in the chain. It has the following signature:
- * 
+ *
  * variable func(c, certs, index, preVerify)
  * Where:
  * c         The TLS connection
@@ -4582,17 +4582,17 @@ forge.tls.createSessionCache = tls.createSessionCache;
  * depth     The current index in the chain, where 0 is the server's cert.
  * certs     The certificate chain, *NOTE* if the server was anonymous then
  *           the chain will be empty.
- * 
+ *
  * The function returns true on success and on failure either the appropriate
  * tls.Alert.Description or an object with 'alert' set to the appropriate
  * tls.Alert.Description and 'message' set to a custom error message. If true
  * is not returned then the connection will abort using, in order of
  * availability, first the returned alert description, second the preVerify
  * alert description, and lastly the default 'bad_certificate'.
- * 
+ *
  * There are three callbacks that can be used to make use of client-side
  * certificates where each takes the TLS connection as the first parameter:
- * 
+ *
  * getCertificate(conn, hint)
  *    The second parameter is a hint as to which certificate should be
  *    returned. If the connection entity is a client, then the hint will be
@@ -4618,7 +4618,7 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *    callback is a function that takes 2 parameters, the TLS connection
  *    and the RSA encrypted (signed) bytes as a string. This callback must
  *    be called once the signature is ready.
- * 
+ *
  * @param options the options for this connection:
  *    server: true if the connection is server-side, false for client.
  *    sessionId: a session ID to reuse, null for a new connection.
@@ -4646,7 +4646,7 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *       the deflate algorithm if the server supports it.
  *    inflate: function(inBytes) if provided, will inflate TLS records using
  *       the deflate algorithm if the server supports it.
- * 
+ *
  * @return the new TLS connection.
  */
 forge.tls.createConnection = tls.createConnection;

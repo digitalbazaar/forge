@@ -1,9 +1,9 @@
 /**
  * Node.js module for Forge message digests.
- * 
+ *
  * @author Dave Longley
- * 
- * Copyright 2011 Digital Bazaar, Inc.
+ *
+ * Copyright 2011-2012 Digital Bazaar, Inc.
  */
 var md5 = require('./md5');
 var sha1 = require('./sha1');

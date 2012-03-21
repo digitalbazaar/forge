@@ -1,12 +1,12 @@
 /**
  * Message Digest Algorithm 5 with 128-bit digest (MD5) implementation.
- * 
+ *
  * This implementation is currently limited to message lengths (in bytes) that
  * are up to 32-bits in size.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -46,7 +46,7 @@ var _init = function()
    // create padding
    _padding = String.fromCharCode(128);
    _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
-   
+
    // g values
    _g = [
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -54,7 +54,7 @@ var _init = function()
       5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2,
       0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9
    ];
-   
+
    // rounds table
    _r = [
       7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
@@ -62,21 +62,21 @@ var _init = function()
       4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
       6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21
    ];
-   
+
    // get the result of abs(sin(i + 1)) as a 32-bit integer
    _k = new Array(64);
    for(var i = 0; i < 64; ++i)
    {
       _k[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000);
    }
-   
+
    // now initialized
    _initialized = true;
 };
 
 /**
  * Updates an MD5 state with the given byte buffer.
- * 
+ *
  * @param s the MD5 state to update.
  * @param w the array to use to store words.
  * @param bytes the byte buffer to update with.
@@ -93,7 +93,7 @@ var _update = function(s, w, bytes)
       b = s.h1;
       c = s.h2;
       d = s.h3;
-      
+
       // round 1
       for(i = 0; i < 16; ++i)
       {
@@ -139,20 +139,20 @@ var _update = function(s, w, bytes)
          c = b;
          b += (t << r) | (t >>> (32 - r));
       }
-      
+
       // update hash state
       s.h0 = (s.h0 + a) & 0xFFFFFFFF;
       s.h1 = (s.h1 + b) & 0xFFFFFFFF;
       s.h2 = (s.h2 + c) & 0xFFFFFFFF;
       s.h3 = (s.h3 + d) & 0xFFFFFFFF;
-      
+
       len -= 64;
    }
 };
 
 /**
  * Creates an MD5 message digest object.
- * 
+ *
  * @return a message digest object.
  */
 md5.create = function()
@@ -162,16 +162,16 @@ md5.create = function()
    {
       _init();
    }
-   
+
    // MD5 state contains four 32-bit integers
    var _state = null;
-   
+
    // input buffer
    var _input = forge.util.createBuffer();
-   
+
    // used for word storage
    var _w = new Array(16);
-   
+
    // message digest object
    var md =
    {
@@ -181,7 +181,7 @@ md5.create = function()
       // length of message so far (does not including padding)
       messageLength: 0
    };
-   
+
    /**
     * Starts the digest.
     */
@@ -199,12 +199,12 @@ md5.create = function()
    };
    // start digest automatically for first time
    md.start();
-   
+
    /**
     * Updates the digest with the given message input. The given input can
     * treated as raw input (no encoding will be applied) or an encoding of
     * 'utf8' maybe given to encode the input using UTF-8.
-    * 
+    *
     * @param msg the message input to update with.
     * @param encoding the encoding to use (default: 'raw', other: 'utf8').
     */
@@ -214,26 +214,26 @@ md5.create = function()
       {
          msg = forge.util.encodeUtf8(msg);
       }
-      
+
       // update message length
       md.messageLength += msg.length;
-      
+
       // add bytes to input buffer
       _input.putBytes(msg);
-      
+
       // process bytes
       _update(_state, _w, _input);
-      
+
       // compact input buffer every 2K or if empty
       if(_input.read > 2048 || _input.length() === 0)
       {
          _input.compact();
       }
    };
-   
+
    /**
     * Produces the digest.
-    * 
+    *
     * @return a byte buffer containing the digest value.
     */
    md.digest = function()
@@ -242,19 +242,19 @@ md5.create = function()
          add the appropriate MD5 padding. Then we do the final update
          on a copy of the state so that if the user wants to get
          intermediate digests they can do so. */
-      
+
       /* Determine the number of bytes that must be added to the message
          to ensure its length is congruent to 448 mod 512. In other words,
          a 64-bit integer that gives the length of the message will be
          appended to the message and whatever the length of the message is
          plus 64 bits must be a multiple of 512. So the length of the
          message must be congruent to 448 mod 512 because 512 - 64 = 448.
-         
+
          In order to fill up the message length it must be filled with
          padding that begins with 1 bit followed by all 0 bits. Padding
          must *always* be present, so if the message length is already
          congruent to 448 mod 512, then 512 padding bits must be added. */
-      
+
       // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
       // _padding starts with 1 byte with first bit is set in it which
       // is byte value 128, then there may be up to 63 other pad bytes
@@ -262,7 +262,7 @@ md5.create = function()
       var padBytes = forge.util.createBuffer();
       padBytes.putBytes(_input.bytes());
       padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
-      
+
       /* Now append length of the message. The length is appended in bits
          as a 64-bit number in little-endian format. Since we store the
          length in bytes, we must multiply it by 8 (or left shift by 3). So
@@ -286,7 +286,7 @@ md5.create = function()
       rval.putInt32Le(s2.h3);
       return rval;
    };
-   
+
    return md;
 };
 

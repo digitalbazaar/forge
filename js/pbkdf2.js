@@ -1,11 +1,11 @@
 /**
  * Password-Based Key-Derivation Function #2 implementation.
- * 
+ *
  * See RFC 2898 for details.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -32,14 +32,14 @@ var pkcs5 = forge.pkcs5;
 
 /**
  * Derives a key from a password.
- * 
+ *
  * @param p the password as a string of bytes.
  * @param s the salt as a string of bytes.
  * @param c the iteration count, a positive integer.
  * @param dkLen the intended length, in bytes, of the derived key,
  *           (max: 2^32 - 1) * hash length of the PRF.
  * @param md the message digest to use in the PRF, defaults to SHA-1.
- * 
+ *
  * @return the derived key, as a string of bytes.
  */
 pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
@@ -49,9 +49,9 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
    {
       md = forge.md.sha1.create();
    }
-   
+
    var hLen = md.digestLength;
-   
+
    /* 1. If dkLen > (2^32 - 1) * hLen, output "derived key too long" and
          stop. */
    if(dkLen > (0xFFFFFFFF * hLen))
@@ -60,7 +60,7 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
          message: 'Derived key is too long.'
       };
    }
-   
+
    /* 2. Let len be the number of hLen-octet blocks in the derived key,
          rounding up, and let r be the number of octets in the last
          block:
@@ -70,7 +70,7 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
     */
    var len = Math.ceil(dkLen / hLen);
    var r = dkLen - (len - 1) * hLen;
-   
+
    /* 3. For each block of the derived key apply the function F defined
          below to the password P, the salt S, the iteration count c, and
          the block index to compute the block:
@@ -106,7 +106,7 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
       prf.update(s);
       prf.update(forge.util.int32ToBytes(i));
       xor = u_c1 = prf.digest().getBytes();
-      
+
       // PRF(P, u_{c-1}) (other iterations)
       for(var j = 2; j <= c; ++j)
       {
@@ -117,7 +117,7 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
          xor = forge.util.xorBytes(xor, u_c, hLen);
          u_c1 = u_c;
       }
-      
+
       /* 4. Concatenate the blocks and extract the first dkLen octets to
       produce a derived key DK:
 
@@ -125,8 +125,8 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md)
        */
       dk += (i < len) ? xor : xor.substr(0, r);
    }
-   
-   /* 5. Output the derived key DK. */      
+
+   /* 5. Output the derived key DK. */
    return dk;
 };
 

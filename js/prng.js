@@ -2,10 +2,10 @@
  * A javascript implementation of a cryptographically-secure
  * Pseudo Random Number Generator (PRNG). The Fortuna algorithm is mostly
  * followed here. SHA-1 is used instead of SHA-256.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -33,9 +33,9 @@ var prng = forge.prng;
 
 /**
  * Creates a new PRNG context.
- * 
+ *
  * A PRNG plugin must be passed in that will provide:
- * 
+ *
  * 1. A function that initializes the key and seed of a PRNG context. It
  *    will be given a 16 byte key and a 16 byte seed. Any key expansion
  *    or transformation of the seed from a byte string into an array of
@@ -44,9 +44,9 @@ var prng = forge.prng;
  *    a seed.
  * 3. A seed increment function. It takes the seed and return seed + 1.
  * 4. An api to create a message digest.
- * 
+ *
  * For an example, see random.js.
- * 
+ *
  * @param plugin the PRNG plugin to use.
  */
 prng.create = function(plugin)
@@ -62,7 +62,7 @@ prng.create = function(plugin)
       // amount of data generated so far
       generated: 0
    };
-   
+
    // create 32 entropy pools (each is a message digest)
    var md = plugin.md;
    var pools = new Array(32);
@@ -71,15 +71,15 @@ prng.create = function(plugin)
       pools[i] = md.create();
    }
    ctx.pools = pools;
-   
+
    // entropy pools are written to cyclically, starting at index 0
    ctx.pool = 0;
-   
+
    /**
     * Generates random bytes.
-    * 
+    *
     * @param count the number of random bytes to generate.
-    * 
+    *
     * @return count random bytes as a string.
     */
    ctx.generate = function(count)
@@ -89,7 +89,7 @@ prng.create = function(plugin)
       {
          _reseed();
       }
-      
+
       // simple generator using counter-based CBC
       var cipher = ctx.plugin.cipher;
       var increment = ctx.plugin.increment;
@@ -102,12 +102,12 @@ prng.create = function(plugin)
          var bytes = cipher(ctx.key, ctx.seed);
          ctx.generated += bytes.length;
          b.putBytes(bytes);
-         
+
          // generate bytes for a new key and seed
          ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
          ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
-         
-         // if amount of data generated is greater than 1 MiB, reseed 
+
+         // if amount of data generated is greater than 1 MiB, reseed
          if(ctx.generated >= 1048576)
          {
             // only do reseed at most 10 times/second (every 100 ms)
@@ -118,10 +118,10 @@ prng.create = function(plugin)
             }
          }
       }
-      
+
       return b.getBytes(count);
    };
-   
+
    /**
     * Private function that reseeds a generator.
     */
@@ -146,7 +146,7 @@ prng.create = function(plugin)
             lo += hi >> 15;
             lo = (lo & 0x7FFFFFFF) + (lo >> 31);
             seed = lo & 0xFFFFFFFF;
-            
+
             // consume lower 3 bytes of seed
             for(var i = 0; i < 3; ++i)
             {
@@ -163,11 +163,11 @@ prng.create = function(plugin)
       {
          // create a SHA-1 message digest
          var md = forge.md.sha1.create();
-         
+
          // digest pool 0's entropy and restart it
          md.update(ctx.pools[0].digest().getBytes());
          ctx.pools[0].start();
-         
+
          // digest the entropy of other pools whose index k meet the
          // condition '2^k mod n == 0' where n is the number of reseeds
          var k = 1;
@@ -181,13 +181,13 @@ prng.create = function(plugin)
                ctx.pools[i].start();
             }
          }
-         
+
          // get digest for key bytes and iterate again for seed bytes
          var keyBytes = md.digest().getBytes();
          md.start();
          md.update(keyBytes);
          var seedBytes = md.digest().getBytes();
-         
+
          // update
          ctx.key = ctx.plugin.formatKey(keyBytes);
          ctx.seed = ctx.plugin.formatSeed(seedBytes);
@@ -196,10 +196,10 @@ prng.create = function(plugin)
          ctx.time = +new Date();
       }
    };
-   
+
    /**
     * Adds entropy to a prng ctx's accumulator.
-    * 
+    *
     * @param bytes the bytes of entropy as a string.
     */
    ctx.collect = function(bytes)
@@ -211,7 +211,7 @@ prng.create = function(plugin)
          ctx.pools[ctx.pool].update(bytes.substr(i, 1));
          ctx.pool = (ctx.pool === 31) ? 0 : ctx.pool + 1;
       }
-      
+
       // do reseed if pool 0 has at least 32 bytes (enough to create a new
       // key and seed)
       if(ctx.pools[0].messageLength >= 32)
@@ -224,10 +224,10 @@ prng.create = function(plugin)
          }
       }
    };
-   
+
    /**
     * Collects an integer of n bits.
-    * 
+    *
     * @param i the integer entropy.
     * @param n the number of bits in the integer.
     */
@@ -242,7 +242,7 @@ prng.create = function(plugin)
       while(n > 0);
       ctx.collect(bytes);
    };
-   
+
    return ctx;
 };
 

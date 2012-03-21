@@ -1,11 +1,11 @@
 /**
  * Functions for manipulating web forms.
- * 
+ *
  * @author David I. Lehn <dlehn@digitalbazaar.com>
  * @author Dave Longley
  * @author Mike Johnson
  *
- * Copyright (c) 2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2011-2012 Digital Bazaar, Inc. All rights reserved.
  */
 (function($)
 {
@@ -23,15 +23,15 @@ var _regex = /(.*?)\[(.*?)\]/g;
 /**
  * Parses a single name property into an array with the name and any
  * array indices.
- * 
+ *
  * @param name the name to parse.
- * 
+ *
  * @return the array of the name and its array indices in order.
  */
 var _parseName = function(name)
 {
    var rval = [];
-   
+
    var matches;
    while(!!(matches = _regex.exec(name)))
    {
@@ -48,13 +48,13 @@ var _parseName = function(name)
    {
       rval.push(name);
    }
-   
+
    return rval;
 };
 
 /**
  * Adds a field from the given form to the given object.
- * 
+ *
  * @param obj the object.
  * @param names the field as an array of object property names.
  * @param value the value of the field.
@@ -80,7 +80,7 @@ var _addField = function(obj, names, value, dict)
       tmp.push(name);
    }
    names = tmp;
-   
+
    // split out array indexes
    var tmp = [];
    $.each(names, function(n, name)
@@ -88,7 +88,7 @@ var _addField = function(obj, names, value, dict)
       tmp = tmp.concat(_parseName(name));
    });
    names = tmp;
-   
+
    // iterate over object property names until value is set
    $.each(names, function(n, name)
    {
@@ -97,14 +97,14 @@ var _addField = function(obj, names, value, dict)
       {
          name = dict[name];
       }
-      
+
       // blank name indicates appending to an array, set name to
       // new last index of array
       if(name.length == 0)
       {
          name = obj.length;
       }
-      
+
       // value already exists, append value
       if(obj[name])
       {
@@ -116,7 +116,7 @@ var _addField = function(obj, names, value, dict)
             {
                obj[name] = [obj[name]];
             }
-            obj[name].push(value);               
+            obj[name].push(value);
          }
          // not last name, go deeper into object
          else
@@ -134,7 +134,7 @@ var _addField = function(obj, names, value, dict)
       {
          // get next name
          var next = names[n + 1];
-         
+
          // blank next value indicates array-appending, so create array
          if(next.length == 0)
          {
@@ -158,20 +158,20 @@ var _addField = function(obj, names, value, dict)
  * @param input the jquery form to serialize.
  * @param sep the object-property separator (defaults to '.').
  * @param dict a dictionary of names to replace (name=replace).
- * 
+ *
  * @return the JSON-serialized form.
  */
 form.serialize = function(input, sep, dict)
 {
    var rval = {};
-   
+
    // add all fields in the form to the object
    sep = sep || '.';
    $.each(input.serializeArray(), function()
    {
       _addField(rval, this.name.split(sep), this.value || '', dict);
    });
-   
+
    return rval;
 };
 

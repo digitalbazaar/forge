@@ -1,14 +1,14 @@
 /**
  * Secure Hash Algorithm with 256-bit digest (SHA-256) implementation.
- * 
+ *
  * See FIPS 180-2 for details.
- * 
+ *
  * This implementation is currently limited to message lengths (in bytes) that
  * are up to 32-bits in size.
- * 
+ *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2011 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function()
 {
@@ -47,7 +47,7 @@ var _init = function()
    // create padding
    _padding = String.fromCharCode(128);
    _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
-   
+
    // create K table for SHA-256
    _k =
       [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -66,14 +66,14 @@ var _init = function()
        0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
-   
+
    // now initialized
    _initialized = true;
 };
 
 /**
  * Updates a SHA-256 state with the given byte buffer.
- * 
+ *
  * @param s the SHA-256 state to update.
  * @param w the array to use to store words.
  * @param bytes the byte buffer to update with.
@@ -108,7 +108,7 @@ var _update = function(s, w, bytes)
          // sum(t1, word 7 ago, t2, word 16 ago) modulo 2^32
          w[i] = (t1 + w[i - 7] + t2 + w[i - 16]) & 0xFFFFFFFF;
       }
-      
+
       // initialize hash value for this chunk
       a = s.h0;
       b = s.h1;
@@ -118,7 +118,7 @@ var _update = function(s, w, bytes)
       f = s.h5;
       g = s.h6;
       h = s.h7;
-      
+
       // round function
       for(i = 0; i < 64; ++i)
       {
@@ -136,7 +136,7 @@ var _update = function(s, w, bytes)
             ((a >>> 22) | (a << 10));
          // Maj(a, b, c) (optimized the same way as SHA-1)
          maj = (a & b) | (c & (a ^ b));
-         
+
          // main algorithm
          t1 = h + s1 + ch + _k[i] + w[i];
          t2 = s0 + maj;
@@ -149,7 +149,7 @@ var _update = function(s, w, bytes)
          b = a;
          a = (t1 + t2) & 0xFFFFFFFF;
       }
-      
+
       // update hash state
       s.h0 = (s.h0 + a) & 0xFFFFFFFF;
       s.h1 = (s.h1 + b) & 0xFFFFFFFF;
@@ -165,7 +165,7 @@ var _update = function(s, w, bytes)
 
 /**
  * Creates a SHA-256 message digest object.
- * 
+ *
  * @return a message digest object.
  */
 sha256.create = function()
@@ -175,16 +175,16 @@ sha256.create = function()
    {
       _init();
    }
-   
+
    // SHA-256 state contains eight 32-bit integers
    var _state = null;
-   
+
    // input buffer
    var _input = forge.util.createBuffer();
-   
+
    // used for word storage
    var _w = new Array(64);
-   
+
    // message digest object
    var md =
    {
@@ -194,7 +194,7 @@ sha256.create = function()
       // length of message so far (does not including padding)
       messageLength: 0
    };
-   
+
    /**
     * Starts the digest.
     */
@@ -216,12 +216,12 @@ sha256.create = function()
    };
    // start digest automatically for first time
    md.start();
-   
+
    /**
     * Updates the digest with the given message input. The given input can
     * treated as raw input (no encoding will be applied) or an encoding of
     * 'utf8' maybe given to encode the input using UTF-8.
-    * 
+    *
     * @param msg the message input to update with.
     * @param encoding the encoding to use (default: 'raw', other: 'utf8').
     */
@@ -231,26 +231,26 @@ sha256.create = function()
       {
          msg = forge.util.encodeUtf8(msg);
       }
-      
+
       // update message length
       md.messageLength += msg.length;
-      
+
       // add bytes to input buffer
       _input.putBytes(msg);
-      
+
       // process bytes
       _update(_state, _w, _input);
-      
+
       // compact input buffer every 2K or if empty
       if(_input.read > 2048 || _input.length() === 0)
       {
          _input.compact();
       }
    };
-   
+
    /**
     * Produces the digest.
-    * 
+    *
     * @return a byte buffer containing the digest value.
     */
    md.digest = function()
@@ -259,19 +259,19 @@ sha256.create = function()
          add the appropriate SHA-256 padding. Then we do the final update
          on a copy of the state so that if the user wants to get
          intermediate digests they can do so. */
-      
+
       /* Determine the number of bytes that must be added to the message
          to ensure its length is congruent to 448 mod 512. In other words,
          a 64-bit integer that gives the length of the message will be
          appended to the message and whatever the length of the message is
          plus 64 bits must be a multiple of 512. So the length of the
          message must be congruent to 448 mod 512 because 512 - 64 = 448.
-         
+
          In order to fill up the message length it must be filled with
          padding that begins with 1 bit followed by all 0 bits. Padding
          must *always* be present, so if the message length is already
          congruent to 448 mod 512, then 512 padding bits must be added. */
-      
+
       // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
       // _padding starts with 1 byte with first bit is set in it which
       // is byte value 128, then there may be up to 63 other pad bytes
@@ -279,7 +279,7 @@ sha256.create = function()
       var padBytes = forge.util.createBuffer();
       padBytes.putBytes(_input.bytes());
       padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
-      
+
       /* Now append length of the message. The length is appended in bits
          as a 64-bit number in big-endian order. Since we store the length
          in bytes, we must multiply it by 8 (or left shift by 3). So here
@@ -311,7 +311,7 @@ sha256.create = function()
       rval.putInt32(s2.h7);
       return rval;
    };
-   
+
    return md;
 };
 

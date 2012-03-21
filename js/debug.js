@@ -1,9 +1,9 @@
 /**
  * Debugging support for web applications.
- * 
+ *
  * @author David I. Lehn <dlehn@digitalbazaar.com>
- * 
- * Copyright 2008-2011 Digital Bazaar, Inc.
+ *
+ * Copyright 2008-2012 Digital Bazaar, Inc.
  */
 (function()
 {
