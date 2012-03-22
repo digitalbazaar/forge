@@ -699,7 +699,7 @@ var PBES2AlgorithmsValidator = {
  * @param rdn the RDNSequence to convert.
  * @param md a message digest to append type and value to if provided.
  */
-var _getAttributesAsArray = function(rdn, md)
+pki.RDNAttributesAsArray = function(rdn, md)
 {
    var rval = [];
 
@@ -1675,7 +1675,7 @@ pki.certificateFromAsn1 = function(obj, computeHash)
 
    // handle issuer, build issuer message digest
    var imd = forge.md.sha1.create();
-   cert.issuer.attributes = _getAttributesAsArray(capture.certIssuer, imd);
+   cert.issuer.attributes = pki.RDNAttributesAsArray(capture.certIssuer, imd);
    if(capture.certIssuerUniqueId)
    {
       cert.issuer.uniqueId = capture.certIssuerUniqueId;
@@ -1684,7 +1684,7 @@ pki.certificateFromAsn1 = function(obj, computeHash)
 
    // handle subject, build subject message digest
    var smd = forge.md.sha1.create();
-   cert.subject.attributes = _getAttributesAsArray(capture.certSubject, smd);
+   cert.subject.attributes = pki.RDNAttributesAsArray(capture.certSubject, smd);
    if(capture.certSubjectUniqueId)
    {
       cert.subject.uniqueId = capture.certSubjectUniqueId;
