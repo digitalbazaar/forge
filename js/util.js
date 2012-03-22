@@ -468,11 +468,11 @@ util.fillString = function(c, n) {
   var s = '';
   while(n > 0) {
     if(n & 1) {
-       s += c;
+      s += c;
     }
     n >>>= 1;
     if(n > 0) {
-       c += c;
+      c += c;
     }
   }
   return s;
