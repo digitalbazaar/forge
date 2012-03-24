@@ -13,6 +13,7 @@ var forge =
    hmac: require('./hmac'),
    log: require('./log'),
    pkcs5: require('./pbkdf2'),
+   pkcs7: require('./pkcs7'),
    pki: require('./pki'),
    prng: require('./prng'),
    random: require('./random'),
