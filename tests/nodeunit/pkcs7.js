@@ -32,8 +32,8 @@ exports.testMessageFromPem = function(test) {
    test.equal(p7.recipients[0].issuer[6].type, '1.2.840.113549.1.9.1');
    test.equal(p7.recipients[0].issuer[6].value, 'stesie@brokenpipe.de');
 
-   test.equal(p7.recipients[0].encKey.algorithm, '1.2.840.113549.1.1.1');  // RSA
-   test.equal(p7.recipients[0].encKey.key.length, 256);
+   test.equal(p7.recipients[0].encContent.algorithm, '1.2.840.113549.1.1.1');  // RSA
+   test.equal(p7.recipients[0].encContent.content.length, 256);
 
    test.equal(p7.encContent.algorithm, forge.pki.oids['aes256-CBC']);
    test.equal(p7.encContent.parameter.data.length, 16);  // IV
@@ -65,6 +65,67 @@ exports.testDecrypt = function(test) {
    test.equal(p7.encContent.key.data.length, 32);
    test.equal(p7.content, 'Today is Boomtime, '
       + "the 9th day of Discord in the YOLD 3178\r\n");
+
+   test.done();
+}
+
+exports.testAddRecipient = function(test) {
+   p7 = forge.pkcs7.createEnvelopedData();
+
+   // initially there should be no recipients
+   test.equal(p7.recipients.length, 0);
+
+   cert = forge.pki.certificateFromPem(certPem);
+   p7.addRecipient(cert);
+
+   test.equal(p7.recipients.length, 1);
+   test.deepEqual(p7.recipients[0].serialNumber, cert.serialNumber);
+   test.deepEqual(p7.recipients[0].issuer, cert.subject.attributes);
+   test.deepEqual(p7.recipients[0].encContent.key, cert.publicKey);
+
+   test.done();
+}
+
+exports.testEncrypt = function(test) {
+   p7 = forge.pkcs7.createEnvelopedData();
+   cert = forge.pki.certificateFromPem(certPem);
+   privKey = forge.pki.privateKeyFromPem(keyPem);
+
+   p7.addRecipient(cert);
+   p7.content = forge.util.createBuffer('Just a little test');
+
+   // pre-condition, PKCS#7 module should default to AES-256-CBC
+   test.equal(p7.encContent.algorithm, forge.pki.oids['aes256-CBC']);
+   p7.encrypt();
+
+   // Since we did not provide a key, a random key should have been created
+   // automatically.  AES256 requires 32 bytes of key material.
+   test.equal(p7.encContent.key.data.length, 32);
+
+   // Furthermore an IV must be generated.  AES256 has 16 bytes IV.
+   test.equal(p7.encContent.parameter.data.length, 16);
+
+   // Content is 18 Bytes long, AES has 16 byte blocksize,
+   // with padding that should make up 32 bytes.
+   test.equals(p7.encContent.content.data.length, 32);
+
+   // RSA encryption should yield 256 bytes
+   test.equals(p7.recipients[0].encContent.content.length, 256);
+
+   // rewind Key & IV
+   p7.encContent.key.read = 0;
+   p7.encContent.parameter.read = 0;
+
+   // decryption of the asym. encrypted data should reveal the symmetric key
+   decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
+   test.equals(decryptedKey, p7.encContent.key.data);
+
+   // decryption of sym. encrypted data should reveal the content
+   ciph = forge.aes.createDecryptionCipher(decryptedKey);
+   ciph.start(p7.encContent.parameter);   // IV
+   ciph.update(p7.encContent.content);
+   ciph.finish();
+   test.equals(ciph.output, 'Just a little test');
 
    test.done();
 }
