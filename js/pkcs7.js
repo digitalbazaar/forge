@@ -83,7 +83,6 @@ else if(typeof(module) !== 'undefined' && module.exports) {
    forge = {
       aes: require('./aes'),
       asn1: require('./asn1'),
-      oids: require('./oids'),
       pki: require('./pki'),
       random: require('./random'),
       util: require('./util')
@@ -267,7 +266,7 @@ p7.messageFromAsn1 = function(obj) {
    var msg;
 
    switch(contentType) {
-      case forge.oids.envelopedData:
+      case forge.pki.oids.envelopedData:
          msg = p7.createEnvelopedData();
          break;
 
@@ -336,11 +335,11 @@ var _recipientInfosFromAsn1 = function(objArr) {
  */
 p7.createEnvelopedData = function() {
    var msg = {
-      type: forge.oids.envelopedData,
+      type: forge.pki.oids.envelopedData,
       version: 0,
       recipients: [],
       encContent: {
-         algorithm: forge.oids['aes256-CBC']
+         algorithm: forge.pki.oids['aes256-CBC']
       },
 
       /**
@@ -363,7 +362,7 @@ p7.createEnvelopedData = function() {
 
          // Check contentType, so far we only support (raw) Data.
          var contentType = asn1.derToOid(capture.contentType);
-         if(contentType !== forge.oids.data) {
+         if(contentType !== forge.pki.oids.data) {
             throw {
                message: 'Unsupported PKCS#7 message. ' +
                   'Only contentType Data supported within EnvelopedData.'
@@ -425,7 +424,7 @@ p7.createEnvelopedData = function() {
          if(msg.encContent.key === undefined && recipient !== undefined
             && privKey !== undefined) {
             switch(recipient.encContent.algorithm) {
-               case forge.oids.rsaEncryption:
+               case forge.pki.oids.rsaEncryption:
                   var key = privKey.decrypt(recipient.encContent.content);
                   msg.encContent.key = forge.util.createBuffer(key);
                   break;
@@ -448,9 +447,9 @@ p7.createEnvelopedData = function() {
             var ciph;
 
             switch(msg.encContent.algorithm) {
-               case forge.oids['aes128-CBC']:
-               case forge.oids['aes192-CBC']:
-               case forge.oids['aes256-CBC']:
+               case forge.pki.oids['aes128-CBC']:
+               case forge.pki.oids['aes192-CBC']:
+               case forge.pki.oids['aes256-CBC']:
                   ciph = forge.aes.createDecryptionCipher(msg.encContent.key);
                   break;
 
@@ -480,7 +479,6 @@ p7.createEnvelopedData = function() {
        * @param cert The certificate of the entity to add.
        */
       addRecipient: function(cert) {
-         //console.log(cert);
          msg.recipients.push({
             version: 0,
             issuer: cert.subject.attributes,
@@ -489,7 +487,7 @@ p7.createEnvelopedData = function() {
                // We simply assume rsaEncryption here, since forge.pki only
                // supports RSA so far.  If the PKI module supports other
                // ciphers one day, we need to modify this one as well.
-               algorithm: forge.oids.rsaEncryption,
+               algorithm: forge.pki.oids.rsaEncryption,
                key: cert.publicKey
             }
          });
@@ -500,15 +498,15 @@ p7.createEnvelopedData = function() {
        *
        * This function supports two optional arguments, cipher and key, which
        * can be used to influence symmetric encryption.  Unless cipher is
-       * provided, the cipher specified in encContent.algorithm is used.  If
-       * that one isn't set as well, AES-256 is used by default.  If no key
-       * is provided, encContent.key is used.  If that one's not set, a random
-       * key will be generated automatically.
+       * provided, the cipher specified in encContent.algorithm is used
+       * (defaults to AES-256-CBC).  If no key is provided, encContent.key
+       * is (re-)used.  If that one's not set, a random key will be generated
+       * automatically.
        *
-       * @param [cipher] The OID of the symmetric cipher to use.
        * @param [key] The key to be used for symmetric encryption.
+       * @param [cipher] The OID of the symmetric cipher to use.
        */
-      encrypt: function(cipher, key) {
+      encrypt: function(key, cipher) {
          // Part 1: Symmetric encryption
          if(msg.encContent.content === undefined) {
             cipher = cipher || msg.encContent.algorithm;
@@ -516,19 +514,19 @@ p7.createEnvelopedData = function() {
 
             var keyLen, ivLen;
             switch(cipher) {
-               case forge.oids['aes128-CBC']:
+               case forge.pki.oids['aes128-CBC']:
                   keyLen = 16;
                   ivLen = 16;
                   ciphFn = forge.aes.createEncryptionCipher;
                   break;
 
-               case forge.oids['aes192-CBC']:
+               case forge.pki.oids['aes192-CBC']:
                   keyLen = 24;
                   ivLen = 16;
                   ciphFn = forge.aes.createEncryptionCipher;
                   break;
 
-               case forge.oids['aes256-CBC']:
+               case forge.pki.oids['aes256-CBC']:
                   keyLen = 32;
                   ivLen = 16;
                   ciphFn = forge.aes.createEncryptionCipher;
@@ -549,8 +547,8 @@ p7.createEnvelopedData = function() {
                };
             }
 
-            // Keep used key in the object to be used by the caller for
-            // whatever reasons.
+            // Keep a copy of the key & IV in the object, so the caller can
+            // use it for whatever reason.
             msg.encContent.key = key;
             msg.encContent.parameter
                = forge.util.createBuffer(forge.random.getBytes(ivLen));
@@ -579,8 +577,8 @@ p7.createEnvelopedData = function() {
             }
 
             switch(recipient.encContent.algorithm) {
-               case forge.oids.rsaEncryption:
-                  recipient.encContent.content = 
+               case forge.pki.oids.rsaEncryption:
+                  recipient.encContent.content =
                      recipient.encContent.key.encrypt(msg.encContent.key.data);
                   break;
 
