@@ -41,6 +41,22 @@ exports.testMessageFromPem = function(test) {
    test.done();
 }
 
+exports.testMessageFromPemWithIndefLength = function(test) {
+   var p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7_indef.pem', 'ascii');
+   test.expect(3);
+
+   try {
+      p7 = forge.pkcs7.messageFromPem(p7Pem);
+      test.equal(p7.type, forge.pki.oids.envelopedData);
+      test.equal(p7.encContent.parameter.toHex(), '536da6a06653733d');
+      test.equal(p7.encContent.content.length(), 80);
+   } catch(err) {
+      console.log('Caught messageFromPem error:', err);
+   }
+
+   test.done();
+}
+
 exports.testFindRecipient = function(test) {
    p7 = forge.pkcs7.messageFromPem(p7Pem);
    cert = forge.pki.certificateFromPem(certPem);
