@@ -166,7 +166,32 @@ var envelopedDataValidator = {
          name: 'EnvelopedData.EncryptedContentInfo.encryptedContent',
          tagClass: asn1.Class.CONTEXT_SPECIFIC,
          type: 0,
-         constructed: false,
+         /* The PKCS#7 structure output by OpenSSL somewhat differs from what
+          * other implementations do generate.
+          *
+          * OpenSSL generates a structure like this:
+          * SEQUENCE {
+          *    ...
+          *    [0]
+          *       26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
+          *       C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
+          *       ...
+          * }
+          *
+          * Whereas other implementations (and this PKCS#7 module) generate:
+          * SEQUENCE {
+          *    ...
+          *    [0] {
+          *       OCTET STRING
+          *          26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
+          *          C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
+          *          ...
+          *    }
+          * }
+          *
+          * In order to support both, we just capture the context specific
+          * field here.  The OCTET STRING bit is removed below.
+          */
          capture: 'encContent'
       }]
    }]
@@ -369,12 +394,27 @@ p7.createEnvelopedData = function() {
             };
          }
 
+         var content = "";
+         if(capture.encContent.constructor === Array) {
+            for(var i = 0; i < capture.encContent.length; i ++) {
+               if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
+                  throw {
+                     message: 'Malformed PKCS#7 message, expecting encrypted '
+                        + 'content constructed of only OCTET STRING objects.'
+                  };
+               }
+               content += capture.encContent[i].value;
+            }
+         } else {
+            content = capture.encContent;
+         }
+
          msg.version = capture.version.charCodeAt(0);
          msg.recipients = _recipientInfosFromAsn1(capture.recipientInfos.value);
          msg.encContent = {
             algorithm: asn1.derToOid(capture.encAlgorithm),
             parameter: forge.util.createBuffer(capture.encParameter),
-            content: forge.util.createBuffer(capture.encContent)
+            content: forge.util.createBuffer(content)
          };
       },
 
