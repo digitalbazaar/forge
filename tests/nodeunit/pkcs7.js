@@ -145,3 +145,19 @@ exports.testEncrypt = function(test) {
 
    test.done();
 }
+
+exports.testMessageToPem = function(test) {
+   p7 = forge.pkcs7.createEnvelopedData();
+   p7.addRecipient(forge.pki.certificateFromPem(certPem));
+   p7.content = forge.util.createBuffer('Just a little test');
+   p7.encrypt();
+
+   pem = forge.pkcs7.messageToPem(p7);
+
+   // Convert back from PEM to new PKCS#7 object, decrypt and test.
+   p7 = forge.pkcs7.messageFromPem(pem);
+   p7.decrypt(p7.recipients[0], forge.pki.privateKeyFromPem(keyPem));
+   test.equals(p7.content, 'Just a little test');
+
+   test.done();
+}

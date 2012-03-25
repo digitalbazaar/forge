@@ -268,6 +268,23 @@ p7.messageFromPem = function(pem) {
 };
 
 /**
+ * Converts a PKCS#7 message to PEM format.
+ *
+ * @param msg The PKCS#7 message object
+ * @param maxline The maximum characters per line, defaults to 64.
+ *
+ * @return The PEM-formatted PKCS#7 message.
+ */
+p7.messageToPem = function(msg, maxline) {
+   var out = asn1.toDer(msg.toAsn1());
+   out = forge.util.encode64(out.getBytes(), maxline || 64);
+   return (
+      '-----BEGIN PKCS7-----\r\n' +
+      out +
+      '\r\n-----END PKCS7-----');
+}
+
+/**
  * Converts a PKCS#7 message from an ASN.1 object.
  *
  * @param obj the ASN.1 representation of a ContentInfo.
@@ -339,6 +356,40 @@ var _recipientInfoFromAsn1 = function(obj) {
 };
 
 /**
+ * Converts a single recipientInfo object to an ASN.1 object.
+ *
+ * @param obj The recipientInfo object.
+ *
+ * @return The ASN.1 representation of a RecipientInfo.
+ */
+var _recipientInfoToAsn1 = function(obj) {
+   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // Version
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+         String.fromCharCode(obj.version)),
+      // IssuerAndSerialNumber
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // Name
+         forge.pki.distinguishedNameToAsn1({ attributes: obj.issuer }),
+         // Serial
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            forge.util.hexToBytes(obj.serialNumber)),
+      ]),
+      // KeyEncryptionAlgorithmIdentifier
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // Algorithm
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(obj.encContent.algorithm).getBytes()),
+         // Parameter, force NULL, only RSA supported for now.
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      ]),
+      // EncryptedKey
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+         obj.encContent.content)
+   ]);
+}
+
+/**
  * Map a set of RecipientInfo ASN.1 objects to recipientInfo objects.
  *
  * @param objArr Array of ASN.1 representations RecipientInfo (i.e. SET OF).
@@ -352,6 +403,50 @@ var _recipientInfosFromAsn1 = function(objArr) {
    }
    return ret;
 };
+
+/**
+ * Map an array of recipientInfo objects to ASN.1 objects.
+ *
+ * @param recipientsArr Array of recipientInfo objects.
+ *
+ * @return Array of ASN.1 representations RecipientInfo.
+ */
+var _recipientInfosToAsn1 = function(recipientsArr) {
+   var ret = [];
+   for(var i = 0; i < recipientsArr.length; i ++) {
+      ret.push(_recipientInfoToAsn1(recipientsArr[i]));
+   }
+   return ret;
+};
+
+/**
+ * Map messages encrypted content to ASN.1 objects.
+ *
+ * @param ec The encContent object of the message.
+ *
+ * @return ASN.1 representation of the encContent object (SEQUENCE).
+ */
+var _encContentToAsn1 = function(ec) {
+   return [
+      // ContentType, always Data for the moment
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+         asn1.oidToDer(forge.pki.oids.data).getBytes()),
+      // ContentEncryptionAlgorithmIdentifier
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+         // Algorithm
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(ec.algorithm).getBytes()),
+         // Parameters (IV)
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            ec.parameter.getBytes())
+      ]),
+      // [0] EncryptedContent
+      asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            ec.content.getBytes())
+      ]),
+   ];
+}
 
 /**
  * Creates an empty PKCS#7 message of type EnvelopedData.
@@ -418,6 +513,29 @@ p7.createEnvelopedData = function() {
          };
       },
 
+      toAsn1: function() {
+         // ContentInfo
+         return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // ContentType
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+               asn1.oidToDer(msg.type).getBytes()),
+            // [0] EnvelopedData
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+                  // Version
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                     String.fromCharCode(msg.version)),
+                  // RecipientInfos
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
+                     _recipientInfosToAsn1(msg.recipients)),
+                  // EncryptedContentInfo
+                  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+                     _encContentToAsn1(msg.encContent))
+               ])
+            ])
+         ]);
+      },
+
       /**
        * Find recipient by X.509 certificate's subject.
        *
@@ -442,7 +560,8 @@ p7.createEnvelopedData = function() {
 
             var match = true;
             for(var j = 0; j < sAttr.length; j ++) {
-               if(rAttr[j].type !== sAttr[j].type || rAttr[j].value !== sAttr[j].value) {
+               if(rAttr[j].type !== sAttr[j].type
+                  || rAttr[j].value !== sAttr[j].value) {
                   match = false;
                   break;
                }
@@ -594,7 +713,7 @@ p7.createEnvelopedData = function() {
                = forge.util.createBuffer(forge.random.getBytes(ivLen));
 
             ciph = ciphFn(key);
-            ciph.start(msg.encContent.parameter);
+            ciph.start(msg.encContent.parameter.copy());
             ciph.update(msg.content);
 
             // The finish function does PKCS#7 padding by default, therefore
