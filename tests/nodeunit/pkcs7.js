@@ -72,7 +72,7 @@ exports.testFindRecipient = function(test) {
    test.done();
 }
 
-exports.testDecrypt = function(test) {
+exports.testDecryptAES = function(test) {
    p7 = forge.pkcs7.messageFromPem(p7Pem);
    privKey = forge.pki.privateKeyFromPem(keyPem);
    p7.decrypt(p7.recipients[0], privKey);
@@ -81,6 +81,21 @@ exports.testDecrypt = function(test) {
    test.equal(p7.encContent.key.data.length, 32);
    test.equal(p7.content, 'Today is Boomtime, '
       + "the 9th day of Discord in the YOLD 3178\r\n");
+
+   test.done();
+}
+
+exports.testDecryptDES = function(test) {
+   var p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7_des3.pem', 'ascii');
+
+   p7 = forge.pkcs7.messageFromPem(p7Pem);
+   privKey = forge.pki.privateKeyFromPem(keyPem);
+   p7.decrypt(p7.recipients[0], privKey);
+
+   // symmetric key must be 24 bytes long (DES3 key)
+   test.equal(p7.encContent.key.data.length, 24);
+   test.equal(p7.content, 'Today is Prickle-Prickle, '
+      + "the 16th day of Discord in the YOLD 3178\r\n");
 
    test.done();
 }
@@ -138,6 +153,48 @@ exports.testEncrypt = function(test) {
 
    // decryption of sym. encrypted data should reveal the content
    ciph = forge.aes.createDecryptionCipher(decryptedKey);
+   ciph.start(p7.encContent.parameter);   // IV
+   ciph.update(p7.encContent.content);
+   ciph.finish();
+   test.equals(ciph.output, 'Just a little test');
+
+   test.done();
+}
+
+exports.testEncryptDES3EDE = function(test) {
+   p7 = forge.pkcs7.createEnvelopedData();
+   cert = forge.pki.certificateFromPem(certPem);
+   privKey = forge.pki.privateKeyFromPem(keyPem);
+
+   p7.addRecipient(cert);
+   p7.content = forge.util.createBuffer('Just a little test');
+   p7.encContent.algorithm = forge.pki.oids['des-EDE3-CBC'];
+   p7.encrypt();
+
+   // Since we did not provide a key, a random key should have been created
+   // automatically.  DES3-EDE requires 24 bytes of key material.
+   test.equal(p7.encContent.key.data.length, 24);
+
+   // Furthermore an IV must be generated.  DES3 has 8 bytes IV.
+   test.equal(p7.encContent.parameter.data.length, 8);
+
+   // Content is 18 Bytes long, DES has 8 byte blocksize,
+   // with padding that should make up 24 bytes.
+   test.equals(p7.encContent.content.data.length, 24);
+
+   // RSA encryption should yield 256 bytes
+   test.equals(p7.recipients[0].encContent.content.length, 256);
+
+   // rewind Key & IV
+   p7.encContent.key.read = 0;
+   p7.encContent.parameter.read = 0;
+
+   // decryption of the asym. encrypted data should reveal the symmetric key
+   decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
+   test.equals(decryptedKey, p7.encContent.key.data);
+
+   // decryption of sym. encrypted data should reveal the content
+   ciph = forge.des.createDecryptionCipher(decryptedKey);
    ciph.start(p7.encContent.parameter);   // IV
    ciph.update(p7.encContent.content);
    ciph.finish();

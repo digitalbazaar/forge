@@ -83,6 +83,7 @@ else if(typeof(module) !== 'undefined' && module.exports) {
    forge = {
       aes: require('./aes'),
       asn1: require('./asn1'),
+      des: require('./des'),
       pki: require('./pki'),
       random: require('./random'),
       util: require('./util')
@@ -612,6 +613,10 @@ p7.createEnvelopedData = function() {
                   ciph = forge.aes.createDecryptionCipher(msg.encContent.key);
                   break;
 
+               case forge.pki.oids['des-EDE3-CBC']:
+                  ciph = forge.des.createDecryptionCipher(msg.encContent.key);
+                  break;
+
                default:
                   throw {
                      message: 'Unsupported symmetric cipher, '
@@ -689,6 +694,12 @@ p7.createEnvelopedData = function() {
                   keyLen = 32;
                   ivLen = 16;
                   ciphFn = forge.aes.createEncryptionCipher;
+                  break;
+
+               case forge.pki.oids['des-EDE3-CBC']:
+                  keyLen = 24;
+                  ivLen = 8;
+                  ciphFn = forge.des.createEncryptionCipher;
                   break;
 
                default:
