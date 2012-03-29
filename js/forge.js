@@ -10,6 +10,7 @@ var forge =
    aes: require('./aes'),
    asn1: require('./asn1'),
    debug: require('./debug'),
+   des: require('./des'),
    hmac: require('./hmac'),
    log: require('./log'),
    pkcs5: require('./pbkdf2'),
