@@ -66,11 +66,20 @@
  * UNIVERSAL 18-22, 25-30 Character string types
  * UNIVERSAL 23-24 Time types
  *
- * The length of an ASN.1 structure is specified after the tag identifier. The
- * length may take up 1 or more bytes, it depends on the length of the value of
- * the ASN.1 structure. DER encoding requires that if the ASN.1 structure has a
- * value that has a length greater than 127, more than 1 byte will be used to
- * store its length, otherwise just one byte will be used. This is strict.
+ * The length of an ASN.1 structure is specified after the tag identifier.
+ * There is a definite form and an indefinite form. The indefinite form may
+ * be used if the encoding is constructed and not all immediately available.
+ * The indefinite form is encoded using a length byte with only the 8th bit
+ * set. The end of the constructed object is marked using end-of-contents
+ * octets (two zero bytes).
+ *
+ * The definite form looks like this:
+ *
+ * The length may take up 1 or more bytes, it depends on the length of the
+ * value of the ASN.1 structure. DER encoding requires that if the ASN.1
+ * structure has a value that has a length greater than 127, more than 1 byte
+ * will be used to store its length, otherwise just one byte will be used.
+ * This is strict.
  *
  * In the case that the length of the ASN.1 value is less than 127, 1 octet
  * (byte) is used to store the "short form" length. The 8th bit has a value of
@@ -207,13 +216,19 @@ asn1.create = function(tagClass, type, constructed, value) {
 /**
  * Gets the length of an ASN.1 value.
  *
+ * In case the length is not specified, undefined is returned.
+ *
  * @param b the ASN.1 byte buffer.
  *
  * @return the length of the ASN.1 value.
  */
 var _getValueLength = function(b) {
-  // see if the length is "short form" or "long form" (bit 8 set)
   var b2 = b.getByte();
+  if(b2 == 0x80) {
+    return undefined;
+  }
+
+  // see if the length is "short form" or "long form" (bit 8 set)
   var length;
   var longForm = b2 & 0x80;
   if(!longForm) {
@@ -242,7 +257,7 @@ asn1.fromDer = function(bytes) {
   }
 
   // minimum length for ASN.1 DER structure is 2
-  if(bytes.length() < 2) {
+  if(bytes.length() < 2)    {
     throw {
       message: 'Too few bytes to parse DER.',
       bytes: bytes.length()
@@ -315,17 +330,36 @@ asn1.fromDer = function(bytes) {
   if(composed) {
     // parse child asn1 objects from the value
     value = [];
-    var start = bytes.length();
-    while(length > 0) {
-      value.push(asn1.fromDer(bytes));
-      length -= start - bytes.length();
-      start = bytes.length();
+    if(length === undefined) {
+      // asn1 object of indefinite length, read until end tag
+      for(;;) {
+        if(bytes.bytes(2) === String.fromCharCode(0, 0)) {
+          bytes.getBytes(2);
+          break;
+        }
+        value.push(asn1.fromDer(bytes));
+      }
+    }
+    else {
+      // parsing asn1 object of definite length
+      var start = bytes.length();
+      while(length > 0) {
+        value.push(asn1.fromDer(bytes));
+        length -= start - bytes.length();
+        start = bytes.length();
+      }
     }
   }
+  // asn1 not composed, get raw value
   else {
     // TODO: do DER to OID conversion and vice-versa in .toDer?
 
-    // asn1 not composed, get raw value
+    if(length === undefined) {
+      throw {
+        message: 'Non-constructed ASN.1 object of indefinite length.'
+      };
+    }
+
     value = bytes.getBytes(length);
   }
 

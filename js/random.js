@@ -91,7 +91,7 @@ if(typeof(navigator) !== 'undefined') {
 }
 
 // add mouse and keyboard collectors if jquery is available
-if($ !== null) {
+if($) {
   // set up mouse entropy capture
   $().mousemove(function(e) {
     // add mouse coords
