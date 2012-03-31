@@ -719,6 +719,7 @@ p7.createEnvelopedData = function() {
 
         // Keep a copy of the key & IV in the object, so the caller can
         // use it for whatever reason.
+        msg.encContent.algorithm = cipher;
         msg.encContent.key = key;
         msg.encContent.parameter
           = forge.util.createBuffer(forge.random.getBytes(ivLen));
