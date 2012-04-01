@@ -1,9 +1,13 @@
 var forge = require('../../js/forge');
 var fs = require('fs');
 
-p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7.pem', 'ascii');
-certPem = fs.readFileSync(__dirname + '/_files/pkcs7_cert.pem', 'ascii');
-keyPem = fs.readFileSync(__dirname + '/_files/pkcs7_key.pem', 'ascii');
+// Files needed for EnvelopedData tests.
+var p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7.pem', 'ascii');
+var certPem = fs.readFileSync(__dirname + '/_files/pkcs7_cert.pem', 'ascii');
+var keyPem = fs.readFileSync(__dirname + '/_files/pkcs7_key.pem', 'ascii');
+
+// Files needed for EncryptedData tests.
+var p7PemEncData = fs.readFileSync(__dirname + '/_files/pkcs7_encrypted_data.pem', 'ascii');
 
 exports.testMessageFromPem = function(test) {
   p7 = forge.pkcs7.messageFromPem(p7Pem);
@@ -215,6 +219,29 @@ exports.testMessageToPem = function(test) {
   p7 = forge.pkcs7.messageFromPem(pem);
   p7.decrypt(p7.recipients[0], forge.pki.privateKeyFromPem(keyPem));
   test.equals(p7.content, 'Just a little test');
+
+  test.done();
+}
+
+exports.testDecryptEncryptedDataFromPem = function(test) {
+  result = '1f8b08000000000000000b2e494d4bcc5308ce4c4dcfd15130b0b430d4b7343732b03437d05170cc2b4e4a4cced051b034343532d25170492d2d294ecec849cc4b0100bf52f02437000000';
+  key = 'b96e4a4c0a3555d31e1b295647cc5cfe74081918cb7f797b';
+  key = forge.util.createBuffer(forge.util.hexToBytes(key));
+
+  test.expect(5);
+
+  try {
+    p7 = forge.pkcs7.messageFromPem(p7PemEncData);
+    test.equal(p7.type, forge.pki.oids.encryptedData);
+    test.equal(p7.encContent.algorithm, forge.pki.oids['des-EDE3-CBC']);
+    test.equal(p7.encContent.parameter.toHex(), 'ba9305a2ee57dc35');
+    test.equal(p7.encContent.content.length(), 80);
+
+    p7.decrypt(key);
+    test.equal(p7.content.getBytes(), forge.util.hexToBytes(result));
+  } catch(err) {
+    console.log('Caught messageFromPem error:', err);
+  }
 
   test.done();
 }

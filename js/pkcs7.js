@@ -7,7 +7,7 @@
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of PKCS#7 is as follows
- * (see RFC #2315 for details):
+ * (see RFC #2315 for details, http://www.ietf.org/rfc/rfc2315.txt):
  *
  * A PKCS#7 message consists of a ContentInfo on root level, which may
  * contain any number of further ContentInfo nested into it.
@@ -19,14 +19,19 @@
  *
  * ContentType ::= OBJECT IDENTIFIER
  *
- * Currently this implementation only supports ContentType = EnvelopedData
- * on root level.  The EnvelopedData element may contain only a ContentInfo
- * of ContentType Data, i.e. plain data.  Further nesting is not (yet)
- * supported.
+ * Currently this implementation only supports ContentType of either
+ * EnvelopedData or EncryptedData on root level.  The top level elements may
+ * contain only a ContentInfo of ContentType Data, i.e. plain data.  Further
+ * nesting is not (yet) supported.
  *
  * EnvelopedData ::= SEQUENCE {
  *    version                    Version,
  *    recipientInfos             RecipientInfos,
+ *    encryptedContentInfo       EncryptedContentInfo
+ * }
+ *
+ * EncryptedData ::= SEQUENCE {
+ *    version                    Version,
  *    encryptedContentInfo       EncryptedContentInfo
  * }
  *
@@ -118,6 +123,68 @@ var contentInfoValidator = {
   }]
 };
 
+var encryptedContentInfoValidator = {
+  name: 'EncryptedContentInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'EncryptedContentInfo.contentType',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OID,
+    constructed: false,
+    capture: 'contentType'
+  }, {
+    name: 'EncryptedContentInfo.contentEncryptionAlgorithm',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true,
+    value: [{
+      name: 'EncryptedContentInfo.contentEncryptionAlgorithm.algorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OID,
+      constructed: false,
+      capture: 'encAlgorithm'
+    }, {
+      name: 'EncryptedContentInfo.contentEncryptionAlgorithm.parameter',
+      tagClass: asn1.Class.UNIVERSAL,
+      constructed: false,
+      capture: 'encParameter'
+    }]
+  }, {
+    name: 'EncryptedContentInfo.encryptedContent',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 0,
+    /* The PKCS#7 structure output by OpenSSL somewhat differs from what
+     * other implementations do generate.
+     *
+     * OpenSSL generates a structure like this:
+     * SEQUENCE {
+     *    ...
+     *    [0]
+     *       26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
+     *       C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
+     *       ...
+     * }
+     *
+     * Whereas other implementations (and this PKCS#7 module) generate:
+     * SEQUENCE {
+     *    ...
+     *    [0] {
+     *       OCTET STRING
+     *          26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
+     *          C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
+     *          ...
+     *    }
+     * }
+     *
+     * In order to support both, we just capture the context specific
+     * field here.  The OCTET STRING bit is removed below.
+     */
+    capture: 'encContent'
+  }]
+};
+
 var envelopedDataValidator = {
   name: 'EnvelopedData',
   tagClass: asn1.Class.UNIVERSAL,
@@ -135,67 +202,21 @@ var envelopedDataValidator = {
     type: asn1.Type.SET,
     constructed: true,
     captureAsn1: 'recipientInfos'
-  }, {
-    name: 'EnvelopedData.EncryptedContentInfo',
+  }].concat(encryptedContentInfoValidator)
+};
+
+var encryptedDataValidator = {
+  name: 'EncryptedData',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'EncryptedData.Version',
     tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'EnvelopedData.EncryptedContentInfo.contentType',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'contentType'
-    }, {
-      name: 'EnvelopedData.EncryptedContentInfo.contentEncryptionAlgorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
-      constructed: true,
-      value: [{
-        name: 'contentEncryptionAlgorithm.algorithm',
-        tagClass: asn1.Class.UNIVERSAL,
-        type: asn1.Type.OID,
-        constructed: false,
-        capture: 'encAlgorithm'
-      }, {
-        name: 'contentEncryptionAlgorithm.parameter',
-        tagClass: asn1.Class.UNIVERSAL,
-        constructed: false,
-        capture: 'encParameter'
-      }]
-    }, {
-      name: 'EnvelopedData.EncryptedContentInfo.encryptedContent',
-      tagClass: asn1.Class.CONTEXT_SPECIFIC,
-      type: 0,
-      /* The PKCS#7 structure output by OpenSSL somewhat differs from what
-       * other implementations do generate.
-       *
-       * OpenSSL generates a structure like this:
-       * SEQUENCE {
-       *    ...
-       *    [0]
-       *       26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
-       *       C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
-       *       ...
-       * }
-       *
-       * Whereas other implementations (and this PKCS#7 module) generate:
-       * SEQUENCE {
-       *    ...
-       *    [0] {
-       *       OCTET STRING
-       *          26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
-       *          C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
-       *          ...
-       *    }
-       * }
-       *
-       * In order to support both, we just capture the context specific
-       * field here.  The OCTET STRING bit is removed below.
-       */
-      capture: 'encContent'
-    }]
-  }]
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'version'
+  }].concat(encryptedContentInfoValidator)
 };
 
 var recipientInfoValidator = {
@@ -311,6 +332,10 @@ p7.messageFromAsn1 = function(obj) {
   switch(contentType) {
     case forge.pki.oids.envelopedData:
       msg = p7.createEnvelopedData();
+      break;
+
+    case forge.pki.oids.encryptedData:
+      msg = p7.createEncryptedData();
       break;
 
     default:
@@ -450,6 +475,157 @@ var _encContentToAsn1 = function(ec) {
 }
 
 /**
+ * Reads the "common part" of an PKCS#7 content block (in ASN.1 format)
+ *
+ * This function reads the "common part" of the PKCS#7 content blocks
+ * EncryptedData and EnvelopedData, i.e. version number and symmetrically
+ * encrypted content block.
+ *
+ * The result of the ASN.1 validate and capture process is returned
+ * to allow the caller to extract further data, e.g. the list of recipients
+ * in case of a EnvelopedData object.
+ *
+ * @param msg The PKCS#7 object to read the data to
+ * @param obj The ASN.1 representation of the content block
+ * @param validator The ASN.1 structure validator object to use
+ * @return Map with values captured by validator object
+ */
+var _fromAsn1 = function(msg, obj, validator) {
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, validator, capture, errors))
+  {
+    throw {
+      message: 'Cannot read PKCS#7 message. ' +
+        'ASN.1 object is not an PKCS#7 EnvelopedData.',
+      errors: errors
+    };
+  }
+
+  // Check contentType, so far we only support (raw) Data.
+  var contentType = asn1.derToOid(capture.contentType);
+  if(contentType !== forge.pki.oids.data) {
+    throw {
+      message: 'Unsupported PKCS#7 message. ' +
+        'Only contentType Data supported within EnvelopedData.'
+    };
+  }
+
+  var content = "";
+  if(capture.encContent.constructor === Array) {
+    for(var i = 0; i < capture.encContent.length; i ++) {
+      if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
+        throw {
+          message: 'Malformed PKCS#7 message, expecting encrypted '
+            + 'content constructed of only OCTET STRING objects.'
+        };
+      }
+      content += capture.encContent[i].value;
+    }
+  } else {
+    content = capture.encContent;
+  }
+
+  msg.version = capture.version.charCodeAt(0);
+  msg.encContent = {
+    algorithm: asn1.derToOid(capture.encAlgorithm),
+    parameter: forge.util.createBuffer(capture.encParameter),
+    content: forge.util.createBuffer(content)
+  };
+
+  return capture;
+}
+
+/**
+ * Decrypt the symmetrically encrypted content block of the PKCS#7 message.
+ *
+ * Decryption is skipped in case the PKCS#7 message object already has a
+ * (decrypted) content attribute.  The algorithm, key and cipher parameters
+ * (probably the iv) are taken from the encContent attribute of the message
+ * object.
+ *
+ * @param The PKCS#7 message object.
+ */
+var _decryptContent = function (msg) {
+  if(msg.encContent.key === undefined) {
+    throw {
+      message: 'Symmetric key not available.'
+    };
+  }
+
+  if(msg.content === undefined) {
+    var ciph;
+
+    switch(msg.encContent.algorithm) {
+      case forge.pki.oids['aes128-CBC']:
+      case forge.pki.oids['aes192-CBC']:
+      case forge.pki.oids['aes256-CBC']:
+        ciph = forge.aes.createDecryptionCipher(msg.encContent.key);
+        break;
+
+      case forge.pki.oids['des-EDE3-CBC']:
+        ciph = forge.des.createDecryptionCipher(msg.encContent.key);
+        break;
+
+      default:
+        throw {
+          message: 'Unsupported symmetric cipher, '
+            + 'OID ' + recipient.encContent.algorithm,
+        };
+    }
+
+    ciph.start(msg.encContent.parameter);
+    ciph.update(msg.encContent.content);
+
+    if(!ciph.finish()) {
+      throw {
+        message: 'Symmetric decryption failed.'
+      };
+    }
+
+    msg.content = ciph.output;
+  }
+};
+
+/**
+ * Creates an empty PKCS#7 message of type EncryptedData.
+ *
+ * @return the message.
+ */
+p7.createEncryptedData = function() {
+  var msg = {
+    type: forge.pki.oids.encryptedData,
+    version: 0,
+    encContent: {
+      algorithm: forge.pki.oids['aes256-CBC']
+    },
+
+    /**
+     * Reads an EncryptedData content block (in ASN.1 format)
+     *
+     * @param obj The ASN.1 representation of the EncryptedData content block
+     */
+    fromAsn1: function(obj) {
+      // Validate EncryptedData content block and capture data.
+      var capture = _fromAsn1(msg, obj, encryptedDataValidator);
+    },
+
+    /**
+     * Decrypt encrypted content
+     *
+     * @param key The (symmetric) key as a byte buffer
+     */
+    decrypt: function(key) {
+      if(key !== undefined) {
+        msg.encContent.key = key;
+      }
+      _decryptContent(msg);
+    }
+  };
+  return msg;
+};
+
+/**
  * Creates an empty PKCS#7 message of type EnvelopedData.
  *
  * @return the message.
@@ -470,48 +646,8 @@ p7.createEnvelopedData = function() {
      */
     fromAsn1: function(obj) {
       // Validate EnvelopedData content block and capture data.
-      var capture = {};
-      var errors = [];
-      if(!asn1.validate(obj, envelopedDataValidator, capture, errors))
-      {
-        throw {
-          message: 'Cannot read PKCS#7 message. ' +
-            'ASN.1 object is not an PKCS#7 EnvelopedData.',
-          errors: errors
-        };
-      }
-
-      // Check contentType, so far we only support (raw) Data.
-      var contentType = asn1.derToOid(capture.contentType);
-      if(contentType !== forge.pki.oids.data) {
-        throw {
-          message: 'Unsupported PKCS#7 message. ' +
-            'Only contentType Data supported within EnvelopedData.'
-        };
-      }
-
-      var content = "";
-      if(capture.encContent.constructor === Array) {
-        for(var i = 0; i < capture.encContent.length; i ++) {
-          if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
-            throw {
-              message: 'Malformed PKCS#7 message, expecting encrypted '
-                + 'content constructed of only OCTET STRING objects.'
-            };
-          }
-          content += capture.encContent[i].value;
-        }
-      } else {
-        content = capture.encContent;
-      }
-
-      msg.version = capture.version.charCodeAt(0);
+      var capture = _fromAsn1(msg, obj, envelopedDataValidator);
       msg.recipients = _recipientInfosFromAsn1(capture.recipientInfos.value);
-      msg.encContent = {
-        algorithm: asn1.derToOid(capture.encAlgorithm),
-        parameter: forge.util.createBuffer(capture.encParameter),
-        content: forge.util.createBuffer(content)
-      };
     },
 
     toAsn1: function() {
@@ -597,44 +733,7 @@ p7.createEnvelopedData = function() {
         }
       }
 
-      if(msg.encContent.key === undefined) {
-        throw {
-          message: 'Symmetric key not available.'
-        };
-      }
-
-      if(msg.content === undefined) {
-        var ciph;
-
-        switch(msg.encContent.algorithm) {
-          case forge.pki.oids['aes128-CBC']:
-          case forge.pki.oids['aes192-CBC']:
-          case forge.pki.oids['aes256-CBC']:
-            ciph = forge.aes.createDecryptionCipher(msg.encContent.key);
-            break;
-
-          case forge.pki.oids['des-EDE3-CBC']:
-            ciph = forge.des.createDecryptionCipher(msg.encContent.key);
-            break;
-
-          default:
-            throw {
-              message: 'Unsupported symmetric cipher, '
-                + 'OID ' + recipient.encContent.algorithm,
-            };
-        }
-
-        ciph.start(msg.encContent.parameter);
-        ciph.update(msg.encContent.content);
-
-        if(!ciph.finish()) {
-          throw {
-            message: 'Symmetric decryption failed.'
-          };
-        }
-
-        msg.content = ciph.output;
-      }
+      _decryptContent(msg);
     },
 
     /**
