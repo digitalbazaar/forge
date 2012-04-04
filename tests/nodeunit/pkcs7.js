@@ -10,7 +10,7 @@ var keyPem = fs.readFileSync(__dirname + '/_files/pkcs7_key.pem', 'ascii');
 var p7PemEncData = fs.readFileSync(__dirname + '/_files/pkcs7_encrypted_data.pem', 'ascii');
 
 exports.testMessageFromPem = function(test) {
-  p7 = forge.pkcs7.messageFromPem(p7Pem);
+  var p7 = forge.pkcs7.messageFromPem(p7Pem);
 
   test.equal(p7.type, forge.pki.oids.envelopedData);
   test.equal(p7.version, 0);
@@ -43,14 +43,14 @@ exports.testMessageFromPem = function(test) {
   test.equal(p7.encContent.parameter.data.length, 16);  // IV
 
   test.done();
-}
+};
 
 exports.testMessageFromPemWithIndefLength = function(test) {
   var p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7_indef.pem', 'ascii');
   test.expect(3);
 
   try {
-    p7 = forge.pkcs7.messageFromPem(p7Pem);
+    var p7 = forge.pkcs7.messageFromPem(p7Pem);
     test.equal(p7.type, forge.pki.oids.envelopedData);
     test.equal(p7.encContent.parameter.toHex(), '536da6a06653733d');
     test.equal(p7.encContent.content.length(), 80);
@@ -59,13 +59,13 @@ exports.testMessageFromPemWithIndefLength = function(test) {
   }
 
   test.done();
-}
+};
 
 exports.testFindRecipient = function(test) {
-  p7 = forge.pkcs7.messageFromPem(p7Pem);
-  cert = forge.pki.certificateFromPem(certPem);
+  var p7 = forge.pkcs7.messageFromPem(p7Pem);
+  var cert = forge.pki.certificateFromPem(certPem);
 
-  ri = p7.findRecipient(cert);
+  var ri = p7.findRecipient(cert);
   test.equal(ri.serialNumber, '00d4541c40d835e2f3');
 
   // Modify certificate so it doesn't match recipient any longer
@@ -74,11 +74,11 @@ exports.testFindRecipient = function(test) {
   test.equal(ri, undefined);
 
   test.done();
-}
+};
 
 exports.testDecryptAES = function(test) {
-  p7 = forge.pkcs7.messageFromPem(p7Pem);
-  privKey = forge.pki.privateKeyFromPem(keyPem);
+  var p7 = forge.pkcs7.messageFromPem(p7Pem);
+  var privKey = forge.pki.privateKeyFromPem(keyPem);
   p7.decrypt(p7.recipients[0], privKey);
 
   // symmetric key must be 32 bytes long (AES 256 key)
@@ -87,13 +87,13 @@ exports.testDecryptAES = function(test) {
     + "the 9th day of Discord in the YOLD 3178\r\n");
 
   test.done();
-}
+};
 
 exports.testDecryptDES = function(test) {
   var p7Pem = fs.readFileSync(__dirname + '/_files/pkcs7_des3.pem', 'ascii');
 
-  p7 = forge.pkcs7.messageFromPem(p7Pem);
-  privKey = forge.pki.privateKeyFromPem(keyPem);
+  var p7 = forge.pkcs7.messageFromPem(p7Pem);
+  var privKey = forge.pki.privateKeyFromPem(keyPem);
   p7.decrypt(p7.recipients[0], privKey);
 
   // symmetric key must be 24 bytes long (DES3 key)
@@ -102,15 +102,15 @@ exports.testDecryptDES = function(test) {
     + "the 16th day of Discord in the YOLD 3178\r\n");
 
   test.done();
-}
+};
 
 exports.testAddRecipient = function(test) {
-  p7 = forge.pkcs7.createEnvelopedData();
+  var p7 = forge.pkcs7.createEnvelopedData();
 
   // initially there should be no recipients
   test.equal(p7.recipients.length, 0);
 
-  cert = forge.pki.certificateFromPem(certPem);
+  var cert = forge.pki.certificateFromPem(certPem);
   p7.addRecipient(cert);
 
   test.equal(p7.recipients.length, 1);
@@ -119,12 +119,12 @@ exports.testAddRecipient = function(test) {
   test.deepEqual(p7.recipients[0].encContent.key, cert.publicKey);
 
   test.done();
-}
+};
 
 exports.testEncrypt = function(test) {
-  p7 = forge.pkcs7.createEnvelopedData();
-  cert = forge.pki.certificateFromPem(certPem);
-  privKey = forge.pki.privateKeyFromPem(keyPem);
+  var p7 = forge.pkcs7.createEnvelopedData();
+  var cert = forge.pki.certificateFromPem(certPem);
+  var privKey = forge.pki.privateKeyFromPem(keyPem);
 
   p7.addRecipient(cert);
   p7.content = forge.util.createBuffer('Just a little test');
@@ -152,23 +152,23 @@ exports.testEncrypt = function(test) {
   p7.encContent.parameter.read = 0;
 
   // decryption of the asym. encrypted data should reveal the symmetric key
-  decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
+  var decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
   test.equals(decryptedKey, p7.encContent.key.data);
 
   // decryption of sym. encrypted data should reveal the content
-  ciph = forge.aes.createDecryptionCipher(decryptedKey);
+  var ciph = forge.aes.createDecryptionCipher(decryptedKey);
   ciph.start(p7.encContent.parameter);   // IV
   ciph.update(p7.encContent.content);
   ciph.finish();
   test.equals(ciph.output, 'Just a little test');
 
   test.done();
-}
+};
 
 exports.testEncryptDES3EDE = function(test) {
-  p7 = forge.pkcs7.createEnvelopedData();
-  cert = forge.pki.certificateFromPem(certPem);
-  privKey = forge.pki.privateKeyFromPem(keyPem);
+  var p7 = forge.pkcs7.createEnvelopedData();
+  var cert = forge.pki.certificateFromPem(certPem);
+  var privKey = forge.pki.privateKeyFromPem(keyPem);
 
   p7.addRecipient(cert);
   p7.content = forge.util.createBuffer('Just a little test');
@@ -194,26 +194,26 @@ exports.testEncryptDES3EDE = function(test) {
   p7.encContent.parameter.read = 0;
 
   // decryption of the asym. encrypted data should reveal the symmetric key
-  decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
+  var decryptedKey = privKey.decrypt(p7.recipients[0].encContent.content);
   test.equals(decryptedKey, p7.encContent.key.data);
 
   // decryption of sym. encrypted data should reveal the content
-  ciph = forge.des.createDecryptionCipher(decryptedKey);
+  var ciph = forge.des.createDecryptionCipher(decryptedKey);
   ciph.start(p7.encContent.parameter);   // IV
   ciph.update(p7.encContent.content);
   ciph.finish();
   test.equals(ciph.output, 'Just a little test');
 
   test.done();
-}
+};
 
 exports.testMessageToPem = function(test) {
-  p7 = forge.pkcs7.createEnvelopedData();
+  var p7 = forge.pkcs7.createEnvelopedData();
   p7.addRecipient(forge.pki.certificateFromPem(certPem));
   p7.content = forge.util.createBuffer('Just a little test');
   p7.encrypt();
 
-  pem = forge.pkcs7.messageToPem(p7);
+  var pem = forge.pkcs7.messageToPem(p7);
 
   // Convert back from PEM to new PKCS#7 object, decrypt and test.
   p7 = forge.pkcs7.messageFromPem(pem);
@@ -221,17 +221,17 @@ exports.testMessageToPem = function(test) {
   test.equals(p7.content, 'Just a little test');
 
   test.done();
-}
+};
 
 exports.testDecryptEncryptedDataFromPem = function(test) {
-  result = '1f8b08000000000000000b2e494d4bcc5308ce4c4dcfd15130b0b430d4b7343732b03437d05170cc2b4e4a4cced051b034343532d25170492d2d294ecec849cc4b0100bf52f02437000000';
-  key = 'b96e4a4c0a3555d31e1b295647cc5cfe74081918cb7f797b';
+  var result = '1f8b08000000000000000b2e494d4bcc5308ce4c4dcfd15130b0b430d4b7343732b03437d05170cc2b4e4a4cced051b034343532d25170492d2d294ecec849cc4b0100bf52f02437000000';
+  var key = 'b96e4a4c0a3555d31e1b295647cc5cfe74081918cb7f797b';
   key = forge.util.createBuffer(forge.util.hexToBytes(key));
 
   test.expect(5);
 
   try {
-    p7 = forge.pkcs7.messageFromPem(p7PemEncData);
+    var p7 = forge.pkcs7.messageFromPem(p7PemEncData);
     test.equal(p7.type, forge.pki.oids.encryptedData);
     test.equal(p7.encContent.algorithm, forge.pki.oids['des-EDE3-CBC']);
     test.equal(p7.encContent.parameter.toHex(), 'ba9305a2ee57dc35');
@@ -244,4 +244,4 @@ exports.testDecryptEncryptedDataFromPem = function(test) {
   }
 
   test.done();
-}
+};

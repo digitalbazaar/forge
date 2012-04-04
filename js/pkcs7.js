@@ -79,7 +79,7 @@
 (function() {
 
 // define forge
-var forge;
+var forge = {};
 if(typeof(window) !== 'undefined') {
   forge = window.forge = window.forge || {};
 }
@@ -304,7 +304,7 @@ p7.messageToPem = function(msg, maxline) {
     '-----BEGIN PKCS7-----\r\n' +
     out +
     '\r\n-----END PKCS7-----');
-}
+};
 
 /**
  * Converts a PKCS#7 message from an ASN.1 object.
@@ -399,7 +399,7 @@ var _recipientInfoToAsn1 = function(obj) {
       forge.pki.distinguishedNameToAsn1({ attributes: obj.issuer }),
       // Serial
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes(obj.serialNumber)),
+        forge.util.hexToBytes(obj.serialNumber))
     ]),
     // KeyEncryptionAlgorithmIdentifier
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -413,7 +413,7 @@ var _recipientInfoToAsn1 = function(obj) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
       obj.encContent.content)
   ]);
-}
+};
 
 /**
  * Map a set of RecipientInfo ASN.1 objects to recipientInfo objects.
@@ -470,9 +470,9 @@ var _encContentToAsn1 = function(ec) {
     asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
         ec.content.getBytes())
-    ]),
+    ])
   ];
-}
+};
 
 /**
  * Reads the "common part" of an PKCS#7 content block (in ASN.1 format)
@@ -534,7 +534,7 @@ var _fromAsn1 = function(msg, obj, validator) {
   };
 
   return capture;
-}
+};
 
 /**
  * Decrypt the symmetrically encrypted content block of the PKCS#7 message.
@@ -570,7 +570,7 @@ var _decryptContent = function (msg) {
       default:
         throw {
           message: 'Unsupported symmetric cipher, '
-            + 'OID ' + recipient.encContent.algorithm,
+            + 'OID ' + msg.encContent.algorithm
         };
     }
 
@@ -593,7 +593,8 @@ var _decryptContent = function (msg) {
  * @return the message.
  */
 p7.createEncryptedData = function() {
-  var msg = {
+  var msg = null;
+  msg = {
     type: forge.pki.oids.encryptedData,
     version: 0,
     encContent: {
@@ -607,7 +608,7 @@ p7.createEncryptedData = function() {
      */
     fromAsn1: function(obj) {
       // Validate EncryptedData content block and capture data.
-      var capture = _fromAsn1(msg, obj, encryptedDataValidator);
+      _fromAsn1(msg, obj, encryptedDataValidator);
     },
 
     /**
@@ -631,7 +632,8 @@ p7.createEncryptedData = function() {
  * @return the message.
  */
 p7.createEnvelopedData = function() {
-  var msg = {
+  var msg = null;
+  msg = {
     type: forge.pki.oids.envelopedData,
     version: 0,
     recipients: [],
@@ -775,7 +777,7 @@ p7.createEnvelopedData = function() {
         cipher = cipher || msg.encContent.algorithm;
         key = key || msg.encContent.key;
 
-        var keyLen, ivLen;
+        var keyLen, ivLen, ciphFn;
         switch(cipher) {
           case forge.pki.oids['aes128-CBC']:
             keyLen = 16;
@@ -823,7 +825,7 @@ p7.createEnvelopedData = function() {
         msg.encContent.parameter
           = forge.util.createBuffer(forge.random.getBytes(ivLen));
 
-        ciph = ciphFn(key);
+        var ciph = ciphFn(key);
         ciph.start(msg.encContent.parameter.copy());
         ciph.update(msg.content);
 
