@@ -100,7 +100,7 @@ else if(typeof(module) !== 'undefined' && module.exports) {
 var asn1 = forge.asn1;
 
 // shortcut for PKCS#7 API
-var p7 = forge.pkcs7;
+var p7 = forge.pkcs7 = forge.pkcs7 || {};
 
 var contentInfoValidator = {
   name: 'ContentInfo',
