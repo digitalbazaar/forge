@@ -121,9 +121,10 @@ p12.toPkcs12Asn1 = function(key, cert, password) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           asn1.oidToDer(oids['keyBag']).getBytes()),
         // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // PrivateKeyInfo
-          asn1.toDer(pkAsn1).getBytes())
+          pkAsn1
+        ])
         // bagAttributes (OPTIONAL)
       ]);
     }
@@ -134,10 +135,10 @@ p12.toPkcs12Asn1 = function(key, cert, password) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           asn1.oidToDer(oids['pkcs8ShroudedKeyBag']).getBytes()),
         // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // EncryptedPrivateKeyInfo
-          asn1.toDer(pki.encryptPrivateKeyInfo(
-            pkAsn1, password)).getBytes())
+          pki.encryptPrivateKeyInfo(pkAsn1, password)
+        ])
         // bagAttributes (OPTIONAL)
       ]);
     }
