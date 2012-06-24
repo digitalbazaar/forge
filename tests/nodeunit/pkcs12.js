@@ -55,3 +55,74 @@ exports.testToPkcs12Asn1_EncryptedKeyOnly = function(test) {
   /* Restore original forge PRNG. */
   forge.random.getBytes = origRandomGetBytes;
 };
+
+exports.testPkcs12FromAsn1_PlainCertOnly = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_certonly.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
+
+  /* The PKCS#12 PFX has exactly on SafeContents instance,
+     and it is not encrypted. */
+  test.equals(p12.version, 3);
+  test.equals(p12.safeContents.length, 1);
+  test.equals(p12.safeContents[0].encrypted, false);
+
+  /* The SafeContents instance is expected to hold on SafeBag, which
+     holds a CertBag with the X.509 certificate. */
+  test.equals(p12.safeContents[0].safeBags.length, 1);
+  test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.certBag);
+
+  /* Check X.509 certificate's serial number to be sure it has been read. */
+  test.equals(p12.safeContents[0].safeBags[0].cert.serialNumber, '00d4541c40d835e2f3');
+  test.done();
+};
+
+exports.testPkcs12FromAsn1_PlainKeyOnly = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_keyonly.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
+
+  /* The PKCS#12 PFX has exactly on SafeContents instance,
+     and it is not encrypted. */
+  test.equals(p12.version, 3);
+  test.equals(p12.safeContents.length, 1);
+  test.equals(p12.safeContents[0].encrypted, false);
+
+  /* The SafeContents instance is expected to hold on SafeBag, which
+     holds a KeyBag with the private key. */
+  test.equals(p12.safeContents[0].safeBags.length, 1);
+  test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.keyBag);
+
+  /* Compare the key from the PFX by simply comparing both primes. */
+  var expKey = forge.pki.privateKeyFromPem(keyPem);
+  test.deepEqual(p12.safeContents[0].safeBags[0].key.p, expKey.p);
+  test.deepEqual(p12.safeContents[0].safeBags[0].key.q, expKey.q);
+
+  test.done();
+};
+
+exports.testPkcs12FromAsn1_EncryptedKeyOnly = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_enckeyonly.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, 'nopass');
+
+  /* The PKCS#12 PFX has exactly on SafeContents instance,
+     and it is *not* encrypted.  Only the key itself is crypted (shrouded) */
+  test.equals(p12.version, 3);
+  test.equals(p12.safeContents.length, 1);
+  test.equals(p12.safeContents[0].encrypted, false);
+
+  /* The SafeContents instance is expected to hold on SafeBag, which
+     holds a KeyBag with the private key. */
+  test.equals(p12.safeContents[0].safeBags.length, 1);
+  test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.pkcs8ShroudedKeyBag);
+
+  /* Compare the key from the PFX by simply comparing both primes. */
+  var expKey = forge.pki.privateKeyFromPem(keyPem);
+  test.deepEqual(p12.safeContents[0].safeBags[0].key.p, expKey.p);
+  test.deepEqual(p12.safeContents[0].safeBags[0].key.q, expKey.q);
+
+  test.done();
+};
+
