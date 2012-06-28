@@ -27,8 +27,13 @@
   "keywords": [
     "tls",
     "http",
+    "https",
     "network",
     "crypto",
-    "cryptography"
+    "cryptography",
+    "rsa",
+    "pki",
+    "aes",
+    "pkcs"
   ]
 }
