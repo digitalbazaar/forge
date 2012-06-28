@@ -27,6 +27,8 @@
   "keywords": [
     "tls",
     "http",
-    "network"
+    "network",
+    "crypto",
+    "cryptography"
   ]
 }
