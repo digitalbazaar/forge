@@ -14,71 +14,90 @@ network resources.
 Features
 --------
 
-forge.debug:
-   Provides storage of debugging information normally inaccessible in
-   closures for viewing/investigation.
+### forge.debug
 
-forge.util:
-   Provides utility functions, including byte buffer support, base64,
-   bytes to/from hex, zlib inflate/deflate, etc.
+Provides storage of debugging information normally inaccessible in
+closures for viewing/investigation.
 
-forge.log:
-   Provides logging to a javascript console using various categories and
-   levels of verbosity.
+### forge.util
 
-forge.task:
-   Provides queuing and synchronizing tasks in a web application.
+Provides utility functions, including byte buffer support, base64,
+bytes to/from hex, zlib inflate/deflate, etc.
 
-forge.aes:
-   Provides basic [AES][] encryption and decryption in CBC mode.
+### forge.log
 
-forge.md.md5:
-   Provides [MD5][] message digests.
+Provides logging to a javascript console using various categories and
+levels of verbosity.
 
-forge.md.sha1:
-   Provides [SHA-1][] message digests.
+### forge.task
 
-forge.md.sha256:
-   Provides [SHA-256][] message digests.
+Provides queuing and synchronizing tasks in a web application.
 
-forge.hmac:
-   Provides [HMAC][] w/any supported message digest algorithm.
+### forge.aes
 
-forge.pkcs5.pbkdf2:
-   Provides the password-based key-derivation function from [PKCS#5][].
+Provides basic [AES][] encryption and decryption in CBC mode.
 
-forge.prng:
-   Provides a [Fortuna][]-based cryptographically-secure pseudo-random number
-   generator, to be used with a cryptographic function backend, ie: [AES][].
+### forge.md.md5
 
-forge.random:
-   Provides an interface to getting cryptographically-secure bytes using
-   [AES][] as a backend for forge.prng.
+Provides [MD5][] message digests.
 
-forge.asn:
-   Provides [ASN.1][] DER encoding and decoding.
+### forge.md.sha1
 
-forge.pki:
-   Provides [X.509][] certificate and RSA public and private key encoding,
-   decoding, encryption/decryption, and signing/verifying.
+Provides [SHA-1][] message digests.
 
-forge.tls:
-   Provides a native javascript client and server-side [TLS][] implementation.
+### forge.md.sha256
 
-forge.socket:
-   Provides an interface to create and use raw sockets provided via Flash.
+Provides [SHA-256][] message digests.
 
-forge.http:
-   Provides a native [JavaScript][] mini-implementation of an http client that
-   uses pooled sockets.
+### forge.hmac
 
-forge.xhr:
-   Provides an XmlHttpRequest implementation using forge.http as a backend.
+Provides [HMAC][] w/any supported message digest algorithm.
 
-mod\_fsp:
-   Provides an [Apache][] module that can serve up a Flash Socket Policy. See
-   `mod_fsp/README` for more details. This module makes it easy to modify
-   an [Apache][] server to allow cross domain requests to be made to it.
+### forge.pkcs5.pbkdf2
+
+Provides the password-based key-derivation function from [PKCS#5][].
+
+### forge.prng
+
+Provides a [Fortuna][]-based cryptographically-secure pseudo-random number
+generator, to be used with a cryptographic function backend, ie: [AES][].
+
+### forge.random
+
+Provides an interface to getting cryptographically-secure bytes using
+[AES][] as a backend for forge.prng.
+
+### forge.asn
+
+Provides [ASN.1][] DER encoding and decoding.
+
+### forge.pki
+
+Provides [X.509][] certificate and RSA public and private key encoding,
+decoding, encryption/decryption, and signing/verifying.
+
+### forge.tls
+
+Provides a native javascript client and server-side [TLS][] implementation.
+
+### forge.socket
+
+Provides an interface to create and use raw sockets provided via Flash.
+
+### forge.http
+
+Provides a native [JavaScript][] mini-implementation of an http client that
+uses pooled sockets.
+
+### forge.xhr
+
+Provides an XmlHttpRequest implementation using forge.http as a backend.
+
+### mod\_fsp
+
+Provides an [Apache][] module that can serve up a Flash Socket Policy. See
+`mod_fsp/README` for more details. This module makes it easy to modify
+an [Apache][] server to allow cross domain requests to be made to it.
 
 
 Getting Started
@@ -86,18 +105,13 @@ Getting Started
 
 Requirements
 
-* General:
-
+* General
   * GNU autotools for the build infrastructure.
-
 * Flash
-
   * Optional: A pre-built SocketPool.swf is included.
   * Adobe Flex 3 SDK to build the Flash socket code.
   * http://opensource.adobe.com/wiki/display/flexsdk/
-
 * Testing
-
   * Optional: Only needed for fast session cache during testing.
   * Python and OpenSSL development environment to build a special SSL module
     with session cache support.
