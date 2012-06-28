@@ -1,0 +1,32 @@
+{
+  "name": "node-forge",
+  "version": "0.1.0",
+  "description": "A native implementation of TLS in JavaScript and tools to write network based web apps.",
+  "homepage": "http://github.com/digitalbazaar/forge",
+  "author": {
+    "name" : "Digital Bazaar, Inc.",
+    "email" : "support@digitalbazaar.com",
+    "url" : "http://digitalbazaar.com/"
+  },
+  "contributors": [{
+    "name" : "Dave Longley",
+    "email" : "dlongley@digitalbazaar.com"
+  }],
+  "repository": {
+    "type" : "git",
+    "url" : "http://github.com/digitalbazaar/forge"
+  },
+  "bugs": {
+    "url": "https://github.com/digitalbazaar/forge/issues",
+    "email": "support@digitalbazaar.com"
+  },
+  "main": "js/forge.js",
+  "engines": {
+    "node": "*"
+  },
+  "keywords": [
+    "tls",
+    "http",
+    "network"
+  ]
+}
