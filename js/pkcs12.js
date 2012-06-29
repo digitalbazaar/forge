@@ -103,6 +103,9 @@ if(typeof(window) !== 'undefined') {
 else if(typeof(module) !== 'undefined' && module.exports) {
   var forge = {
     asn1: require('./asn1'),
+    md: {
+      sha1: require('./sha1')
+    },
     pki: require('./pki'),
     util: require('./util')
   };
@@ -597,6 +600,114 @@ p12.toPkcs12Asn1 = function(key, cert, password) {
       ])
     ])
   ]);
+};
+
+/**
+ * PKCS#12 key derivation
+ *
+ * @param {String} password The password to derive the key material from
+ * @param {ByteBuffer} salt The salt to use
+ * @param {int} id The PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC)
+ * @param {int} iter The iteration count
+ * @param {int} n Number of bytes to derive from the password
+ * @param md The message digest to use, defaults to SHA-1.
+ * @return {ByteBuffer} The bytes derived from the password
+ */
+p12.generateKey = function(password, salt, id, iter, n, md) {
+  var j, l;
+
+  if(typeof(md) === 'undefined' || md === null) {
+    md = forge.md.sha1.create();
+  }
+
+  var u = md.digestLength;
+  var v = md.blockLength;
+  var result = new forge.util.ByteBuffer();
+
+  /* Convert password to Unicode byte buffer + trailing 0-byte. */
+  var passBuf = new forge.util.ByteBuffer();
+  for(l = 0; l < password.length; l++) {
+    passBuf.putInt16(password.charCodeAt(l));
+  }
+  passBuf.putInt16(0);
+
+  /* Length of salt and password in BYTES. */
+  var p = passBuf.length();
+  var s = salt.length();
+
+  /* 1. Construct a string, D (the “diversifier”), by concatenating
+        v copies of ID. */
+  var D = new forge.util.ByteBuffer();
+  D.fillWithByte(id, v);
+
+  /* 2. Concatenate copies of the salt together to create a string S of length
+        v⋅s/v bytes (the final copy of the salt may be truncated to create S).
+        Note that if the salt is the empty string, then so is S. */
+  var Slen = v * Math.ceil(s / v);
+  var S = new forge.util.ByteBuffer();
+  for(l = 0; l < Slen; l ++) {
+    S.putByte(salt.at(l % s));
+  }
+
+  /* 3. Concatenate copies of the password together to create a string P of
+        length v⋅p/v bytes (the final copy of the password may be truncated
+        to create P).
+        Note that if the password is the empty string, then so is P. */
+  var Plen = v * Math.ceil(p / v);
+  var P = new forge.util.ByteBuffer();
+  for(l = 0; l < Plen; l ++) {
+    P.putByte(passBuf.at(l % p));
+  }
+
+  /* 4. Set I=S||P to be the concatenation of S and P. */
+  var I = S;
+  I.putBuffer(P);
+
+  /* 5. Set c=n/u. */
+  var c = Math.ceil(n / u);
+
+  /* 6. For i=1, 2, ..., c, do the following: */
+  for(var i = 1; i <= c; i ++) {
+    /* a) Set Ai=H^r(D||I). (l.e. the rth hash of D||I, H(H(H(...H(D||I)))) */
+    var buf = new forge.util.ByteBuffer();
+    buf.putBytes(D.bytes());
+    buf.putBytes(I.bytes());
+    for(var round = 0; round < iter; round ++) {
+      md.start();
+      md.update(buf.getBytes());
+      buf = md.digest();
+    }
+
+    /* b) Concatenate copies of Ai to create a string B of length v bytes (the
+          final copy of Ai may be truncated to create B). */
+    var B = new forge.util.ByteBuffer();
+    for(l = 0; l < v; l ++) {
+      B.putByte(buf.at(l % u));
+    }
+
+    /* c) Treating I as a concatenation I0, I1, ..., Ik-1 of v-byte blocks,
+          where k=s/v+p/v, modify I by setting Ij=(Ij+B+1) mod 2v
+          for each j.  */
+    var k = Math.ceil(s / v) + Math.ceil(p / v);
+    var Inew = new forge.util.ByteBuffer();
+    for(j = 0; j < k; j ++) {
+      var chunk = new forge.util.ByteBuffer(I.getBytes(v));
+      var x = 0x1ff;
+      for(l = B.length() - 1; l >= 0; l --) {
+        x = x >> 8;
+        x += B.at(l) + chunk.at(l);
+        chunk.setAt(l, x & 0xff);
+      }
+      Inew.putBuffer(chunk);
+    }
+    I = Inew;
+
+    /* Add Ai to A. */
+    result.putBuffer(buf);
+  }
+
+  result.truncate(result.length() - n);
+  return result;
 };
 
 })();

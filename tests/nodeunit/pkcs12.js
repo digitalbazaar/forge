@@ -126,3 +126,13 @@ exports.testPkcs12FromAsn1_EncryptedKeyOnly = function(test) {
   test.done();
 };
 
+exports.testGenerateKey = function(test) {
+  var salt = 'A15D6AA8F8DAFC352F9EE1C192F09966EB85D17B';
+  salt = new forge.util.ByteBuffer(forge.util.hexToBytes(salt));
+
+  var exp = '03e46727268575c6ebd6bff828d0d09b0c914201263ca543';
+  var gen = forge.pkcs12.generateKey('123456', salt, 1, 1024, 24);
+  test.equals(gen.toHex(), exp);
+  test.done();
+};
+
