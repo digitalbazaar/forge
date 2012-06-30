@@ -38,8 +38,6 @@ oids['1.3.14.3.2.26'] = 'sha1';
 oids['sha1'] = '1.3.14.3.2.26';
 oids['1.2.840.113549.2.5'] = 'md5';
 oids['md5'] = '1.2.840.113549.2.5';
-oids['1.2.840.113549.3.7'] = 'des-EDE3-CBC';
-oids['des-EDE3-CBC'] = '1.2.840.113549.3.7';
 
 // pkcs#7 content types
 oids['1.2.840.113549.1.7.1'] = 'data';
@@ -82,6 +80,23 @@ oids['1.2.840.113549.1.5.13'] = 'pkcs5PBES2';
 oids['pkcs5PBES2'] = '1.2.840.113549.1.5.13';
 oids['1.2.840.113549.1.5.12'] = 'pkcs5PBKDF2';
 oids['pkcs5PBKDF2'] = '1.2.840.113549.1.5.12';
+
+oids['1.2.840.113549.1.12.1.1'] = 'pbeWithSHAAnd128BitRC4';
+oids['pbeWithSHAAnd128BitRC4'] = '1.2.840.113549.1.12.1.1';
+oids['1.2.840.113549.1.12.1.2'] = 'pbeWithSHAAnd40BitRC4';
+oids['pbeWithSHAAnd40BitRC4'] = '1.2.840.113549.1.12.1.2';
+oids['1.2.840.113549.1.12.1.3'] = 'pbeWithSHAAnd3-KeyTripleDES-CBC';
+oids['pbeWithSHAAnd3-KeyTripleDES-CBC'] = '1.2.840.113549.1.12.1.3';
+oids['1.2.840.113549.1.12.1.4'] = 'pbeWithSHAAnd2-KeyTripleDES-CBC';
+oids['pbeWithSHAAnd2-KeyTripleDES-CBC'] = '1.2.840.113549.1.12.1.4';
+oids['1.2.840.113549.1.12.1.5'] = 'pbeWithSHAAnd128BitRC2-CBC';
+oids['pbeWithSHAAnd128BitRC2-CBC'] = '1.2.840.113549.1.12.1.5';
+oids['1.2.840.113549.1.12.1.6'] = 'pbewithSHAAnd40BitRC2-CBC';
+oids['pbewithSHAAnd40BitRC2-CBC'] = '1.2.840.113549.1.12.1.6';
+
+// symmetric key algorithm oids
+oids['1.2.840.113549.3.7'] = 'des-EDE3-CBC';
+oids['des-EDE3-CBC'] = '1.2.840.113549.3.7';
 oids['2.16.840.1.101.3.4.1.2'] = 'aes128-CBC';
 oids['aes128-CBC'] = '2.16.840.1.101.3.4.1.2';
 oids['2.16.840.1.101.3.4.1.22'] = 'aes192-CBC';
