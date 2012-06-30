@@ -363,6 +363,18 @@ util.ByteBuffer.prototype.at = function(i) {
 };
 
 /**
+ * Puts a byte at the given index without modifying the read pointer.
+ *
+ * @param i the byte index.
+ * @param b the byte to put.
+ */
+util.ByteBuffer.prototype.setAt = function(i, b) {
+  this.data = this.data.substr(0, this.read + i) +
+    String.fromCharCode(b) +
+    this.data.substr(this.read + i + 1);
+};
+
+/**
  * Gets the last byte without modifying the read pointer.
  *
  * @return the last byte.

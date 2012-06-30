@@ -3,8 +3,10 @@
  * support for RSA public and private keys.
  *
  * @author Dave Longley
+ * @author Stefan Siegl <stesie@brokenpipe.de>
  *
  * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of an X.509v3 certificate is as follows
  * (see RFC 2459):
@@ -150,69 +152,6 @@
  *
  * EncryptedData ::= OCTET STRING
  *
- * PFX ::= SEQUENCE {
- *   version  INTEGER {v3(3)}(v3,...),
- *   authSafe ContentInfo,
- *   macData  MacData OPTIONAL
- * }
- *
- * MacData ::= SEQUENCE {
- *   mac DigestInfo,
- *   macSalt OCTET STRING,
- *   iterations INTEGER DEFAULT 1
- * }
- * Note: The iterations default is for historical reasons and its use is
- * deprecated. A higher value, like 1024, is recommended.
- *
- * ContentInfo ::= SEQUENCE {
- *   contentType ContentType,
- *   content     [0] EXPLICIT ANY DEFINED BY contentType OPTIONAL
- * }
- *
- * ContentType ::= OBJECT IDENTIFIER
- *
- * AuthenticatedSafe ::= SEQUENCE OF ContentInfo
- * -- Data if unencrypted
- * -- EncryptedData if password-encrypted
- * -- EnvelopedData if public key-encrypted
- *
- *
- * SafeContents ::= SEQUENCE OF SafeBag
- *
- * SafeBag ::= SEQUENCE {
- *   bagId     BAG-TYPE.&id ({PKCS12BagSet})
- *   bagValue  [0] EXPLICIT BAG-TYPE.&Type({PKCS12BagSet}{@bagId}),
- *   bagAttributes SET OF PKCS12Attribute OPTIONAL
- * }
- *
- * PKCS12Attribute ::= SEQUENCE {
- *   attrId ATTRIBUTE.&id ({PKCS12AttrSet}),
- *   attrValues SET OF ATTRIBUTE.&Type ({PKCS12AttrSet}{@attrId})
- * } -- This type is compatible with the X.500 type ’Attribute’
- *
- * PKCS12AttrSet ATTRIBUTE ::= {
- *   friendlyName | -- from PKCS #9
- *   localKeyId, -- from PKCS #9
- *   ... -- Other attributes are allowed
- * }
- *
- * CertBag ::= SEQUENCE {
- *   certId    BAG-TYPE.&id   ({CertTypes}),
- *   certValue [0] EXPLICIT BAG-TYPE.&Type ({CertTypes}{@certId})
- * }
- *
- * x509Certificate BAG-TYPE ::= {OCTET STRING IDENTIFIED BY {certTypes 1}}
- *   -- DER-encoded X.509 certificate stored in OCTET STRING
- *
- * sdsiCertificate BAG-TYPE ::= {IA5String IDENTIFIED BY {certTypes 2}}
- * -- Base64-encoded SDSI certificate stored in IA5String
- *
- * CertTypes BAG-TYPE ::= {
- *   x509Certificate |
- *   sdsiCertificate,
- *   ... -- For future extensions
- * }
- *
  */
 (function() {
 
@@ -225,6 +164,7 @@ else if(typeof(module) !== 'undefined' && module.exports) {
   var forge = {
     aes: require('./aes'),
     asn1: require('./asn1'),
+    des: require('./des'),
     md: require('./md'),
     pkcs5: require('./pbkdf2'),
     pki: {
@@ -236,6 +176,8 @@ else if(typeof(module) !== 'undefined' && module.exports) {
   };
   BigInteger = require('./jsbn');
   module.exports = forge.pki;
+
+  forge.pkcs12 = forge.pkcs12 || require('./pkcs12');
 }
 
 // shortcut for asn.1 API
@@ -682,6 +624,26 @@ var PBES2AlgorithmsValidator = {
       constructed: false,
       capture: 'encIv'
     }]
+  }]
+};
+
+var pkcs12PbeParamsValidator = {
+  name: 'pkcs-12PbeParams',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'pkcs-12PbeParams.salt',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OCTETSTRING,
+    constructed: false,
+    capture: 'salt'
+  }, {
+    name: 'pkcs-12PbeParams.iterations',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'iterations'
   }]
 };
 
@@ -2540,44 +2502,20 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
 };
 
 /**
- * Decrypts a ASN.1 PrivateKeyInfo object.
+ * Get new Forge cipher object instance according to PBES2 params block.
  *
- * @param obj the ASN.1 EncryptedPrivateKeyInfo object.
- * @param password the password to decrypt with.
+ * The returned cipher instance is already started using the IV
+ * from PBES2 parameter block.
  *
- * @return the ASN.1 PrivateKeyInfo on success, null on failure.
+ * @param params The ASN.1 PBES2-params object.
+ * @param password The password to decrypt with.
+ * @return New cipher object instance.
  */
-pki.decryptPrivateKeyInfo = function(obj, password) {
-  var rval = null;
-
+var _cipherForPBES2 = function(params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, encryptedPrivateKeyValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read encrypted private key. ' +
-        'ASN.1 object is not a supported EncryptedPrivateKeyInfo.',
-      errors: errors
-    };
-  }
-
-  // check oid
-  var oid = asn1.derToOid(capture.encryptionOid);
-  if(oid !== pki.oids['pkcs5PBES2']) {
-    throw {
-      message: 'Cannot read encrypted private key. Unsupported OID.',
-      oid: oid,
-      supportedOids: ['pkcs5PBES2']
-    };
-  }
-
-  // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encryptedData);
-
-  // get PBE params
-  errors = [];
-  if(!asn1.validate(
-    capture.encryptionParams, PBES2AlgorithmsValidator, capture, errors)) {
+  if(!asn1.validate(params, PBES2AlgorithmsValidator, capture, errors)) {
     throw {
       message: 'Cannot read password-based-encryption algorithm ' +
         'parameters. ASN.1 object is not a supported ' +
@@ -2628,6 +2566,94 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
   var iv = capture.encIv;
   var cipher = forge.aes.createDecryptionCipher(dk);
   cipher.start(iv);
+
+  return cipher;
+};
+
+/**
+ * Get new Forge cipher object instance for PKCS#12 PBE.
+ *
+ * The returned cipher instance is already started using the key & IV
+ * derived from the provided password and PKCS#12 PBE salt.
+ *
+ * @param params The ASN.1 PKCS#12 PBE-params object.
+ * @param password The password to decrypt with.
+ * @param oid The PKCS#12 PBE OID (in string notation).
+ * @return New cipher object instance.
+ */
+var _cipherForPKCS12PBE = function(params, password, oid) {
+  // get PBE params
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(params, pkcs12PbeParamsValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read password-based-encryption algorithm ' +
+        'parameters. ASN.1 object is not a supported ' +
+        'EncryptedPrivateKeyInfo.',
+      errors: errors
+    };
+  }
+
+  var salt = forge.util.createBuffer(capture.salt);
+  var count = forge.util.createBuffer(capture.iterations);
+  count = count.getInt(count.length() << 3);
+
+  var dkLen = 24;
+  var dIvLen = 8;
+
+  var key = forge.pkcs12.generateKey(password, salt, 1, count, dkLen);
+  var iv = forge.pkcs12.generateKey(password, salt, 2, count, dIvLen);
+
+  return forge.des.startDecrypting(key, iv);
+};
+
+
+/**
+ * Decrypts a ASN.1 PrivateKeyInfo object.
+ *
+ * @param obj the ASN.1 EncryptedPrivateKeyInfo object.
+ * @param password the password to decrypt with.
+ *
+ * @return the ASN.1 PrivateKeyInfo on success, null on failure.
+ */
+pki.decryptPrivateKeyInfo = function(obj, password) {
+  var rval = null;
+
+  // get PBE params
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, encryptedPrivateKeyValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read encrypted private key. ' +
+        'ASN.1 object is not a supported EncryptedPrivateKeyInfo.',
+      errors: errors
+    };
+  }
+
+  // check oid
+  var oid = asn1.derToOid(capture.encryptionOid);
+  var cipher = null;
+
+  switch(oid) {
+  case pki.oids['pkcs5PBES2']:
+    cipher = _cipherForPBES2(capture.encryptionParams, password);
+    break;
+
+  case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+    cipher = _cipherForPKCS12PBE(capture.encryptionParams, password, oid);
+    break;
+
+  default:
+    throw {
+      message: 'Cannot read encrypted private key. Unsupported OID.',
+      oid: oid,
+      supportedOids: ['pkcs5PBES2', 'pbeWithSHAAnd3-KeyTripleDES-CBC']
+    };
+  }
+
+  // get encrypted data
+  var encrypted = forge.util.createBuffer(capture.encryptedData);
+
   cipher.update(encrypted);
   if(cipher.finish()) {
     rval = asn1.fromDer(cipher.output);
@@ -2703,118 +2729,6 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     rval = pki.privateKeyFromAsn1(rval);
   }
   return rval;
-};
-
-/**
- * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
- * password is provided then the private key will be encrypted.
- *
- * @param key the private key.
- * @param cert the certificate.
- * @param password the password to use.
- *
- * @return the PKCS#12 PFX ASN.1 object.
- */
-pki.toPkcs12Asn1 = function(key, cert, password) {
-  // TODO: tests (pkcs12-related code is untested)
-  // TODO: implement password-based-encryption for the whole package
-
-  // create safe bag for private key
-  var keyBag = null;
-  if(key !== null) {
-    var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
-    if(password === null) {
-      // no encryption
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['keyBag']).getBytes()),
-        // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-          // PrivateKeyInfo
-          asn1.toDer(pkAsn1).getBytes())
-        // bagAttributes (OPTIONAL)
-      ]);
-    }
-    else {
-      // encrypted PrivateKeyInfo
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['pkcs8ShroudedKeyBag']).getBytes()),
-        // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-          // EncryptedPrivateKeyInfo
-          asn1.toDer(pki.encryptPrivateKeyInfo(
-            pkAsn1, password)).getBytes())
-        // bagAttributes (OPTIONAL)
-      ]);
-    }
-  }
-
-  // create safe bag for certificate
-  if(cert !== null) {
-    var certAsn1 = pki.certificateToAsn1(cert);
-    var certSafeBag =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['certBag']).getBytes()),
-        // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false,
-          // CertBag
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-            // certId
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(oids['x509Certificate']).getBytes()),
-            // certValue (x509Certificate)
-            asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-              asn1.toDer(certAsn1).getBytes())
-            ]))
-        // bagAttributes (OPTIONAL)
-      ]);
-  }
-
-  // create SafeContents
-  var bags = [];
-  if(key !== null) {
-    bags.push(keyBag);
-  }
-  if(cert !== null) {
-    bags.push(certSafeBag);
-  }
-  var safeContents =
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, bags);
-
-  // create AuthenticatedSafe
-  var safe = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // PKCS#7 ContentInfo
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // contentType
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        // OID for the content type is 'data'
-        asn1.oidToDer(oids['data']).getBytes()),
-      // content
-      asn1.toDer(safeContents).getBytes()
-    ])
-  ]);
-
-  // PFX
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // version (3)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(0x03)),
-    // PKCS#7 ContentInfo
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // contentType
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        // OID for the content type is 'data'
-        asn1.oidToDer(oids['data']).getBytes()),
-      // content
-      pki.toDer(safe).getBytes()
-    ])
-  ]);
 };
 
 /**
