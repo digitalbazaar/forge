@@ -3,8 +3,10 @@
  * support for RSA public and private keys.
  *
  * @author Dave Longley
+ * @author Stefan Siegl <stesie@brokenpipe.de>
  *
  * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of an X.509v3 certificate is as follows
  * (see RFC 2459):
@@ -162,6 +164,7 @@ else if(typeof(module) !== 'undefined' && module.exports) {
   var forge = {
     aes: require('./aes'),
     asn1: require('./asn1'),
+    des: require('./des'),
     md: require('./md'),
     pkcs5: require('./pbkdf2'),
     pki: {
@@ -173,6 +176,8 @@ else if(typeof(module) !== 'undefined' && module.exports) {
   };
   BigInteger = require('./jsbn');
   module.exports = forge.pki;
+
+  forge.pkcs12 = forge.pkcs12 || require('./pkcs12');
 }
 
 // shortcut for asn.1 API
@@ -619,6 +624,26 @@ var PBES2AlgorithmsValidator = {
       constructed: false,
       capture: 'encIv'
     }]
+  }]
+};
+
+var pkcs12PbeParamsValidator = {
+  name: 'pkcs-12PbeParams',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'pkcs-12PbeParams.salt',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OCTETSTRING,
+    constructed: false,
+    capture: 'salt'
+  }, {
+    name: 'pkcs-12PbeParams.iterations',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'iterations'
   }]
 };
 
@@ -2545,6 +2570,43 @@ var _cipherForPBES2 = function(params, password) {
   return cipher;
 };
 
+/**
+ * Get new Forge cipher object instance for PKCS#12 PBE.
+ *
+ * The returned cipher instance is already started using the key & IV
+ * derived from the provided password and PKCS#12 PBE salt.
+ *
+ * @param params The ASN.1 PKCS#12 PBE-params object.
+ * @param password The password to decrypt with.
+ * @param oid The PKCS#12 PBE OID (in string notation).
+ * @return New cipher object instance.
+ */
+var _cipherForPKCS12PBE = function(params, password, oid) {
+  // get PBE params
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(params, pkcs12PbeParamsValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read password-based-encryption algorithm ' +
+        'parameters. ASN.1 object is not a supported ' +
+        'EncryptedPrivateKeyInfo.',
+      errors: errors
+    };
+  }
+
+  var salt = forge.util.createBuffer(capture.salt);
+  var count = forge.util.createBuffer(capture.iterations);
+  count = count.getInt(count.length() << 3);
+
+  var dkLen = 24;
+  var dIvLen = 8;
+
+  var key = forge.pkcs12.generateKey(password, salt, 1, count, dkLen);
+  var iv = forge.pkcs12.generateKey(password, salt, 2, count, dIvLen);
+
+  return forge.des.startDecrypting(key, iv);
+};
+
 
 /**
  * Decrypts a ASN.1 PrivateKeyInfo object.
@@ -2577,11 +2639,15 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
     cipher = _cipherForPBES2(capture.encryptionParams, password);
     break;
 
+  case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+    cipher = _cipherForPKCS12PBE(capture.encryptionParams, password, oid);
+    break;
+
   default:
     throw {
       message: 'Cannot read encrypted private key. Unsupported OID.',
       oid: oid,
-      supportedOids: ['pkcs5PBES2']
+      supportedOids: ['pkcs5PBES2', 'pbeWithSHAAnd3-KeyTripleDES-CBC']
     };
   }
 
