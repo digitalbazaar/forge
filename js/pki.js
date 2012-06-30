@@ -2477,44 +2477,20 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
 };
 
 /**
- * Decrypts a ASN.1 PrivateKeyInfo object.
+ * Get new Forge cipher object instance according to PBES2 params block.
  *
- * @param obj the ASN.1 EncryptedPrivateKeyInfo object.
- * @param password the password to decrypt with.
+ * The returned cipher instance is already started using the IV
+ * from PBES2 parameter block.
  *
- * @return the ASN.1 PrivateKeyInfo on success, null on failure.
+ * @param params The ASN.1 PBES2-params object.
+ * @param password The password to decrypt with.
+ * @return New cipher object instance.
  */
-pki.decryptPrivateKeyInfo = function(obj, password) {
-  var rval = null;
-
+var _cipherForPBES2 = function(params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, encryptedPrivateKeyValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read encrypted private key. ' +
-        'ASN.1 object is not a supported EncryptedPrivateKeyInfo.',
-      errors: errors
-    };
-  }
-
-  // check oid
-  var oid = asn1.derToOid(capture.encryptionOid);
-  if(oid !== pki.oids['pkcs5PBES2']) {
-    throw {
-      message: 'Cannot read encrypted private key. Unsupported OID.',
-      oid: oid,
-      supportedOids: ['pkcs5PBES2']
-    };
-  }
-
-  // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encryptedData);
-
-  // get PBE params
-  errors = [];
-  if(!asn1.validate(
-    capture.encryptionParams, PBES2AlgorithmsValidator, capture, errors)) {
+  if(!asn1.validate(params, PBES2AlgorithmsValidator, capture, errors)) {
     throw {
       message: 'Cannot read password-based-encryption algorithm ' +
         'parameters. ASN.1 object is not a supported ' +
@@ -2565,6 +2541,53 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
   var iv = capture.encIv;
   var cipher = forge.aes.createDecryptionCipher(dk);
   cipher.start(iv);
+
+  return cipher;
+};
+
+
+/**
+ * Decrypts a ASN.1 PrivateKeyInfo object.
+ *
+ * @param obj the ASN.1 EncryptedPrivateKeyInfo object.
+ * @param password the password to decrypt with.
+ *
+ * @return the ASN.1 PrivateKeyInfo on success, null on failure.
+ */
+pki.decryptPrivateKeyInfo = function(obj, password) {
+  var rval = null;
+
+  // get PBE params
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, encryptedPrivateKeyValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read encrypted private key. ' +
+        'ASN.1 object is not a supported EncryptedPrivateKeyInfo.',
+      errors: errors
+    };
+  }
+
+  // check oid
+  var oid = asn1.derToOid(capture.encryptionOid);
+  var cipher = null;
+
+  switch(oid) {
+  case pki.oids['pkcs5PBES2']:
+    cipher = _cipherForPBES2(capture.encryptionParams, password);
+    break;
+
+  default:
+    throw {
+      message: 'Cannot read encrypted private key. Unsupported OID.',
+      oid: oid,
+      supportedOids: ['pkcs5PBES2']
+    };
+  }
+
+  // get encrypted data
+  var encrypted = forge.util.createBuffer(capture.encryptedData);
+
   cipher.update(encrypted);
   if(cipher.finish()) {
     rval = asn1.fromDer(cipher.output);
