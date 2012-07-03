@@ -82,8 +82,15 @@ _ctx.collectInt(+new Date(), 32);
 if(typeof(navigator) !== 'undefined') {
   var _navBytes = '';
   for(var key in navigator) {
-    if(typeof(navigator[key]) == 'string') {
-      _navBytes += navigator[key];
+    try {
+      if(typeof(navigator[key]) == 'string') {
+        _navBytes += navigator[key];
+      }
+    } catch(e) {
+      /* Some navigator keys might not be accessible, e.g. the geolocation
+         attribute throws an exception if touched in Mozilla chrome:// context.
+
+         Silently ignore this and just don't use this as a source of entropy. */
     }
   }
   _ctx.collect(_navBytes);

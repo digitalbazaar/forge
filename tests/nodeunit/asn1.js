@@ -1,7 +1,7 @@
 var forge = require('../../js/forge');
 
 exports.testGeneralizedTimeToDate = function(test) {
-  d = new Date();
+  var d = new Date();
   var localOffset;
 
   // test local time case
@@ -48,10 +48,10 @@ exports.testGeneralizedTimeToDate = function(test) {
   test.equal(d.getTime(), 1298471640123);   // Wed Feb 23 14:34:00.123 UTC 2011
 
   test.done();
-}
+};
 
 exports.testUtcTimeToDate = function(test) {
-  d = forge.asn1.utcTimeToDate('1102231234Z');
+  var d = forge.asn1.utcTimeToDate('1102231234Z');
   test.equal(d.getTime(), 1298464440000);   // Wed Feb 23 12:34:00 UTC 2011
 
   d = forge.asn1.utcTimeToDate('1102231234+0200');
@@ -70,4 +70,4 @@ exports.testUtcTimeToDate = function(test) {
   test.equal(d.getTime(), 1298471696000);   // Wed Feb 23 14:34:56 UTC 2011
 
   test.done();
-}
+};
