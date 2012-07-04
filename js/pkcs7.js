@@ -6,75 +6,14 @@
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
- * The ASN.1 representation of PKCS#7 is as follows
- * (see RFC #2315 for details, http://www.ietf.org/rfc/rfc2315.txt):
- *
- * A PKCS#7 message consists of a ContentInfo on root level, which may
- * contain any number of further ContentInfo nested into it.
- *
- * ContentInfo ::= SEQUENCE {
- *    contentType                ContentType,
- *    content               [0]  EXPLICIT ANY DEFINED BY contentType OPTIONAL
- * }
- *
- * ContentType ::= OBJECT IDENTIFIER
- *
  * Currently this implementation only supports ContentType of either
  * EnvelopedData or EncryptedData on root level.  The top level elements may
  * contain only a ContentInfo of ContentType Data, i.e. plain data.  Further
  * nesting is not (yet) supported.
  *
- * EnvelopedData ::= SEQUENCE {
- *    version                    Version,
- *    recipientInfos             RecipientInfos,
- *    encryptedContentInfo       EncryptedContentInfo
- * }
- *
- * EncryptedData ::= SEQUENCE {
- *    version                    Version,
- *    encryptedContentInfo       EncryptedContentInfo
- * }
- *
- * Version ::= INTEGER
- *
- * RecipientInfos ::= SET OF RecipientInfo
- *
- * EncryptedContentInfo ::= SEQUENCE {
- *   contentType                 ContentType,
- *   contentEncryptionAlgorithm  ContentEncryptionAlgorithmIdentifier,
- *   encryptedContent       [0]  IMPLICIT EncryptedContent OPTIONAL
- * }
- *
- * ContentEncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
- *
- * The AlgorithmIdentifier contains an Object Identifier (OID) and parameters
- * for the algorithm, if any. In the case of AES and DES3, there is only one,
- * the IV.
- *
- * AlgorithmIdentifer ::= SEQUENCE {
- *    algorithm OBJECT IDENTIFIER,
- *    parameters ANY DEFINED BY algorithm OPTIONAL
- * }
- *
- * EncryptedContent ::= OCTET STRING
- *
- * RecipientInfo ::= SEQUENCE {
- *   version                     Version,
- *   issuerAndSerialNumber       IssuerAndSerialNumber,
- *   keyEncryptionAlgorithm      KeyEncryptionAlgorithmIdentifier,
- *   encryptedKey                EncryptedKey
- * }
- *
- * IssuerAndSerialNumber ::= SEQUENCE {
- *   issuer                      Name,
- *   serialNumber                CertificateSerialNumber
- * }
- *
- * CertificateSerialNumber ::= INTEGER
- *
- * KeyEncryptionAlgorithmIdentifier ::= AlgorithmIdentifier
- *
- * EncryptedKey ::= OCTET STRING
+ * The Forge validators for PKCS #7's ASN.1 structures are available from
+ * a seperate file pkcs7asn1.js, since those are referenced from other
+ * PKCS standards like PKCS #12.
  */
 (function() {
 
@@ -89,11 +28,14 @@ else if(typeof(module) !== 'undefined' && module.exports) {
     aes: require('./aes'),
     asn1: require('./asn1'),
     des: require('./des'),
+    pkcs7: {
+      asn1: require('./pkcs7asn1')
+    },
     pki: require('./pki'),
     random: require('./random'),
     util: require('./util')
   };
-  module.exports = forge.pkcs7 = {};
+  module.exports = forge.pkcs7;
 }
 
 // shortcut for ASN.1 API
@@ -102,177 +44,6 @@ var asn1 = forge.asn1;
 // shortcut for PKCS#7 API
 var p7 = forge.pkcs7 = forge.pkcs7 || {};
 
-var contentInfoValidator = {
-  name: 'ContentInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    name: 'ContentInfo.ContentType',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
-    constructed: false,
-    capture: 'contentType'
-  }, {
-    name: 'ContentInfo.content',
-    tagClass: asn1.Class.CONTEXT_SPECIFIC,
-    type: 0,
-    constructed: true,
-    optional: true,
-    captureAsn1: 'content'
-  }]
-};
-
-var encryptedContentInfoValidator = {
-  name: 'EncryptedContentInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    name: 'EncryptedContentInfo.contentType',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
-    constructed: false,
-    capture: 'contentType'
-  }, {
-    name: 'EncryptedContentInfo.contentEncryptionAlgorithm',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'EncryptedContentInfo.contentEncryptionAlgorithm.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'encAlgorithm'
-    }, {
-      name: 'EncryptedContentInfo.contentEncryptionAlgorithm.parameter',
-      tagClass: asn1.Class.UNIVERSAL,
-      constructed: false,
-      capture: 'encParameter'
-    }]
-  }, {
-    name: 'EncryptedContentInfo.encryptedContent',
-    tagClass: asn1.Class.CONTEXT_SPECIFIC,
-    type: 0,
-    /* The PKCS#7 structure output by OpenSSL somewhat differs from what
-     * other implementations do generate.
-     *
-     * OpenSSL generates a structure like this:
-     * SEQUENCE {
-     *    ...
-     *    [0]
-     *       26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
-     *       C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
-     *       ...
-     * }
-     *
-     * Whereas other implementations (and this PKCS#7 module) generate:
-     * SEQUENCE {
-     *    ...
-     *    [0] {
-     *       OCTET STRING
-     *          26 DA 67 D2 17 9C 45 3C B1 2A A8 59 2F 29 33 38
-     *          C3 C3 DF 86 71 74 7A 19 9F 40 D0 29 BE 85 90 45
-     *          ...
-     *    }
-     * }
-     *
-     * In order to support both, we just capture the context specific
-     * field here.  The OCTET STRING bit is removed below.
-     */
-    capture: 'encContent'
-  }]
-};
-
-var envelopedDataValidator = {
-  name: 'EnvelopedData',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    name: 'EnvelopedData.Version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: 'version'
-  }, {
-    name: 'EnvelopedData.RecipientInfos',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SET,
-    constructed: true,
-    captureAsn1: 'recipientInfos'
-  }].concat(encryptedContentInfoValidator)
-};
-
-var encryptedDataValidator = {
-  name: 'EncryptedData',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    name: 'EncryptedData.Version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: 'version'
-  }].concat(encryptedContentInfoValidator)
-};
-
-var recipientInfoValidator = {
-  name: 'RecipientInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    name: 'RecipientInfo.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: 'version'
-  }, {
-    name: 'RecipientInfo.issuerAndSerial',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'RecipientInfo.issuerAndSerial.issuer',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
-      constructed: true,
-      captureAsn1: 'issuer'
-    }, {
-      name: 'RecipientInfo.issuerAndSerial.serialNumber',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.INTEGER,
-      constructed: false,
-      capture: 'serial'
-    }]
-  }, {
-    name: 'RecipientInfo.keyEncryptionAlgorithm',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'RecipientInfo.keyEncryptionAlgorithm.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'encAlgorithm'
-    }, {
-      name: 'RecipientInfo.keyEncryptionAlgorithm.parameter',
-      tagClass: asn1.Class.UNIVERSAL,
-      constructed: false,
-      capture: 'encParameter'
-    }]
-  }, {
-    name: 'RecipientInfo.encryptedKey',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OCTETSTRING,
-    constructed: false,
-    capture: 'encKey'
-  }]
-};
 
     
 
@@ -317,7 +88,7 @@ p7.messageFromAsn1 = function(obj) {
   // validate root level ContentInfo and capture data
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, contentInfoValidator, capture, errors))
+  if(!asn1.validate(obj, p7.asn1.contentInfoValidator, capture, errors))
   {
     throw {
       message: 'Cannot read PKCS#7 message. ' +
@@ -360,7 +131,7 @@ var _recipientInfoFromAsn1 = function(obj) {
   // Validate EnvelopedData content block and capture data.
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, recipientInfoValidator, capture, errors))
+  if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors))
   {
     throw {
       message: 'Cannot read PKCS#7 message. ' +
@@ -608,7 +379,7 @@ p7.createEncryptedData = function() {
      */
     fromAsn1: function(obj) {
       // Validate EncryptedData content block and capture data.
-      _fromAsn1(msg, obj, encryptedDataValidator);
+      _fromAsn1(msg, obj, p7.asn1.encryptedDataValidator);
     },
 
     /**
@@ -648,7 +419,7 @@ p7.createEnvelopedData = function() {
      */
     fromAsn1: function(obj) {
       // Validate EnvelopedData content block and capture data.
-      var capture = _fromAsn1(msg, obj, envelopedDataValidator);
+      var capture = _fromAsn1(msg, obj, p7.asn1.envelopedDataValidator);
       msg.recipients = _recipientInfosFromAsn1(capture.recipientInfos.value);
     },
 
