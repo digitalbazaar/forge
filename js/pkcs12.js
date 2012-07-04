@@ -106,6 +106,9 @@ else if(typeof(module) !== 'undefined' && module.exports) {
     md: {
       sha1: require('./sha1')
     },
+    pkcs7: {
+      asn1: require('./pkcs7asn1')
+    },
     pki: require('./pki'),
     util: require('./util')
   };
@@ -358,6 +361,12 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         safeContents = data.value;
         break;
 
+      case oids.encryptedData:
+        var data = capture.content.value[0];
+        safeContents = _decryptSafeContents(data, password);
+        obj.encrypted = true;
+        break;
+
       default:
         throw {
           message: 'Unsupported PKCS#12 contentType.',
@@ -368,6 +377,48 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
     obj.safeBags = _decodeSafeContents(safeContents, password);
     pfx.safeContents.push(obj);
   }
+}
+
+/**
+ * Decrypt PKCS#7 EncryptedData structure
+ *
+ * @param data ASN.1 encoded EncryptedContentInfo object
+ * @param password The user-provided password
+ * @return The decrypted SafeContents (ASN.1 object)
+ */
+function _decryptSafeContents(data, password) {
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(data, forge.pkcs7.asn1.encryptedDataValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read EncryptedContentInfo. ',
+      errors: errors
+    };
+  }
+
+  var oid = asn1.derToOid(capture.contentType);
+  if(oid !== oids.data) {
+    throw {
+      message: 'PKCS#12 EncryptedContentInfo ContentType is not Data.',
+      oid: oid
+    };
+  }
+
+  // get cipher
+  oid = asn1.derToOid(capture.encAlgorithm);
+  var cipher = pki.pbe.getCipher(oid, capture.encParameter, password);
+
+  // get encrypted data
+  var encrypted = forge.util.createBuffer(capture.encContent);
+
+  cipher.update(encrypted);
+  if(!cipher.finish()) {
+    throw {
+      message: 'Failed to decrypt PKCS#12 SafeContents.'
+    };
+  }
+
+  return cipher.output.getBytes();
 }
 
 /**
