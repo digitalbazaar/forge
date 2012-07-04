@@ -145,7 +145,7 @@ var encryptedContentInfoValidator = {
     }, {
       name: 'EncryptedContentInfo.contentEncryptionAlgorithm.parameter',
       tagClass: asn1.Class.UNIVERSAL,
-      capture: 'encParameter'
+      captureAsn1: 'encParameter'
     }]
   }, {
     name: 'EncryptedContentInfo.encryptedContent',
@@ -259,7 +259,7 @@ p7v.recipientInfoValidator = {
       name: 'RecipientInfo.keyEncryptionAlgorithm.parameter',
       tagClass: asn1.Class.UNIVERSAL,
       constructed: false,
-      capture: 'encParameter'
+      captureAsn1: 'encParameter'
     }]
   }, {
     name: 'RecipientInfo.encryptedKey',

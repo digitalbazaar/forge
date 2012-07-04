@@ -146,7 +146,7 @@ var _recipientInfoFromAsn1 = function(obj) {
     serialNumber: forge.util.createBuffer(capture.serial).toHex(),
     encContent: {
       algorithm: asn1.derToOid(capture.encAlgorithm),
-      parameter: capture.encParameter,
+      parameter: capture.encParameter.value,
       content: capture.encKey
     }
   };
@@ -300,7 +300,7 @@ var _fromAsn1 = function(msg, obj, validator) {
   msg.version = capture.version.charCodeAt(0);
   msg.encContent = {
     algorithm: asn1.derToOid(capture.encAlgorithm),
-    parameter: forge.util.createBuffer(capture.encParameter),
+    parameter: forge.util.createBuffer(capture.encParameter.value),
     content: forge.util.createBuffer(content)
   };
 
