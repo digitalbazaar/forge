@@ -121,6 +121,20 @@ var createCipher = function(key, bits, encrypt)
   }
 
   /**
+   * Rotate a word right by given number of bits.
+   *
+   * Bits that are shifted out on the right are put back in on the left
+   * hand side.
+   *
+   * @param word The word to shift right.
+   * @param bits The number of bits to shift by.
+   * @return The rotated word.
+   */
+  var ror = function(word, bits) {
+    return ((word & 0xffff) >> bits) | ((word << (16 - bits)) & 0xffff);
+  }
+
+  /**
    * Perform one mixing round "in place".
    *
    * @param R Array of four words to perform mixing on.
@@ -146,6 +160,31 @@ var createCipher = function(key, bits, encrypt)
   };
 
   /**
+   * Perform one r-mixing round "in place".
+   *
+   * @param R Array of four words to perform mixing on.
+   */
+  var decryptMixRound = function(R) {
+    for(i = 3; i >= 0; i--) {
+      R[i] = ror(R[i], s[i]);
+      R[i] -= K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
+        ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
+      j --;
+    }
+  };
+
+  /**
+   * Perform one r-mashing round "in place".
+   *
+   * @param R Array of four words to perform mashing on.
+   */
+  var decryptMashRound = function(R) {
+    for(i = 3; i >= 0; i--) {
+      R[i] -= K[R[(i + 3) % 4] & 63];
+    }
+  };
+
+  /**
    * Run the specified cipher execution plan.
    *
    * This function takes four words from the input buffer, applies the IV on
@@ -165,16 +204,21 @@ var createCipher = function(key, bits, encrypt)
     for(i = 0; i < 4; i ++) {
       var val = _input.getInt16Le();
 
-      /* If we're encrypting, apply the IV (if requested). */
-      if(encrypt && _iv !== null) {
-        val ^= _iv.getInt16Le();
+      if(_iv !== null) {
+        if(encrypt) {
+          /* We're encrypting, apply the IV first. */
+          val ^= _iv.getInt16Le();
+        } else {
+          /* We're decryption, keep cipher text for next block. */
+          _iv.putInt16Le(val);
+        }
       }
 
       R.push(val & 0xffff);
     }
 
     /* Reset global "j" variable as per spec. */
-    j = 0;
+    j = encrypt ? 0 : 63;
 
     /* Run execution plan. */
     for(var ptr = 0; ptr < plan.length; ptr ++) {
@@ -185,15 +229,41 @@ var createCipher = function(key, bits, encrypt)
 
     /* Write back result to output buffer. */
     for(i = 0; i < 4; i ++) {
-      _output.putInt16Le(R[i]);
-
-      /* If we're encryption in CBC-mode, feed back encrypted bytes into
-         IV buffer to carry it forward to next round. */
-      if(encrypt && _iv !== null) {
-        _iv.putInt16Le(R[i]);
+      if(_iv !== null) {
+        if(encrypt) {
+          /* We're encrypting in CBC-mode, feed back encrypted bytes into
+             IV buffer to carry it forward to next block. */
+          _iv.putInt16Le(R[i]);
+        } else {
+          R[i] ^= _iv.getInt16Le();
+        }
       }
+
+      _output.putInt16Le(R[i]);
     }
   };
+
+
+  /* Create the cipher execution plan */
+  var plan;
+
+  if(encrypt) {
+    plan = [
+      [ 5, encryptMixRound ],
+      [ 1, encryptMashRound ],
+      [ 6, encryptMixRound ],
+      [ 1, encryptMashRound ],
+      [ 5, encryptMixRound ]
+    ];
+  } else {
+    plan = [
+      [ 5, decryptMixRound ],
+      [ 1, decryptMashRound ],
+      [ 6, decryptMixRound ],
+      [ 1, decryptMashRound ],
+      [ 5, decryptMixRound ]
+    ];
+  }
 
 
   /* Create cipher object */
@@ -237,13 +307,7 @@ var createCipher = function(key, bits, encrypt)
       }
 
       while(_input.length() >= 8) {
-        runPlan([
-          [ 5, encryptMixRound ],
-          [ 1, encryptMashRound ],
-          [ 6, encryptMixRound ],
-          [ 1, encryptMashRound ],
-          [ 5, encryptMixRound ]
-        ]);
+        runPlan(plan);
       }
     },
 
@@ -319,7 +383,7 @@ var createCipher = function(key, bits, encrypt)
  * @return the cipher.
  */
 forge.rc2.startEncrypting = function(key, iv, output) {
-  var cipher = createCipher(key, 128, true);
+  var cipher = forge.rc2.createEncryptionCipher(key, 128);
   cipher.start(iv, output);
   return cipher;
 };
@@ -341,4 +405,40 @@ forge.rc2.createEncryptionCipher = function(key, bits) {
   return createCipher(key, bits, true);
 };
 
+/**
+ * Creates an RC2 cipher object to decrypt data in ECB or CBC mode using the
+ * given symmetric key. The output will be stored in the 'output' member
+ * of the returned cipher.
+ *
+ * The key and iv may be given as a string of bytes or a byte buffer.
+ * The cipher is initialized to use 128 effective key bits.
+ *
+ * @param key the symmetric key to use.
+ * @param iv the initialization vector to use.
+ * @param output the buffer to write to, null to create one.
+ *
+ * @return the cipher.
+ */
+forge.rc2.startDecrypting = function(key, iv, output) {
+  var cipher = forge.rc2.createDecryptionCipher(key, 128);
+  cipher.start(iv, output);
+  return cipher;
+};
+
+/**
+ * Creates an RC2 cipher object to decrypt data in ECB or CBC mode using the
+ * given symmetric key.
+ *
+ * The key may be given as a string of bytes or a byte buffer.
+ *
+ * To start decrypting call start() on the cipher with an iv and optional
+ * output buffer.
+ *
+ * @param key the symmetric key to use.
+ *
+ * @return the cipher.
+ */
+forge.rc2.createDecryptionCipher = function(key, bits) {
+  return createCipher(key, bits, false);
+};
 })();

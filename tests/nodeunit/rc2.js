@@ -68,3 +68,36 @@ exports.testEncryptDataCBC = function(test) {
   test.equal(cipher.output.toHex(), res);
   test.done();
 }
+
+exports.testDecryptDataECB = function(test) {
+  var key = '88bca90e90875a7f0f79c384627bafb2';
+  key = new forge.util.ByteBuffer(forge.util.hexToBytes(key));
+
+  var input = '2194adaf4d517e3a';
+  input = new forge.util.ByteBuffer(forge.util.hexToBytes(input));
+
+  var cipher = forge.rc2.startDecrypting(key, null, null)
+  cipher.update(input);
+  cipher.finish();
+
+  test.equal(cipher.output, 'vegan');
+  test.done();
+}
+
+exports.testDecryptDataCBC = function(test) {
+  var key = '88bca90e90875a7f0f79c384627bafb2';
+  key = new forge.util.ByteBuffer(forge.util.hexToBytes(key));
+
+  var iv = '0123456789abcdef';
+  iv = new forge.util.ByteBuffer(forge.util.hexToBytes(iv));
+
+  var input = '50cfd16e0fd7f20b17a622eb2a469b7e';
+  input = new forge.util.ByteBuffer(forge.util.hexToBytes(input));
+
+  var cipher = forge.rc2.startDecrypting(key, iv, null)
+  cipher.update(input);
+  cipher.finish();
+
+  test.equal(cipher.output, 'revolution');
+  test.done();
+}
