@@ -87,9 +87,9 @@ forge.rc2.expandKey = function(key, effKeyBits) {
 };
 
 /**
- * Creates an DES cipher object.
+ * Creates a RC2 cipher object.
  *
- * @param key the symmetric key to use (64 or 192 bits).
+ * @param key the symmetric key to use (as base for key generation).
  * @param bits the number of effective key bits.
  * @param encrypt false for decryption, true for encryption.
  *
@@ -305,7 +305,7 @@ var createCipher = function(key, bits, encrypt)
 
 
 /**
- * Creates an RC2 cipher object to encrypt data in CBC mode using the
+ * Creates an RC2 cipher object to encrypt data in ECB or CBC mode using the
  * given symmetric key. The output will be stored in the 'output' member
  * of the returned cipher.
  *
@@ -325,7 +325,7 @@ forge.rc2.startEncrypting = function(key, iv, output) {
 };
 
 /**
- * Creates an RC2 cipher object to encrypt data in CBC mode using the
+ * Creates an RC2 cipher object to encrypt data in ECB or CBC mode using the
  * given symmetric key.
  *
  * The key may be given as a string of bytes or a byte buffer.
