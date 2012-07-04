@@ -50,6 +50,38 @@ var piTable = [
 
 var s = [1, 2, 3, 5];
 
+
+/**
+ * Rotate a word left by given number of bits.
+ *
+ * Bits that are shifted out on the left are put back in on the right
+ * hand side.
+ *
+ * @param word The word to shift left.
+ * @param bits The number of bits to shift by.
+ * @return The rotated word.
+ */
+var rol = function(word, bits) {
+  return ((word << bits) & 0xffff) | ((word & 0xffff) >> (16 - bits));
+}
+
+/**
+ * Rotate a word right by given number of bits.
+ *
+ * Bits that are shifted out on the right are put back in on the left
+ * hand side.
+ *
+ * @param word The word to shift right.
+ * @param bits The number of bits to shift by.
+ * @return The rotated word.
+ */
+var ror = function(word, bits) {
+  return ((word & 0xffff) >> bits) | ((word << (16 - bits)) & 0xffff);
+}
+
+
+
+
 /* RC2 API */
 
 /**
@@ -86,6 +118,7 @@ forge.rc2.expandKey = function(key, effKeyBits) {
   return L;
 };
 
+
 /**
  * Creates a RC2 cipher object.
  *
@@ -98,6 +131,7 @@ forge.rc2.expandKey = function(key, effKeyBits) {
 var createCipher = function(key, bits, encrypt)
 {
   var _finish = false, _input = null, _output = null, _iv = null;
+  var mixRound, mashRound;
   var i, j, K = [];
 
   /* Expand key and fill into K[] Array */
@@ -106,83 +140,57 @@ var createCipher = function(key, bits, encrypt)
     K.push(key.getInt16Le());
   }
 
-  /**
-   * Rotate a word left by given number of bits.
-   *
-   * Bits that are shifted out on the left are put back in on the right
-   * hand side.
-   *
-   * @param word The word to shift left.
-   * @param bits The number of bits to shift by.
-   * @return The rotated word.
-   */
-  var rol = function(word, bits) {
-    return ((word << bits) & 0xffff) | ((word & 0xffff) >> (16 - bits));
+  if(encrypt) {
+    /**
+     * Perform one mixing round "in place".
+     *
+     * @param R Array of four words to perform mixing on.
+     */
+    mixRound = function(R) {
+      for(i = 0; i < 4; i++) {
+        R[i] += K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
+          ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
+        R[i] = rol(R[i], s[i]);
+        j ++;
+      }
+    };
+
+    /**
+     * Perform one mashing round "in place".
+     *
+     * @param R Array of four words to perform mashing on.
+     */
+    mashRound = function(R) {
+      for(i = 0; i < 4; i ++) {
+        R[i] += K[R[(i + 3) % 4] & 63];
+      }
+    };
+  } else {
+    /**
+     * Perform one r-mixing round "in place".
+     *
+     * @param R Array of four words to perform mixing on.
+     */
+    mixRound = function(R) {
+      for(i = 3; i >= 0; i--) {
+        R[i] = ror(R[i], s[i]);
+        R[i] -= K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
+          ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
+        j --;
+      }
+    };
+
+    /**
+     * Perform one r-mashing round "in place".
+     *
+     * @param R Array of four words to perform mashing on.
+     */
+    mashRound = function(R) {
+      for(i = 3; i >= 0; i--) {
+        R[i] -= K[R[(i + 3) % 4] & 63];
+      }
+    };
   }
-
-  /**
-   * Rotate a word right by given number of bits.
-   *
-   * Bits that are shifted out on the right are put back in on the left
-   * hand side.
-   *
-   * @param word The word to shift right.
-   * @param bits The number of bits to shift by.
-   * @return The rotated word.
-   */
-  var ror = function(word, bits) {
-    return ((word & 0xffff) >> bits) | ((word << (16 - bits)) & 0xffff);
-  }
-
-  /**
-   * Perform one mixing round "in place".
-   *
-   * @param R Array of four words to perform mixing on.
-   */
-  var encryptMixRound = function(R) {
-    for(i = 0; i < 4; i++) {
-      R[i] += K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
-        ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
-      R[i] = rol(R[i], s[i]);
-      j ++;
-    }
-  };
-
-  /**
-   * Perform one mashing round "in place".
-   *
-   * @param R Array of four words to perform mashing on.
-   */
-  var encryptMashRound = function(R) {
-    for(i = 0; i < 4; i ++) {
-      R[i] += K[R[(i + 3) % 4] & 63];
-    }
-  };
-
-  /**
-   * Perform one r-mixing round "in place".
-   *
-   * @param R Array of four words to perform mixing on.
-   */
-  var decryptMixRound = function(R) {
-    for(i = 3; i >= 0; i--) {
-      R[i] = ror(R[i], s[i]);
-      R[i] -= K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
-        ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
-      j --;
-    }
-  };
-
-  /**
-   * Perform one r-mashing round "in place".
-   *
-   * @param R Array of four words to perform mashing on.
-   */
-  var decryptMashRound = function(R) {
-    for(i = 3; i >= 0; i--) {
-      R[i] -= K[R[(i + 3) % 4] & 63];
-    }
-  };
 
   /**
    * Run the specified cipher execution plan.
@@ -244,28 +252,6 @@ var createCipher = function(key, bits, encrypt)
   };
 
 
-  /* Create the cipher execution plan */
-  var plan;
-
-  if(encrypt) {
-    plan = [
-      [ 5, encryptMixRound ],
-      [ 1, encryptMashRound ],
-      [ 6, encryptMixRound ],
-      [ 1, encryptMashRound ],
-      [ 5, encryptMixRound ]
-    ];
-  } else {
-    plan = [
-      [ 5, decryptMixRound ],
-      [ 1, decryptMashRound ],
-      [ 6, decryptMixRound ],
-      [ 1, decryptMashRound ],
-      [ 5, decryptMixRound ]
-    ];
-  }
-
-
   /* Create cipher object */
   var cipher = null;
   cipher = {
@@ -307,7 +293,13 @@ var createCipher = function(key, bits, encrypt)
       }
 
       while(_input.length() >= 8) {
-        runPlan(plan);
+        runPlan([
+            [ 5, mixRound ],
+            [ 1, mashRound ],
+            [ 6, mixRound ],
+            [ 1, mashRound ],
+            [ 5, mixRound ]
+          ]);
       }
     },
 
