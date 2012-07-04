@@ -11,6 +11,9 @@
   "contributors": [{
     "name" : "Dave Longley",
     "email" : "dlongley@digitalbazaar.com"
+  }, {
+    "name" : "Stefan Siegl",
+    "email" : "stesie@brokenpipe.de"
   }],
   "repository": {
     "type" : "git",
@@ -34,6 +37,8 @@
     "rsa",
     "pki",
     "aes",
-    "pkcs"
+    "pkcs",
+    "des",
+    "rc2"
   ]
 }
