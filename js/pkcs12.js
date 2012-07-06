@@ -227,7 +227,27 @@ var safeBagValidator = {
     type: asn1.Type.SET,
     constructed: true,
     optional: true,
-    captureAsn1: 'bagAttributes'
+    capture: 'bagAttributes'
+  }]
+};
+
+var attributeValidator = {
+  name: 'Attribute',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'Attribute.attrId',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OID,
+    constructed: false,
+    capture: 'oid'
+  }, {
+    name: 'Attribute.attrValues',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SET,
+    constructed: true,
+    capture: 'values'
   }]
 };
 
@@ -458,7 +478,8 @@ function _decodeSafeContents(safeContents, password) {
 
     /* Create bag object and push to result array. */
     var bag = {
-      type: asn1.derToOid(capture.bagId)
+      type: asn1.derToOid(capture.bagId),
+      attributes: _decodeBagAttributes(capture.bagAttributes)
     };
     res.push(bag);
 
@@ -530,6 +551,41 @@ function _decodeSafeContents(safeContents, password) {
   return res;
 }
 
+/**
+ * Decode PKCS#12 SET OF PKCS12Attribute into JavaScript object
+ *
+ * @param attributes SET OF PKCS12Attribute (ASN.1 object)
+ * @return the decoded attributes
+ */
+function _decodeBagAttributes(attributes) {
+  var decodedAttrs = {};
+
+  if(attributes !== undefined) {
+    for(var i = 0; i < attributes.length; i ++) {
+      var capture = {};
+      var errors = [];
+      if(!asn1.validate(attributes[i], attributeValidator, capture, errors)) {
+        throw {
+          message: 'Cannot read PKCS#12 BagAttribute.',
+          errors: errors
+        };
+      }
+
+      var oid = asn1.derToOid(capture.oid);
+      if(oids[oid] === undefined) {
+        // unsupported attribute type, ignore.
+        continue;
+      }
+
+      decodedAttrs[oids[oid]] = [];
+      for(var j = 0; j < capture.values.length; j ++) {
+        decodedAttrs[oids[oid]].push(capture.values[j].value);
+      }
+    }
+  }
+
+  return decodedAttrs;
+}
 
 /**
  * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
