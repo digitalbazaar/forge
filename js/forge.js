@@ -18,6 +18,7 @@ var forge = {
   pki: require('./pki'),
   prng: require('./prng'),
   random: require('./random'),
+  rc2: require('./rc2'),
   task: require('./task'),
   tls: require('./tls'),
   util: require('./util'),

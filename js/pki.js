@@ -172,6 +172,7 @@ else if(typeof(module) !== 'undefined' && module.exports) {
       rsa: require('./rsa')
     },
     random: require('./random'),
+    rc2: require('./rc2'),
     util: require('./util')
   };
   BigInteger = require('./jsbn');
@@ -186,6 +187,8 @@ var asn1 = forge.asn1;
 /* Public Key Infrastructure (PKI) implementation. */
 var pki = forge.pki = forge.pki || {};
 var oids = pki.oids;
+
+pki.pbe = {};
 
 // short name OID mappings
 var _shortNames = {};
@@ -2507,11 +2510,12 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
  * The returned cipher instance is already started using the IV
  * from PBES2 parameter block.
  *
+ * @param oid The PKCS#12 PBE OID (in string notation).
  * @param params The ASN.1 PBES2-params object.
  * @param password The password to decrypt with.
  * @return New cipher object instance.
  */
-var _cipherForPBES2 = function(params, password) {
+pki.pbe.getCipherForPBES2 = function(oid, params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
@@ -2576,12 +2580,12 @@ var _cipherForPBES2 = function(params, password) {
  * The returned cipher instance is already started using the key & IV
  * derived from the provided password and PKCS#12 PBE salt.
  *
+ * @param oid The PKCS#12 PBE OID (in string notation).
  * @param params The ASN.1 PKCS#12 PBE-params object.
  * @param password The password to decrypt with.
- * @param oid The PKCS#12 PBE OID (in string notation).
  * @return New cipher object instance.
  */
-var _cipherForPKCS12PBE = function(params, password, oid) {
+pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
@@ -2598,14 +2602,60 @@ var _cipherForPKCS12PBE = function(params, password, oid) {
   var count = forge.util.createBuffer(capture.iterations);
   count = count.getInt(count.length() << 3);
 
-  var dkLen = 24;
-  var dIvLen = 8;
+  var dkLen, dIvLen, cipherFn;
+  switch(oid) {
+    case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+      dkLen = 24;
+      dIvLen = 8;
+      cipherFn = forge.des.startDecrypting;
+      break;
+
+    case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
+      dkLen = 5;
+      dIvLen = 8;
+      cipherFn = function(key, iv) {
+        var cipher = forge.rc2.createDecryptionCipher(key, 40);
+        cipher.start(iv, null);
+        return cipher;
+      };
+      break;
+
+    default:
+      throw {
+        message: 'Cannot read PKCS #12 PBE data block. Unsupported OID.',
+        oid: oid
+      };
+  }
 
   var key = forge.pkcs12.generateKey(password, salt, 1, count, dkLen);
   var iv = forge.pkcs12.generateKey(password, salt, 2, count, dIvLen);
 
-  return forge.des.startDecrypting(key, iv);
+  return cipherFn(key, iv);
 };
+
+pki.pbe.getCipher = function(oid, params, password) {
+  switch(oid) {
+  case pki.oids['pkcs5PBES2']:
+    return pki.pbe.getCipherForPBES2(oid, params, password);
+    break;
+
+  case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+  case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
+    return pki.pbe.getCipherForPKCS12PBE(oid, params, password);
+    break;
+
+  default:
+    throw {
+      message: 'Cannot read encrypted PBE data block. Unsupported OID.',
+      oid: oid,
+      supportedOids: [
+        'pkcs5PBES2',
+        'pbeWithSHAAnd3-KeyTripleDES-CBC',
+        'pbewithSHAAnd40BitRC2-CBC'
+      ]
+    };
+  }
+}
 
 
 /**
@@ -2630,26 +2680,9 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
     };
   }
 
-  // check oid
+  // get cipher
   var oid = asn1.derToOid(capture.encryptionOid);
-  var cipher = null;
-
-  switch(oid) {
-  case pki.oids['pkcs5PBES2']:
-    cipher = _cipherForPBES2(capture.encryptionParams, password);
-    break;
-
-  case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
-    cipher = _cipherForPKCS12PBE(capture.encryptionParams, password, oid);
-    break;
-
-  default:
-    throw {
-      message: 'Cannot read encrypted private key. Unsupported OID.',
-      oid: oid,
-      supportedOids: ['pkcs5PBES2', 'pbeWithSHAAnd3-KeyTripleDES-CBC']
-    };
-  }
+  var cipher = pki.pbe.getCipher(oid, capture.encryptionParams, password);
 
   // get encrypted data
   var encrypted = forge.util.createBuffer(capture.encryptedData);
