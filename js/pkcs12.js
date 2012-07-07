@@ -278,6 +278,36 @@ var certBagValidator = {
   }]
 };
 
+/**
+ * Search SafeContents structure for bags with matching attributes.
+ *
+ * The search can optionally be narrowed by a certain bag type.
+ *
+ * @param safeContents The SafeContents structure to search in.
+ * @param attrName The name of the attribute to compare against.
+ * @param attrValue The attribute value to search for.
+ * @param bagType Optional bag type to narrow search by.
+ * @return Array of matching bags
+ */
+function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
+  var result = [];
+
+  for(var i = 0; i < safeContents.length; i ++) {
+    for(var j = 0; j < safeContents[i].safeBags.length; j ++) {
+      var bag = safeContents[i].safeBags[j];
+      if(bagType !== undefined && bag.type !== bagType) {
+        continue;
+      }
+
+      if(bag.attributes[attrName] !== undefined &&
+         bag.attributes[attrName].indexOf(attrValue) >= 0) {
+        result.push(bag);
+      }
+    }
+  }
+
+  return result;
+};
 
 /**
  * Converts a PKCS#12 PFX in ASN.1 notation into a PFX object.
@@ -301,7 +331,31 @@ p12.pkcs12FromAsn1 = function(obj, password) {
 
   var pfx = {
     version: capture.version.charCodeAt(0),
-    safeContents: []
+    safeContents: [],
+
+    /**
+     * Get bags with matching friendlyName attribute
+     *
+     * @param friendlyName The friendly name to search for
+     * @param bagType Optional bag type to narrow search by
+     * @return Array of bags with matching friendlyName attribute
+     */
+    getBagsByFriendlyName: function(friendlyName, bagType) {
+      return _getBagsByAttribute(pfx.safeContents, 'friendlyName',
+        friendlyName, bagType);
+    },
+
+    /**
+     * Get bags with matching localKeyId attribute
+     *
+     * @param localKeyId The localKeyId name to search for
+     * @param bagType Optional bag type to narrow search by
+     * @return Array of bags with matching localKeyId attribute
+     */
+    getBagsByLocalKeyId: function(localKeyId, bagType) {
+      return _getBagsByAttribute(pfx.safeContents, 'localKeyId',
+        localKeyId, bagType);
+    }
   };
 
   if(capture.version.charCodeAt(0) !== 3) {
