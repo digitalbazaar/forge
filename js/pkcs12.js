@@ -307,7 +307,7 @@ function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
   }
 
   return result;
-};
+}
 
 /**
  * Converts a PKCS#12 PFX in ASN.1 notation into a PFX object.
@@ -362,7 +362,7 @@ p12.pkcs12FromAsn1 = function(obj, password) {
     throw {
       message: 'PKCS#12 PFX of version other than 3 not supported.',
       version: capture.version.charCodeAt(0)
-    }
+    };
   }
 
   if(asn1.derToOid(capture.contentType) !== oids.data) {
@@ -382,7 +382,7 @@ p12.pkcs12FromAsn1 = function(obj, password) {
 
   _decodeAuthenticatedSafe(pfx, data.value, password);
   return pfx;
-}
+};
 
 /**
  * Decode PKCS#12 AuthenticatedSafe (BER encoded) into PFX object.
@@ -403,7 +403,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
     throw {
       message: 'PKCS#12 AuthenticatedSafe expected to be a ' +
         'SEQUENCE OF ContentInfo'
-    }
+    };
   }
 
   for(var i = 0; i < authSafe.value.length; i ++) {
@@ -423,9 +423,9 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
       encrypted: false
     };
     var safeContents = null;
+    var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
       case oids.data:
-        var data = capture.content.value[0];
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
           throw {
@@ -436,7 +436,6 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         break;
 
       case oids.encryptedData:
-        var data = capture.content.value[0];
         safeContents = _decryptSafeContents(data, password);
         obj.encrypted = true;
         break;
@@ -513,7 +512,7 @@ function _decodeSafeContents(safeContents, password) {
     throw {
       message: 'PKCS#12 SafeContents expected to be a ' +
         'SEQUENCE OF SafeBag'
-    }
+    };
   }
 
   var res = [];
@@ -587,7 +586,7 @@ function _decodeSafeContents(safeContents, password) {
           message: 'Unsupported PKCS#12 SafeBag type.',
           oid: bag.type
         };
-    };
+    }
 
     /* Validate SafeBag value (i.e. CertBag, etc.) and capture data if needed. */
     if(validator !== undefined &&
