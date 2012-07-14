@@ -1495,11 +1495,18 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     cert.md = null;
     if(cert.signatureOid in oids) {
       var oid = oids[cert.signatureOid];
-      if(oid === 'sha1withRSAEncryption') {
-        cert.md = forge.md.sha1.create();
-      }
-      else if(oid === 'md5withRSAEncryption') {
-        cert.md = forge.md.md5.create();
+      switch(oid) {
+        case 'sha1withRSAEncryption':
+          cert.md = forge.md.sha1.create();
+          break;
+
+        case 'md5withRSAEncryption':
+          cert.md = forge.md.md5.create();
+          break;
+
+        case 'sha256WithRSAEncryption':
+          cert.md = forge.md.sha256.create();
+          break;
       }
     }
     if(cert.md === null) {
