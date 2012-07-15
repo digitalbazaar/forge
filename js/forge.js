@@ -22,7 +22,10 @@ var forge = {
   task: require('./task'),
   tls: require('./tls'),
   util: require('./util'),
-  md: require('./md')
+  md: require('./md'),
+  mgf: {
+    mgf1: require('./mgf1')
+  }
 };
 forge.pki.oids = require('./oids');
 forge.pki.rsa = require('./rsa');
