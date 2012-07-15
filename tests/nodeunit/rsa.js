@@ -1,7 +1,14 @@
 var forge = require('../../js/forge');
 var fs = require('fs');
 
-/* Key material in _files directory was created with OpenSSL using
+/*
+ * Test encryption & decryption using RSA with PKCS#1 v1.5 padding
+ *
+ * We're testing using different key sizes (1024, 1025, 1031, 1032).
+ * The test functions are generated from "templates" below, one
+ * for each key size to provide sensible output to nodeunit.
+ *
+ * Key material in _files directory was created with OpenSSL using
  * these commands:
  *
  * openssl genrsa -out rsa_1024_private.pem 1024
@@ -51,3 +58,41 @@ var keySizes = [ 1024, 1025, 1031, 1032 ];
 for(var i = 0; i < keySizes.length; i ++) {
   createTestFunctions(keySizes[i]);
 }
+
+
+/*
+ * Test maximum message length detection in encryption routine.
+ *
+ * The message must be padded with at least eight bytes, two zero bytes and
+ * one byte telling what the block type is.  This is 11 extra bytes are
+ * added to the message.
+ *
+ * We're testing using a message of 118 bytes.  Together with the 11 extra
+ * bytes the encryption block needs to be at least 129 bytes long.  This is
+ * we need a key with a modulus length of at least 1025 bits.
+ */
+exports.testMessageLengthDetection_1024 = function(test) {
+  var keyPem = fs.readFileSync(__dirname +
+    '/_files/rsa_1024_public.pem', 'ascii');
+  var key = forge.pki.publicKeyFromPem(keyPem);
+  var message = new forge.util.ByteBuffer();
+  message.fillWithByte(0, 118);
+
+  test.throws(function() {
+    key.encrypt(message.getBytes());
+  });
+  test.done();
+};
+
+exports.testMessageLengthDetection_1025 = function(test) {
+  var keyPem = fs.readFileSync(__dirname +
+    '/_files/rsa_1025_public.pem', 'ascii');
+  var key = forge.pki.publicKeyFromPem(keyPem);
+  var message = new forge.util.ByteBuffer();
+  message.fillWithByte(0, 118);
+
+  test.doesNotThrow(function() {
+    key.encrypt(message.getBytes());
+    test.done();
+  });
+};
