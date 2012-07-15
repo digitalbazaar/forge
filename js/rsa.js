@@ -174,7 +174,7 @@ var _modPow = function(x, key, pub) {
  */
 pki.rsa.encrypt = function(m, key, bt) {
   // get the length of the modulus in bytes
-  var k = key.n.bitLength() >>> 3;
+  var k = Math.ceil(key.n.bitLength() / 8);
 
   if(m.length > (k - 11)) {
     throw {
