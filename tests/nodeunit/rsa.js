@@ -14,6 +14,9 @@ var fs = require('fs');
  * openssl genrsa -out rsa_1024_private.pem 1024
  * openssl rsa -in rsa_1024_private.pem -out rsa_1024_public.pem -outform PEM -pubout
  * echo 'too many secrets' | openssl rsautl -encrypt -inkey rsa_1024_public.pem -pubin -out rsa_1024_encrypted.bin
+ *
+ * echo -n 'just testing' | openssl dgst -sha1 -binary > tosign.sha1
+ * openssl pkeyutl -sign -in tosign.sha1 -inkey rsa_1024_private.pem -out rsa_1024_sig.bin -pkeyopt digest:sha1
  */
 
 function createTestFunctions(keySize) {
@@ -52,6 +55,47 @@ function createTestFunctions(keySize) {
     test.done();
   };
 
+  /**
+   * Test RSA signature verification using various key sizes
+   * and PKCS #1 v1.5 padding.
+   */
+  exports['testRsaVerify' + keySize] = function(test) {
+    var sig = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_sig.bin', 'binary');
+    var keyPem = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_public.pem', 'ascii');
+    var key = forge.pki.publicKeyFromPem(keyPem);
+
+    var md = forge.md.sha1.create();
+    md.start();
+    md.update('just testing');
+
+    test.equal(key.verify(md.digest().getBytes(), sig), true);
+    test.done();
+  };
+
+  /**
+   * Test RSA signature generation with various key sizes and
+   * PKCS #1 v1.5 padding.
+   *
+   * Those signatures are deterministic, therefore just generate
+   * them and compare against pre-calculated ones.
+   */
+  exports['testRsaSign' + keySize] = function(test) {
+    var keyPem = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_private.pem', 'ascii');
+    var key = forge.pki.privateKeyFromPem(keyPem);
+
+    var md = forge.md.sha1.create();
+    md.start();
+    md.update('just testing');
+
+    var exp = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_sig.bin', 'binary');
+    test.equal(key.sign(md), exp);
+
+    test.done();
+  };
 }
 
 var keySizes = [ 1024, 1025, 1031, 1032 ];
