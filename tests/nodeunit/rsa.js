@@ -23,6 +23,14 @@ var fs = require('fs');
  * openssl pkeyutl -sign -in tosign.sha1 -inkey rsa_1024_private.pem \
  *   -out rsa_1024_sigpss.bin -pkeyopt digest:sha1 \
  *   -pkeyopt rsa_padding_mode:pss -pkeyopt rsa_pss_saltlen:20
+ *
+ * OpenSSL commands for signature verification:
+ *
+ * openssl pkeyutl -verify -in tosign.sha1 -sigfile rsa_1024_sig.bin \
+ *   -pubin -inkey rsa_1024_public.pem -pkeyopt digest:sha1
+ * openssl pkeyutl -verify -in tosign.sha1 -sigfile rsa_1025_sigpss.bin \
+ *   -pubin -inkey rsa_1025_public.pem -pkeyopt digest:sha1 \
+ *   -pkeyopt rsa_padding_mode:pss -pkeyopt rsa_pss_saltlen:20
  */
 
 function createTestFunctions(keySize) {
@@ -121,6 +129,42 @@ function createTestFunctions(keySize) {
     var pss = forge.pss.create(forge.md.sha1.create(),
       forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
     test.equal(key.verify(md.digest().getBytes(), sig, pss), true);
+    test.done();
+  };
+
+  /**
+   * Test RSA signature generation with various key sizes and
+   * PSS padding.
+   *
+   * Those signatures are *not* deterministic, therefore we can't just
+   * generate them and compare against pre-calculated ones.  Instead
+   * we rely on the verify function to work (tested against signatures
+   * created with OpenSSL) and accept as successful if verification
+   * passes.
+   */
+  exports['testRsaSignPss' + keySize] = function(test) {
+    var keyPem = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_private.pem', 'ascii');
+    var key = forge.pki.privateKeyFromPem(keyPem);
+
+    var pubkeyPem = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_public.pem', 'ascii');
+    var pubkey = forge.pki.publicKeyFromPem(pubkeyPem);
+
+    var md = forge.md.sha1.create();
+    md.start();
+    md.update('just testing');
+
+    /* create signature */
+    var pss = forge.pss.create(forge.md.sha1.create(),
+      forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+    var sig = key.sign(md, pss);
+    console.log(new forge.util.ByteBuffer(sig).toHex());
+
+    /* verify it */
+    md.start();
+    md.update('just testing');
+    test.equal(pubkey.verify(md.digest().getBytes(), sig, pss), true);
     test.done();
   };
 }

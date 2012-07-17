@@ -15,6 +15,7 @@ if(typeof(window) !== 'undefined') {
 // define node.js module
 else if(typeof(module) !== 'undefined' && module.exports) {
   forge = {
+    random: require('./random'),
     util: require('./util')
   };
   module.exports = forge.pss = {};
@@ -32,7 +33,8 @@ var pss = forge.pss = forge.pss || {};
  * @return a signature scheme object.
  */
 pss.create = function(hash, mgf, sLen) {
-  pss = {};
+  var hLen = hash.digestLength;
+  var pssobj = {};
 
   /**
    * Verify PSS signature
@@ -45,11 +47,10 @@ pss.create = function(hash, mgf, sLen) {
    * @param modsBits Length of the RSA modulus in bits.
    * @return true if the signature was verified, false if not.
    */
-  pss.verify = function(mHash, em, modBits) {
+  pssobj.verify = function(mHash, em, modBits) {
     var i;
     var emBits = modBits - 1;
     var emLen = Math.ceil(emBits / 8);
-    var hLen = hash.digestLength;
 
     /* c. Convert the message representative m to an encoded message EM
      *    of length emLen = (modBits - 1) / 8 octets, where modBits
@@ -67,7 +68,7 @@ pss.create = function(hash, mgf, sLen) {
      *    0xbc, output "inconsistent" and stop. */
     if(em.charCodeAt(emLen - 1) !== 0xbc) {
       throw {
-        message: 'Encode message does not end in 0xBC.'
+        message: 'Encoded message does not end in 0xBC.'
       };
     }
 
@@ -136,7 +137,78 @@ pss.create = function(hash, mgf, sLen) {
     return h === h_;
   };
 
-  return pss;
+  /**
+   * Encode PSS signature.
+   *
+   * This function implements EMSA-PSS-ENCODE as per RFC 3447, section 9.1.1
+   *
+   * @param md the message digest object with the hash to sign.
+   * @param modsBits Length of the RSA modulus in bits.
+   * @return the encoded message, string of length (modBits - 1) / 8
+   */
+  pssobj.encode = function(md, modBits) {
+    var i;
+    var emBits = modBits - 1;
+    var emLen = Math.ceil(emBits / 8);
+
+    /* 2. Let mHash = Hash(M), an octet string of length hLen. */
+    var mHash = md.digest().getBytes();
+
+    /* 3. If emLen < hLen + sLen + 2, output "encoding error" and stop. */
+    if(emLen < hLen + sLen + 2) {
+      throw {
+        message: 'Message is too long to encrypt'
+      };
+    }
+
+    /* 4. Generate a random octet string salt of length sLen; if sLen = 0,
+     *    then salt is the empty string. */
+    var salt = forge.random.getBytes(sLen);
+
+    /* 5. Let M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt; */
+    var m_ = new forge.util.ByteBuffer();
+    m_.fillWithByte(0, 8);
+    m_.putBytes(mHash);
+    m_.putBytes(salt);
+
+    /* 6. Let H = Hash(M'), an octet string of length hLen. */
+    hash.start();
+    hash.update(m_.getBytes());
+    var h = hash.digest().getBytes();
+
+    /* 7. Generate an octet string PS consisting of emLen - sLen - hLen - 2
+     *    zero octets.  The length of PS may be 0. */
+    var ps = new forge.util.ByteBuffer();
+    ps.fillWithByte(0, emLen - sLen - hLen - 2);
+
+    /* 8. Let DB = PS || 0x01 || salt; DB is an octet string of length
+     *    emLen - hLen - 1. */
+    ps.putByte(0x01);
+    ps.putBytes(salt);
+    var db = ps.getBytes();
+
+    /* 9. Let dbMask = MGF(H, emLen - hLen - 1). */
+    var maskLen = emLen - hLen - 1;
+    var dbMask = mgf.generate(h, maskLen);
+
+    /* 10. Let maskedDB = DB \xor dbMask. */
+    var maskedDB = '';
+    for(i = 0; i < maskLen; i ++) {
+      maskedDB += String.fromCharCode(db.charCodeAt(i) ^ dbMask.charCodeAt(i));
+    }
+
+    /* 11. Set the leftmost 8emLen - emBits bits of the leftmost octet in
+     *     maskedDB to zero. */
+    var mask = (0xFF00 >> (8 * emLen - emBits)) & 0xFF;
+    maskedDB = String.fromCharCode(maskedDB.charCodeAt(0) & ~mask) +
+      maskedDB.substr(1);
+
+    /* 12. Let EM = maskedDB || H || 0xbc.
+     * 13. Output EM. */
+    return maskedDB + h + String.fromCharCode(0xbc);
+  };
+
+  return pssobj;
 };
 
 })();
