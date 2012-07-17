@@ -12,11 +12,17 @@ var fs = require('fs');
  * these commands:
  *
  * openssl genrsa -out rsa_1024_private.pem 1024
- * openssl rsa -in rsa_1024_private.pem -out rsa_1024_public.pem -outform PEM -pubout
- * echo 'too many secrets' | openssl rsautl -encrypt -inkey rsa_1024_public.pem -pubin -out rsa_1024_encrypted.bin
+ * openssl rsa -in rsa_1024_private.pem -out rsa_1024_public.pem \
+ *   -outform PEM -pubout
+ * echo 'too many secrets' | openssl rsautl -encrypt \
+ *   -inkey rsa_1024_public.pem -pubin -out rsa_1024_encrypted.bin
  *
  * echo -n 'just testing' | openssl dgst -sha1 -binary > tosign.sha1
- * openssl pkeyutl -sign -in tosign.sha1 -inkey rsa_1024_private.pem -out rsa_1024_sig.bin -pkeyopt digest:sha1
+ * openssl pkeyutl -sign -in tosign.sha1 -inkey rsa_1024_private.pem \
+ *   -out rsa_1024_sig.bin -pkeyopt digest:sha1
+ * openssl pkeyutl -sign -in tosign.sha1 -inkey rsa_1024_private.pem \
+ *   -out rsa_1024_sigpss.bin -pkeyopt digest:sha1 \
+ *   -pkeyopt rsa_padding_mode:pss -pkeyopt rsa_pss_saltlen:20
  */
 
 function createTestFunctions(keySize) {
@@ -94,6 +100,27 @@ function createTestFunctions(keySize) {
       '/_files/rsa_' + keySize + '_sig.bin', 'binary');
     test.equal(key.sign(md), exp);
 
+    test.done();
+  };
+
+  /**
+   * Test RSA signature verification using various key sizes
+   * and PSS padding.
+   */
+  exports['testRsaVerifyPss' + keySize] = function(test) {
+    var sig = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_sigpss.bin', 'binary');
+    var keyPem = fs.readFileSync(__dirname +
+      '/_files/rsa_' + keySize + '_public.pem', 'ascii');
+    var key = forge.pki.publicKeyFromPem(keyPem);
+
+    var md = forge.md.sha1.create();
+    md.start();
+    md.update('just testing');
+
+    var pss = forge.pss.create(forge.md.sha1.create(),
+      forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+    test.equal(key.verify(md.digest().getBytes(), sig, pss), true);
     test.done();
   };
 }

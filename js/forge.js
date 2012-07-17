@@ -17,6 +17,7 @@ var forge = {
   pkcs12: require('./pkcs12'),
   pki: require('./pki'),
   prng: require('./prng'),
+  pss: require('./pss'),
   random: require('./random'),
   rc2: require('./rc2'),
   task: require('./task'),

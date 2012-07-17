@@ -252,10 +252,15 @@ pki.rsa.encrypt = function(m, key, bt) {
 /**
  * Performs RSA decryption.
  *
+ * The parameter ml controls whether to apply PKCS#1 v1.5 padding
+ * or not.  Set ml = false to disable padding removal completely
+ * (in order to handle e.g. EMSA-PSS later on) and simply pass back
+ * the RSA encryption block.
+ *
  * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
  * @param pub true for a public key operation, false for private.
- * @param ml the message length, if known.
+ * @param ml the message length, if known.  false to disable padding.
  *
  * @return the decrypted message as a byte string.
  */
@@ -293,69 +298,71 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   }
   eb.putBytes(forge.util.hexToBytes(xhex));
 
-  /* It is an error if any of the following conditions occurs:
+  if(ml !== false) {
+    /* It is an error if any of the following conditions occurs:
 
-    1. The encryption block EB cannot be parsed unambiguously.
-    2. The padding string PS consists of fewer than eight octets
-      or is inconsisent with the block type BT.
-    3. The decryption process is a public-key operation and the block
-      type BT is not 00 or 01, or the decryption process is a
-      private-key operation and the block type is not 02.
-   */
+      1. The encryption block EB cannot be parsed unambiguously.
+      2. The padding string PS consists of fewer than eight octets
+        or is inconsisent with the block type BT.
+      3. The decryption process is a public-key operation and the block
+        type BT is not 00 or 01, or the decryption process is a
+        private-key operation and the block type is not 02.
+     */
 
-  // parse the encryption block
-  var first = eb.getByte();
-  var bt = eb.getByte();
-  if(first !== 0x00 ||
-    (pub && bt !== 0x00 && bt !== 0x01) ||
-    (!pub && bt != 0x02) ||
-    (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
-  }
-
-  var padNum = 0;
-  if(bt === 0x00) {
-    // check all padding bytes for 0x00
-    var padNum = k - 3 - ml;
-    for(var i = 0; i < padNum; ++i) {
-      if(eb.getByte() !== 0x00) {
-        throw {
-          message: 'Encryption block is invalid.'
-        };
-      }
+    // parse the encryption block
+    var first = eb.getByte();
+    var bt = eb.getByte();
+    if(first !== 0x00 ||
+      (pub && bt !== 0x00 && bt !== 0x01) ||
+      (!pub && bt != 0x02) ||
+      (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
+      throw {
+        message: 'Encryption block is invalid.'
+      };
     }
-  }
-  else if(bt === 0x01) {
-    // find the first byte that isn't 0xFF, should be after all padding
+
     var padNum = 0;
-    while(eb.length() > 1) {
-      if(eb.getByte() !== 0xFF) {
-        --eb.read;
-        break;
+    if(bt === 0x00) {
+      // check all padding bytes for 0x00
+      padNum = k - 3 - ml;
+      for(var i = 0; i < padNum; ++i) {
+        if(eb.getByte() !== 0x00) {
+          throw {
+            message: 'Encryption block is invalid.'
+          };
+        }
       }
-      ++padNum;
     }
-  }
-  else if(bt === 0x02) {
-    // look for 0x00 byte
-    var padNum = 0;
-    while(eb.length() > 1) {
-      if(eb.getByte() === 0x00) {
-        --eb.read;
-        break;
+    else if(bt === 0x01) {
+      // find the first byte that isn't 0xFF, should be after all padding
+      padNum = 0;
+      while(eb.length() > 1) {
+        if(eb.getByte() !== 0xFF) {
+          --eb.read;
+          break;
+        }
+        ++padNum;
       }
-      ++padNum;
     }
-  }
+    else if(bt === 0x02) {
+      // look for 0x00 byte
+      padNum = 0;
+      while(eb.length() > 1) {
+        if(eb.getByte() === 0x00) {
+          --eb.read;
+          break;
+        }
+        ++padNum;
+      }
+    }
 
-  // zero must be 0x00 and padNum must be (k - 3 - message length)
-  var zero = eb.getByte();
-  if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
+    // zero must be 0x00 and padNum must be (k - 3 - message length)
+    var zero = eb.getByte();
+    if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
+      throw {
+        message: 'Encryption block is invalid.'
+      };
+    }
   }
 
   // return message
@@ -655,8 +662,12 @@ pki.rsa.setPublicKey = function(n, e) {
   /**
    * Verifies the given signature against the given digest.
    *
-   * Once RSA-decrypted, the signature is an OCTET STRING that holds
-   * a DigestInfo.
+   * PKCS#1 supports multiple (currently two) signature schemes:
+   * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
+   *
+   * By default this implementation uses the "old scheme", i.e.
+   * RSASSA-PKCS1-v1_5, in which case once RSA-decrypted, the
+   * signature is an OCTET STRING that holds a DigestInfo.
    *
    * DigestInfo ::= SEQUENCE {
    *   digestAlgorithm DigestAlgorithmIdentifier,
@@ -665,20 +676,29 @@ pki.rsa.setPublicKey = function(n, e) {
    * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
    * Digest ::= OCTET STRING
    *
+   * To perform PSS signature verification, provide an instance
+   * of Forge PSS object as scheme parameter.
+   *
    * @param digest the message digest hash to compare against the signature.
    * @param signature the signature to verify.
-   *
+   * @param scheme signature scheme to use, undefined for PKCS#1 v1.5
+   *   padding style.
    * @return true if the signature was verified, false if not.
    */
-   key.verify = function(digest, signature) {
+   key.verify = function(digest, signature, scheme) {
      // do rsa decryption
-     var d = pki.rsa.decrypt(signature, key, true);
+     var ml = scheme === undefined ? undefined : false;
+     var d = pki.rsa.decrypt(signature, key, true, ml);
 
-     // d is ASN.1 BER-encoded DigestInfo
-     var obj = asn1.fromDer(d);
+     if(scheme === undefined) {
+       // d is ASN.1 BER-encoded DigestInfo
+       var obj = asn1.fromDer(d);
 
-     // compare the given digest to the decrypted one
-     return digest === obj.value[1].value;
+       // compare the given digest to the decrypted one
+       return digest === obj.value[1].value;
+     } else {
+       return scheme.verify(digest, d, key.n.bitLength());
+     }
   };
 
   return key;
