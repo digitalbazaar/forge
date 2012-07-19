@@ -37,3 +37,14 @@ exports.testImportCertSha256WithRSAPSS = function(test) {
   test.equal(cert.siginfo.parameters.mgf.hash.algorithmOid, forge.pki.oids['sha256']);
   test.done();
 };
+
+exports.testVerifySignatureSha256WithRSAPSS = function(test) {
+  var certPem = fs.readFileSync(__dirname + '/_files/pki_cert_sha256pss_testcert.pem', 'ascii');
+  var issuerPem = fs.readFileSync(__dirname + '/_files/pki_cert_sha256pss_issuer.pem', 'ascii');
+
+  var cert = forge.pki.certificateFromPem(certPem, true);
+  var issuer = forge.pki.certificateFromPem(issuerPem);
+
+  test.equal(issuer.verify(cert), true);
+  test.done();
+};
