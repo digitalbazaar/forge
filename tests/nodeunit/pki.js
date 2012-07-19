@@ -22,3 +22,18 @@ exports.testVerifySignatureSha256WithRSA = function(test) {
   test.equal(issuer.verify(cert), true);
   test.done();
 };
+
+exports.testImportCertSha256WithRSAPSS = function(test) {
+  var certPem = fs.readFileSync(__dirname + '/_files/pki_cert_sha256pss_testcert.pem', 'ascii');
+  var cert = forge.pki.certificateFromPem(certPem, true);
+
+  test.equal(cert.signatureOid, forge.pki.oids['RSASSA-PSS']);
+  test.equal(cert.signatureParameters.hash.algorithmOid, forge.pki.oids['sha256']);
+  test.equal(cert.signatureParameters.mgf.algorithmOid, forge.pki.oids['mgf1']);
+  test.equal(cert.signatureParameters.mgf.hash.algorithmOid, forge.pki.oids['sha256']);
+  test.equal(cert.siginfo.algorithmOid, forge.pki.oids['RSASSA-PSS']);
+  test.equal(cert.siginfo.parameters.hash.algorithmOid, forge.pki.oids['sha256']);
+  test.equal(cert.siginfo.parameters.mgf.algorithmOid, forge.pki.oids['mgf1']);
+  test.equal(cert.siginfo.parameters.mgf.hash.algorithmOid, forge.pki.oids['sha256']);
+  test.done();
+};
