@@ -151,16 +151,97 @@ exports.testPkcs12FromAsn1_EncryptedMix = function(test) {
   test.equals(p12.safeContents[0].encrypted, false);
   test.equals(p12.safeContents[0].safeBags.length, 2);
   test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.pkcs8ShroudedKeyBag);
+  test.equals(p12.safeContents[0].safeBags[0].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[0].safeBags[0].attributes.friendlyName[0], 'encryptionkey');
+  test.equals(p12.safeContents[0].safeBags[0].attributes.localKeyId.length, 1);
+  test.equals(p12.safeContents[0].safeBags[0].attributes.localKeyId[0], 'Time 1311855238964');
+
   test.equals(p12.safeContents[0].safeBags[1].type, forge.pki.oids.pkcs8ShroudedKeyBag);
+  test.equals(p12.safeContents[0].safeBags[1].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[0].safeBags[1].attributes.friendlyName[0], 'signaturekey');
+  test.equals(p12.safeContents[0].safeBags[1].attributes.localKeyId.length, 1);
+  test.equals(p12.safeContents[0].safeBags[1].attributes.localKeyId[0], 'Time 1311855238863');
 
   test.equals(p12.safeContents[1].encrypted, true);
   test.equals(p12.safeContents[1].safeBags.length, 6);
-  test.equals(p12.safeContents[1].safeBags[0].type, forge.pki.oids.certBag);
-  test.equals(p12.safeContents[1].safeBags[1].type, forge.pki.oids.certBag);
-  test.equals(p12.safeContents[1].safeBags[2].type, forge.pki.oids.certBag);
-  test.equals(p12.safeContents[1].safeBags[3].type, forge.pki.oids.certBag);
-  test.equals(p12.safeContents[1].safeBags[4].type, forge.pki.oids.certBag);
-  test.equals(p12.safeContents[1].safeBags[5].type, forge.pki.oids.certBag);
 
+  test.equals(p12.safeContents[1].safeBags[0].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[0].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[0].attributes.friendlyName[0], 'CN=1002753325,2.5.4.5=#130b3130303237353333323543');
+  test.equals(p12.safeContents[1].safeBags[0].attributes.localKeyId.length, 1);
+  test.equals(p12.safeContents[1].safeBags[0].attributes.localKeyId[0], 'Time 1311855238964');
+
+  test.equals(p12.safeContents[1].safeBags[1].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[1].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[1].attributes.friendlyName[0], 'CN=ElsterSoftTestCA,OU=CA,O=Elster,C=DE');
+
+  test.equals(p12.safeContents[1].safeBags[2].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[2].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[2].attributes.friendlyName[0], 'CN=ElsterRootCA,OU=RootCA,O=Elster,C=DE');
+
+  test.equals(p12.safeContents[1].safeBags[3].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[3].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[3].attributes.friendlyName[0], 'CN=1002753325,2.5.4.5=#130b3130303237353333323541');
+  test.equals(p12.safeContents[1].safeBags[3].attributes.localKeyId.length, 1);
+  test.equals(p12.safeContents[1].safeBags[3].attributes.localKeyId[0], 'Time 1311855238863');
+
+  test.equals(p12.safeContents[1].safeBags[4].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[4].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[4].attributes.friendlyName[0], 'CN=ElsterSoftTestCA,OU=CA,O=Elster,C=DE');
+
+  test.equals(p12.safeContents[1].safeBags[5].type, forge.pki.oids.certBag);
+  test.equals(p12.safeContents[1].safeBags[5].attributes.friendlyName.length, 1);
+  test.equals(p12.safeContents[1].safeBags[5].attributes.friendlyName[0], 'CN=ElsterRootCA,OU=RootCA,O=Elster,C=DE');
+
+  test.done();
+}
+
+exports.testGetBagsByFriendlyName = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
+  var bags = p12.getBagsByFriendlyName('signaturekey');
+
+  test.equals(bags.length, 1);
+  test.equals(bags[0].attributes.friendlyName[0], 'signaturekey');
+
+  test.done();
+}
+
+exports.testGetBagsByFriendlyNameNarrowed = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
+  var bags = p12.getBagsByFriendlyName('signaturekey', forge.pki.oids.certBag);
+
+  test.equals(bags.length, 0);
+  test.done();
+}
+
+exports.testGetBagsByLocalKeyId = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
+  var bags = p12.getBagsByLocalKeyId('Time 1311855238863');
+
+  test.equals(bags.length, 2);
+  test.equals(bags[0].attributes.localKeyId[0], 'Time 1311855238863');
+  test.equals(bags[1].attributes.localKeyId[0], 'Time 1311855238863');
+  test.done();
+}
+
+exports.testGetBagsByLocalKeyIdNarrowed = function(test) {
+  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Asn1 = forge.asn1.fromDer(p12Der);
+
+  var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
+  var bags = p12.getBagsByLocalKeyId('Time 1311855238863', forge.pki.oids.certBag);
+
+  test.equals(bags.length, 1);
+  test.equals(bags[0].attributes.localKeyId[0], 'Time 1311855238863');
+  test.equals(bags[0].type, forge.pki.oids.certBag);
   test.done();
 }

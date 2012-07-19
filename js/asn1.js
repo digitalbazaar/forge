@@ -185,7 +185,8 @@ asn1.Type = {
   PRINTABLESTRING: 19,
   IA5STRING:       22,
   UTCTIME:         23,
-  GENERALIZEDTIME: 24
+  GENERALIZEDTIME: 24,
+  BMPSTRING:       30
 };
 
 /**
@@ -360,7 +361,14 @@ asn1.fromDer = function(bytes) {
       };
     }
 
-    value = bytes.getBytes(length);
+    if(type === asn1.Type.BMPSTRING) {
+      value = '';
+      for(var i = 0; i < length; i += 2) {
+        value += String.fromCharCode(bytes.getInt16());
+      }
+    } else {
+      value = bytes.getBytes(length);
+    }
   }
 
   // create and return asn1 object
