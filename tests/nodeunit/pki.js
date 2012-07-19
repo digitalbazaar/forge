@@ -48,3 +48,11 @@ exports.testVerifySignatureSha256WithRSAPSS = function(test) {
   test.equal(issuer.verify(cert), true);
   test.done();
 };
+
+exports.testReexportCertSha256WithRSAPSS = function(test) {
+  var certPem = fs.readFileSync(__dirname + '/_files/pki_cert_sha256pss_testcert.pem', 'ascii');
+  var cert = forge.pki.certificateFromPem(certPem, true);
+  var certExportPem = forge.pki.certificateToPem(cert, 64);
+  test.equals(certExportPem, certPem);
+  test.done();
+};

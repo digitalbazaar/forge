@@ -1876,6 +1876,56 @@ _extensionsToAsn1 = function(exts) {
 };
 
 /**
+ * Convert signature parameters object to ASN.1
+ *
+ * @param {String} oid Signature algorithm OID
+ * @param params The signature parametrs object
+ * @return ASN.1 object representing signature parameters
+ */
+var _signatureParametersToAsn1 = function(oid, params) {
+  switch(oid) {
+    case oids['RSASSA-PSS']:
+      var parts = [];
+
+      if(params.hash.algorithmOid !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(params.hash.algorithmOid).getBytes()),
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+          ])
+        ]));
+      }
+
+      if(params.mgf.algorithmOid !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(params.mgf.algorithmOid).getBytes()),
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                asn1.oidToDer(params.mgf.hash.algorithmOid).getBytes()),
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+            ])
+          ])
+        ]));
+      }
+
+      if(params.saltLength !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(params.saltLength))
+        ]));
+      }
+
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, parts);
+
+    default:
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '');
+  }
+};
+
+/**
  * Gets the ASN.1 TBSCertificate part of an X.509v3 certificate.
  *
  * @param cert the certificate.
@@ -1900,7 +1950,8 @@ pki.getTBSCertificate = function(cert) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(cert.siginfo.algorithmOid).getBytes()),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      _signatureParametersToAsn1(cert.siginfo.algorithmOid,
+        cert.siginfo.parameters)
     ]),
     // issuer
     _dnToAsn1(cert.issuer),
@@ -1979,7 +2030,7 @@ pki.certificateToAsn1 = function(cert) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(cert.signatureOid).getBytes()),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      _signatureParametersToAsn1(cert.signatureOid, cert.signatureParameters)
     ]),
     // SignatureValue
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
