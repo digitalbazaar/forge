@@ -159,7 +159,6 @@ function createTestFunctions(keySize) {
     var pss = forge.pss.create(forge.md.sha1.create(),
       forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
     var sig = key.sign(md, pss);
-    console.log(new forge.util.ByteBuffer(sig).toHex());
 
     /* verify it */
     md.start();
