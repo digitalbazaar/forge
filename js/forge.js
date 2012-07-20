@@ -17,12 +17,16 @@ var forge = {
   pkcs12: require('./pkcs12'),
   pki: require('./pki'),
   prng: require('./prng'),
+  pss: require('./pss'),
   random: require('./random'),
   rc2: require('./rc2'),
   task: require('./task'),
   tls: require('./tls'),
   util: require('./util'),
-  md: require('./md')
+  md: require('./md'),
+  mgf: {
+    mgf1: require('./mgf1')
+  }
 };
 forge.pki.oids = require('./oids');
 forge.pki.rsa = require('./rsa');

@@ -63,7 +63,7 @@ var s = [1, 2, 3, 5];
  */
 var rol = function(word, bits) {
   return ((word << bits) & 0xffff) | ((word & 0xffff) >> (16 - bits));
-}
+};
 
 /**
  * Rotate a word right by given number of bits.
@@ -77,7 +77,7 @@ var rol = function(word, bits) {
  */
 var ror = function(word, bits) {
   return ((word & 0xffff) >> bits) | ((word << (16 - bits)) & 0xffff);
-}
+};
 
 
 
@@ -357,7 +357,7 @@ var createCipher = function(key, bits, encrypt)
   };
 
   return cipher;
-}
+};
 
 
 /**

@@ -227,7 +227,27 @@ var safeBagValidator = {
     type: asn1.Type.SET,
     constructed: true,
     optional: true,
-    captureAsn1: 'bagAttributes'
+    capture: 'bagAttributes'
+  }]
+};
+
+var attributeValidator = {
+  name: 'Attribute',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'Attribute.attrId',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OID,
+    constructed: false,
+    capture: 'oid'
+  }, {
+    name: 'Attribute.attrValues',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SET,
+    constructed: true,
+    capture: 'values'
   }]
 };
 
@@ -258,6 +278,36 @@ var certBagValidator = {
   }]
 };
 
+/**
+ * Search SafeContents structure for bags with matching attributes.
+ *
+ * The search can optionally be narrowed by a certain bag type.
+ *
+ * @param safeContents The SafeContents structure to search in.
+ * @param attrName The name of the attribute to compare against.
+ * @param attrValue The attribute value to search for.
+ * @param bagType Optional bag type to narrow search by.
+ * @return Array of matching bags
+ */
+function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
+  var result = [];
+
+  for(var i = 0; i < safeContents.length; i ++) {
+    for(var j = 0; j < safeContents[i].safeBags.length; j ++) {
+      var bag = safeContents[i].safeBags[j];
+      if(bagType !== undefined && bag.type !== bagType) {
+        continue;
+      }
+
+      if(bag.attributes[attrName] !== undefined &&
+         bag.attributes[attrName].indexOf(attrValue) >= 0) {
+        result.push(bag);
+      }
+    }
+  }
+
+  return result;
+}
 
 /**
  * Converts a PKCS#12 PFX in ASN.1 notation into a PFX object.
@@ -281,14 +331,38 @@ p12.pkcs12FromAsn1 = function(obj, password) {
 
   var pfx = {
     version: capture.version.charCodeAt(0),
-    safeContents: []
+    safeContents: [],
+
+    /**
+     * Get bags with matching friendlyName attribute
+     *
+     * @param friendlyName The friendly name to search for
+     * @param bagType Optional bag type to narrow search by
+     * @return Array of bags with matching friendlyName attribute
+     */
+    getBagsByFriendlyName: function(friendlyName, bagType) {
+      return _getBagsByAttribute(pfx.safeContents, 'friendlyName',
+        friendlyName, bagType);
+    },
+
+    /**
+     * Get bags with matching localKeyId attribute
+     *
+     * @param localKeyId The localKeyId name to search for
+     * @param bagType Optional bag type to narrow search by
+     * @return Array of bags with matching localKeyId attribute
+     */
+    getBagsByLocalKeyId: function(localKeyId, bagType) {
+      return _getBagsByAttribute(pfx.safeContents, 'localKeyId',
+        localKeyId, bagType);
+    }
   };
 
   if(capture.version.charCodeAt(0) !== 3) {
     throw {
       message: 'PKCS#12 PFX of version other than 3 not supported.',
       version: capture.version.charCodeAt(0)
-    }
+    };
   }
 
   if(asn1.derToOid(capture.contentType) !== oids.data) {
@@ -308,7 +382,7 @@ p12.pkcs12FromAsn1 = function(obj, password) {
 
   _decodeAuthenticatedSafe(pfx, data.value, password);
   return pfx;
-}
+};
 
 /**
  * Decode PKCS#12 AuthenticatedSafe (BER encoded) into PFX object.
@@ -329,7 +403,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
     throw {
       message: 'PKCS#12 AuthenticatedSafe expected to be a ' +
         'SEQUENCE OF ContentInfo'
-    }
+    };
   }
 
   for(var i = 0; i < authSafe.value.length; i ++) {
@@ -349,9 +423,9 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
       encrypted: false
     };
     var safeContents = null;
+    var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
       case oids.data:
-        var data = capture.content.value[0];
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
           throw {
@@ -362,7 +436,6 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         break;
 
       case oids.encryptedData:
-        var data = capture.content.value[0];
         safeContents = _decryptSafeContents(data, password);
         obj.encrypted = true;
         break;
@@ -439,7 +512,7 @@ function _decodeSafeContents(safeContents, password) {
     throw {
       message: 'PKCS#12 SafeContents expected to be a ' +
         'SEQUENCE OF SafeBag'
-    }
+    };
   }
 
   var res = [];
@@ -458,7 +531,8 @@ function _decodeSafeContents(safeContents, password) {
 
     /* Create bag object and push to result array. */
     var bag = {
-      type: asn1.derToOid(capture.bagId)
+      type: asn1.derToOid(capture.bagId),
+      attributes: _decodeBagAttributes(capture.bagAttributes)
     };
     res.push(bag);
 
@@ -512,7 +586,7 @@ function _decodeSafeContents(safeContents, password) {
           message: 'Unsupported PKCS#12 SafeBag type.',
           oid: bag.type
         };
-    };
+    }
 
     /* Validate SafeBag value (i.e. CertBag, etc.) and capture data if needed. */
     if(validator !== undefined &&
@@ -530,6 +604,41 @@ function _decodeSafeContents(safeContents, password) {
   return res;
 }
 
+/**
+ * Decode PKCS#12 SET OF PKCS12Attribute into JavaScript object
+ *
+ * @param attributes SET OF PKCS12Attribute (ASN.1 object)
+ * @return the decoded attributes
+ */
+function _decodeBagAttributes(attributes) {
+  var decodedAttrs = {};
+
+  if(attributes !== undefined) {
+    for(var i = 0; i < attributes.length; i ++) {
+      var capture = {};
+      var errors = [];
+      if(!asn1.validate(attributes[i], attributeValidator, capture, errors)) {
+        throw {
+          message: 'Cannot read PKCS#12 BagAttribute.',
+          errors: errors
+        };
+      }
+
+      var oid = asn1.derToOid(capture.oid);
+      if(oids[oid] === undefined) {
+        // unsupported attribute type, ignore.
+        continue;
+      }
+
+      decodedAttrs[oids[oid]] = [];
+      for(var j = 0; j < capture.values.length; j ++) {
+        decodedAttrs[oids[oid]].push(capture.values[j].value);
+      }
+    }
+  }
+
+  return decodedAttrs;
+}
 
 /**
  * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a

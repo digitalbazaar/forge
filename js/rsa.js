@@ -35,6 +35,58 @@ forge.pki = forge.pki || {};
 forge.pki.rsa = forge.pki.rsa || {};
 var pki = forge.pki;
 
+
+
+/**
+ * Wrap digest in DigestInfo object.
+ *
+ * This function implements EMSA-PKCS1-v1_5-ENCODE as per RFC 3447.
+ *
+ * DigestInfo ::= SEQUENCE {
+ *   digestAlgorithm DigestAlgorithmIdentifier,
+ *   digest Digest
+ * }
+ *
+ * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
+ * Digest ::= OCTET STRING
+ *
+ * @param md the message digest object with the hash to sign.
+ * @return the encoded message (ready for RSA encrytion)
+ */
+var emsaPkcs1v15encode = function(md) {
+  // get the oid for the algorithm
+  var oid;
+  if(md.algorithm in forge.pki.oids) {
+    oid = forge.pki.oids[md.algorithm];
+  }
+  else {
+    throw {
+      message: 'Unknown message digest algorithm.',
+      algorithm: md.algorithm
+    };
+  }
+  var oidBytes = asn1.oidToDer(oid).getBytes();
+
+  // create the digest info
+  var digestInfo = asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+  var digestAlgorithm = asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+  digestAlgorithm.value.push(asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+  digestAlgorithm.value.push(asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+  var digest = asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
+    false, md.digest().getBytes());
+  digestInfo.value.push(digestAlgorithm);
+  digestInfo.value.push(digest);
+
+  // encode digest info
+  return asn1.toDer(digestInfo).getBytes();
+};
+
+
 /**
  * Performs x^c mod n (RSA encryption or decryption operation).
  *
@@ -166,66 +218,82 @@ var _modPow = function(x, key, pub) {
 /**
  * Performs RSA encryption.
  *
+ * The parameter bt controls whether to put padding bytes before the
+ * message passed in.  Set bt to either true or false to disable padding
+ * completely (in order to handle e.g. EMSA-PSS encoding seperately before),
+ * signaling whether the encryption operation is a public key operation
+ * (i.e. encrypting data) or not, i.e. private key operation (data signing).
+ *
+ * For PKCS#1 v1.5 padding pass in the block type to use, i.e. either 0x01
+ * (for signing) or 0x02 (for encryption).  The key operation mode (private
+ * or public) is derived from this flag in that case).
+ *
  * @param m the message to encrypt as a byte string.
  * @param key the RSA key to use.
- * @param bt the block type to use (0x01 for private key, 0x02 for public).
- *
+ * @param bt for PKCS#1 v1.5 padding, the block type to use
+ *   (0x01 for private key, 0x02 for public),
+ *   to disable padding: true = public key, false = private key
  * @return the encrypted bytes as a string.
  */
 pki.rsa.encrypt = function(m, key, bt) {
-  // get the length of the modulus in bytes
-  var k = key.n.bitLength() >>> 3;
-
-  if(m.length > (k - 11)) {
-    throw {
-      message: 'Message is too long to encrypt.',
-      length: m.length,
-      max: (k - 11)
-    };
-  }
-
-  /* A block type BT, a padding string PS, and the data D shall be
-    formatted into an octet string EB, the encryption block:
-
-    EB = 00 || BT || PS || 00 || D
-
-    The block type BT shall be a single octet indicating the structure of
-    the encryption block. For this version of the document it shall have
-    value 00, 01, or 02. For a private-key operation, the block type
-    shall be 00 or 01. For a public-key operation, it shall be 02.
-
-    The padding string PS shall consist of k-3-||D|| octets. For block
-    type 00, the octets shall have value 00; for block type 01, they
-    shall have value FF; and for block type 02, they shall be
-    pseudorandomly generated and nonzero. This makes the length of the
-    encryption block EB equal to k. */
-
-  // build the encryption block
+  var pub = bt;
   var eb = forge.util.createBuffer();
-  eb.putByte(0x00);
-  eb.putByte(bt);
 
-  // create the padding, get key type
-  var pub;
-  var padNum = k - 3 - m.length;
-  var padByte;
-  if(bt === 0x00 || bt === 0x01) {
-    pub = false;
-    padByte = (bt === 0x00) ? 0x00 : 0xFF;
-    for(var i = 0; i < padNum; ++i) {
-      eb.putByte(padByte);
+  // get the length of the modulus in bytes
+  var k = Math.ceil(key.n.bitLength() / 8);
+
+  if(bt !== false && bt !== true) {
+    /* use PKCS#1 v1.5 padding */
+    if(m.length > (k - 11)) {
+      throw {
+        message: 'Message is too long to encrypt.',
+        length: m.length,
+        max: (k - 11)
+      };
     }
-  }
-  else {
-    pub = true;
-    for(var i = 0; i < padNum; ++i) {
-      padByte = Math.floor(Math.random() * 255) + 1;
-      eb.putByte(padByte);
+
+    /* A block type BT, a padding string PS, and the data D shall be
+      formatted into an octet string EB, the encryption block:
+
+      EB = 00 || BT || PS || 00 || D
+
+      The block type BT shall be a single octet indicating the structure of
+      the encryption block. For this version of the document it shall have
+      value 00, 01, or 02. For a private-key operation, the block type
+      shall be 00 or 01. For a public-key operation, it shall be 02.
+
+      The padding string PS shall consist of k-3-||D|| octets. For block
+      type 00, the octets shall have value 00; for block type 01, they
+      shall have value FF; and for block type 02, they shall be
+      pseudorandomly generated and nonzero. This makes the length of the
+      encryption block EB equal to k. */
+
+    // build the encryption block
+    eb.putByte(0x00);
+    eb.putByte(bt);
+
+    // create the padding, get key type
+    var padNum = k - 3 - m.length;
+    var padByte;
+    if(bt === 0x00 || bt === 0x01) {
+      pub = false;
+      padByte = (bt === 0x00) ? 0x00 : 0xFF;
+      for(var i = 0; i < padNum; ++i) {
+        eb.putByte(padByte);
+      }
     }
+    else {
+      pub = true;
+      for(var i = 0; i < padNum; ++i) {
+        padByte = Math.floor(Math.random() * 255) + 1;
+        eb.putByte(padByte);
+      }
+    }
+
+    // zero followed by message
+    eb.putByte(0x00);
   }
 
-  // zero followed by message
-  eb.putByte(0x00);
   eb.putBytes(m);
 
   // load encryption block as big integer 'x'
@@ -252,10 +320,15 @@ pki.rsa.encrypt = function(m, key, bt) {
 /**
  * Performs RSA decryption.
  *
+ * The parameter ml controls whether to apply PKCS#1 v1.5 padding
+ * or not.  Set ml = false to disable padding removal completely
+ * (in order to handle e.g. EMSA-PSS later on) and simply pass back
+ * the RSA encryption block.
+ *
  * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
  * @param pub true for a public key operation, false for private.
- * @param ml the message length, if known.
+ * @param ml the message length, if known.  false to disable padding.
  *
  * @return the decrypted message as a byte string.
  */
@@ -293,69 +366,71 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   }
   eb.putBytes(forge.util.hexToBytes(xhex));
 
-  /* It is an error if any of the following conditions occurs:
+  if(ml !== false) {
+    /* It is an error if any of the following conditions occurs:
 
-    1. The encryption block EB cannot be parsed unambiguously.
-    2. The padding string PS consists of fewer than eight octets
-      or is inconsisent with the block type BT.
-    3. The decryption process is a public-key operation and the block
-      type BT is not 00 or 01, or the decryption process is a
-      private-key operation and the block type is not 02.
-   */
+      1. The encryption block EB cannot be parsed unambiguously.
+      2. The padding string PS consists of fewer than eight octets
+        or is inconsisent with the block type BT.
+      3. The decryption process is a public-key operation and the block
+        type BT is not 00 or 01, or the decryption process is a
+        private-key operation and the block type is not 02.
+     */
 
-  // parse the encryption block
-  var first = eb.getByte();
-  var bt = eb.getByte();
-  if(first !== 0x00 ||
-    (pub && bt !== 0x00 && bt !== 0x01) ||
-    (!pub && bt != 0x02) ||
-    (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
-  }
-
-  var padNum = 0;
-  if(bt === 0x00) {
-    // check all padding bytes for 0x00
-    var padNum = k - 3 - ml;
-    for(var i = 0; i < padNum; ++i) {
-      if(eb.getByte() !== 0x00) {
-        throw {
-          message: 'Encryption block is invalid.'
-        };
-      }
+    // parse the encryption block
+    var first = eb.getByte();
+    var bt = eb.getByte();
+    if(first !== 0x00 ||
+      (pub && bt !== 0x00 && bt !== 0x01) ||
+      (!pub && bt != 0x02) ||
+      (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
+      throw {
+        message: 'Encryption block is invalid.'
+      };
     }
-  }
-  else if(bt === 0x01) {
-    // find the first byte that isn't 0xFF, should be after all padding
+
     var padNum = 0;
-    while(eb.length() > 1) {
-      if(eb.getByte() !== 0xFF) {
-        --eb.read;
-        break;
+    if(bt === 0x00) {
+      // check all padding bytes for 0x00
+      padNum = k - 3 - ml;
+      for(var i = 0; i < padNum; ++i) {
+        if(eb.getByte() !== 0x00) {
+          throw {
+            message: 'Encryption block is invalid.'
+          };
+        }
       }
-      ++padNum;
     }
-  }
-  else if(bt === 0x02) {
-    // look for 0x00 byte
-    var padNum = 0;
-    while(eb.length() > 1) {
-      if(eb.getByte() === 0x00) {
-        --eb.read;
-        break;
+    else if(bt === 0x01) {
+      // find the first byte that isn't 0xFF, should be after all padding
+      padNum = 0;
+      while(eb.length() > 1) {
+        if(eb.getByte() !== 0xFF) {
+          --eb.read;
+          break;
+        }
+        ++padNum;
       }
-      ++padNum;
     }
-  }
+    else if(bt === 0x02) {
+      // look for 0x00 byte
+      padNum = 0;
+      while(eb.length() > 1) {
+        if(eb.getByte() === 0x00) {
+          --eb.read;
+          break;
+        }
+        ++padNum;
+      }
+    }
 
-  // zero must be 0x00 and padNum must be (k - 3 - message length)
-  var zero = eb.getByte();
-  if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
+    // zero must be 0x00 and padNum must be (k - 3 - message length)
+    var zero = eb.getByte();
+    if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
+      throw {
+        message: 'Encryption block is invalid.'
+      };
+    }
   }
 
   // return message
@@ -655,8 +730,12 @@ pki.rsa.setPublicKey = function(n, e) {
   /**
    * Verifies the given signature against the given digest.
    *
-   * Once RSA-decrypted, the signature is an OCTET STRING that holds
-   * a DigestInfo.
+   * PKCS#1 supports multiple (currently two) signature schemes:
+   * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
+   *
+   * By default this implementation uses the "old scheme", i.e.
+   * RSASSA-PKCS1-v1_5, in which case once RSA-decrypted, the
+   * signature is an OCTET STRING that holds a DigestInfo.
    *
    * DigestInfo ::= SEQUENCE {
    *   digestAlgorithm DigestAlgorithmIdentifier,
@@ -665,20 +744,29 @@ pki.rsa.setPublicKey = function(n, e) {
    * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
    * Digest ::= OCTET STRING
    *
+   * To perform PSS signature verification, provide an instance
+   * of Forge PSS object as scheme parameter.
+   *
    * @param digest the message digest hash to compare against the signature.
    * @param signature the signature to verify.
-   *
+   * @param scheme signature scheme to use, undefined for PKCS#1 v1.5
+   *   padding style.
    * @return true if the signature was verified, false if not.
    */
-   key.verify = function(digest, signature) {
+   key.verify = function(digest, signature, scheme) {
      // do rsa decryption
-     var d = pki.rsa.decrypt(signature, key, true);
+     var ml = scheme === undefined ? undefined : false;
+     var d = pki.rsa.decrypt(signature, key, true, ml);
 
-     // d is ASN.1 BER-encoded DigestInfo
-     var obj = asn1.fromDer(d);
+     if(scheme === undefined) {
+       // d is ASN.1 BER-encoded DigestInfo
+       var obj = asn1.fromDer(d);
 
-     // compare the given digest to the decrypted one
-     return digest === obj.value[1].value;
+       // compare the given digest to the decrypted one
+       return digest === obj.value[1].value;
+     } else {
+       return scheme.verify(digest, d, key.n.bitLength());
+     }
   };
 
   return key;
@@ -725,54 +813,28 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
   /**
    * Signs the given digest, producing a signature.
    *
-   * First the digest is stored in a DigestInfo object. Then that object
-   * is RSA-encrypted to produce the signature.
+   * PKCS#1 supports multiple (currently two) signature schemes:
+   * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
    *
-   * DigestInfo ::= SEQUENCE {
-   *   digestAlgorithm DigestAlgorithmIdentifier,
-   *   digest Digest
-   * }
-   * DigestAlgorithmIdentifier ::= AlgorithmIdentifier
-   * Digest ::= OCTET STRING
+   * By default this implementation uses the "old scheme", i.e.
+   * RSASSA-PKCS1-v1_5.  In order to generate a PSS signature, provide
+   * an instance of Forge PSS object as scheme parameter.
    *
    * @param md the message digest object with the hash to sign.
-   *
+   * @param scheme signature scheme to use, undefined for PKCS#1 v1.5
+   *   padding style.
    * @return the signature as a byte string.
    */
-  key.sign = function(md) {
-    // get the oid for the algorithm
-    var oid;
-    if(md.algorithm in forge.pki.oids) {
-      oid = forge.pki.oids[md.algorithm];
+  key.sign = function(md, scheme) {
+    var bt = false;  /* private key operation */
+
+    if(scheme === undefined) {
+      scheme = { encode: emsaPkcs1v15encode };
+      bt = 0x01;
     }
-    else {
-      throw {
-        message: 'Unknown message digest algorithm.',
-        algorithm: md.algorithm
-      };
-    }
-    var oidBytes = asn1.oidToDer(oid).getBytes();
 
-    // create the digest info
-    var digestInfo = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-    var digestAlgorithm = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-    digestAlgorithm.value.push(asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
-    digestAlgorithm.value.push(asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
-    var digest = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
-      false, md.digest().getBytes());
-    digestInfo.value.push(digestAlgorithm);
-    digestInfo.value.push(digest);
-
-    // encode digest info
-    var d = asn1.toDer(digestInfo).getBytes();
-
-    // do rsa encryption
-    return pki.rsa.encrypt(d, key, 0x01);
+    var d = scheme.encode(md, key.n.bitLength());
+    return pki.rsa.encrypt(d, key, bt);
   };
 
   return key;

@@ -152,6 +152,7 @@
  *
  * EncryptedData ::= OCTET STRING
  *
+ * RSASSA-PSS signatures are described in RFC 3447 and RFC 4055.
  */
 (function() {
 
@@ -166,11 +167,13 @@ else if(typeof(module) !== 'undefined' && module.exports) {
     asn1: require('./asn1'),
     des: require('./des'),
     md: require('./md'),
+    mgf: require('./mgf'),
     pkcs5: require('./pbkdf2'),
     pki: {
       oids: require('./oids'),
       rsa: require('./rsa')
     },
+    pss: require('./pss'),
     random: require('./random'),
     rc2: require('./rc2'),
     util: require('./util')
@@ -310,7 +313,12 @@ var x509CertificateValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.OID,
         constructed: false,
-        capture: 'certSignatureOid'
+        capture: 'certinfoSignatureOid'
+      }, {
+        name: 'Certificate.TBSCertificate.signature.parameters',
+        tagClass: asn1.Class.UNIVERSAL,
+        optional: true,
+        captureAsn1: 'certinfoSignatureParams'
       }]
     }, {
       name: 'Certificate.TBSCertificate.issuer',
@@ -416,6 +424,11 @@ var x509CertificateValidator = {
       type: asn1.Type.OID,
       constructed: false,
       capture: 'certSignatureOid'
+    }, {
+      name: 'Certificate.TBSCertificate.signature.parameters',
+      tagClass: asn1.Class.UNIVERSAL,
+      optional: true,
+      captureAsn1: 'certSignatureParams'
     }]
   }, {
     // SignatureValue
@@ -647,6 +660,90 @@ var pkcs12PbeParamsValidator = {
     type: asn1.Type.INTEGER,
     constructed: false,
     capture: 'iterations'
+  }]
+};
+
+var rsassaPssParameterValidator = {
+  name: 'rsapss',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'rsapss.hashAlgorithm',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 0,
+    constructed: true,
+    value: [{
+      name: 'rsapss.hashAlgorithm.AlgorithmIdentifier',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Class.SEQUENCE,
+      constructed: true,
+      optional: true,
+      value: [{
+        name: 'rsapss.hashAlgorithm.AlgorithmIdentifier.algorithm',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.OID,
+        constructed: false,
+        capture: 'hashOid'
+        /* parameter block omitted, for SHA1 NULL anyhow. */
+      }]
+    }]
+  }, {
+    name: 'rsapss.maskGenAlgorithm',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 1,
+    constructed: true,
+    value: [{
+      name: 'rsapss.maskGenAlgorithm.AlgorithmIdentifier',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Class.SEQUENCE,
+      constructed: true,
+      optional: true,
+      value: [{
+        name: 'rsapss.maskGenAlgorithm.AlgorithmIdentifier.algorithm',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.OID,
+        constructed: false,
+        capture: 'maskGenOid'
+      }, {
+        name: 'rsapss.maskGenAlgorithm.AlgorithmIdentifier.params',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.SEQUENCE,
+        constructed: true,
+        value: [{
+          name: 'rsapss.maskGenAlgorithm.AlgorithmIdentifier.params.algorithm',
+          tagClass: asn1.Class.UNIVERSAL,
+          type: asn1.Type.OID,
+          constructed: false,
+          capture: 'maskGenHashOid'
+          /* parameter block omitted, for SHA1 NULL anyhow. */
+        }]
+      }]
+    }]
+  }, {
+    name: 'rsapss.saltLength',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 2,
+    optional: true,
+    value: [{
+      name: 'rsapss.saltLength.saltLength',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Class.INTEGER,
+      constructed: false,
+      capture: 'saltLength'
+    }]
+  }, {
+    name: 'rsapss.trailerField',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 3,
+    optional: true,
+    value: [{
+      name: 'rsapss.trailer.trailer',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Class.INTEGER,
+      constructed: false,
+      capture: 'trailer'
+    }]
   }]
 };
 
@@ -962,6 +1059,85 @@ var _bnToBytes = function(b) {
 };
 
 /**
+ * Converts signature parameters from ASN.1 structure.
+ *
+ * Currently only RSASSA-PSS supported.  The PKCS#1 v1.5 signature scheme had
+ * no parameters.
+ *
+ * RSASSA-PSS-params  ::=  SEQUENCE  {
+ *   hashAlgorithm      [0] HashAlgorithm DEFAULT
+ *                             sha1Identifier,
+ *   maskGenAlgorithm   [1] MaskGenAlgorithm DEFAULT
+ *                             mgf1SHA1Identifier,
+ *   saltLength         [2] INTEGER DEFAULT 20,
+ *   trailerField       [3] INTEGER DEFAULT 1
+ * }
+ *
+ * HashAlgorithm  ::=  AlgorithmIdentifier
+ *
+ * MaskGenAlgorithm  ::=  AlgorithmIdentifier
+ *
+ * AlgorithmIdentifer ::= SEQUENCE {
+ *   algorithm OBJECT IDENTIFIER,
+ *   parameters ANY DEFINED BY algorithm OPTIONAL
+ * }
+ *
+ * @param oid The OID specifying the signature algorithm
+ * @param obj The ASN.1 structure holding the parameters
+ * @param fillDefaults Whether to use return default values where omitted
+ * @return signature parameter object
+ */
+var _readSignatureParameters = function(oid, obj, fillDefaults) {
+  var params = {};
+
+  if(oid !== oids['RSASSA-PSS']) {
+    return params;
+  }
+
+  if(fillDefaults) {
+    params = {
+      hash: {
+        algorithmOid: oids['sha1']
+      },
+      mgf: {
+        algorithmOid: oids['mgf1'],
+        hash: {
+          algorithmOid: oids['sha1']
+        }
+      },
+      saltLength: 20
+    };
+  }
+
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, rsassaPssParameterValidator, capture, errors)) {
+    throw {
+      message: 'Cannot read RSASSA-PSS parameter block.',
+      errors: errors
+    };
+  }
+
+  if(capture.hashOid !== undefined) {
+    params.hash = params.hash || {};
+    params.hash.algorithmOid = asn1.derToOid(capture.hashOid);
+  }
+
+  if(capture.maskGenOid !== undefined) {
+    params.mgf = params.mgf || {};
+    params.mgf.algorithmOid = asn1.derToOid(capture.maskGenOid);
+    params.mgf.hash = params.mgf.hash || {};
+    params.mgf.hash.algorithmOid = asn1.derToOid(capture.maskGenHashOid);
+  }
+
+  if(capture.saltLength !== undefined) {
+    params.saltLength = capture.saltLength.charCodeAt(0);
+  }
+
+  return params;
+};
+
+/**
  * Converts an X.509 certificate from PEM format.
  *
  * Note: If the certificate is to be verified then compute hash should
@@ -1067,6 +1243,8 @@ pki.createCertificate = function() {
   cert.serialNumber = '00';
   cert.signatureOid = null;
   cert.signature = null;
+  cert.siginfo = {};
+  cert.siginfo.algorithmOid = null;
   cert.validity = {};
   cert.validity.notBefore = new Date();
   cert.validity.notAfter = new Date();
@@ -1348,6 +1526,7 @@ pki.createCertificate = function() {
   cert.sign = function(key) {
     // TODO: get signature OID from private key
     cert.signatureOid = oids['sha1withRSAEncryption'];
+    cert.siginfo.algorithmOid = oids['sha1withRSAEncryption'];
     cert.md = forge.md.sha1.create();
 
     // get TBSCertificate, convert to DER
@@ -1370,9 +1549,55 @@ pki.createCertificate = function() {
     var rval = false;
 
     if(child.md !== null) {
+      var scheme;
+
+      switch(child.signatureOid) {
+        case oids['sha1withRSAEncryption']:
+          scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
+          break;
+
+        case oids['RSASSA-PSS']:
+          var hash, mgf;
+
+          /* initialize mgf */
+          hash = oids[child.signatureParameters.mgf.hash.algorithmOid];
+          if(hash === undefined || forge.md[hash] === undefined) {
+            throw {
+              message: 'Unsupported MGF hash function',
+              oid: child.signatureParameters.mgf.hash.algorithmOid,
+              name: hash
+            };
+          }
+
+          mgf = oids[child.signatureParameters.mgf.algorithmOid];
+          if(mgf === undefined || forge.mgf[mgf] === undefined) {
+            throw {
+              message: 'Unsupported MGF function',
+              oid: child.signatureParameters.mgf.algorithmOid,
+              name: mgf
+            };
+          }
+
+          mgf = forge.mgf[mgf].create(forge.md[hash].create());
+
+          /* initialize hash function */
+          hash = oids[child.signatureParameters.hash.algorithmOid];
+          if(hash === undefined || forge.md[hash] === undefined) {
+            throw {
+              message: 'Unsupported RSASSA-PSS hash function',
+              oid: child.signatureParameters.hash.algorithmOid,
+              name: hash
+            };
+          }
+
+          scheme = forge.pss.create(forge.md[hash].create(), mgf,
+            child.signatureParameters.saltLength);
+          break;
+      }
+
       // verify signature on cert using public key
       rval = cert.publicKey.verify(
-        child.md.digest().getBytes(), child.signature);
+        child.md.digest().getBytes(), child.signature, scheme);
     }
 
     return rval;
@@ -1457,6 +1682,11 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   var serial = forge.util.createBuffer(capture.certSerialNumber);
   cert.serialNumber = serial.toHex();
   cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
+  cert.signatureParameters = _readSignatureParameters(cert.signatureOid,
+    capture.certSignatureParams, true);
+  cert.siginfo.algorithmOid = forge.asn1.derToOid(capture.certinfoSignatureOid);
+  cert.siginfo.parameters = _readSignatureParameters(cert.siginfo.algorithmOid,
+    capture.certinfoSignatureParams, false);
   // skip "unused bits" in signature value BITSTRING
   var signature = forge.util.createBuffer(capture.certSignature);
   ++signature.read;
@@ -1495,11 +1725,22 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     cert.md = null;
     if(cert.signatureOid in oids) {
       var oid = oids[cert.signatureOid];
-      if(oid === 'sha1withRSAEncryption') {
-        cert.md = forge.md.sha1.create();
-      }
-      else if(oid === 'md5withRSAEncryption') {
-        cert.md = forge.md.md5.create();
+      switch(oid) {
+        case 'sha1withRSAEncryption':
+          cert.md = forge.md.sha1.create();
+          break;
+
+        case 'md5withRSAEncryption':
+          cert.md = forge.md.md5.create();
+          break;
+
+        case 'sha256WithRSAEncryption':
+          cert.md = forge.md.sha256.create();
+          break;
+
+        case 'RSASSA-PSS':
+          cert.md = forge.md.sha256.create();
+          break;
       }
     }
     if(cert.md === null) {
@@ -1635,6 +1876,56 @@ _extensionsToAsn1 = function(exts) {
 };
 
 /**
+ * Convert signature parameters object to ASN.1
+ *
+ * @param {String} oid Signature algorithm OID
+ * @param params The signature parametrs object
+ * @return ASN.1 object representing signature parameters
+ */
+var _signatureParametersToAsn1 = function(oid, params) {
+  switch(oid) {
+    case oids['RSASSA-PSS']:
+      var parts = [];
+
+      if(params.hash.algorithmOid !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(params.hash.algorithmOid).getBytes()),
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+          ])
+        ]));
+      }
+
+      if(params.mgf.algorithmOid !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(params.mgf.algorithmOid).getBytes()),
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                asn1.oidToDer(params.mgf.hash.algorithmOid).getBytes()),
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+            ])
+          ])
+        ]));
+      }
+
+      if(params.saltLength !== undefined) {
+        parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            String.fromCharCode(params.saltLength))
+        ]));
+      }
+
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, parts);
+
+    default:
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '');
+  }
+};
+
+/**
  * Gets the ASN.1 TBSCertificate part of an X.509v3 certificate.
  *
  * @param cert the certificate.
@@ -1657,9 +1948,10 @@ pki.getTBSCertificate = function(cert) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(cert.signatureOid).getBytes()),
+        asn1.oidToDer(cert.siginfo.algorithmOid).getBytes()),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      _signatureParametersToAsn1(cert.siginfo.algorithmOid,
+        cert.siginfo.parameters)
     ]),
     // issuer
     _dnToAsn1(cert.issuer),
@@ -1738,7 +2030,7 @@ pki.certificateToAsn1 = function(cert) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(cert.signatureOid).getBytes()),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      _signatureParametersToAsn1(cert.signatureOid, cert.signatureParameters)
     ]),
     // SignatureValue
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
