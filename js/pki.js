@@ -1253,12 +1253,20 @@ pki.createCertificate = function() {
   cert.issuer.getField = function(sn) {
     return _getAttribute(cert.issuer, sn);
   };
+  cert.issuer.addField = function(attr) {
+    _fillMissingFields([attr]);
+    cert.issuer.attributes.push(attr);
+  };
   cert.issuer.attributes = [];
   cert.issuer.hash = null;
 
   cert.subject = {};
   cert.subject.getField = function(sn) {
     return _getAttribute(cert.subject, sn);
+  };
+  cert.subject.addField = function(attr) {
+    _fillMissingFields([attr]);
+    cert.subject.attributes.push(attr);
   };
   cert.subject.attributes = [];
   cert.subject.hash = null;
