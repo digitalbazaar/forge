@@ -2303,9 +2303,9 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
   var first = true;
   var error = null;
   var depth = 0;
-  var cert, parent;
+  var parent = null;
   do {
-    cert = chain.shift();
+    var cert = chain.shift();
 
     // 1. check valid time
     if(now < cert.validity.notBefore || now > cert.validity.notAfter) {
@@ -2346,7 +2346,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
           // can't be determined from the certificate (unlikely case for
           // old certificates) so normalize by always putting parents into
           // an array
-          if(parents.constructor != Array) {
+          if(parents.constructor !== Array) {
             parents = [parents];
           }
 
@@ -2405,8 +2405,9 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     }
 
     // 8. check for CA if cert is not first or is the only certificate
-    // in chain, first check keyUsage extension and then basic constraints
-    if(!first || chain.length === 0) {
+    // in chain with no parent, first check keyUsage extension and then basic
+    // constraints
+    if(!first || (chain.length === 0 && !parent)) {
       var bcExt = cert.getExtension('basicConstraints');
       var keyUsageExt = cert.getExtension('keyUsage');
       if(keyUsageExt !== null) {

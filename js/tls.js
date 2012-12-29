@@ -3052,7 +3052,6 @@ tls.createServerHello = function(c) {
  * @return the Certificate byte buffer.
  */
 tls.createCertificate = function(c) {
-  // TODO: support sending more than 1 certificate?
   // TODO: check certificate request to ensure types are supported
 
   // get a certificate (a certificate as a PEM string)
@@ -3060,18 +3059,32 @@ tls.createCertificate = function(c) {
   var cert = null;
   if(c.getCertificate) {
     cert = c.getCertificate(
-      c, client ?
-      c.session.certificateRequest : c.session.serverNameList);
+      c, client ? c.session.certificateRequest : c.session.serverNameList);
   }
 
-  // buffer to hold cert
-  var certBuffer = forge.util.createBuffer();
+  // buffer to hold certificate list
+  var certList = forge.util.createBuffer();
   if(cert !== null) {
     try {
-      // certificate entry is itself a vector with 3 length bytes
-      var der = forge.pki.pemToDer(cert);
-      var asn1 = forge.asn1.fromDer(der.bytes());
-      writeVector(certBuffer, 3, der);
+      // normalize cert to a chain of certificates
+      if((Array.isArray && !Array.isArray(cert)) ||
+        cert.constructor !== Array) {
+        cert = [cert];
+      }
+      var asn1 = null;
+      for(var i = 0; i < cert.length; ++i) {
+        var der = forge.pki.pemToDer(cert);
+        if(asn1 === null) {
+          asn1 = forge.asn1.fromDer(der.bytes());
+        }
+
+        // certificate entry is itself a vector with 3 length bytes
+        var certBuffer = forge.util.createBuffer();
+        writeVector(certBuffer, 3, der);
+
+        // add cert vector to cert list vector
+        certList.putBuffer(certBuffer);
+      }
 
       // save certificate
       cert = forge.pki.certificateFromAsn1(asn1);
@@ -3096,13 +3109,13 @@ tls.createCertificate = function(c) {
   }
 
   // determine length of the handshake message
-  var length = 3 + certBuffer.length(); // cert vector
+  var length = 3 + certList.length(); // cert list vector
 
   // build record fragment
   var rval = forge.util.createBuffer();
   rval.putByte(tls.HandshakeType.certificate);
   rval.putInt24(length);
-  writeVector(rval, 3, certBuffer);
+  writeVector(rval, 3, certList);
   return rval;
 };
 
@@ -3772,7 +3785,8 @@ tls.createConnection = function(options) {
   var caStore = null;
   if(options.caStore) {
     // if CA store is an array, convert it to a CA store object
-    if(options.caStore.constructor == Array) {
+    if((Array.isArray && Array.isArray(options.caStore)) ||
+      options.caStore.constructor == Array) {
       caStore = forge.pki.createCaStore(options.caStore);
     }
     else {
@@ -4256,7 +4270,9 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   one was provided (empty array if not). The hint can be examined to
  *   determine which certificate to use (advanced). Most implementations
  *   will just return a certificate. The return value must be a
- *   PEM-formatted certificate.
+ *   PEM-formatted certificate or an array of PEM-formatted certificates
+ *   that constitute a certificate chain, with the first in the array/chain
+ *   being the client's certificate.
  * getPrivateKey(conn, certificate)
  *   The second parameter is an forge.pki X.509 certificate object that
  *   is associated with the requested private key. The return value must
@@ -4285,7 +4301,8 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   verifyClient: true to require a client certificate in server mode,
  *     'optional' to request one, false not to (default: false).
  *   verify: a handler used to custom verify certificates in the chain.
- *   getCertificate: an optional callback used to get a certificate.
+ *   getCertificate: an optional callback used to get a certificate or
+ *     a chain of certificates (as an array).
  *   getPrivateKey: an optional callback used to get a private key.
  *   getSignature: an optional callback used to get a signature.
  *   tlsDataReady: function(conn) called when TLS protocol data has been
