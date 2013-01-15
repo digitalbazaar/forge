@@ -952,13 +952,13 @@ var _parseExtensions = function(exts) {
           e.altNames = [];
 
           // ev is a SYNTAX SEQUENCE
-          var gn, altname;
+          var gn;
           var ev = asn1.fromDer(e.value);
           for(var n = 0; n < ev.value.length; ++n) {
             // get GeneralName
             gn = ev.value[n];
 
-            altName = {
+            var altName = {
               type: gn.type,
               value: gn.value
             };
@@ -1457,7 +1457,7 @@ pki.createCertificate = function() {
           if(e.pathLenConstraint) {
             var num = e.pathLenConstraint;
             var tmp = forge.util.createBuffer();
-            tmp.putInt(num, num.toString(2).length)
+            tmp.putInt(num, num.toString(2).length);
             e.value.value.push(asn1.create(
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
               tmp.getBytes()));
@@ -1560,47 +1560,47 @@ pki.createCertificate = function() {
       var scheme;
 
       switch(child.signatureOid) {
-        case oids['sha1withRSAEncryption']:
-          scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
-          break;
+      case oids['sha1withRSAEncryption']:
+        scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
+        break;
 
-        case oids['RSASSA-PSS']:
-          var hash, mgf;
+      case oids['RSASSA-PSS']:
+        var hash, mgf;
 
-          /* initialize mgf */
-          hash = oids[child.signatureParameters.mgf.hash.algorithmOid];
-          if(hash === undefined || forge.md[hash] === undefined) {
-            throw {
-              message: 'Unsupported MGF hash function',
-              oid: child.signatureParameters.mgf.hash.algorithmOid,
-              name: hash
-            };
-          }
+        /* initialize mgf */
+        hash = oids[child.signatureParameters.mgf.hash.algorithmOid];
+        if(hash === undefined || forge.md[hash] === undefined) {
+          throw {
+            message: 'Unsupported MGF hash function.',
+            oid: child.signatureParameters.mgf.hash.algorithmOid,
+            name: hash
+          };
+        }
 
-          mgf = oids[child.signatureParameters.mgf.algorithmOid];
-          if(mgf === undefined || forge.mgf[mgf] === undefined) {
-            throw {
-              message: 'Unsupported MGF function',
-              oid: child.signatureParameters.mgf.algorithmOid,
-              name: mgf
-            };
-          }
+        mgf = oids[child.signatureParameters.mgf.algorithmOid];
+        if(mgf === undefined || forge.mgf[mgf] === undefined) {
+          throw {
+            message: 'Unsupported MGF function.',
+            oid: child.signatureParameters.mgf.algorithmOid,
+            name: mgf
+          };
+        }
 
-          mgf = forge.mgf[mgf].create(forge.md[hash].create());
+        mgf = forge.mgf[mgf].create(forge.md[hash].create());
 
-          /* initialize hash function */
-          hash = oids[child.signatureParameters.hash.algorithmOid];
-          if(hash === undefined || forge.md[hash] === undefined) {
-            throw {
-              message: 'Unsupported RSASSA-PSS hash function',
-              oid: child.signatureParameters.hash.algorithmOid,
-              name: hash
-            };
-          }
+        /* initialize hash function */
+        hash = oids[child.signatureParameters.hash.algorithmOid];
+        if(hash === undefined || forge.md[hash] === undefined) {
+          throw {
+            message: 'Unsupported RSASSA-PSS hash function.',
+            oid: child.signatureParameters.hash.algorithmOid,
+            name: hash
+          };
+        }
 
-          scheme = forge.pss.create(forge.md[hash].create(), mgf,
-            child.signatureParameters.saltLength);
-          break;
+        scheme = forge.pss.create(forge.md[hash].create(), mgf,
+          child.signatureParameters.saltLength);
+        break;
       }
 
       // verify signature on cert using public key
@@ -2722,8 +2722,8 @@ pki.wrapRsaPrivateKey = function(rsaKey) {
  * @param obj the ASN.1 PrivateKeyInfo object.
  * @param password the password to encrypt with.
  * @param options:
- *          encAlg the encryption algorithm to use
- *            ('aes128', 'aes192', 'aes256').
+ *          algorithm the encryption algorithm to use
+ *            ('aes128', 'aes192', 'aes256', '3des'), defaults to 'aes128'.
  *          count the iteration count to use.
  *          saltSize the salt size to use.
  *
@@ -2734,43 +2734,49 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   options = options || {};
   options.saltSize = options.saltSize || 8;
   options.count = options.count || 2048;
-  options.encAlg = options.encAlg || 'aes128';
+  options.algorithm = options.algorithm || 'aes128';
 
   // generate PBE params
   var salt = forge.random.getBytes(options.saltSize);
   var count = options.count;
-  var dkLen;
-  var encOid;
-  if(options.encAlg === 'aes128') {
-    dkLen = 16;
-    encOid = oids['aes128-CBC'];
-  }
-  else if(options.encAlg === 'aes192') {
-    dkLen = 24;
-    encOid = oids['aes192-CBC'];
-  }
-  else if(options.encAlg === 'aes256') {
-    dkLen = 32;
-    encOid = oids['aes256-CBC'];
-  }
-
   var countBytes = forge.util.createBuffer();
   countBytes.putInt16(count);
+  var dkLen;
+  var encryptionAlgorithm;
+  var encryptedData;
+  if(options.algorithm.indexOf('aes') === 0) {
+    // Do PBES2
+    var encOid;
+    if(options.algorithm === 'aes128') {
+      dkLen = 16;
+      encOid = oids['aes128-CBC'];
+    }
+    else if(options.algorithm === 'aes192') {
+      dkLen = 24;
+      encOid = oids['aes192-CBC'];
+    }
+    else if(options.algorithm === 'aes256') {
+      dkLen = 32;
+      encOid = oids['aes256-CBC'];
+    }
+    else {
+      throw {
+        message: 'Cannot encrypt private key. Unknown encryption algorithm.',
+        algorithm: options.algorithm
+      };
+    }
 
-  // encrypt private key using pbe SHA-1 and AES
-  var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
-  var iv = forge.random.getBytes(16);
-  var cipher = forge.aes.createEncryptionCipher(dk);
-  cipher.start(iv);
-  cipher.update(asn1.toDer(obj));
-  cipher.finish();
+    // encrypt private key using pbe SHA-1 and AES
+    var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
+    var iv = forge.random.getBytes(16);
+    var cipher = forge.aes.createEncryptionCipher(dk);
+    cipher.start(iv);
+    cipher.update(asn1.toDer(obj));
+    cipher.finish();
+    encryptedData = cipher.output.getBytes();
 
-  // TODO: support more than PBE aes
-
-  // EncryptedPrivateKeyInfo
-  var rval = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // encryptionAlgorithm (PBES2Algorithms)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    encryptionAlgorithm = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(oids['pkcs5PBES2']).getBytes()),
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -2797,10 +2803,49 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
             asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv),
         ])
       ])
-    ]),
+    ]);
+  }
+  else if(options.algorithm === '3des') {
+    // Do PKCS12 PBE
+    dkLen = 24;
+
+    var saltBytes = new forge.util.ByteBuffer(salt);
+    var dk = forge.pkcs12.generateKey(password, saltBytes, 1, count, dkLen);
+    var iv = forge.pkcs12.generateKey(password, saltBytes, 2, count, dkLen);
+    var cipher = forge.des.createEncryptionCipher(dk);
+    cipher.start(iv);
+    cipher.update(asn1.toDer(obj));
+    cipher.finish();
+    encryptedData = cipher.output.getBytes();
+
+    encryptionAlgorithm = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.oidToDer(oids['pbeWithSHAAnd3-KeyTripleDES-CBC']).getBytes()),
+      // pkcs-12PbeParams
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        // salt
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
+        // iteration count
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+          countBytes.getBytes())
+      ])
+    ]);
+  }
+  else {
+    throw {
+      message: 'Cannot encrypt private key. Unknown encryption algorithm.',
+      algorithm: options.algorithm
+    };
+  }
+
+  // EncryptedPrivateKeyInfo
+  var rval = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // encryptionAlgorithm
+    encryptionAlgorithm,
     // encryptedData
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      cipher.output.getBytes())
+    asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, encryptedData)
   ]);
   return rval;
 };
@@ -2956,8 +3001,7 @@ pki.pbe.getCipher = function(oid, params, password) {
       ]
     };
   }
-}
-
+};
 
 /**
  * Decrypts a ASN.1 PrivateKeyInfo object.

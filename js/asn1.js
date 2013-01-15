@@ -405,7 +405,9 @@ asn1.toDer = function(obj) {
 
     // add all of the child DER bytes together
     for(var i = 0; i < obj.value.length; ++i) {
-      value.putBuffer(asn1.toDer(obj.value[i]));
+      if(obj.value[i] !== undefined) {
+        value.putBuffer(asn1.toDer(obj.value[i]));
+      }
     }
   }
   // use asn1.value directly

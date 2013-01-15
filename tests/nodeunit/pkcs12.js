@@ -13,12 +13,16 @@ function mockRandomGetBytes(num) {
 
 exports.testToPkcs12Asn1_CertOnly = function(test) {
   var cert = forge.pki.certificateFromPem(certPem);
-  var p12Asn = forge.pkcs12.toPkcs12Asn1(null, cert, null);
+  var p12Asn = forge.pkcs12.toPkcs12Asn1(null, cert, null, {
+    useMac: false,
+    generateLocalKeyId: false,
+  });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 
   /* The generated PKCS#12 file lacks a MAC, therefore pass -nomacver to
      OpenSSL like so:  openssl pkcs12 -nomacver -in _files/pkcs12_certonly.p12 */
-  var exp = fs.readFileSync(__dirname + '/_files/pkcs12_certonly.p12', 'binary');
+  var exp = fs.readFileSync(
+    __dirname + '/_files/pkcs12_certonly.p12', 'binary');
 
   test.equal(p12Der, exp);
   test.done();
@@ -26,12 +30,16 @@ exports.testToPkcs12Asn1_CertOnly = function(test) {
 
 exports.testToPkcs12Asn1_KeyOnly = function(test) {
   var privKey = forge.pki.privateKeyFromPem(keyPem);
-  var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, null);
+  var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, null, {
+    useMac: false,
+    generateLocalKeyId: false,
+  });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 
   /* The generated PKCS#12 file lacks a MAC, therefore pass -nomacver to
      OpenSSL like so:  openssl pkcs12 -nomacver -nodes -in _files/pkcs12_keyonly.p12 */
-  var exp = fs.readFileSync(__dirname + '/_files/pkcs12_keyonly.p12', 'binary');
+  var exp = fs.readFileSync(
+    __dirname + '/_files/pkcs12_keyonly.p12', 'binary');
   test.equal(p12Der, exp);
   test.done();
 };
@@ -43,12 +51,16 @@ exports.testToPkcs12Asn1_EncryptedKeyOnly = function(test) {
   forge.random.getBytes = mockRandomGetBytes;
 
   var privKey = forge.pki.privateKeyFromPem(keyPem);
-  var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, 'nopass');
+  var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, 'nopass', {
+    useMac: false,
+    generateLocalKeyId: false,
+  });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 
   /* The generated PKCS#12 file lacks a MAC, therefore pass -nomacver to
      OpenSSL like so:  openssl pkcs12 -nomacver -nodes -in _files/pkcs12_enckeyonly.p12 */
-  var exp = fs.readFileSync(__dirname + '/_files/pkcs12_enckeyonly.p12', 'binary');
+  var exp = fs.readFileSync(
+    __dirname + '/_files/pkcs12_enckeyonly.p12', 'binary');
   test.equal(p12Der, exp);
   test.done();
 
@@ -57,7 +69,8 @@ exports.testToPkcs12Asn1_EncryptedKeyOnly = function(test) {
 };
 
 exports.testPkcs12FromAsn1_PlainCertOnly = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_certonly.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_certonly.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
 
@@ -73,12 +86,14 @@ exports.testPkcs12FromAsn1_PlainCertOnly = function(test) {
   test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.certBag);
 
   /* Check X.509 certificate's serial number to be sure it has been read. */
-  test.equals(p12.safeContents[0].safeBags[0].cert.serialNumber, '00d4541c40d835e2f3');
+  test.equals(
+    p12.safeContents[0].safeBags[0].cert.serialNumber, '00d4541c40d835e2f3');
   test.done();
 };
 
 exports.testPkcs12FromAsn1_PlainKeyOnly = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_keyonly.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_keyonly.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
 
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
@@ -103,7 +118,8 @@ exports.testPkcs12FromAsn1_PlainKeyOnly = function(test) {
 };
 
 exports.testPkcs12FromAsn1_EncryptedKeyOnly = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_enckeyonly.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_enckeyonly.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, 'nopass');
 
@@ -116,7 +132,8 @@ exports.testPkcs12FromAsn1_EncryptedKeyOnly = function(test) {
   /* The SafeContents instance is expected to hold on SafeBag, which
      holds a KeyBag with the private key. */
   test.equals(p12.safeContents[0].safeBags.length, 1);
-  test.equals(p12.safeContents[0].safeBags[0].type, forge.pki.oids.pkcs8ShroudedKeyBag);
+  test.equals(
+    p12.safeContents[0].safeBags[0].type, forge.pki.oids.pkcs8ShroudedKeyBag);
 
   /* Compare the key from the PFX by simply comparing both primes. */
   var expKey = forge.pki.privateKeyFromPem(keyPem);
@@ -137,7 +154,8 @@ exports.testGenerateKey = function(test) {
 };
 
 exports.testPkcs12FromAsn1_EncryptedMix = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_encmixed.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
 
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
@@ -194,7 +212,7 @@ exports.testPkcs12FromAsn1_EncryptedMix = function(test) {
   test.equals(p12.safeContents[1].safeBags[5].attributes.friendlyName[0], 'CN=ElsterRootCA,OU=RootCA,O=Elster,C=DE');
 
   test.done();
-}
+};
 
 exports.testGetBagsByFriendlyName = function(test) {
   var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
@@ -207,10 +225,11 @@ exports.testGetBagsByFriendlyName = function(test) {
   test.equals(bags[0].attributes.friendlyName[0], 'signaturekey');
 
   test.done();
-}
+};
 
 exports.testGetBagsByFriendlyNameNarrowed = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_encmixed.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
 
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
@@ -218,10 +237,11 @@ exports.testGetBagsByFriendlyNameNarrowed = function(test) {
 
   test.equals(bags.length, 0);
   test.done();
-}
+};
 
 exports.testGetBagsByLocalKeyId = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_encmixed.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
 
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
@@ -231,17 +251,19 @@ exports.testGetBagsByLocalKeyId = function(test) {
   test.equals(bags[0].attributes.localKeyId[0], 'Time 1311855238863');
   test.equals(bags[1].attributes.localKeyId[0], 'Time 1311855238863');
   test.done();
-}
+};
 
 exports.testGetBagsByLocalKeyIdNarrowed = function(test) {
-  var p12Der = fs.readFileSync(__dirname + '/_files/pkcs12_encmixed.p12', 'binary');
+  var p12Der = fs.readFileSync(
+    __dirname + '/_files/pkcs12_encmixed.p12', 'binary');
   var p12Asn1 = forge.asn1.fromDer(p12Der);
 
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '123456');
-  var bags = p12.getBagsByLocalKeyId('Time 1311855238863', forge.pki.oids.certBag);
+  var bags = p12.getBagsByLocalKeyId(
+    'Time 1311855238863', forge.pki.oids.certBag);
 
   test.equals(bags.length, 1);
   test.equals(bags[0].attributes.localKeyId[0], 'Time 1311855238863');
   test.equals(bags[0].type, forge.pki.oids.certBag);
   test.done();
-}
+};
