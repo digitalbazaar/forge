@@ -53,7 +53,7 @@ pss.create = function(hash, mgf, sLen) {
     var emLen = Math.ceil(emBits / 8);
 
     /* c. Convert the message representative m to an encoded message EM
-     *    of length emLen = (modBits - 1) / 8 octets, where modBits
+     *    of length emLen = ceil((modBits - 1) / 8) octets, where modBits
      *    is the length in bits of the RSA modulus n */
     em = em.substr(-emLen);
 
@@ -144,7 +144,7 @@ pss.create = function(hash, mgf, sLen) {
    *
    * @param md the message digest object with the hash to sign.
    * @param modsBits Length of the RSA modulus in bits.
-   * @return the encoded message, string of length (modBits - 1) / 8
+   * @return the encoded message, string of length ceil((modBits - 1) / 8)
    */
   pssobj.encode = function(md, modBits) {
     var i;
