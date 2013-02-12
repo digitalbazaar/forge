@@ -143,7 +143,10 @@ if(typeof(window) !== 'undefined') {
 // define node.js module
 else if(typeof(module) !== 'undefined' && module.exports) {
   var forge = {
-    util: require('./util')
+    util: require('./util'),
+    pki: {
+      oids: require('./oids')
+    }
   };
   module.exports = forge.asn1 = {};
 }
@@ -962,8 +965,17 @@ asn1.prettyPrint = function(obj, level, indentation) {
   }
   else {
     rval += indent + 'Value: ';
+    if(obj.type === asn1.Type.OID) {
+      var oid = asn1.derToOid(obj.value);
+      rval += oid;
+      if(forge.pki && forge.pki.oids) {
+        if(oid in forge.pki.oids) {
+          rval += ' (' + forge.pki.oids[oid] + ')';
+        }
+      }
+    }
     // FIXME: choose output (hex vs. printable) based on asn1.Type
-    if(_nonLatinRegex.test(obj.value)) {
+    else if(_nonLatinRegex.test(obj.value)) {
       rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
     }
     else if(obj.value.length === 0) {
