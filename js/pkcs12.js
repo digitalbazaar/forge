@@ -579,7 +579,7 @@ function _decodeSafeContents(safeContents, password) {
             };
           }
 
-          bag.cert = pki.certificateFromAsn1(asn1.fromDer(capture.cert));
+          bag.cert = pki.certificateFromAsn1(asn1.fromDer(capture.cert), true);
         };
         break;
 
