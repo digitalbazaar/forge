@@ -283,7 +283,7 @@ var x509CertificateValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
     constructed: true,
-    captureAsn1: 'certTbs',
+    captureAsn1: 'tbsCertificate',
     value: [{
       name: 'Certificate.TBSCertificate.version',
       tagClass: asn1.Class.CONTEXT_SPECIFIC,
@@ -771,6 +771,7 @@ pki.RDNAttributesAsArray = function(rdn, md) {
       attr = set.value[i];
       obj.type = asn1.derToOid(attr.value[0].value);
       obj.value = attr.value[1].value;
+      obj.valueTagClass = attr.value[1].type;
       // if the OID is known, get its name and short name
       if(obj.type in oids) {
         obj.name = oids[obj.type];
@@ -1538,7 +1539,8 @@ pki.createCertificate = function() {
     cert.md = forge.md.sha1.create();
 
     // get TBSCertificate, convert to DER
-    var bytes = asn1.toDer(pki.getTBSCertificate(cert));
+    cert.tbsCertificate = pki.getTBSCertificate(cert);
+    var bytes = asn1.toDer(cert.tbsCertificate);
 
     // digest and sign
     cert.md.update(bytes.getBytes());
@@ -1556,14 +1558,47 @@ pki.createCertificate = function() {
   cert.verify = function(child) {
     var rval = false;
 
-    if(child.md !== null) {
-      var scheme;
+    var md = child.md;
+    if(md === null) {
+      // check signature OID for supported signature types
+      if(cert.signatureOid in oids) {
+        var oid = oids[cert.signatureOid];
+        switch(oid) {
+        case 'sha1withRSAEncryption':
+          md = forge.md.sha1.create();
+          break;
+        case 'md5withRSAEncryption':
+          md = forge.md.md5.create();
+          break;
+        case 'sha256WithRSAEncryption':
+          md = forge.md.sha256.create();
+          break;
+        case 'RSASSA-PSS':
+          md = forge.md.sha256.create();
+          break;
+        }
+      }
+      if(md === null) {
+        throw {
+          message: 'Could not compute certificate digest. ' +
+            'Unknown signature OID.',
+          signatureOid: cert.signatureOid
+        };
+      }
+
+      // produce DER formatted TBSCertificate and digest it
+      var tbsCertificate = child.tbsCertificate || pki.getTBSCertificate(child);
+      var bytes = asn1.toDer(tbsCertificate);
+      md.update(bytes.getBytes());
+    }
+
+    if(md !== null) {
+      var scheme = undefined;
 
       switch(child.signatureOid) {
       case oids['sha1withRSAEncryption']:
         scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
         break;
-
       case oids['RSASSA-PSS']:
         var hash, mgf;
 
@@ -1605,7 +1640,7 @@ pki.createCertificate = function() {
 
       // verify signature on cert using public key
       rval = cert.publicKey.verify(
-        child.md.digest().getBytes(), child.signature, scheme);
+        md.digest().getBytes(), child.signature, scheme);
     }
 
     return rval;
@@ -1728,27 +1763,27 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     };
   }
 
+  // keep TBSCertificate to preserve signature when exporting
+  cert.tbsCertificate = capture.tbsCertificate;
+
   if(computeHash) {
     // check signature OID for supported signature types
     cert.md = null;
     if(cert.signatureOid in oids) {
       var oid = oids[cert.signatureOid];
       switch(oid) {
-        case 'sha1withRSAEncryption':
-          cert.md = forge.md.sha1.create();
-          break;
-
-        case 'md5withRSAEncryption':
-          cert.md = forge.md.md5.create();
-          break;
-
-        case 'sha256WithRSAEncryption':
-          cert.md = forge.md.sha256.create();
-          break;
-
-        case 'RSASSA-PSS':
-          cert.md = forge.md.sha256.create();
-          break;
+      case 'sha1withRSAEncryption':
+        cert.md = forge.md.sha1.create();
+        break;
+      case 'md5withRSAEncryption':
+        cert.md = forge.md.md5.create();
+        break;
+      case 'sha256WithRSAEncryption':
+        cert.md = forge.md.sha256.create();
+        break;
+      case 'RSASSA-PSS':
+        cert.md = forge.md.sha256.create();
+        break;
       }
     }
     if(cert.md === null) {
@@ -1760,7 +1795,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     }
 
     // produce DER formatted TBSCertificate and digest it
-    var bytes = asn1.toDer(capture.certTbs);
+    var bytes = asn1.toDer(cert.tbsCertificate);
     cert.md.update(bytes.getBytes());
   }
 
@@ -1811,6 +1846,18 @@ _dnToAsn1 = function(obj) {
   var attrs = obj.attributes;
   for(var i = 0; i < attrs.length; ++i) {
     attr = attrs[i];
+    var value = attr.value;
+
+    // reuse tag class for attribute value if available
+    var valueTagClass = asn1.Type.PRINTABLESTRING;
+    if('valueTagClass' in attr) {
+      valueTagClass = attr.valueTagClass;
+
+      if(valueTagClass === asn1.Type.UTF8) {
+        value = forge.util.encodeUtf8(value);
+      }
+      // FIXME: handle more encodings
+    }
 
     // create a RelativeDistinguishedName set
     // each value in the set is an AttributeTypeAndValue first
@@ -1821,10 +1868,7 @@ _dnToAsn1 = function(obj) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           asn1.oidToDer(attr.type).getBytes()),
         // AttributeValue
-        // TODO: make value types more sophisticated
-        asn1.create(
-          asn1.Class.UNIVERSAL, asn1.Type.PRINTABLESTRING, false,
-          attr.value)
+        asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
       ])
     ]);
     rval.value.push(set);
@@ -2028,10 +2072,13 @@ pki.distinguishedNameToAsn1 = function(dn) {
  * @return the asn1 representation of an X.509v3 RSA certificate.
  */
 pki.certificateToAsn1 = function(cert) {
+  // prefer cached TBSCertificate over generating one
+  var tbsCertificate = cert.tbsCertificate || pki.getTBSCertificate(cert);
+
   // Certificate
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // TBSCertificate
-    pki.getTBSCertificate(cert),
+    tbsCertificate,
     // AlgorithmIdentifier (signature algorithm)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
