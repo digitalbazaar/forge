@@ -646,10 +646,17 @@ function _decodeBagAttributes(attributes) {
  * Wraps a private key and certificate in a PKCS#12 PFX wrapper. If a
  * password is provided then the private key will be encrypted.
  *
+ * An entire certificate chain may also be included. To do this, pass
+ * an array for the "cert" parameter where the first certificate is
+ * the one that is paired with the private key and each subsequent one
+ * verifies the previous one. The certificates may be in PEM format or
+ * have been already parsed by Forge.
+ *
  * @todo implement password-based-encryption for the whole package
  *
  * @param key the private key.
- * @param cert the certificate.
+ * @param cert the certificate (may be an array of certificates in order
+ *          to specify a certificate chain).
  * @param password the password to use.
  * @param options:
  *          encAlgorithm the encryption algorithm to use
@@ -657,6 +664,7 @@ function _decodeBagAttributes(attributes) {
  *          count the iteration count to use.
  *          saltSize the salt size to use.
  *          useMac true to include a MAC, false not to, defaults to true.
+ *          localKeyId the local key ID to use, in hex.
  *          generateLocalKeyId true to generate a random local key ID,
  *            false not to, defaults to true.
  *
@@ -671,14 +679,24 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   if(!('useMac' in options)) {
     options.useMac = true;
   }
+  if(!('localKeyId' in options)) {
+    options.localKeyId = null;
+  }
   if(!('generateLocalKeyId' in options)) {
     options.generateLocalKeyId = true;
   }
 
+  var localKeyId = options.localKeyId;
   var bagAttrs = undefined;
-  if(options.generateLocalKeyId) {
+  if(localKeyId !== null) {
+    localKeyId = forge.util.hexToBytes(localKeyId);
+  }
+  else if(options.generateLocalKeyId) {
     // set localKeyId and friendlyName (if specified)
-    var localKeyId = forge.random.getBytes(20);
+    localKeyId = forge.random.getBytes(20);
+  }
+
+  if(localKeyId !== null) {
     var attrs = [
       // localKeyID
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -756,9 +774,27 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     contents.push(keyCI);
   }
 
-  // create safe bag for certificate
+  // create safe bag(s) for certificate chain
+  var chain = [];
   if(cert !== null) {
+    if((Array.isArray && Array.isArray(cert)) || cert.constructor === Array) {
+      chain = cert;
+    }
+    else {
+      chain = [cert];
+    }
+  }
+
+  var certSafeBags = [];
+  for(var i = 0; i < chain.length; ++i) {
+    // convert cert from PEM as necessary
+    cert = chain[i];
+    if(typeof cert === 'string') {
+      cert = pki.certificateFromPem(cert);
+    }
+
     // SafeBag
+    var certBagAttrs = (i === 0) ? bagAttrs : undefined;
     var certAsn1 = pki.certificateToAsn1(cert);
     var certSafeBag =
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -779,12 +815,15 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
                 asn1.toDer(certAsn1).getBytes())
             ])])]),
         // bagAttributes (OPTIONAL)
-        bagAttrs
+        certBagAttrs
       ]);
+    certSafeBags.push(certSafeBag);
+  }
 
+  if(certSafeBags.length > 0) {
     // SafeContents
     var certSafeContents = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [certSafeBag]);
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, certSafeBags);
 
     // ContentInfo
     var certCI =
