@@ -886,64 +886,72 @@ asn1.prettyPrint = function(obj, level, indentation) {
   }
 
   if(obj.tagClass === asn1.Class.UNIVERSAL) {
+    rval += obj.type;
+
     // known types
     switch(obj.type) {
     case asn1.Type.NONE:
-      rval += 'None';
+      rval += ' (None)';
       break;
     case asn1.Type.BOOLEAN:
-      rval += 'Boolean';
+      rval += ' (Boolean)';
       break;
     case asn1.Type.BITSTRING:
-      rval += 'Bit string';
+      rval += ' (Bit string)';
       break;
     case asn1.Type.INTEGER:
-      rval += 'Integer';
+      rval += ' (Integer)';
       break;
     case asn1.Type.OCTETSTRING:
-      rval += 'Octet string';
+      rval += ' (Octet string)';
       break;
     case asn1.Type.NULL:
-      rval += 'Null';
+      rval += ' (Null)';
       break;
     case asn1.Type.OID:
-      rval += 'Object Identifier';
+      rval += ' (Object Identifier)';
       break;
     case asn1.Type.ODESC:
-      rval += 'Object Descriptor';
+      rval += ' (Object Descriptor)';
       break;
     case asn1.Type.EXTERNAL:
-      rval += 'External or Instance of';
+      rval += ' (External or Instance of)';
       break;
     case asn1.Type.REAL:
-      rval += 'Real';
+      rval += ' (Real)';
       break;
     case asn1.Type.ENUMERATED:
-      rval += 'Enumerated';
+      rval += ' (Enumerated)';
       break;
     case asn1.Type.EMBEDDED:
-      rval += 'Embedded PDV';
+      rval += ' (Embedded PDV)';
+      break;
+    case asn1.Type.UTF8:
+      rval += ' (UTF8)';
       break;
     case asn1.Type.ROID:
-      rval += 'Relative Object Identifier';
+      rval += ' (Relative Object Identifier)';
       break;
     case asn1.Type.SEQUENCE:
-      rval += 'Sequence';
+      rval += ' (Sequence)';
       break;
     case asn1.Type.SET:
-      rval += 'Set';
+      rval += ' (Set)';
       break;
     case asn1.Type.PRINTABLESTRING:
-      rval += 'Printable String';
+      rval += ' (Printable String)';
       break;
     case asn1.Type.IA5String:
-      rval += 'IA5String (ASCII)';
+      rval += ' (IA5String (ASCII))';
       break;
     case asn1.Type.UTCTIME:
-      rval += 'UTC time';
+      rval += ' (UTC time)';
       break;
-    default:
-      rval += obj.type;
+    case asn1.Type.GENERALIZEDTIME:
+      rval += ' (Generalized time)';
+      break;
+    case asn1.Type.BMPSTRING:
+      rval += ' (BMP String)';
       break;
     }
   }
