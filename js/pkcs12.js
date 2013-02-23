@@ -162,6 +162,7 @@ var pfxValidator = {
     type: asn1.Type.SEQUENCE,
     constructed: true,
     optional: true,
+    captureAsn1: 'mac',
     value: [{
       name: 'PFX.macData.mac',
       tagClass: asn1.Class.UNIVERSAL,
@@ -269,7 +270,7 @@ var certBagValidator = {
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     constructed: true,
     /* So far we only support X.509 certificates (which are wrapped in
-       a OCTET STRING, hence hard code that here). */
+       an OCTET STRING, hence hard code that here). */
     value: [{
       name: 'CertBag.certValue[0]',
       tagClass: asn1.Class.UNIVERSAL,
@@ -378,8 +379,58 @@ p12.pkcs12FromAsn1 = function(obj, password) {
   if(data.tagClass !== asn1.Class.UNIVERSAL ||
      data.type !== asn1.Type.OCTETSTRING) {
     throw {
-      message: 'PKCS#12 authSafe content data is not a OCTET STRING'
+      message: 'PKCS#12 authSafe content data is not an OCTET STRING.'
     };
+  }
+
+  // check for MAC
+  if(capture.mac) {
+    var md = null;
+    var macKeyBytes = 0;
+    var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
+    switch(macAlgorithm) {
+    case oids['sha1']:
+      md = forge.md.sha1.create();
+      macKeyBytes = 20;
+      break;
+    case oids['sha256']:
+      md = forge.md.sha256.create();
+      macKeyBytes = 32;
+      break;
+    case oids['sha384']:
+      md = forge.md.sha384.create();
+      macKeyBytes = 48;
+      break;
+    case oids['sha512']:
+      md = forge.md.sha512.create();
+      macKeyBytes = 64;
+      break;
+    case oids['md5']:
+      md = forge.md.md5.create();
+      macKeyBytes = 16;
+      break;
+    }
+    if(md === null) {
+      throw {
+        message: 'PKCS#12 uses unsupported MAC algorithm: ' + macAlgorithm
+      };
+    }
+
+    // verify MAC
+    var macSalt = new forge.util.ByteBuffer(capture.macSalt);
+    var macIterations = parseInt(
+      forge.util.bytesToHex(capture.macIterations), 16);
+    var macKey = p12.generateKey(
+      password || '', macSalt, 3, macIterations, macKeyBytes, md);
+    var mac = forge.hmac.create();
+    mac.start(md, macKey);
+    mac.update(data.value);
+    var macValue = mac.getMac();
+    if(macValue.getBytes() !== capture.macDigest) {
+      throw {
+        message: 'PKCS#12 MAC could not be verified. Invalid password?'
+      };
+    }
   }
 
   _decodeAuthenticatedSafe(pfx, data.value, password);
@@ -431,7 +482,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
           throw {
-            message: 'PKCS#12 SafeContents Data is not a OCTET STRING'
+            message: 'PKCS#12 SafeContents Data is not an OCTET STRING'
           };
         }
         safeContents = data.value;
@@ -881,7 +932,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, macSalt.getBytes()),
       // iterations INTEGER (XXX: Only support count < 65536)
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes( count.toString(16))
+        forge.util.hexToBytes(count.toString(16))
       )
     ]);
   }
@@ -909,20 +960,21 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
 };
 
 /**
- * PKCS#12 key derivation
+ * Derives a PKCS#12 key.
  *
- * @param {String} password The password to derive the key material from
- * @param {ByteBuffer} salt The salt to use
- * @param {int} id The PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC)
- * @param {int} iter The iteration count
- * @param {int} n Number of bytes to derive from the password
- * @param md The message digest to use, defaults to SHA-1.
- * @return {ByteBuffer} The bytes derived from the password
+ * @param {String} password the password to derive the key material from.
+ * @param {ByteBuffer} salt the salt to use.
+ * @param {int} id the PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC).
+ * @param {int} iter the iteration count.
+ * @param {int} n the number of bytes to derive from the password.
+ * @param md the message digest to use, defaults to SHA-1.
+ *
+ * @return {ByteBuffer} The bytes derived from the password.
  */
 p12.generateKey = function(password, salt, id, iter, n, md) {
   var j, l;
 
-  if(typeof(md) === 'undefined' || md === null) {
+  if(typeof md === 'undefined' || md === null) {
     md = forge.md.sha1.create();
   }
 
