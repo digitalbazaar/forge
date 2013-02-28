@@ -5,7 +5,7 @@
  * @author Dave Longley
  * @author Stefan Siegl <stesie@brokenpipe.de>
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of an X.509v3 certificate is as follows
@@ -331,14 +331,18 @@ var x509CertificateValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
+      // Note: UTC and generalized times may both appear so the capture
+      // names are based on their detected order, the names used below
+      // are only for the common case, which validity time really means
+      // "notBefore" and which means "notAfter" will be determined by order
       value: [{
         // notBefore (Time) (UTC time case)
-        name: 'Certificate.TBSCertificate.validity.notBefore',
+        name: 'Certificate.TBSCertificate.validity.notBefore (utc)',
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.UTCTIME,
         constructed: false,
         optional: true,
-        capture: 'certNotBefore'
+        capture: 'certValidity1UTCTime'
       }, {
         // notBefore (Time) (generalized time case)
         name: 'Certificate.TBSCertificate.validity.notBefore (generalized)',
@@ -346,23 +350,23 @@ var x509CertificateValidator = {
         type: asn1.Type.GENERALIZEDTIME,
         constructed: false,
         optional: true,
-        capture: 'certNotBeforeGeneralized'
+        capture: 'certValidity2GeneralizedTime'
       }, {
         // notAfter (Time) (only UTC time is supported)
-        name: 'Certificate.TBSCertificate.validity.notAfter',
+        name: 'Certificate.TBSCertificate.validity.notAfter (utc)',
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.UTCTIME,
         constructed: false,
         optional: true,
-        capture: 'certNotAfter'
+        capture: 'certValidity3UTCTime'
       }, {
         // notAfter (Time) (only UTC time is supported)
-        name: 'Certificate.TBSCertificate.validity.notAfter',
+        name: 'Certificate.TBSCertificate.validity.notAfter (generalized)',
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.GENERALIZEDTIME,
         constructed: false,
         optional: true,
-        capture: 'certNotAfterGeneralized'
+        capture: 'certValidity4GeneralizedTime'
       }]
     }, {
       // Name (subject) (RDNSequence)
@@ -1735,33 +1739,35 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   ++signature.read;
   cert.signature = signature.getBytes();
 
-  if(capture.certNotBefore !== undefined) {
-    cert.validity.notBefore = asn1.utcTimeToDate(capture.certNotBefore);
+  var validity = [];
+  if(capture.certValidity1UTCTime !== undefined) {
+    validity.push(asn1.utcTimeToDate(capture.certValidity1UTCTime));
   }
-  else if(capture.certNotBeforeGeneralized !== undefined) {
-    cert.validity.notBefore = asn1.generalizedTimeToDate
-      (capture.certNotBeforeGeneralized);
+  if(capture.certValidity2GeneralizedTime !== undefined) {
+    validity.push(asn1.generalizedTimeToDate(
+      capture.certValidity2GeneralizedTime));
   }
-  else {
+  if(capture.certValidity3UTCTime !== undefined) {
+    validity.push(asn1.utcTimeToDate(capture.certValidity3UTCTime));
+  }
+  if(capture.certValidity4GeneralizedTime !== undefined) {
+    validity.push(asn1.generalizedTimeToDate(
+      capture.certValidity4GeneralizedTime));
+  }
+  if(validity.length > 2) {
     throw {
-      message: 'Cannot read notBefore time, neither provided as UTCTime ' +
-        'nor as GeneralizedTime.'
+      message: 'Cannot read notBefore/notAfter validity times; more than ' +
+        'two times were provided in the certificate.'
     };
   }
-
-  if(capture.certNotAfter !== undefined) {
-    cert.validity.notAfter = asn1.utcTimeToDate(capture.certNotAfter);
-  }
-  else if(capture.certNotAfterGeneralized !== undefined) {
-    cert.validity.notAfter = asn1.generalizedTimeToDate
-      (capture.certNotAfterGeneralized);
-  }
-  else {
+  if(validity.length < 2) {
     throw {
-      message: 'Cannot read notAfter time, neither provided as UTCTime ' +
-        'nor as GeneralizedTime.'
+      message: 'Cannot read notBefore/notAfter validity times; they were not ' +
+        'provided as either UTCTime or GeneralizedTime.'
     };
   }
+  cert.validity.notBefore = validity[0];
+  cert.validity.notAfter = validity[1];
 
   // keep TBSCertificate to preserve signature when exporting
   cert.tbsCertificate = capture.tbsCertificate;
