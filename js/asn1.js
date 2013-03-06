@@ -369,7 +369,8 @@ asn1.fromDer = function(bytes) {
       for(var i = 0; i < length; i += 2) {
         value += String.fromCharCode(bytes.getInt16());
       }
-    } else {
+    }
+    else {
       value = bytes.getBytes(length);
     }
   }
@@ -415,7 +416,14 @@ asn1.toDer = function(obj) {
   }
   // use asn1.value directly
   else {
-    value.putBytes(obj.value);
+    if(obj.type === asn1.Type.BMPSTRING) {
+      for(var i = 0; i < obj.value.length; ++i) {
+        value.putInt16(obj.value.charCodeAt(i));
+      }
+    }
+    else {
+      value.putBytes(obj.value);
+    }
   }
 
   // add tag byte
