@@ -3222,8 +3222,10 @@ tls.createServerKeyExchange = function(c) {
 
   // build record fragment
   var rval = forge.util.createBuffer();
-  rval.putByte(tls.HandshakeType.server_key_exchange);
-  rval.putInt24(length);
+  if(length > 0) {
+    rval.putByte(tls.HandshakeType.server_key_exchange);
+    rval.putInt24(length);
+  }
   return rval;
 };
 
