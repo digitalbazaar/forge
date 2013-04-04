@@ -974,7 +974,9 @@ tls.parseHelloMessage = function(c, record, length) {
     });
   }
   else {
+    // use 'remaining' to calculate # of remaining bytes in the message
     var b = record.fragment;
+    var remaining = b.length();
     msg = {
       version: {
         major: b.getByte(),
@@ -993,8 +995,9 @@ tls.parseHelloMessage = function(c, record, length) {
       msg.compression_methods = readVector(b, 1);
     }
 
-    // read extensions if there are any
-    if(b.length() > 0) {
+    // read extensions if there are any bytes left in the message
+    remaining = length - (remaining - b.length());
+    if(remaining > 0) {
       // parse extensions
       var exts = readVector(b, 2);
       while(exts.length() > 0) {
