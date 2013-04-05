@@ -57,6 +57,14 @@ Provides [HMAC][] w/any supported message digest algorithm.
 
 Provides the password-based key-derivation function from [PKCS#5][].
 
+### forge.pkcs7
+
+Provides cryptographically protected messages from [PKCS#7][].
+
+### forge.pkcs12
+
+Provides the cryptographic archive file format from [PKCS#12][].
+
 ### forge.prng
 
 Provides a [Fortuna][]-based cryptographically-secure pseudo-random number
@@ -165,8 +173,9 @@ Contact
 [JavaScript]: http://en.wikipedia.org/wiki/JavaScript
 [MD5]: http://en.wikipedia.org/wiki/MD5
 [PKCS#5]: http://en.wikipedia.org/wiki/PKCS
+[PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
+[PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [X.509]: http://en.wikipedia.org/wiki/SHA-256
-
