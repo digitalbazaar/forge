@@ -56,6 +56,7 @@ var j_lm = ((canary&0xffffff)==0xefcafe);
 
 // (public) Constructor
 function BigInteger(a,b,c) {
+  this.data = [];
   if(a != null)
     if("number" == typeof a) this.fromNumber(a,b,c);
     else if(b == null && "string" != typeof a) this.fromString(a,256);
@@ -75,9 +76,9 @@ function nbi() { return new BigInteger(null); }
 // max internal value = 2*dvalue^2-2*dvalue (< 2^53)
 function am1(i,x,w,j,c,n) {
   while(--n >= 0) {
-    var v = x*this[i++]+w[j]+c;
+    var v = x*this.data[i++]+w.data[j]+c;
     c = Math.floor(v/0x4000000);
-    w[j++] = v&0x3ffffff;
+    w.data[j++] = v&0x3ffffff;
   }
   return c;
 }
@@ -87,12 +88,12 @@ function am1(i,x,w,j,c,n) {
 function am2(i,x,w,j,c,n) {
   var xl = x&0x7fff, xh = x>>15;
   while(--n >= 0) {
-    var l = this[i]&0x7fff;
-    var h = this[i++]>>15;
+    var l = this.data[i]&0x7fff;
+    var h = this.data[i++]>>15;
     var m = xh*l+h*xl;
-    l = xl*l+((m&0x7fff)<<15)+w[j]+(c&0x3fffffff);
+    l = xl*l+((m&0x7fff)<<15)+w.data[j]+(c&0x3fffffff);
     c = (l>>>30)+(m>>>15)+xh*h+(c>>>30);
-    w[j++] = l&0x3fffffff;
+    w.data[j++] = l&0x3fffffff;
   }
   return c;
 }
@@ -101,12 +102,12 @@ function am2(i,x,w,j,c,n) {
 function am3(i,x,w,j,c,n) {
   var xl = x&0x3fff, xh = x>>14;
   while(--n >= 0) {
-    var l = this[i]&0x3fff;
-    var h = this[i++]>>14;
+    var l = this.data[i]&0x3fff;
+    var h = this.data[i++]>>14;
     var m = xh*l+h*xl;
-    l = xl*l+((m&0x3fff)<<14)+w[j]+c;
+    l = xl*l+((m&0x3fff)<<14)+w.data[j]+c;
     c = (l>>28)+(m>>14)+xh*h;
-    w[j++] = l&0xfffffff;
+    w.data[j++] = l&0xfffffff;
   }
   return c;
 }
@@ -158,7 +159,7 @@ function intAt(s,i) {
 
 // (protected) copy this to r
 function bnpCopyTo(r) {
-  for(var i = this.t-1; i >= 0; --i) r[i] = this[i];
+  for(var i = this.t-1; i >= 0; --i) r.data[i] = this.data[i];
   r.t = this.t;
   r.s = this.s;
 }
@@ -167,8 +168,8 @@ function bnpCopyTo(r) {
 function bnpFromInt(x) {
   this.t = 1;
   this.s = (x<0)?-1:0;
-  if(x > 0) this[0] = x;
-  else if(x < -1) this[0] = x+DV;
+  if(x > 0) this.data[0] = x;
+  else if(x < -1) this.data[0] = x+DV;
   else this.t = 0;
 }
 
@@ -196,19 +197,19 @@ function bnpFromString(s,b) {
     }
     mi = false;
     if(sh == 0)
-      this[this.t++] = x;
+      this.data[this.t++] = x;
     else if(sh+k > this.DB) {
-      this[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
-      this[this.t++] = (x>>(this.DB-sh));
+      this.data[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
+      this.data[this.t++] = (x>>(this.DB-sh));
     }
     else
-      this[this.t-1] |= x<<sh;
+      this.data[this.t-1] |= x<<sh;
     sh += k;
     if(sh >= this.DB) sh -= this.DB;
   }
   if(k == 8 && (s[0]&0x80) != 0) {
     this.s = -1;
-    if(sh > 0) this[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
+    if(sh > 0) this.data[this.t-1] |= ((1<<(this.DB-sh))-1)<<sh;
   }
   this.clamp();
   if(mi) BigInteger.ZERO.subTo(this,this);
@@ -217,7 +218,7 @@ function bnpFromString(s,b) {
 // (protected) clamp off excess high words
 function bnpClamp() {
   var c = this.s&this.DM;
-  while(this.t > 0 && this[this.t-1] == c) --this.t;
+  while(this.t > 0 && this.data[this.t-1] == c) --this.t;
 }
 
 // (public) return string representation in given radix
@@ -233,14 +234,14 @@ function bnToString(b) {
   var km = (1<<k)-1, d, m = false, r = "", i = this.t;
   var p = this.DB-(i*this.DB)%k;
   if(i-- > 0) {
-    if(p < this.DB && (d = this[i]>>p) > 0) { m = true; r = int2char(d); }
+    if(p < this.DB && (d = this.data[i]>>p) > 0) { m = true; r = int2char(d); }
     while(i >= 0) {
       if(p < k) {
-        d = (this[i]&((1<<p)-1))<<(k-p);
-        d |= this[--i]>>(p+=this.DB-k);
+        d = (this.data[i]&((1<<p)-1))<<(k-p);
+        d |= this.data[--i]>>(p+=this.DB-k);
       }
       else {
-        d = (this[i]>>(p-=k))&km;
+        d = (this.data[i]>>(p-=k))&km;
         if(p <= 0) { p += this.DB; --i; }
       }
       if(d > 0) m = true;
@@ -263,7 +264,7 @@ function bnCompareTo(a) {
   var i = this.t;
   r = i-a.t;
   if(r != 0) return r;
-  while(--i >= 0) if((r=this[i]-a[i]) != 0) return r;
+  while(--i >= 0) if((r=this.data[i]-a.data[i]) != 0) return r;
   return 0;
 }
 
@@ -281,21 +282,21 @@ function nbits(x) {
 // (public) return the number of bits in "this"
 function bnBitLength() {
   if(this.t <= 0) return 0;
-  return this.DB*(this.t-1)+nbits(this[this.t-1]^(this.s&this.DM));
+  return this.DB*(this.t-1)+nbits(this.data[this.t-1]^(this.s&this.DM));
 }
 
 // (protected) r = this << n*DB
 function bnpDLShiftTo(n,r) {
   var i;
-  for(i = this.t-1; i >= 0; --i) r[i+n] = this[i];
-  for(i = n-1; i >= 0; --i) r[i] = 0;
+  for(i = this.t-1; i >= 0; --i) r.data[i+n] = this.data[i];
+  for(i = n-1; i >= 0; --i) r.data[i] = 0;
   r.t = this.t+n;
   r.s = this.s;
 }
 
 // (protected) r = this >> n*DB
 function bnpDRShiftTo(n,r) {
-  for(var i = n; i < this.t; ++i) r[i-n] = this[i];
+  for(var i = n; i < this.t; ++i) r.data[i-n] = this.data[i];
   r.t = Math.max(this.t-n,0);
   r.s = this.s;
 }
@@ -307,11 +308,11 @@ function bnpLShiftTo(n,r) {
   var bm = (1<<cbs)-1;
   var ds = Math.floor(n/this.DB), c = (this.s<<bs)&this.DM, i;
   for(i = this.t-1; i >= 0; --i) {
-    r[i+ds+1] = (this[i]>>cbs)|c;
-    c = (this[i]&bm)<<bs;
+    r.data[i+ds+1] = (this.data[i]>>cbs)|c;
+    c = (this.data[i]&bm)<<bs;
   }
-  for(i = ds-1; i >= 0; --i) r[i] = 0;
-  r[ds] = c;
+  for(i = ds-1; i >= 0; --i) r.data[i] = 0;
+  r.data[ds] = c;
   r.t = this.t+ds+1;
   r.s = this.s;
   r.clamp();
@@ -325,12 +326,12 @@ function bnpRShiftTo(n,r) {
   var bs = n%this.DB;
   var cbs = this.DB-bs;
   var bm = (1<<bs)-1;
-  r[0] = this[ds]>>bs;
+  r.data[0] = this.data[ds]>>bs;
   for(var i = ds+1; i < this.t; ++i) {
-    r[i-ds-1] |= (this[i]&bm)<<cbs;
-    r[i-ds] = this[i]>>bs;
+    r.data[i-ds-1] |= (this.data[i]&bm)<<cbs;
+    r.data[i-ds] = this.data[i]>>bs;
   }
-  if(bs > 0) r[this.t-ds-1] |= (this.s&bm)<<cbs;
+  if(bs > 0) r.data[this.t-ds-1] |= (this.s&bm)<<cbs;
   r.t = this.t-ds;
   r.clamp();
 }
@@ -339,15 +340,15 @@ function bnpRShiftTo(n,r) {
 function bnpSubTo(a,r) {
   var i = 0, c = 0, m = Math.min(a.t,this.t);
   while(i < m) {
-    c += this[i]-a[i];
-    r[i++] = c&this.DM;
+    c += this.data[i]-a.data[i];
+    r.data[i++] = c&this.DM;
     c >>= this.DB;
   }
   if(a.t < this.t) {
     c -= a.s;
     while(i < this.t) {
-      c += this[i];
-      r[i++] = c&this.DM;
+      c += this.data[i];
+      r.data[i++] = c&this.DM;
       c >>= this.DB;
     }
     c += this.s;
@@ -355,15 +356,15 @@ function bnpSubTo(a,r) {
   else {
     c += this.s;
     while(i < a.t) {
-      c -= a[i];
-      r[i++] = c&this.DM;
+      c -= a.data[i];
+      r.data[i++] = c&this.DM;
       c >>= this.DB;
     }
     c -= a.s;
   }
   r.s = (c<0)?-1:0;
-  if(c < -1) r[i++] = this.DV+c;
-  else if(c > 0) r[i++] = c;
+  if(c < -1) r.data[i++] = this.DV+c;
+  else if(c > 0) r.data[i++] = c;
   r.t = i;
   r.clamp();
 }
@@ -374,8 +375,8 @@ function bnpMultiplyTo(a,r) {
   var x = this.abs(), y = a.abs();
   var i = x.t;
   r.t = i+y.t;
-  while(--i >= 0) r[i] = 0;
-  for(i = 0; i < y.t; ++i) r[i+x.t] = x.am(0,y[i],r,i,0,x.t);
+  while(--i >= 0) r.data[i] = 0;
+  for(i = 0; i < y.t; ++i) r.data[i+x.t] = x.am(0,y.data[i],r,i,0,x.t);
   r.s = 0;
   r.clamp();
   if(this.s != a.s) BigInteger.ZERO.subTo(r,r);
@@ -385,15 +386,15 @@ function bnpMultiplyTo(a,r) {
 function bnpSquareTo(r) {
   var x = this.abs();
   var i = r.t = 2*x.t;
-  while(--i >= 0) r[i] = 0;
+  while(--i >= 0) r.data[i] = 0;
   for(i = 0; i < x.t-1; ++i) {
-    var c = x.am(i,x[i],r,2*i,0,1);
-    if((r[i+x.t]+=x.am(i+1,2*x[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
-      r[i+x.t] -= x.DV;
-      r[i+x.t+1] = 1;
+    var c = x.am(i,x.data[i],r,2*i,0,1);
+    if((r.data[i+x.t]+=x.am(i+1,2*x.data[i],r,2*i+1,c,x.t-i-1)) >= x.DV) {
+      r.data[i+x.t] -= x.DV;
+      r.data[i+x.t+1] = 1;
     }
   }
-  if(r.t > 0) r[r.t-1] += x.am(i,x[i],r,2*i,0,1);
+  if(r.t > 0) r.data[r.t-1] += x.am(i,x.data[i],r,2*i,0,1);
   r.s = 0;
   r.clamp();
 }
@@ -411,30 +412,30 @@ function bnpDivRemTo(m,q,r) {
   }
   if(r == null) r = nbi();
   var y = nbi(), ts = this.s, ms = m.s;
-  var nsh = this.DB-nbits(pm[pm.t-1]);	// normalize modulus
+  var nsh = this.DB-nbits(pm.data[pm.t-1]);	// normalize modulus
   if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
   else { pm.copyTo(y); pt.copyTo(r); }
   var ys = y.t;
-  var y0 = y[ys-1];
+  var y0 = y.data[ys-1];
   if(y0 == 0) return;
-  var yt = y0*(1<<this.F1)+((ys>1)?y[ys-2]>>this.F2:0);
+  var yt = y0*(1<<this.F1)+((ys>1)?y.data[ys-2]>>this.F2:0);
   var d1 = this.FV/yt, d2 = (1<<this.F1)/yt, e = 1<<this.F2;
   var i = r.t, j = i-ys, t = (q==null)?nbi():q;
   y.dlShiftTo(j,t);
   if(r.compareTo(t) >= 0) {
-    r[r.t++] = 1;
+    r.data[r.t++] = 1;
     r.subTo(t,r);
   }
   BigInteger.ONE.dlShiftTo(ys,t);
   t.subTo(y,y);	// "negative" y so we can replace sub with am later
-  while(y.t < ys) y[y.t++] = 0;
+  while(y.t < ys) y.data[y.t++] = 0;
   while(--j >= 0) {
     // Estimate quotient digit
-    var qd = (r[--i]==y0)?this.DM:Math.floor(r[i]*d1+(r[i-1]+e)*d2);
-    if((r[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
+    var qd = (r.data[--i]==y0)?this.DM:Math.floor(r.data[i]*d1+(r.data[i-1]+e)*d2);
+    if((r.data[i]+=y.am(0,qd,r,j,0,ys)) < qd) {	// Try it out
       y.dlShiftTo(j,t);
       r.subTo(t,r);
-      while(r[i] < --qd) r.subTo(t,r);
+      while(r.data[i] < --qd) r.subTo(t,r);
     }
   }
   if(q != null) {
@@ -484,7 +485,7 @@ Classic.prototype.sqrTo = cSqrTo;
 // JS multiply "overflows" differently from C/C++, so care is needed here.
 function bnpInvDigit() {
   if(this.t < 1) return 0;
-  var x = this[0];
+  var x = this.data[0];
   if((x&1) == 0) return 0;
   var y = x&3;		// y == 1/x mod 2^2
   y = (y*(2-(x&0xf)*y))&0xf;	// y == 1/x mod 2^4
@@ -527,16 +528,16 @@ function montRevert(x) {
 // x = x/R mod m (HAC 14.32)
 function montReduce(x) {
   while(x.t <= this.mt2)	// pad x so am has enough room later
-    x[x.t++] = 0;
+    x.data[x.t++] = 0;
   for(var i = 0; i < this.m.t; ++i) {
-    // faster way of calculating u0 = x[i]*mp mod DV
-    var j = x[i]&0x7fff;
-    var u0 = (j*this.mpl+(((j*this.mph+(x[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
+    // faster way of calculating u0 = x.data[i]*mp mod DV
+    var j = x.data[i]&0x7fff;
+    var u0 = (j*this.mpl+(((j*this.mph+(x.data[i]>>15)*this.mpl)&this.um)<<15))&x.DM;
     // use am to combine the multiply-shift-add into one call
     j = i+this.m.t;
-    x[j] += this.m.am(0,u0,x,i,0,this.m.t);
+    x.data[j] += this.m.am(0,u0,x,i,0,this.m.t);
     // propagate carry
-    while(x[j] >= x.DV) { x[j] -= x.DV; x[++j]++; }
+    while(x.data[j] >= x.DV) { x.data[j] -= x.DV; x.data[++j]++; }
   }
   x.clamp();
   x.drShiftTo(this.m.t,x);
@@ -556,7 +557,7 @@ Montgomery.prototype.mulTo = montMulTo;
 Montgomery.prototype.sqrTo = montSqrTo;
 
 // (protected) true iff this is even
-function bnpIsEven() { return ((this.t>0)?(this[0]&1):this.s) == 0; }
+function bnpIsEven() { return ((this.t>0)?(this.data[0]&1):this.s) == 0; }
 
 // (protected) this^e, e < 2^32, doing sqr and mul with "r" (HAC 14.79)
 function bnpExp(e,z) {
@@ -624,20 +625,20 @@ function bnClone() { var r = nbi(); this.copyTo(r); return r; }
 //(public) return value as integer
 function bnIntValue() {
 if(this.s < 0) {
- if(this.t == 1) return this[0]-this.DV;
+ if(this.t == 1) return this.data[0]-this.DV;
  else if(this.t == 0) return -1;
 }
-else if(this.t == 1) return this[0];
+else if(this.t == 1) return this.data[0];
 else if(this.t == 0) return 0;
 // assumes 16 < DB < 32
-return ((this[1]&((1<<(32-this.DB))-1))<<this.DB)|this[0];
+return ((this.data[1]&((1<<(32-this.DB))-1))<<this.DB)|this.data[0];
 }
 
 //(public) return value as byte
-function bnByteValue() { return (this.t==0)?this.s:(this[0]<<24)>>24; }
+function bnByteValue() { return (this.t==0)?this.s:(this.data[0]<<24)>>24; }
 
 //(public) return value as short (assumes DB>=16)
-function bnShortValue() { return (this.t==0)?this.s:(this[0]<<16)>>16; }
+function bnShortValue() { return (this.t==0)?this.s:(this.data[0]<<16)>>16; }
 
 //(protected) return x s.t. r^x < DV
 function bnpChunkSize(r) { return Math.floor(Math.LN2*this.DB/Math.log(r)); }
@@ -645,7 +646,7 @@ function bnpChunkSize(r) { return Math.floor(Math.LN2*this.DB/Math.log(r)); }
 //(public) 0 if this == 0, 1 if this > 0
 function bnSigNum() {
 if(this.s < 0) return -1;
-else if(this.t <= 0 || (this.t == 1 && this[0] <= 0)) return 0;
+else if(this.t <= 0 || (this.t == 1 && this.data[0] <= 0)) return 0;
 else return 1;
 }
 
@@ -723,15 +724,15 @@ var i = this.t, r = new Array();
 r[0] = this.s;
 var p = this.DB-(i*this.DB)%8, d, k = 0;
 if(i-- > 0) {
- if(p < this.DB && (d = this[i]>>p) != (this.s&this.DM)>>p)
+ if(p < this.DB && (d = this.data[i]>>p) != (this.s&this.DM)>>p)
    r[k++] = d|(this.s<<(this.DB-p));
  while(i >= 0) {
    if(p < 8) {
-     d = (this[i]&((1<<p)-1))<<(8-p);
-     d |= this[--i]>>(p+=this.DB-8);
+     d = (this.data[i]&((1<<p)-1))<<(8-p);
+     d |= this.data[--i]>>(p+=this.DB-8);
    }
    else {
-     d = (this[i]>>(p-=8))&0xff;
+     d = (this.data[i]>>(p-=8))&0xff;
      if(p <= 0) { p += this.DB; --i; }
    }
    if((d&0x80) != 0) d |= -256;
@@ -749,15 +750,15 @@ function bnMax(a) { return(this.compareTo(a)>0)?this:a; }
 //(protected) r = this op a (bitwise)
 function bnpBitwiseTo(a,op,r) {
 var i, f, m = Math.min(a.t,this.t);
-for(i = 0; i < m; ++i) r[i] = op(this[i],a[i]);
+for(i = 0; i < m; ++i) r.data[i] = op(this.data[i],a.data[i]);
 if(a.t < this.t) {
  f = a.s&this.DM;
- for(i = m; i < this.t; ++i) r[i] = op(this[i],f);
+ for(i = m; i < this.t; ++i) r.data[i] = op(this.data[i],f);
  r.t = this.t;
 }
 else {
  f = this.s&this.DM;
- for(i = m; i < a.t; ++i) r[i] = op(f,a[i]);
+ for(i = m; i < a.t; ++i) r.data[i] = op(f,a.data[i]);
  r.t = a.t;
 }
 r.s = op(this.s,a.s);
@@ -783,7 +784,7 @@ function bnAndNot(a) { var r = nbi(); this.bitwiseTo(a,op_andnot,r); return r; }
 //(public) ~this
 function bnNot() {
 var r = nbi();
-for(var i = 0; i < this.t; ++i) r[i] = this.DM&~this[i];
+for(var i = 0; i < this.t; ++i) r.data[i] = this.DM&~this.data[i];
 r.t = this.t;
 r.s = ~this.s;
 return r;
@@ -818,7 +819,7 @@ return r;
 //(public) returns index of lowest 1-bit (or -1 if none)
 function bnGetLowestSetBit() {
 for(var i = 0; i < this.t; ++i)
- if(this[i] != 0) return i*this.DB+lbit(this[i]);
+ if(this.data[i] != 0) return i*this.DB+lbit(this.data[i]);
 if(this.s < 0) return this.t*this.DB;
 return -1;
 }
@@ -833,7 +834,7 @@ return r;
 //(public) return number of set bits
 function bnBitCount() {
 var r = 0, x = this.s&this.DM;
-for(var i = 0; i < this.t; ++i) r += cbit(this[i]^x);
+for(var i = 0; i < this.t; ++i) r += cbit(this.data[i]^x);
 return r;
 }
 
@@ -841,7 +842,7 @@ return r;
 function bnTestBit(n) {
 var j = Math.floor(n/this.DB);
 if(j >= this.t) return(this.s!=0);
-return((this[j]&(1<<(n%this.DB)))!=0);
+return((this.data[j]&(1<<(n%this.DB)))!=0);
 }
 
 //(protected) this op (1<<n)
@@ -864,15 +865,15 @@ function bnFlipBit(n) { return this.changeBit(n,op_xor); }
 function bnpAddTo(a,r) {
 var i = 0, c = 0, m = Math.min(a.t,this.t);
 while(i < m) {
- c += this[i]+a[i];
- r[i++] = c&this.DM;
+ c += this.data[i]+a.data[i];
+ r.data[i++] = c&this.DM;
  c >>= this.DB;
 }
 if(a.t < this.t) {
  c += a.s;
  while(i < this.t) {
-   c += this[i];
-   r[i++] = c&this.DM;
+   c += this.data[i];
+   r.data[i++] = c&this.DM;
    c >>= this.DB;
  }
  c += this.s;
@@ -880,15 +881,15 @@ if(a.t < this.t) {
 else {
  c += this.s;
  while(i < a.t) {
-   c += a[i];
-   r[i++] = c&this.DM;
+   c += a.data[i];
+   r.data[i++] = c&this.DM;
    c >>= this.DB;
  }
  c += a.s;
 }
 r.s = (c<0)?-1:0;
-if(c > 0) r[i++] = c;
-else if(c < -1) r[i++] = this.DV+c;
+if(c > 0) r.data[i++] = c;
+else if(c < -1) r.data[i++] = this.DV+c;
 r.t = i;
 r.clamp();
 }
@@ -917,7 +918,7 @@ return new Array(q,r);
 
 //(protected) this *= n, this >= 0, 1 < n < DV
 function bnpDMultiply(n) {
-this[this.t] = this.am(0,n-1,this,0,0,this.t);
+this.data[this.t] = this.am(0,n-1,this,0,0,this.t);
 ++this.t;
 this.clamp();
 }
@@ -925,12 +926,12 @@ this.clamp();
 //(protected) this += n << w words, this >= 0
 function bnpDAddOffset(n,w) {
 if(n == 0) return;
-while(this.t <= w) this[this.t++] = 0;
-this[w] += n;
-while(this[w] >= this.DV) {
- this[w] -= this.DV;
- if(++w >= this.t) this[this.t++] = 0;
- ++this[w];
+while(this.t <= w) this.data[this.t++] = 0;
+this.data[w] += n;
+while(this.data[w] >= this.DV) {
+ this.data[w] -= this.DV;
+ if(++w >= this.t) this.data[this.t++] = 0;
+ ++this.data[w];
 }
 }
 
@@ -954,10 +955,10 @@ function bnpMultiplyLowerTo(a,n,r) {
 var i = Math.min(this.t+a.t,n);
 r.s = 0; // assumes a,this >= 0
 r.t = i;
-while(i > 0) r[--i] = 0;
+while(i > 0) r.data[--i] = 0;
 var j;
-for(j = r.t-this.t; i < j; ++i) r[i+this.t] = this.am(0,a[i],r,i,0,this.t);
-for(j = Math.min(a.t,n); i < j; ++i) this.am(0,a[i],r,i,0,n-i);
+for(j = r.t-this.t; i < j; ++i) r.data[i+this.t] = this.am(0,a.data[i],r,i,0,this.t);
+for(j = Math.min(a.t,n); i < j; ++i) this.am(0,a.data[i],r,i,0,n-i);
 r.clamp();
 }
 
@@ -967,9 +968,9 @@ function bnpMultiplyUpperTo(a,n,r) {
 --n;
 var i = r.t = this.t+a.t-n;
 r.s = 0; // assumes a,this >= 0
-while(--i >= 0) r[i] = 0;
+while(--i >= 0) r.data[i] = 0;
 for(i = Math.max(n-this.t,0); i < a.t; ++i)
- r[this.t+i-n] = this.am(n-i,a[i],r,0,0,this.t+i-n);
+ r.data[this.t+i-n] = this.am(n-i,a.data[i],r,0,0,this.t+i-n);
 r.clamp();
 r.drShiftTo(1,r);
 }
@@ -1045,12 +1046,12 @@ if(k > 1) {
 }
 
 var j = e.t-1, w, is1 = true, r2 = nbi(), t;
-i = nbits(e[j])-1;
+i = nbits(e.data[j])-1;
 while(j >= 0) {
- if(i >= k1) w = (e[j]>>(i-k1))&km;
+ if(i >= k1) w = (e.data[j]>>(i-k1))&km;
  else {
-   w = (e[j]&((1<<(i+1))-1))<<(k1-i);
-   if(j > 0) w |= e[j-1]>>(this.DB+i-k1);
+   w = (e.data[j]&((1<<(i+1))-1))<<(k1-i);
+   if(j > 0) w |= e.data[j-1]>>(this.DB+i-k1);
  }
 
  n = k;
@@ -1066,7 +1067,7 @@ while(j >= 0) {
    z.mulTo(r2,g[w],r);
  }
 
- while(j >= 0 && (e[j]&(1<<i)) == 0) {
+ while(j >= 0 && (e.data[j]&(1<<i)) == 0) {
    z.sqrTo(r,r2); t = r; r = r2; r2 = t;
    if(--i < 0) { i = this.DB-1; --j; }
  }
@@ -1107,8 +1108,8 @@ function bnpModInt(n) {
 if(n <= 0) return 0;
 var d = this.DV%n, r = (this.s<0)?n-1:0;
 if(this.t > 0)
- if(d == 0) r = this[0]%n;
- else for(var i = this.t-1; i >= 0; --i) r = (d*r+this[i])%n;
+ if(d == 0) r = this.data[0]%n;
+ else for(var i = this.t-1; i >= 0; --i) r = (d*r+this.data[i])%n;
 return r;
 }
 
@@ -1160,9 +1161,9 @@ var lplim = (1<<26)/lowprimes[lowprimes.length-1];
 //(public) test primality with certainty >= 1-.5^t
 function bnIsProbablePrime(t) {
 var i, x = this.abs();
-if(x.t == 1 && x[0] <= lowprimes[lowprimes.length-1]) {
+if(x.t == 1 && x.data[0] <= lowprimes[lowprimes.length-1]) {
  for(i = 0; i < lowprimes.length; ++i)
-   if(x[0] == lowprimes[i]) return true;
+   if(x.data[0] == lowprimes[i]) return true;
  return false;
 }
 if(x.isEven()) return false;
