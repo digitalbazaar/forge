@@ -1,8 +1,8 @@
 Forge
 =====
 
-A native implementation of [TLS][] in [JavaScript][] and tools to write network
-based web apps.
+A native implementation of [TLS][] (and various other cryptographic tools) in
+[JavaScript][].
 
 Introduction
 ------------
