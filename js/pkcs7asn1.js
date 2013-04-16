@@ -99,7 +99,7 @@ var asn1 = forge.asn1;
 var p7 = forge.pkcs7 = forge.pkcs7 || {};
 var p7v = p7.asn1 = p7.asn1 || {};
 
-p7v.contentInfoValidator = {
+var contentInfoValidator = {
   name: 'ContentInfo',
   tagClass: asn1.Class.UNIVERSAL,
   type: asn1.Type.SEQUENCE,
@@ -119,6 +119,7 @@ p7v.contentInfoValidator = {
     captureAsn1: 'content'
   }]
 };
+p7v.contentInfoValidator = contentInfoValidator;
 
 var encryptedContentInfoValidator = {
   name: 'EncryptedContentInfo',
@@ -213,6 +214,90 @@ p7v.encryptedDataValidator = {
     constructed: false,
     capture: 'version'
   }].concat(encryptedContentInfoValidator)
+};
+
+var signerValidator = {
+  name: 'SignerInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'SignerInfo.Version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false
+  }, {
+    name: 'SignerInfo.IssuerAndSerialNumber',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true
+  }, {
+    name: 'SignerInfo.DigestAlgorithm',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true
+  }, {
+    name: 'SignerInfo.AuthenticatedAttributes',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 0,
+    constructed: true,
+    optional: true
+  }, {
+    name: 'SignerInfo.DigestEncryptionAlgorithm',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true
+  }, {
+    name: 'SignerInfo.EncryptedDigest',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OCTETSTRING,
+    constructed: false,
+    capture: 'signature'
+  }, {
+    name: 'SignerInfo.UnauthenticatedAttributes',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 1,
+    constructed: true,
+    optional: true
+  }]
+};
+
+p7v.signedDataValidator = {
+  name: 'SignedData',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'SignedData.Version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'version'
+  }, {
+    name: 'SignedData.DigestAlgorithms',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SET,
+    constructed: true,
+    captureAsn1: 'digestAlgorithms'
+  }, contentInfoValidator, {
+    name: 'SignedData.Certificates',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 0,
+    optional: true,
+    captureAsn1: 'certificates'
+  }, {
+    name: 'SignedData.CertificateRevocationLists',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 1,
+    optional: true,
+    captureAsn1: 'crls'
+  }, {
+    name: 'SignedData.SignerInfos',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SET,
+    capture: 'signerInfos',
+    value: [signerValidator]
+  }]
 };
 
 p7v.recipientInfoValidator = {
