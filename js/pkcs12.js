@@ -416,10 +416,10 @@ p12.pkcs12FromAsn1 = function(obj, password) {
       };
     }
 
-    // verify MAC
+    // verify MAC (iterations default to 1)
     var macSalt = new forge.util.ByteBuffer(capture.macSalt);
-    var macIterations = parseInt(
-      forge.util.bytesToHex(capture.macIterations), 16);
+    var macIterations = (('macIterations' in capture) ?
+      parseInt(forge.util.bytesToHex(capture.macIterations), 16) : 1);
     var macKey = p12.generateKey(
       password || '', macSalt, 3, macIterations, macKeyBytes, md);
     var mac = forge.hmac.create();
@@ -467,7 +467,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
     var errors = [];
     if(!asn1.validate(contentInfo, contentInfoValidator, capture, errors)) {
       throw {
-        message: 'Cannot read ContentInfo. ',
+        message: 'Cannot read ContentInfo.',
         errors: errors
       };
     }
@@ -482,13 +482,19 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
           throw {
-            message: 'PKCS#12 SafeContents Data is not an OCTET STRING'
+            message: 'PKCS#12 SafeContents Data is not an OCTET STRING.'
           };
         }
         safeContents = data.value;
         break;
 
       case oids.encryptedData:
+        if(password === undefined) {
+          throw {
+            message: 'Found PKCS#12 Encrypted SafeContents Data but ' +
+              'no password available.'
+          };
+        }
         safeContents = _decryptSafeContents(data, password);
         obj.encrypted = true;
         break;
