@@ -208,6 +208,18 @@ asn1.create = function(tagClass, type, constructed, value) {
     constructed, it will contain a list of other asn1 objects. If not,
     it will contain the ASN.1 value as an array of bytes formatted
     according to the ASN.1 data type. */
+
+  // remove undefined values
+  if(value.constructor == Array) {
+    var tmp = [];
+    for(var i = 0; i < value.length; ++i) {
+      if(value[i] !== undefined) {
+        tmp.push(value[i]);
+      }
+    }
+    value = tmp;
+  }
+
   return {
     tagClass: tagClass,
     type: type,
@@ -971,13 +983,18 @@ asn1.prettyPrint = function(obj, level, indentation) {
   rval += indent + 'Constructed: ' + obj.constructed + '\n';
 
   if(obj.composed) {
-    rval += indent + 'Sub values: ' + obj.value.length;
+    var subvalues = 0;
+    var sub = '';
     for(var i = 0; i < obj.value.length; ++i) {
-      rval += asn1.prettyPrint(obj.value[i], level + 1, indentation);
-      if((i + 1) < obj.value.length) {
-        rval += ',';
+      if(obj.value[i] !== undefined) {
+        subvalues += 1;
+        sub += asn1.prettyPrint(obj.value[i], level + 1, indentation);
+        if((i + 1) < obj.value.length) {
+          sub += ',';
+        }
       }
     }
+    rval += indent + 'Sub values: ' + subvalues + sub;
   }
   else {
     rval += indent + 'Value: ';
