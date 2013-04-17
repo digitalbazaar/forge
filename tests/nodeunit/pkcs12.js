@@ -12,8 +12,7 @@ function mockRandomGetBytes(num) {
 }
 
 exports.testToPkcs12Asn1_CertOnly = function(test) {
-  var cert = forge.pki.certificateFromPem(certPem);
-  var p12Asn = forge.pkcs12.toPkcs12Asn1(null, cert, null, {
+  var p12Asn = forge.pkcs12.toPkcs12Asn1(null, certPem, null, {
     useMac: false,
     generateLocalKeyId: false,
   });
@@ -23,7 +22,6 @@ exports.testToPkcs12Asn1_CertOnly = function(test) {
      OpenSSL like so:  openssl pkcs12 -nomacver -in _files/pkcs12_certonly.p12 */
   var exp = fs.readFileSync(
     __dirname + '/_files/pkcs12_certonly.p12', 'binary');
-
   test.equal(p12Der, exp);
   test.done();
 };
@@ -74,7 +72,7 @@ exports.testPkcs12FromAsn1_PlainCertOnly = function(test) {
   var p12Asn1 = forge.asn1.fromDer(p12Der);
   var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
 
-  /* The PKCS#12 PFX has exactly on SafeContents instance,
+  /* The PKCS#12 PFX has exactly one SafeContents instance,
      and it is not encrypted. */
   test.equals(p12.version, 3);
   test.equals(p12.safeContents.length, 1);
