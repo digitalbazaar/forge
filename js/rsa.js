@@ -6,23 +6,22 @@
  * Copyright (c) 2010-2012 Digital Bazaar, Inc.
  */
 (function() {
+var deps = {
+  asn1: './asn1',
+  pki: {
+    oids: './oids'
+  },
+  random: './random',
+  util: './util',
+  jsbn: './jsbn'
+};
+var name = 'rsa';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-// define forge
-if(typeof(window) !== 'undefined') {
-  var forge = window.forge = window.forge || {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports) {
-  var forge = {
-    asn1: require('./asn1'),
-    pki: {
-      oids: require('./oids')
-    },
-    random: require('./random'),
-    util: require('./util')
-  };
-  BigInteger = require('./jsbn');
-  module.exports = forge.pki.rsa = {};
+
+if (typeof BigInteger === 'undefined') {
+  BigInteger = forge.jsbn;
 }
 
 // shortcut for asn.1 API
@@ -32,9 +31,8 @@ var asn1 = forge.asn1;
  * RSA encryption and decryption, see RFC 2313.
  */
 forge.pki = forge.pki || {};
-forge.pki.rsa = forge.pki.rsa || {};
+forge.pki.rsa = forge.rsa;
 var pki = forge.pki;
-
 
 
 /**
@@ -840,4 +838,66 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
   return key;
 };
 
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    forge[name] = forge[name] || {};
+    initModule(forge);
+    return forge[name];
+  });
+}
 })();

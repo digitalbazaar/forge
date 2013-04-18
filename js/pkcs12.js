@@ -94,36 +94,30 @@
  * }
  */
 (function() {
+var deps = {
+  asn1: './asn1',
+  md: {
+    sha1: './sha1'
+  },
+  pkcs7: {
+    asn1: './pkcs7asn1'
+  },
+  pki: './pki',
+  util: './util',
+  random: './random',
+  hmac: './hmac'
+};
+var name = 'pkcs12';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-// define forge
-if(typeof(window) !== 'undefined') {
-  var forge = window.forge = window.forge || {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports) {
-  var forge = {
-    asn1: require('./asn1'),
-    md: {
-      sha1: require('./sha1')
-    },
-    pkcs7: {
-      asn1: require('./pkcs7asn1')
-    },
-    pki: require('./pki'),
-    util: require('./util'),
-    random: require('./random'),
-    hmac: require('./hmac')
-  };
-  module.exports = forge.pkcs12 = {};
-}
 
 // shortcut for asn.1 & PKI API
 var asn1 = forge.asn1;
 var pki = forge.pki;
-var oids = pki.oids;
 
 // shortcut for PKCS#12 API
-var p12 = forge.pkcs12 = forge.pkcs12 || {};
+var p12 = forge.pkcs12;
 
 var contentInfoValidator = {
   name: 'ContentInfo',
@@ -368,7 +362,7 @@ p12.pkcs12FromAsn1 = function(obj, password) {
     };
   }
 
-  if(asn1.derToOid(capture.contentType) !== oids.data) {
+  if(asn1.derToOid(capture.contentType) !== pki.oids.data) {
     throw {
       message: 'Only PKCS#12 PFX in password integrity mode supported.',
       oid: asn1.derToOid(capture.contentType)
@@ -389,23 +383,23 @@ p12.pkcs12FromAsn1 = function(obj, password) {
     var macKeyBytes = 0;
     var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
     switch(macAlgorithm) {
-    case oids['sha1']:
+    case pki.oids['sha1']:
       md = forge.md.sha1.create();
       macKeyBytes = 20;
       break;
-    case oids['sha256']:
+    case pki.oids['sha256']:
       md = forge.md.sha256.create();
       macKeyBytes = 32;
       break;
-    case oids['sha384']:
+    case pki.oids['sha384']:
       md = forge.md.sha384.create();
       macKeyBytes = 48;
       break;
-    case oids['sha512']:
+    case pki.oids['sha512']:
       md = forge.md.sha512.create();
       macKeyBytes = 64;
       break;
-    case oids['md5']:
+    case pki.oids['md5']:
       md = forge.md.md5.create();
       macKeyBytes = 16;
       break;
@@ -478,7 +472,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
     var safeContents = null;
     var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
-      case oids.data:
+      case pki.oids.data:
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
           throw {
@@ -488,7 +482,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         safeContents = data.value;
         break;
 
-      case oids.encryptedData:
+      case pki.oids.encryptedData:
         if(password === undefined) {
           throw {
             message: 'Found PKCS#12 Encrypted SafeContents Data but ' +
@@ -529,7 +523,7 @@ function _decryptSafeContents(data, password) {
   }
 
   var oid = asn1.derToOid(capture.contentType);
-  if(oid !== oids.data) {
+  if(oid !== pki.oids.data) {
     throw {
       message: 'PKCS#12 EncryptedContentInfo ContentType is not Data.',
       oid: oid
@@ -598,7 +592,7 @@ function _decodeSafeContents(safeContents, password) {
     var validator, decoder;
     var bagAsn1 = capture.bagValue.value[0];
     switch(bag.type) {
-      case oids.pkcs8ShroudedKeyBag:
+      case pki.oids.pkcs8ShroudedKeyBag:
         /* bagAsn1 has a EncryptedPrivateKeyInfo, which we need to decrypt.
            Afterwards we can handle it like a keyBag,
            which is a PrivateKeyInfo. */
@@ -616,20 +610,20 @@ function _decodeSafeContents(safeContents, password) {
         }
 
         /* fall through */
-      case oids.keyBag:
+      case pki.oids.keyBag:
         /* A PKCS#12 keyBag is a simple PrivateKeyInfo as understood by our
            PKI module, hence we don't have to do validation/capturing here,
            just pass what we already got. */
         bag.key = pki.privateKeyFromAsn1(bagAsn1);
         continue;  /* Nothing more to do. */
 
-      case oids.certBag:
+      case pki.oids.certBag:
         /* A PkCS#12 certBag can wrap both X.509 and sdsi certificates.
            Therefore put the SafeBag content through another validator to
            capture the fields.  Afterwards check & store the results. */
         validator = certBagValidator;
         decoder = function() {
-          if(asn1.derToOid(capture.certId) !== oids.x509Certificate) {
+          if(asn1.derToOid(capture.certId) !== pki.oids.x509Certificate) {
             throw {
               message: 'Unsupported certificate type, only X.509 supported.',
               oid: asn1.derToOid(capture.certId)
@@ -684,14 +678,14 @@ function _decodeBagAttributes(attributes) {
       }
 
       var oid = asn1.derToOid(capture.oid);
-      if(oids[oid] === undefined) {
+      if(pki.oids[oid] === undefined) {
         // unsupported attribute type, ignore.
         continue;
       }
 
-      decodedAttrs[oids[oid]] = [];
+      decodedAttrs[pki.oids[oid]] = [];
       for(var j = 0; j < capture.values.length; j ++) {
-        decodedAttrs[oids[oid]].push(capture.values[j].value);
+        decodedAttrs[pki.oids[oid]].push(capture.values[j].value);
       }
     }
   }
@@ -759,7 +753,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['localKeyId']).getBytes()),
+          asn1.oidToDer(pki.oids['localKeyId']).getBytes()),
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
@@ -783,7 +777,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['keyBag']).getBytes()),
+          asn1.oidToDer(pki.oids['keyBag']).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // PrivateKeyInfo
@@ -798,7 +792,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['pkcs8ShroudedKeyBag']).getBytes()),
+          asn1.oidToDer(pki.oids['pkcs8ShroudedKeyBag']).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // EncryptedPrivateKeyInfo
@@ -820,7 +814,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(oids['data']).getBytes()),
+          asn1.oidToDer(pki.oids['data']).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -857,14 +851,14 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(oids['certBag']).getBytes()),
+          asn1.oidToDer(pki.oids['certBag']).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // CertBag
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // certId
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(oids['x509Certificate']).getBytes()),
+              asn1.oidToDer(pki.oids['x509Certificate']).getBytes()),
             // certValue (x509Certificate)
             asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
               asn1.create(
@@ -889,7 +883,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(oids['data']).getBytes()),
+          asn1.oidToDer(pki.oids['data']).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -924,7 +918,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           // algorithm = SHA-1
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(oids['sha1']).getBytes()),
+            asn1.oidToDer(pki.oids['sha1']).getBytes()),
           // parameters = Null
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
         ]),
@@ -953,7 +947,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       // contentType
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         // OID for the content type is 'data'
-        asn1.oidToDer(oids['data']).getBytes()),
+        asn1.oidToDer(pki.oids['data']).getBytes()),
       // content
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
         asn1.create(
@@ -1075,4 +1069,66 @@ p12.generateKey = function(password, salt, id, iter, n, md) {
   return result;
 };
 
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    forge[name] = forge[name] || {};
+    initModule(forge);
+    return forge[name];
+  });
+}
 })();

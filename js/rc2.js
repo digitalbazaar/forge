@@ -8,26 +8,14 @@
  * Information on the RC2 cipher is available from RFC #2268,
  * http://www.ietf.org/rfc/rfc2268.txt
  */
+(function() {
+var deps = {
+  util: './util'
+};
+var name = 'rc2';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-(function()
-{
-
-// define forge
-var forge = {};
-if(typeof(window) !== 'undefined')
-{
-  forge = window.forge = window.forge || {};
-  forge.rc2 = {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports)
-{
-  forge =
-  {
-    util: require('./util')
-  };
-  module.exports = forge.rc2 = {};
-}
 
 var piTable = [
   0xd9, 0x78, 0xf9, 0xc4, 0x19, 0xdd, 0xb5, 0xed, 0x28, 0xe9, 0xfd, 0x79, 0x4a, 0xa0, 0xd8, 0x9d,
@@ -433,4 +421,67 @@ forge.rc2.startDecrypting = function(key, iv, output) {
 forge.rc2.createDecryptionCipher = function(key, bits) {
   return createCipher(key, bits, false);
 };
+
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    forge[name] = forge[name] || {};
+    initModule(forge);
+    return forge[name];
+  });
+}
 })();

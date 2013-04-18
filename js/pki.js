@@ -155,40 +155,38 @@
  * RSASSA-PSS signatures are described in RFC 3447 and RFC 4055.
  */
 (function() {
+var deps = {
+  aes: './aes',
+  asn1: './asn1',
+  des: './des',
+  md: './md',
+  mgf: './mgf',
+  pkcs5: './pbkdf2',
+  pki: {
+    oids: './oids',
+    rsa: './rsa'
+  },
+  pss: './pss',
+  random: './random',
+  rc2: './rc2',
+  util: './util',
+  jsbn: './jsbn',
+  pkcs12: './pkcs12'
+};
+var name = 'pki';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-// define forge
-if(typeof(window) !== 'undefined') {
-  var forge = window.forge = window.forge || {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports) {
-  var forge = {
-    aes: require('./aes'),
-    asn1: require('./asn1'),
-    des: require('./des'),
-    md: require('./md'),
-    mgf: require('./mgf'),
-    pkcs5: require('./pbkdf2'),
-    pki: {
-      oids: require('./oids'),
-      rsa: require('./rsa')
-    },
-    pss: require('./pss'),
-    random: require('./random'),
-    rc2: require('./rc2'),
-    util: require('./util')
-  };
-  BigInteger = require('./jsbn');
-  module.exports = forge.pki;
 
-  forge.pkcs12 = forge.pkcs12 || require('./pkcs12');
+if (typeof BigInteger === 'undefined') {
+  BigInteger = forge.jsbn;
 }
 
 // shortcut for asn.1 API
 var asn1 = forge.asn1;
 
 /* Public Key Infrastructure (PKI) implementation. */
-var pki = forge.pki = forge.pki || {};
+var pki = forge.pki;
 var oids = pki.oids;
 
 pki.pbe = {};
@@ -3189,4 +3187,66 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey;
  */
 pki.setRsaPrivateKey = pki.rsa.setPrivateKey;
 
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    forge[name] = forge[name] || {};
+    initModule(forge);
+    return forge[name];
+  });
+}
 })();
