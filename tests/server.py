@@ -91,6 +91,10 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
 def create_http_server(options, script_dir):
     """Start a static file server"""
+    # use UTF-8 encoding for javascript files
+    m = SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map
+    m['.js'] = 'application/javascript;charset=UTF-8'
+
     Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 #    httpd = SocketServer.TCPServer((options.host, options.port), Handler)
     httpd = ThreadedTCPServer((options.host, options.port), Handler)
