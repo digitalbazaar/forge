@@ -880,7 +880,7 @@ var _removeItem = function(api, id, key) {
 
     // see if entry has no keys remaining
     var empty = true;
-    for(var prop in tmp) {
+    for(var prop in obj) {
       empty = false;
       break;
     }
