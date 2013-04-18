@@ -152,6 +152,22 @@ More advanced tests need TLS enabled::
     $ ./tests/server.py --tls
 
 
+NodeJS & RequireJS
+------------------
+
+A test server for [NodeJS](http://nodejs.org/) can be found at `./nodejs`. The following are included:
+
+  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://visionmedia.github.io/mocha/) test.
+  * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
+
+To run:
+
+    cd nodejs
+    npm install
+    npm test
+    npm start
+
+
 Library Details
 ---------------
 
