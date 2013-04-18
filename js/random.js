@@ -45,7 +45,7 @@ prng_aes.formatKey = function(key) {
 };
 prng_aes.formatSeed = function(seed) {
   // convert seed into 32-bit integers
-  tmp = forge.util.createBuffer(seed);
+  var tmp = forge.util.createBuffer(seed);
   seed = new Array(4);
   seed[0] = tmp.getInt32();
   seed[1] = tmp.getInt32();
