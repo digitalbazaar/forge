@@ -381,9 +381,9 @@ if (cjsDefine || typeof define === 'function') {
     assigns.forEach(function(assign) {
       assign(forge, args);
     });
-    var exports = forge[name] = forge[name] || {};
+    forge[name] = forge[name] || {};
     initModule(forge);
-    return exports;
+    return forge[name];
   });
 }
 })();
