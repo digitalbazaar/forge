@@ -15,7 +15,7 @@ var deps = {
   util: './util',
   jsbn: './jsbn'
 };
-var name = 'pki';
+var name = 'rsa';
 function initModule(forge) {
 /* ########## Begin module implementation ########## */
 
@@ -31,7 +31,7 @@ var asn1 = forge.asn1;
  * RSA encryption and decryption, see RFC 2313.
  */
 forge.pki = forge.pki || {};
-forge.pki.rsa = forge.pki.rsa || {};
+forge.pki.rsa = forge.rsa;
 var pki = forge.pki;
 
 
