@@ -9,14 +9,14 @@ jQuery(function($)
 {
    // logging category
    var cat = 'forge.tests.common';
-   
+
    // local alias
    var forge = window.forge;
 
    var tests = [];
    var passed = 0;
    var failed = 0;
-   
+
    var init = function()
    {
       passed = failed = 0;
@@ -91,11 +91,11 @@ jQuery(function($)
    $('#start').click(function() {
       start();
    });
-   
+
    $('#reset').click(function() {
       init();
    });
-   
+
    $('#keygen').click(function() {
       var bits = $('#bits')[0].value;
       var keys = forge.pki.rsa.generateKeyPair(bits);
@@ -106,7 +106,7 @@ jQuery(function($)
          forge.log.debug(cat, forge.pki.privateKeyToPem(keys.privateKey));
          forge.log.debug(cat, 'public key:', keys.publicKey);
          forge.log.debug(cat, forge.pki.publicKeyToPem(keys.publicKey));
-         
+
          forge.log.debug(cat, 'testing sign/verify...');
          setTimeout(function()
          {
@@ -126,7 +126,7 @@ jQuery(function($)
          }, 0);
       }, 0);
    });
-   
+
    $('#certgen').click(function() {
       var bits = $('#bits')[0].value;
       forge.log.debug(cat, 'generating ' + bits +
@@ -179,15 +179,15 @@ jQuery(function($)
             // FIXME: add subjectKeyIdentifier extension
             // FIXME: add authorityKeyIdentifier extension
             cert.publicKey = keys.publicKey;
-            
+
             // self-sign certificate
             cert.sign(keys.privateKey);
-            
+
             forge.log.debug(cat, 'certificate:', cert);
             //forge.log.debug(cat,
             //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
             forge.log.debug(cat, forge.pki.certificateToPem(cert));
-            
+
             // verify certificate
             forge.log.debug(cat, 'verified', cert.verify(cert));
          }
@@ -197,7 +197,7 @@ jQuery(function($)
          }
       }, 0);
    });
-   
+
    var addTest = function(name, run)
    {
       var container = $('<ul><li>Test ' + name + '</li><ul/></ul>');
@@ -254,7 +254,7 @@ jQuery(function($)
       };
       tests.push(test);
    };
-   
+
    addTest('buffer put bytes', function(task, test)
    {
       ba = forge.util.createBuffer();
@@ -277,46 +277,46 @@ jQuery(function($)
       var exHex = '0102030400000004010203ffffffff';
       test.expect.html(exHex);
       test.result.html(hex);
-      
+
       test.check();
    });
-   
+
    addTest('buffer from hex', function(task, test)
    {
       var exHex = '0102030400000004010203ffffffff';
       test.expect.html(exHex);
-      
+
       var buf = forge.util.createBuffer();
       buf.putBytes(forge.util.hexToBytes(exHex));
       test.result.html(buf.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('base64 encode', function(task, test)
    {
       var s1 = '00010203050607080A0B0C0D0F1011121415161719';
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
       test.expect.html(s2);
-      
+
       var out = forge.util.encode64(s1);
       test.result.html(out);
-      
-      test.check();      
+
+      test.check();
    });
-   
+
    addTest('base64 decode', function(task, test)
    {
       var s1 = '00010203050607080A0B0C0D0F1011121415161719';
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
-      test.expect.html(s1);      
-      
+      test.expect.html(s1);
+
       var out = forge.util.decode64(s2);
       test.result.html(out);
-      
-      test.check();      
+
+      test.check();
    });
-   
+
    addTest('md5 empty', function(task, test)
    {
       var expect = 'd41d8cd98f00b204e9800998ecf8427e';
@@ -325,7 +325,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('md5 "abc"', function(task, test)
    {
       var expect = '900150983cd24fb0d6963f7d28e17f72';
@@ -335,7 +335,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('md5 "The quick brown fox jumps over the lazy dog"',
       function(task, test)
    {
@@ -347,17 +347,18 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
-   addTest('md5 "c\'è"', function(task, test)
+
+   // c'è
+   addTest('md5 "c\'\u00e8"', function(task, test)
    {
       var expect = '8ef7c2941d78fe89f31e614437c9db59';
       test.expect.html(expect);
       var md = forge.md.md5.create();
-      md.update("c'è", 'utf8');
+      md.update("c'\u00e8", 'utf8');
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('md5 "THIS IS A MESSAGE"',
    function(task, test)
    {
@@ -372,7 +373,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('md5 long message',
    function(task, test)
    {
@@ -396,9 +397,9 @@ jQuery(function($)
          '301b060355040a13144469676974616c2042617a6161722c20496e632' +
          'e31443042060355040b133b4269746d756e6b206c6f63616c686f7374' +
          '2d6f6e6c7920436572746966696361746573202d20417574686f72697' +
-         'a6174696f6e207669612042545031123010060355040313096c6f6361' + 
-         '6c686f737430820122300d06092a864886f70d01010105000382010f0' + 
-         '03082010a0282010100dc436f17d6909d8a9d6186ea218eb5c86b848b' + 
+         'a6174696f6e207669612042545031123010060355040313096c6f6361' +
+         '6c686f737430820122300d06092a864886f70d01010105000382010f0' +
+         '03082010a0282010100dc436f17d6909d8a9d6186ea218eb5c86b848b' +
          'ae02219bd56a71203daf07e81bc19e7e98134136bcb012881864bf03b' +
          '3774652ad5eab85dba411a5114ffeac09babce75f31314345512cd87c' +
          '91318b2e77433270a52185fc16f428c3ca412ad6e9484bc2fb87abb4e' +
@@ -418,7 +419,7 @@ jQuery(function($)
          'd69052d7ca6a75cc9225550e315d71c5f8764362ea4dbc6ecb837a847' +
          '1043c5a7f826a71af145a053090bd4bccca6a2c552841cdb1908a8352' +
          'f49283d2e641acdef667c7543af441a16f8294251e2ac376fa507b53a' +
-         'e418dd038cd20cef1e7bfbf5ae03a7c88d93d843abaabbdc5f3431132' + 
+         'e418dd038cd20cef1e7bfbf5ae03a7c88d93d843abaabbdc5f3431132' +
          'f3e559d2dd414c3eda38a210b8'));
       input.putBytes(forge.util.hexToBytes('0e000000'));
       input.putBytes(forge.util.hexToBytes(
@@ -432,7 +433,7 @@ jQuery(function($)
          'a91fe6cdcb8127f156e0b4a5d1f54ce2742eb70c895f5f8b85f5febe6' +
          '9bc73e891f9280826860a0c2ef94c7935e6215c3c4cd6b0e43e80cca3' +
          '96d913d36be'));
-      
+
       var expect = 'd15a2da0e92c3da55dc573f885b6e653';
       test.expect.html(expect);
 
@@ -440,10 +441,10 @@ jQuery(function($)
       md.start();
       md.update(input.getBytes());
       test.result.html(md.digest().toHex());
-      
+
       test.check();
    });
-   
+
    addTest('sha-1 empty', function(task, test)
    {
       var expect = 'da39a3ee5e6b4b0d3255bfef95601890afd80709';
@@ -452,7 +453,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('sha-1 "abc"', function(task, test)
    {
       var expect = 'a9993e364706816aba3e25717850c26c9cd0d89d';
@@ -462,7 +463,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('sha-1 "The quick brown fox jumps over the lazy dog"',
       function(task, test)
    {
@@ -474,17 +475,18 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
-   addTest('sha-1 "c\'è"', function(task, test)
+
+   // c'è
+   addTest('sha-1 "c\'\u00e8"', function(task, test)
    {
       var expect = '98c9a3f804daa73b68a5660d032499a447350c0d';
       test.expect.html(expect);
       var md = forge.md.sha1.create();
-      md.update("c'è", 'utf8');
+      md.update("c'\u00e8", 'utf8');
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('sha-1 "THIS IS A MESSAGE"',
    function(task, test)
    {
@@ -499,7 +501,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    // other browsers too slow for this test
    if($.browser.webkit)
    {
@@ -517,7 +519,7 @@ jQuery(function($)
          test.check();
       });
    }
-   
+
    addTest('sha-256 "abc"', function(task, test)
    {
       var expect =
@@ -528,18 +530,19 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
-   addTest('sha-256 "c\'è"', function(task, test)
+
+   // c'è
+   addTest('sha-256 "c\'\u00e8"', function(task, test)
    {
       var expect =
          '1aa15c717afffd312acce2217ce1c2e5dabca53c92165999132ec9ca5decdaca';
       test.expect.html(expect);
       var md = forge.md.sha256.create();
-      md.update("c'è", 'utf8');
+      md.update("c'\u00e8", 'utf8');
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    addTest('sha-256 "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"',
    function(task, test)
    {
@@ -552,7 +555,7 @@ jQuery(function($)
       test.result.html(md.digest().toHex());
       test.check();
    });
-   
+
    // other browsers too slow for this test
    if($.browser.webkit)
    {
@@ -571,7 +574,7 @@ jQuery(function($)
          test.check();
       });
    }
-   
+
    addTest('hmac md5 "Hi There", 16-byte key', function(task, test)
    {
       var expect = '9294727a3638bb1c13f48ef8158bfc9d';
@@ -584,7 +587,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('hmac md5 "what do ya want for nothing?", "Jefe" key',
       function(task, test)
    {
@@ -596,7 +599,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('hmac md5 "Test Using Larger Than Block-Size Key - ' +
       'Hash Key First", 80-byte key', function(task, test)
    {
@@ -613,7 +616,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('hmac sha-1 "Hi There", 20-byte key', function(task, test)
    {
       var expect = 'b617318655057264e28bc0b6fb378c8ef146be00';
@@ -626,7 +629,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('hmac sha-1 "what do ya want for nothing?", "Jefe" key',
       function(task, test)
    {
@@ -638,7 +641,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('hmac sha-1 "Test Using Larger Than Block-Size Key - ' +
       'Hash Key First", 80-byte key', function(task, test)
    {
@@ -655,7 +658,7 @@ jQuery(function($)
       test.result.html(hmac.digest().toHex());
       test.check();
    });
-   
+
    addTest('pbkdf2 hmac-sha-1 c=1', function(task, test)
    {
       var expect = '0c60c80f961f0e71f3a9b524af6012062fe037a6';
@@ -664,7 +667,7 @@ jQuery(function($)
       test.result.html(forge.util.bytesToHex(dk));
       test.check();
    });
-   
+
    addTest('pbkdf2 hmac-sha-1 c=2', function(task, test)
    {
       var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
@@ -673,7 +676,7 @@ jQuery(function($)
       test.result.html(forge.util.bytesToHex(dk));
       test.check();
    });
-   
+
    addTest('pbkdf2 hmac-sha-1 c=2', function(task, test)
    {
       var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
@@ -682,7 +685,7 @@ jQuery(function($)
       test.result.html(forge.util.bytesToHex(dk));
       test.check();
    });
-   
+
    addTest('pbkdf2 hmac-sha-1 c=5 keylen=8', function(task, test)
    {
       var expect = 'd1daa78615f287e6';
@@ -692,7 +695,7 @@ jQuery(function($)
       test.result.html(forge.util.bytesToHex(dk));
       test.check();
    });
-   
+
    // other browsers too slow for this test
    if($.browser.webkit)
    {
@@ -705,7 +708,7 @@ jQuery(function($)
          test.check();
       });
    }
-   
+
    /* too slow for javascript
    addTest('pbkdf2 hmac-sha-1 c=16777216', function(task, test)
    {
@@ -715,7 +718,7 @@ jQuery(function($)
       test.result.html(forge.util.bytesToHex(dk));
       test.check();
    });*/
-   
+
    addTest('aes-128 encrypt', function(task, test)
    {
       var block = [];
@@ -724,35 +727,35 @@ jQuery(function($)
       block.push(0x8899aabb);
       block.push(0xccddeeff);
       var plain = block;
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
       key.push(0x08090a0b);
       key.push(0x0c0d0e0f);
-      
+
       var expect = [];
       expect.push(0x69c4e0d8);
       expect.push(0x6a7b0430);
       expect.push(0xd8cdb780);
       expect.push(0x70b4c55a);
-      
+
       test.expect.html('69c4e0d86a7b0430d8cdb78070b4c55a');
-      
+
       var output = [];
       var w = forge.aes._expandKey(key, false);
       forge.aes._updateBlock(w, block, output, false);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('aes-128 decrypt', function(task, test)
    {
       var block = [];
@@ -760,35 +763,35 @@ jQuery(function($)
       block.push(0x6a7b0430);
       block.push(0xd8cdb780);
       block.push(0x70b4c55a);
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
       key.push(0x08090a0b);
       key.push(0x0c0d0e0f);
-      
+
       var expect = [];
       expect.push(0x00112233);
       expect.push(0x44556677);
       expect.push(0x8899aabb);
       expect.push(0xccddeeff);
-      
+
       test.expect.html('00112233445566778899aabbccddeeff');
-      
+
       var output = [];
       w = forge.aes._expandKey(key, true);
       forge.aes._updateBlock(w, block, output, true);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('aes-192 encrypt', function(task, test)
    {
       var block = [];
@@ -797,7 +800,7 @@ jQuery(function($)
       block.push(0x8899aabb);
       block.push(0xccddeeff);
       var plain = block;
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
@@ -805,29 +808,29 @@ jQuery(function($)
       key.push(0x0c0d0e0f);
       key.push(0x10111213);
       key.push(0x14151617);
-      
+
       var expect = [];
       expect.push(0xdda97ca4);
       expect.push(0x864cdfe0);
       expect.push(0x6eaf70a0);
       expect.push(0xec0d7191);
-      
+
       test.expect.html('dda97ca4864cdfe06eaf70a0ec0d7191');
-      
+
       var output = [];
       var w = forge.aes._expandKey(key, false);
       forge.aes._updateBlock(w, block, output, false);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('aes-192 decrypt', function(task, test)
    {
       var block = [];
@@ -835,7 +838,7 @@ jQuery(function($)
       block.push(0x864cdfe0);
       block.push(0x6eaf70a0);
       block.push(0xec0d7191);
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
@@ -843,29 +846,29 @@ jQuery(function($)
       key.push(0x0c0d0e0f);
       key.push(0x10111213);
       key.push(0x14151617);
-      
+
       var expect = [];
       expect.push(0x00112233);
       expect.push(0x44556677);
       expect.push(0x8899aabb);
       expect.push(0xccddeeff);
-      
+
       test.expect.html('00112233445566778899aabbccddeeff');
-      
+
       var output = [];
       w = forge.aes._expandKey(key, true);
       forge.aes._updateBlock(w, block, output, true);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('aes-256 encrypt', function(task, test)
    {
       var block = [];
@@ -874,7 +877,7 @@ jQuery(function($)
       block.push(0x8899aabb);
       block.push(0xccddeeff);
       var plain = block;
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
@@ -884,29 +887,29 @@ jQuery(function($)
       key.push(0x14151617);
       key.push(0x18191a1b);
       key.push(0x1c1d1e1f);
-      
+
       var expect = [];
       expect.push(0x8ea2b7ca);
       expect.push(0x516745bf);
       expect.push(0xeafc4990);
       expect.push(0x4b496089);
-      
+
       test.expect.html('8ea2b7ca516745bfeafc49904b496089');
-      
+
       var output = [];
       var w = forge.aes._expandKey(key, false);
       forge.aes._updateBlock(w, block, output, false);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    addTest('aes-256 decrypt', function(task, test)
    {
       var block = [];
@@ -914,7 +917,7 @@ jQuery(function($)
       block.push(0x516745bf);
       block.push(0xeafc4990);
       block.push(0x4b496089);
-      
+
       var key = [];
       key.push(0x00010203);
       key.push(0x04050607);
@@ -924,29 +927,29 @@ jQuery(function($)
       key.push(0x14151617);
       key.push(0x18191a1b);
       key.push(0x1c1d1e1f);
-      
+
       var expect = [];
       expect.push(0x00112233);
       expect.push(0x44556677);
       expect.push(0x8899aabb);
       expect.push(0xccddeeff);
-      
+
       test.expect.html('00112233445566778899aabbccddeeff');
-      
+
       var output = [];
       w = forge.aes._expandKey(key, true);
       forge.aes._updateBlock(w, block, output, true);
-      
+
       var out = forge.util.createBuffer();
       out.putInt32(output[0]);
       out.putInt32(output[1]);
       out.putInt32(output[2]);
       out.putInt32(output[3]);
       test.result.html(out.toHex());
-      
+
       test.check();
    });
-   
+
    (function()
    {
       var keys = [
@@ -993,7 +996,7 @@ jQuery(function($)
             var iv = forge.util.hexToBytes(ivs[i]);
             var input = (i & 1) ? forge.util.hexToBytes(inputs[i]) : inputs[i];
             var output = forge.util.hexToBytes(outputs[i]);
-            
+
             addTest('aes-128 cbc encrypt', function(task, test)
             {
                // encrypt w/no padding
@@ -1005,7 +1008,7 @@ jQuery(function($)
                test.result.html(cipher.output.toHex());
                test.check();
             });
-            
+
             addTest('aes-128 cbc decrypt', function(task, test)
             {
                // decrypt w/no padding
@@ -1022,7 +1025,7 @@ jQuery(function($)
          })(i);
       }
    })();
-   
+
    addTest('private key encryption', function(task, test)
    {
       var _privateKey =
@@ -1054,7 +1057,7 @@ jQuery(function($)
       else
       {
          test.fail();
-      }      
+      }
    });
 
    addTest('random', function(task, test)
@@ -1062,7 +1065,7 @@ jQuery(function($)
      forge.random.getBytes(16);
      forge.random.getBytes(24);
      forge.random.getBytes(32);
-     
+
       var b = forge.random.getBytes(10);
       test.result.html(forge.util.bytesToHex(b));
       if(b.length === 10)
@@ -1074,14 +1077,14 @@ jQuery(function($)
          test.fail();
       }
    });
-   
+
    addTest('asn.1 oid => der', function(task, test)
    {
       test.expect.html('2a864886f70d');
       test.result.html(forge.asn1.oidToDer('1.2.840.113549').toHex());
       test.check();
    });
-   
+
    addTest('asn.1 der => oid', function(task, test)
    {
       var der = '2a864886f70d';
@@ -1089,7 +1092,7 @@ jQuery(function($)
       test.result.html(forge.asn1.derToOid(forge.util.hexToBytes(der)));
       test.check();
    });
-   
+
    (function()
    {
       var _privateKey =
@@ -1116,7 +1119,7 @@ jQuery(function($)
       'TkP3VF29vXBo+dLq5e+8VyAyQ3FzM1wI4ts4hRACF8w6mqygXQ7i/SDu8/rXqRGt\r\n' +
       'vnM+z0MYDdKo80efzwIDAQAB\r\n' +
       '-----END PUBLIC KEY-----';
-         
+
       var _certificate =
       '-----BEGIN CERTIFICATE-----\r\n' +
       'MIIDIjCCAougAwIBAgIJANE2aHSbwpaRMA0GCSqGSIb3DQEBBQUAMGoxCzAJBgNV\r\n' +
@@ -1137,13 +1140,13 @@ jQuery(function($)
       'Y6FdybcyDLSxKn9id+g9229ci9/s9PI+QmD5vXd8yZyScLc2JkYB4GC6+9D1+/+x\r\n' +
       's2hzMxuK6kzZlP+0l9LGcraMQPGRydjCARZZm4Uegln9rh85XFQ=\r\n' +
       '-----END CERTIFICATE-----';
-      
+
       var _signature =
          '9200ece65cdaed36bcc20b94c65af852e4f88f0b4fe5b249d54665f815992ac4' +
          '3a1399e65d938c6a7f16dd39d971a53ca66523209dbbfbcb67afa579dbb0c220' +
          '672813d9e6f4818f29b9becbb29da2032c5e422da97e0c39bfb7a2e7d568615a' +
          '5073af0337ff215a8e1b2332d668691f4fb731440055420c24ac451dd3c913f4';
-      
+
       addTest('private key from pem/to pem', function(task, test)
       {
          try
@@ -1151,7 +1154,7 @@ jQuery(function($)
             // convert from pem
             var key = forge.pki.privateKeyFromPem(_privateKey);
             //forge.log.debug(cat, 'privateKey', key);
-            
+
             // convert back to pem
             var pem = forge.pki.privateKeyToPem(key);
             test.expect.html(_privateKey);
@@ -1164,7 +1167,7 @@ jQuery(function($)
             test.fail();
          }
       });
-      
+
       addTest('public key from pem/to pem', function(task, test)
       {
          try
@@ -1172,7 +1175,7 @@ jQuery(function($)
             // convert from pem
             var key = forge.pki.publicKeyFromPem(_publicKey);
             //forge.log.debug(cat, 'publicKey', key);
-            
+
             // convert back to pem
             var pem = forge.pki.publicKeyToPem(key);
             test.expect.html(_publicKey);
@@ -1185,7 +1188,7 @@ jQuery(function($)
             test.fail();
          }
       });
-      
+
       addTest('certificate key from pem/to pem', function(task, test)
       {
          try
@@ -1213,7 +1216,7 @@ jQuery(function($)
             test.fail();
          }
       });
-      
+
       addTest('verify signature', function(task, test)
       {
          try
@@ -1238,7 +1241,7 @@ jQuery(function($)
             test.fail();
          }
       });
-      
+
       addTest('sign and verify', function(task, test)
       {
          try
@@ -1274,7 +1277,7 @@ jQuery(function($)
             test.fail();
          }
       });
-      
+
       addTest('certificate verify', function(task, test)
       {
          try
@@ -1298,7 +1301,7 @@ jQuery(function($)
          }
       });
    })();
-   
+
    addTest('TLS prf', function(task, test)
    {
       // Note: This test vector is originally from:
@@ -1316,7 +1319,7 @@ jQuery(function($)
          seed.putByte(0xCD);
       }
       seed = seed.getBytes();
-      
+
       var bytes = forge.tls.prf_tls1(secret, 'PRF Testvector',  seed, 104);
       var expect =
          'd3d4d1e349b5d515044666d51de32bab258cb521' +
@@ -1329,7 +1332,7 @@ jQuery(function($)
       test.result.html(bytes.toHex());
       test.check();
    });
-   
+
    // function to create certificate
    var createCert = function(keys, cn, data)
    {
@@ -1380,21 +1383,21 @@ jQuery(function($)
       // FIXME: add subjectKeyIdentifier extension
       // FIXME: add authorityKeyIdentifier extension
       cert.publicKey = keys.publicKey;
-      
+
       // self-sign certificate
       cert.sign(keys.privateKey);
-      
+
       // save data
       data[cn] = {
          cert: forge.pki.certificateToPem(cert),
          privateKey: forge.pki.privateKeyToPem(keys.privateKey)
       };
    };
-   
+
    var generateCert = function(task, test, cn, data)
    {
       task.block();
-      
+
       // create key-generation state and function to step algorithm
       test.result.html(
          'Generating 512-bit key-pair and certificate for \"' + cn + '\".');
@@ -1429,33 +1432,33 @@ jQuery(function($)
             }
          }
       };
-      
+
       // run key-gen algorithm
       setTimeout(step, 0);
    };
-   
+
    var clientSessionCache1 = forge.tls.createSessionCache();
    var serverSessionCache1 = forge.tls.createSessionCache();
    addTest('TLS connection, w/o client-certificate', function(task, test)
    {
       var data = {};
-      
+
       task.next('generate server certifcate', function(task)
       {
          generateCert(task, test, 'server', data);
       });
-      
+
       task.next('starttls', function(task)
       {
          test.result.html(test.result.html() + 'Starting TLS...');
-         
+
          var end =
          {
             client: null,
             server: null
          };
          var success = false;
-         
+
          // create client
          end.client = forge.tls.createConnection(
          {
@@ -1483,7 +1486,7 @@ jQuery(function($)
             connected: function(c)
             {
                test.result.html(test.result.html() + 'Client connected...');
-               
+
                // send message to server
                setTimeout(function()
                {
@@ -1527,7 +1530,7 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // create server
          end.server = forge.tls.createConnection(
          {
@@ -1560,7 +1563,7 @@ jQuery(function($)
             {
                test.result.html(test.result.html() +
                   'Server received \"' + c.data.getBytes() + '\"');
-               
+
                // send response
                c.prepare('Hello Client');
                c.close();
@@ -1576,41 +1579,41 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // start handshake
          task.block();
          end.client.handshake();
       });
    });
-   
+
    var clientSessionCache2 = forge.tls.createSessionCache();
    var serverSessionCache2 = forge.tls.createSessionCache();
    addTest('TLS connection, w/optional client-certificate', function(task, test)
    {
       var data = {};
-      
+
       task.next('generate server certifcate', function(task)
       {
          generateCert(task, test, 'server', data);
       });
-      
+
       // client-cert generated but not sent in this test
       task.next('generate client certifcate', function(task)
       {
          generateCert(task, test, 'client', data);
       });
-      
+
       task.next('starttls', function(task)
       {
          test.result.html(test.result.html() + 'Starting TLS...');
-         
+
          var end =
          {
             client: null,
             server: null
          };
          var success = false;
-         
+
          // create client
          end.client = forge.tls.createConnection(
          {
@@ -1638,7 +1641,7 @@ jQuery(function($)
             connected: function(c)
             {
                test.result.html(test.result.html() + 'Client connected...');
-               
+
                // send message to server
                setTimeout(function()
                {
@@ -1682,7 +1685,7 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // create server
          end.server = forge.tls.createConnection(
          {
@@ -1730,7 +1733,7 @@ jQuery(function($)
             {
                test.result.html(test.result.html() +
                   'Server received \"' + c.data.getBytes() + '\"');
-               
+
                // send response
                c.prepare('Hello Client');
                c.close();
@@ -1746,40 +1749,40 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // start handshake
          task.block();
          end.client.handshake();
       });
    });
-   
+
    var clientSessionCache3 = forge.tls.createSessionCache();
    var serverSessionCache3 = forge.tls.createSessionCache();
    addTest('TLS connection, w/client-certificate', function(task, test)
    {
       var data = {};
-      
+
       task.next('generate server certifcate', function(task)
       {
          generateCert(task, test, 'server', data);
       });
-      
+
       task.next('generate client certifcate', function(task)
       {
          generateCert(task, test, 'client', data);
       });
-      
+
       task.next('starttls', function(task)
       {
          test.result.html(test.result.html() + 'Starting TLS...');
-         
+
          var end =
          {
             client: null,
             server: null
          };
          var success = false;
-         
+
          // create client
          end.client = forge.tls.createConnection(
          {
@@ -1807,7 +1810,7 @@ jQuery(function($)
             connected: function(c)
             {
                test.result.html(test.result.html() + 'Client connected...');
-               
+
                // send message to server
                setTimeout(function()
                {
@@ -1861,7 +1864,7 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // create server
          end.server = forge.tls.createConnection(
          {
@@ -1909,7 +1912,7 @@ jQuery(function($)
             {
                test.result.html(test.result.html() +
                   'Server received \"' + c.data.getBytes() + '\"');
-               
+
                // send response
                c.prepare('Hello Client');
                c.close();
@@ -1925,12 +1928,12 @@ jQuery(function($)
                task.fail();
             }
          });
-         
+
          // start handshake
          task.block();
          end.client.handshake();
       });
    });
-   
+
    init();
 });
