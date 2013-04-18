@@ -94,28 +94,23 @@
  * }
  */
 (function() {
+var deps = {
+  asn1: './asn1',
+  md: {
+    sha1: './sha1'
+  },
+  pkcs7: {
+    asn1: './pkcs7asn1'
+  },
+  pki: './pki',
+  util: './util',
+  random: './random',
+  hmac: './hmac'
+};
+var name = 'pkcs12';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-// define forge
-if(typeof(window) !== 'undefined') {
-  var forge = window.forge = window.forge || {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports) {
-  var forge = {
-    asn1: require('./asn1'),
-    md: {
-      sha1: require('./sha1')
-    },
-    pkcs7: {
-      asn1: require('./pkcs7asn1')
-    },
-    pki: require('./pki'),
-    util: require('./util'),
-    random: require('./random'),
-    hmac: require('./hmac')
-  };
-  module.exports = forge.pkcs12 = {};
-}
 
 // shortcut for asn.1 & PKI API
 var asn1 = forge.asn1;
@@ -123,7 +118,7 @@ var pki = forge.pki;
 var oids = pki.oids;
 
 // shortcut for PKCS#12 API
-var p12 = forge.pkcs12 = forge.pkcs12 || {};
+var p12 = forge.pkcs12;
 
 var contentInfoValidator = {
   name: 'ContentInfo',
@@ -1075,4 +1070,66 @@ p12.generateKey = function(password, salt, id, iter, n, md) {
   return result;
 };
 
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    var exports = forge[name] = forge[name] || {};
+    initModule(forge);
+    return exports;
+  });
+}
 })();

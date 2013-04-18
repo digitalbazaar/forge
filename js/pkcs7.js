@@ -16,36 +16,28 @@
  * PKCS standards like PKCS #12.
  */
 (function() {
+var deps = {
+  aes: './aes',
+  asn1: './asn1',
+  des: './des',
+  pkcs7: {
+    asn1: './pkcs7asn1'
+  },
+  pki: './pki',
+  random: './random',
+  util: './util'
+};
+var name = 'pkcs7';
+function initModule(forge) {
+/* ########## Begin module implementation ########## */
 
-// define forge
-var forge = {};
-if(typeof(window) !== 'undefined') {
-  forge = window.forge = window.forge || {};
-}
-// define node.js module
-else if(typeof(module) !== 'undefined' && module.exports) {
-  forge = {
-    aes: require('./aes'),
-    asn1: require('./asn1'),
-    des: require('./des'),
-    pkcs7: {
-      asn1: require('./pkcs7asn1')
-    },
-    pki: require('./pki'),
-    random: require('./random'),
-    util: require('./util')
-  };
-  module.exports = forge.pkcs7;
-}
 
 // shortcut for ASN.1 API
 var asn1 = forge.asn1;
 
 // shortcut for PKCS#7 API
-var p7 = forge.pkcs7 = forge.pkcs7 || {};
+var p7 = forge.pkcs7;
 
-
-    
 
 /**
  * Converts a PKCS#7 message from PEM format.
@@ -637,4 +629,66 @@ p7.createEnvelopedData = function() {
   return msg;
 };
 
+
+/* ########## Begin module wrapper ########## */
+}
+var cjsDefine = null;
+if (typeof define !== 'function') {
+  // CommonJS -> AMD
+  if (typeof exports === 'object') {
+    cjsDefine = function(ids, factory) {
+      module.exports = factory.apply(null, ids.map(function(id) {
+        return require(id);
+      }));
+    }
+  } else
+  // <script>
+  {
+    var forge = window.forge = window.forge || {};
+    forge[name] = forge[name] || {};
+    initModule(forge);
+  }
+}
+// AMD
+if (cjsDefine || typeof define === 'function') {
+  var ids = [];
+  var assigns = [];
+  // Convert `deps` dependency declaration tree into AMD dependency list.
+  function forEachDep(path, deps) {
+    function assign(path) {
+      var index = ids.length;
+      ids.push(deps[path[path.length-1]]);
+      // Create helper function used after import below.
+      assigns.push(function(forge, args) {
+        var id;
+        while(path.length > 1) {
+          id = path.shift();
+          forge = forge[id] = forge[id] || {};
+        }
+        forge[path[0]] = args[index];
+      });
+    }
+    for (var alias in deps) {
+      if (typeof deps[alias] === 'string') {
+        assign(path.concat(alias));
+      } else {
+        forEachDep(path.concat(alias), deps[alias]);
+      }
+    }
+    return forge;
+  }
+  forEachDep([], deps);
+  // Declare module AMD style.
+  (cjsDefine || define)(ids, function() {
+    var args = arguments;
+    var forge = {};
+    // Assemble AMD imported modules into `forge` dependency tree.
+    assigns.forEach(function(assign) {
+      assign(forge, args);
+    });
+    var exports = forge[name] = forge[name] || {};
+    initModule(forge);
+    return exports;
+  });
+}
 })();
