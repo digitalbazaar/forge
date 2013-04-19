@@ -274,7 +274,7 @@ var _fromAsn1 = function(msg, obj, validator) {
     };
   }
 
-  var content = "";
+  var content = '';
   if(capture.encContent.constructor === Array) {
     for(var i = 0; i < capture.encContent.length; i ++) {
       if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
@@ -285,7 +285,8 @@ var _fromAsn1 = function(msg, obj, validator) {
       }
       content += capture.encContent[i].value;
     }
-  } else {
+  }
+  else {
     content = capture.encContent;
   }
 
@@ -574,7 +575,8 @@ p7.createEnvelopedData = function() {
 
         if(key === undefined) {
           key = forge.util.createBuffer(forge.random.getBytes(keyLen));
-        } else if(key.length() != keyLen) {
+        }
+        else if(key.length() != keyLen) {
           throw {
             message: 'Symmetric key has wrong length, '
               + 'got ' + key.length() + ' bytes, expected ' + keyLen
@@ -633,24 +635,24 @@ p7.createEnvelopedData = function() {
 /* ########## Begin module wrapper ########## */
 }
 var cjsDefine = null;
-if (typeof define !== 'function') {
+if(typeof define !== 'function') {
   // CommonJS -> AMD
-  if (typeof exports === 'object') {
+  if(typeof exports === 'object') {
     cjsDefine = function(ids, factory) {
       module.exports = factory.apply(null, ids.map(function(id) {
         return require(id);
       }));
-    }
-  } else
+    };
+  }
   // <script>
-  {
+  else {
     var forge = window.forge = window.forge || {};
     forge[name] = forge[name] || {};
     initModule(forge);
   }
 }
 // AMD
-if (cjsDefine || typeof define === 'function') {
+if(cjsDefine || typeof define === 'function') {
   var ids = [];
   var assigns = [];
   // Convert `deps` dependency declaration tree into AMD dependency list.
@@ -668,10 +670,11 @@ if (cjsDefine || typeof define === 'function') {
         forge[path[0]] = args[index];
       });
     }
-    for (var alias in deps) {
-      if (typeof deps[alias] === 'string') {
+    for(var alias in deps) {
+      if(typeof deps[alias] === 'string') {
         assign(path.concat(alias));
-      } else {
+      }
+      else {
         forEachDep(path.concat(alias), deps[alias]);
       }
     }
