@@ -241,7 +241,8 @@ var signerValidator = {
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 0,
     constructed: true,
-    optional: true
+    optional: true,
+    capture: 'authenticatedAttributes'
   }, {
     name: 'SignerInfo.DigestEncryptionAlgorithm',
     tagClass: asn1.Class.UNIVERSAL,
@@ -279,7 +280,9 @@ p7v.signedDataValidator = {
     type: asn1.Type.SET,
     constructed: true,
     captureAsn1: 'digestAlgorithms'
-  }, contentInfoValidator, {
+  },
+  contentInfoValidator,
+  {
     name: 'SignedData.Certificates',
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 0,
