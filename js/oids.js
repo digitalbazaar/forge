@@ -81,6 +81,13 @@ oids['localKeyId'] = '1.2.840.113549.1.9.21';
 oids['1.2.840.113549.1.9.22.1'] = 'x509Certificate';
 oids['x509Certificate'] = '1.2.840.113549.1.9.22.1';
 
+oids['1.2.840.113549.1.9.4'] = 'messageDigest';
+oids['messageDigest'] = '1.2.840.113549.1.9.4';
+oids['1.2.840.113549.1.9.3'] = 'contentType';
+oids['contentType'] = '1.2.840.113549.1.9.3';
+oids['1.2.840.113549.1.9.5'] = 'signingTime';
+oids['signingTime'] = '1.2.840.113549.1.9.5';
+
 // pkcs#12 safe bags
 oids['1.2.840.113549.1.12.10.1.1'] = 'keyBag';
 oids['keyBag'] = '1.2.840.113549.1.12.10.1.1';
