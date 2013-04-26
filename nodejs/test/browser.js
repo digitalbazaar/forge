@@ -1,44 +1,41 @@
-
-const SERVER = require("../server");
-const GRUNT = require('grunt');
-
+var server = require('../server');
+var grunt = require('grunt');
 
 describe('browser', function() {
+  it('should run tests', function(done) {
+    this.timeout(60 * 1000);
 
-    it('should run tests', function(done) {
+    return server.main(function(err, info) {
+      if(err) {
+        return done(err);
+      }
 
-        this.timeout(60 * 1000);
+      grunt.initConfig({
+        mocha: {
+          all: {
+            options: {
+              reporter: 'List',
+              urls: ['http://localhost:' + info.port + '/index.html']
+            }
+          }
+        }
+      });
 
-        return SERVER.main(function(err, info) {
-            if (err) return done(err);
+      grunt.loadNpmTasks('grunt-mocha');
 
-            GRUNT.initConfig({
-                mocha: {
-                    all: {
-                        options: {
-                            reporter: 'List',
-                            urls: [
-                                'http://localhost:' + info.port + '/index.html'
-                            ]
-                        }
-                    }
-                }
-            });
-
-            GRUNT.loadNpmTasks('grunt-mocha');
-
-            GRUNT.registerInitTask('default', function() {
-                GRUNT.task.run(['mocha']);
-            });
-            GRUNT.tasks(['default'], {
-                //debug: true
-            }, function() {
-                if (err) return done(err);
-                return info.server.close(function() {
-                    return done(null);
-                });
-            });
+      grunt.registerInitTask('default', function() {
+        grunt.task.run(['mocha']);
+      });
+      grunt.tasks(['default'], {
+        //debug: true
+      }, function() {
+        if(err) {
+          return done(err);
+        }
+        return info.server.close(function() {
+          return done(null);
         });
+      });
     });
-
+  });
 });

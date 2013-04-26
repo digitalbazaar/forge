@@ -13,16 +13,11 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
 (function() {
-var deps = {
-  util: './util'
-};
-var name = 'aes';
-function initModule(forge) {
 /* ########## Begin module implementation ########## */
-
+function initModule(forge) {
 
 var init = false; // not yet initialized
 var Nb = 4;       // number of words comprising the state (AES = 4)
@@ -1045,6 +1040,7 @@ var _createCipher = function(key, iv, output, decrypt) {
 };
 
 /* AES API */
+forge.aes = forge.aes || {};
 
 /**
  * Creates an AES cipher object to encrypt data in CBC mode using the
@@ -1143,67 +1139,46 @@ forge.aes._expandKey = function(key, decrypt) {
  */
 forge.aes._updateBlock = _updateBlock;
 
+} // end module implementation
 
 /* ########## Begin module wrapper ########## */
-}
-var cjsDefine = null;
+var name = 'aes';
+var deps = ['./util'];
+var nodeDefine = null;
 if(typeof define !== 'function') {
-  // CommonJS -> AMD
-  if(typeof exports === 'object') {
-    cjsDefine = function(ids, factory) {
-      module.exports = factory.apply(null, ids.map(function(id) {
-        return require(id);
-      }));
+  // NodeJS -> AMD
+  if(typeof module === 'object' && module.exports) {
+    nodeDefine = function(ids, factory) {
+      factory(require, module);
     };
   }
   // <script>
   else {
-    var forge = window.forge = window.forge || {};
-    forge[name] = forge[name] || {};
+    forge = window.forge = window.forge || {};
     initModule(forge);
   }
 }
 // AMD
-if(cjsDefine || typeof define === 'function') {
-  var ids = [];
-  var assigns = [];
-  // Convert `deps` dependency declaration tree into AMD dependency list.
-  function forEachDep(path, deps) {
-    function assign(path) {
-      var index = ids.length;
-      ids.push(deps[path[path.length-1]]);
-      // Create helper function used after import below.
-      assigns.push(function(forge, args) {
-        var id;
-        while(path.length > 1) {
-          id = path.shift();
-          forge = forge[id] = forge[id] || {};
-        }
-        forge[path[0]] = args[index];
-      });
-    }
-    for(var alias in deps) {
-      if(typeof deps[alias] === 'string') {
-        assign(path.concat(alias));
+if(nodeDefine || typeof define === 'function') {
+  // define module AMD style
+  (nodeDefine || define)(['require', 'module'].concat(deps),
+  function(require, module) {
+    module.exports = function(forge) {
+      var mods = deps.map(function(dep) {
+        return require(dep);
+      }).concat(initModule);
+      // handle circular dependencies
+      forge = forge || {};
+      forge.defined = forge.defined || {};
+      if(forge.defined[name]) {
+        return forge[name];
       }
-      else {
-        forEachDep(path.concat(alias), deps[alias]);
+      forge.defined[name] = true;
+      for(var i = 0; i < mods.length; ++i) {
+        mods[i](forge);
       }
-    }
-    return forge;
-  }
-  forEachDep([], deps);
-  // Declare module AMD style.
-  (cjsDefine || define)(ids, function() {
-    var args = arguments;
-    var forge = {};
-    // Assemble AMD imported modules into `forge` dependency tree.
-    assigns.forEach(function(assign) {
-      assign(forge, args);
-    });
-    forge[name] = forge[name] || {};
-    initModule(forge);
-    return forge[name];
+      return forge[name];
+    };
   });
 }
 })();

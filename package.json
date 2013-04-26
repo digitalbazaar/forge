@@ -4,16 +4,19 @@
   "description": "A native implementation of TLS in JavaScript and tools to write network based web apps.",
   "homepage": "http://github.com/digitalbazaar/forge",
   "author": {
-    "name" : "Digital Bazaar, Inc.",
-    "email" : "support@digitalbazaar.com",
-    "url" : "http://digitalbazaar.com/"
+    "name": "Digital Bazaar, Inc.",
+    "email": "support@digitalbazaar.com",
+    "url": "http://digitalbazaar.com/"
   },
   "contributors": [{
-    "name" : "Dave Longley",
-    "email" : "dlongley@digitalbazaar.com"
+    "name": "Dave Longley",
+    "email": "dlongley@digitalbazaar.com"
   }, {
-    "name" : "Stefan Siegl",
-    "email" : "stesie@brokenpipe.de"
+    "name": "Stefan Siegl",
+    "email": "stesie@brokenpipe.de"
+  }, {
+    "name": "Christoph Dorn",
+    "email": "christoph@christophdorn.com"
   }],
   "repository": {
     "type" : "git",
