@@ -465,16 +465,16 @@ p7.createEnvelopedData = function() {
     },
 
     /**
-     * Find recipient by X.509 certificate's subject.
+     * Find recipient by X.509 certificate's issuer.
      *
-     * @param cert The certificate for which's subject to look for.
+     * @param cert the certificate with the issuer to look for.
      *
-     * @return The recipient object
+     * @return the recipient object.
      */
     findRecipient: function(cert) {
-      var sAttr = cert.subject.attributes;
+      var sAttr = cert.issuer.attributes;
 
-      for(var i = 0; i < msg.recipients.length; i ++) {
+      for(var i = 0; i < msg.recipients.length; ++i) {
         var r = msg.recipients[i];
         var rAttr = r.issuer;
 
@@ -487,9 +487,9 @@ p7.createEnvelopedData = function() {
         }
 
         var match = true;
-        for(var j = 0; j < sAttr.length; j ++) {
-          if(rAttr[j].type !== sAttr[j].type
-            || rAttr[j].value !== sAttr[j].value) {
+        for(var j = 0; j < sAttr.length; ++j) {
+          if(rAttr[j].type !== sAttr[j].type ||
+            rAttr[j].value !== sAttr[j].value) {
             match = false;
             break;
           }
