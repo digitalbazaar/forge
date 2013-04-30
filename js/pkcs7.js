@@ -1,5 +1,5 @@
 /**
- * Javascript implementation of PKCS#7 v1.5.  Currently only certain parts of
+ * Javascript implementation of PKCS#7 v1.5. Currently only certain parts of
  * PKCS#7 are implemented, especially the enveloped-data content type.
  *
  * @author Stefan Siegl
@@ -85,6 +85,10 @@ p7.messageFromAsn1 = function(obj) {
 
     case forge.pki.oids.encryptedData:
       msg = p7.createEncryptedData();
+      break;
+
+    case forge.pki.oids.signedData:
+      msg = p7.createSignedData();
       break;
 
     default:
@@ -260,28 +264,50 @@ var _fromAsn1 = function(msg, obj, validator) {
     };
   }
 
-  var content = '';
-  if(capture.encContent.constructor === Array) {
-    for(var i = 0; i < capture.encContent.length; i ++) {
-      if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
-        throw {
-          message: 'Malformed PKCS#7 message, expecting encrypted '
-            + 'content constructed of only OCTET STRING objects.'
-        };
+  if(capture.encContent) {
+    var content = '';
+    if(capture.encContent.constructor === Array) {
+      for(var i = 0; i < capture.encContent.length; ++i) {
+        if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
+          throw {
+            message: 'Malformed PKCS#7 message, expecting encrypted ' +
+              'content constructed of only OCTET STRING objects.'
+          };
+        }
+        content += capture.encContent[i].value;
       }
-      content += capture.encContent[i].value;
     }
+    else {
+      content = capture.encContent;
+    }
+    msg.encContent = {
+      algorithm: asn1.derToOid(capture.encAlgorithm),
+      parameter: forge.util.createBuffer(capture.encParameter.value),
+      content: forge.util.createBuffer(content)
+    };
   }
-  else {
-    content = capture.encContent;
+
+  if(capture.content) {
+    var content = '';
+    if(capture.content.constructor === Array) {
+      for(var i = 0; i < capture.content.length; ++i) {
+        if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
+          throw {
+            message: 'Malformed PKCS#7 message, expecting ' +
+              'content constructed of only OCTET STRING objects.'
+          };
+        }
+        content += capture.content[i].value;
+      }
+    }
+    else {
+      content = capture.content;
+    }
+    msg.content = forge.util.createBuffer(content);
   }
 
   msg.version = capture.version.charCodeAt(0);
-  msg.encContent = {
-    algorithm: asn1.derToOid(capture.encAlgorithm),
-    parameter: forge.util.createBuffer(capture.encParameter.value),
-    content: forge.util.createBuffer(content)
-  };
+  msg.rawCapture = capture;
 
   return capture;
 };
@@ -335,6 +361,19 @@ var _decryptContent = function (msg) {
 
     msg.content = ciph.output;
   }
+};
+
+p7.createSignedData = function() {
+  var msg = null;
+  msg = {
+    type: forge.pki.oids.signedData,
+    version: 1,
+    fromAsn1: function(obj) {
+      // validate SignedData content block and capture data.
+      _fromAsn1(msg, obj, p7.asn1.signedDataValidator);
+    }
+  };
+  return msg;
 };
 
 /**
@@ -561,8 +600,7 @@ p7.createEnvelopedData = function() {
 
         if(key === undefined) {
           key = forge.util.createBuffer(forge.random.getBytes(keyLen));
-        }
-        else if(key.length() != keyLen) {
+        } else if(key.length() != keyLen) {
           throw {
             message: 'Symmetric key has wrong length, '
               + 'got ' + key.length() + ' bytes, expected ' + keyLen
