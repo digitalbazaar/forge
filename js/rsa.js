@@ -319,8 +319,6 @@ pki.rsa.encrypt = function(m, key, bt) {
  * @return the decrypted message as a byte string.
  */
 pki.rsa.decrypt = function(ed, key, pub, ml) {
-  var m = forge.util.createBuffer();
-
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
 
@@ -444,12 +442,10 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
   var rng = {
     // x is an array to fill with bytes
     nextBytes: function(x) {
-      var tmp1 = +new Date();
       var b = forge.random.getBytes(x.length);
       for(var i = 0; i < x.length; ++i) {
         x[i] = b.charCodeAt(i);
       }
-      var tmp2 = +new Date();
     }
   };
 
