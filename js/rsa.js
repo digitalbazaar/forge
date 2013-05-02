@@ -451,8 +451,6 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
 
   var rval = {
     state: 0,
-    itrs: 0,
-    maxItrs: 100,
     bits: bits,
     rng: rng,
     e: new BigInteger((e || 65537).toString(16), 16),
@@ -463,7 +461,8 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
     pqState: 0,
     num: null,
     six: new BigInteger(null),
-    addNext: 2,
+    modSix: null,
+    addNext: null,
     keys: null
   };
   rval.six.fromInt(6);
@@ -502,7 +501,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
  * @return true if the key-generation completed, false if not.
  */
 pki.rsa.stepKeyPairGenerationState = function(state, n) {
-  // do key generation (from Tom Wu's rsa.js, see jsbn.js license)
+  // do key generation (based on Tom Wu's rsa.js, see jsbn.js license)
 
   // keep stepping until time limit is reached or done
   var t1 = +new Date();
@@ -516,18 +515,17 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
 
       // get a random number
       if(state.pqState === 0) {
-        state.itrs = 0;
+        state.modSix = null;
         state.num = new BigInteger(bits, state.rng);
-        state.r = null;
-        // force number to be odd
-        if(state.num.isEven()) {
-          state.num.dAddOffset(1, 0);
-        }
         // force MSB set
         if(!state.num.testBit(bits1)) {
           state.num.bitwiseTo(
             BigInteger.ONE.shiftLeft(bits1),
             function(x,y){ return x|y; }, state.num);
+        }
+        // force number to be odd
+        if(state.num.isEven()) {
+          state.num.dAddOffset(1, 0);
         }
         ++state.pqState;
       }
@@ -536,45 +534,33 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         /* Note: All primes are of the form 6k +/- 1. So to find
           a probable prime we first align the number at a possible
           prime. Then each time the number is determined not to be
-          prime we add 2 if the number was at 6k - 1 or we add 4 if
-          the number was at 6k + 1. */
+          prime we add 4 if the number was at 6k + 1 or we add 2 if
+          the number was at 6k - 1 or 6k +/- 3. */
         // FIXME: need to use a faster strategy than this ...
-        // this is the bottleneck
-        if(state.addNext === null) {
-          // r will be 1, 3, or 5 since num is odd
-          var r = state.num.mod(state.six).byteValue();
-          // if we are at 3, advance to 5
-          if(r === 3) {
-            state.num.mod.dAddOffset(2);
-            r = 5;
-          }
-
-          // set add next
-          state.addNext = (r === 1) ? 2 : 4;
+        // this is a bottleneck
+        if(state.modSix === null) {
+          // mod will be 1, 3, or 5 since num is odd
+          state.modSix = state.num.mod(state.six).byteValue();
         }
+        // if r=1, we're at 6k+1, next prime may be at 6k-1, add 4
+        // if r=3, we're at 6k +/- 3, next prime may be at 6k +/- 1, add 2
+        // if r=5, we're at 6k-1, next prime may be at 6k+1, add 2
+        state.addNext = (state.modSix === 1) ? 4 : 2;
 
         // do primality test
-        var pp = state.num.isProbablePrime(1);
-        if(pp) {
+        if(state.modSix !== 3 && state.num.isProbablePrime(1)) {
           ++state.pqState;
         }
-        // do max iterations before trying a new number
-        else if(state.itrs < state.maxItrs) {
-          // add addNext to get to next potential odd number
+        else {
+          // add addNext to get to next potential prime
           state.num.dAddOffset(state.addNext, 0);
           if(state.num.bitLength() > bits) {
-            state.addNext = null;
-            state.num.subTo(
-               BigInteger.ONE.shiftLeft(bits1), state.num);
+            // overflow, try again
+            state.pqState = 0;
           }
           else {
-            state.addNext = (state.addNext === 4) ? 2 : 4;
+            state.modSix = (state.modSix + state.addNext) % 6;
           }
-          ++state.itrs;
-        }
-        else {
-          // too many iterations, try again
-          state.pqState = 0;
         }
       }
       // ensure number is coprime with e
