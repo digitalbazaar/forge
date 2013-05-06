@@ -65,7 +65,7 @@ var _ctx = forge.prng.create(prng_aes);
 
 // add other sources of entropy only if window.crypto.getRandomValues is not
 // available -- otherwise this source will be automatically used by the prng
-if(!(window && window.crypto && window.crypto.getRandomValues)) {
+if(!(typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues)) {
   // get load time entropy
   _ctx.collectInt(+new Date(), 32);
 
@@ -122,6 +122,14 @@ forge.random = forge.random || {};
 forge.random.getBytes = function(count) {
   return _ctx.generate(count);
 };
+
+/**
+ * Adds bytes of entropy to the random number generator. Use this to provide
+ * high-quality entropy, if it is available from some other source.
+ */
+forge.random.seed = function(bytes) {
+  return _ctx.collect(bytes);
+}
 
 })(typeof(jQuery) !== 'undefined' ? jQuery : null);
 
