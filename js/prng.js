@@ -106,7 +106,7 @@ prng.create = function(plugin) {
       }
 
       if(ctx.key === null) {
-        return _reseed(ctx.collector, generate);
+        return _reseed(ctx.seedFile, generate);
       }
 
       // generate the random bytes
@@ -166,13 +166,13 @@ prng.create = function(plugin) {
   /**
    * Private function that asynchronously reseeds a generator.
    *
-   * @param collector the immediate entropy collector to use.
+   * @param seedFile the immediate entropy source to use.
    * @param callback(err) called once the operation completes.
    */
-  function _reseed(collector, callback) {
+  function _reseed(seedFile, callback) {
     // synchronous reseeding
     if(arguments.length === 0) {
-      collector = defaultCollector;
+      seedFile = defaultSeedFile;
       callback = function() {};
     }
 
@@ -183,7 +183,7 @@ prng.create = function(plugin) {
 
     // not enough seed data...
     var needed = (32 - ctx.pools[0].messageLength) << 5;
-    collector(needed, function(err, bytes) {
+    seedFile(needed, function(err, bytes) {
       if(err) {
         return callback(err);
       }
@@ -235,13 +235,13 @@ prng.create = function(plugin) {
   }
 
   /**
-   * The built-in default collector. This collector is invoked when entropy
+   * The built-in default seedFile. This seedFile is used when entropy
    * is needed immediately.
    *
    * @param needed the number of bytes that are needed.
    * @param callback(err, bytes) called once the operation completes.
    */
-  function defaultCollector(needed, callback) {
+  function defaultSeedFile(needed, callback) {
     // nodejs
     if(crypto) {
       try {
@@ -302,7 +302,7 @@ prng.create = function(plugin) {
   };
   if(crypto) {
     // use nodejs async API
-    ctx.collector = function(needed, callback) {
+    ctx.seedFile = function(needed, callback) {
       crypto.randomBytes(needed, function(err, bytes) {
         if(err) {
           return callback(err);
@@ -312,7 +312,7 @@ prng.create = function(plugin) {
     };
   }
   else {
-    ctx.collector = defaultCollector;
+    ctx.seedFile = defaultSeedFile;
   }
 
   /**
@@ -356,7 +356,7 @@ prng.create = function(plugin) {
   ctx.registerWorker = function(worker) {
     // worker receives random bytes
     if(worker === self) {
-      ctx.collector = function(needed, callback) {
+      ctx.seedFile = function(needed, callback) {
         function listener(e) {
           var data = e.data;
           if(data.forge && data.forge.prng) {
@@ -373,7 +373,7 @@ prng.create = function(plugin) {
       function listener(e) {
         var data = e.data;
         if(data.forge && data.forge.prng) {
-          ctx.collector(data.forge.prng.needed, function(err, bytes) {
+          ctx.seedFile(data.forge.prng.needed, function(err, bytes) {
             worker.postMessage({forge: {prng: {err: err, bytes: bytes}}});
           });
         }
