@@ -85,6 +85,24 @@ if(typeof(navigator) !== 'undefined') {
   _navBytes = null;
 }
 
+// window.crypto.getRandomValues is a strong source of randomness if available
+if (window && window.crypto && window.crypto.getRandomValues) {
+  // completely fill the generator: 32 pools, each of which wants 32 bytes of data
+  // TODO: is this a good target?
+  var ENTROPY_BYTES = 32*32;
+  var entropy = new Uint32Array(ENTROPY_BYTES/4);
+  try {
+    window.crypto.getRandomValues(entropy);
+    for (var i = 0; i < entropy.length; i++) {
+      _ctx.collectInt(entropy[i], 32);
+    }
+  } catch (e) {
+    // Mozilla claims getRandomValues can throw QuotaExceededError, so ignore errors
+    // https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
+    // However I've never observed this exception
+  }
+}
+
 // add mouse and keyboard collectors if jquery is available
 if($) {
   // set up mouse entropy capture
