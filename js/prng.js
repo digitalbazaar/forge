@@ -101,34 +101,58 @@ prng.create = function(plugin) {
    * Private function that reseeds a generator.
    */
   function _reseed() {
-    // not enough seed data... but we need to get going so just
-    // be sad and add some weak random data
+    // not enough seed data...
+    var reseeds = ctx.reseeds;
     if(ctx.pools[0].messageLength < 32) {
-      /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
-      implemented with David G. Carta's optimization: with 32 bit math
-      and without division (Public Domain). */
-      var needed = (32 - ctx.pools[0].messageLength) << 5;
-      var b = '';
-      var hi, lo, next;
-      var seed = Math.floor(Math.random() * 0xFFFF);
-      while(b.length < needed) {
-        lo = 16807 * (seed & 0xFFFF);
-        hi = 16807 * (seed >> 16);
-        lo += (hi & 0x7FFF) << 16;
-        lo += hi >> 15;
-        lo = (lo & 0x7FFFFFFF) + (lo >> 31);
-        seed = lo & 0xFFFFFFFF;
-
-        // consume lower 3 bytes of seed
-        for(var i = 0; i < 3; ++i) {
-          // throw in more pseudo random
-          next = seed >>> (i << 3);
-          next ^= Math.floor(Math.random() * 0xFF);
-          b += String.fromCharCode(next & 0xFF);
+      // use window.crypto.getRandomValues strong source of entropy if
+      // available
+      if(window && window.crypto && window.crypto.getRandomValues) {
+        var needed = (32 - ctx.pools[0].messageLength) << 5;
+        var entropy = new Uint32Array(needed / 4);
+        try {
+          window.crypto.getRandomValues(entropy);
+          for(var i = 0; i < entropy.length; ++i) {
+            // will automatically reseed in collect
+            ctx.collectInt(entropy[i], 32);
+          }
+        }
+        catch (e) {
+          /* Mozilla claims getRandomValues can throw QuotaExceededError, so
+           ignore errors. In this case, weak entropy will be added, but
+           hopefully this never happens.
+           https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
+           However I've never observed this exception --@evanj */
         }
       }
-      // will automatically reseed in collect
-      ctx.collect(b);
+
+      // be sad and add some weak random data
+      if(reseeds === ctx.reseeds && ctx.pools[0].messageLength < 32) {
+        /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
+        implemented with David G. Carta's optimization: with 32 bit math
+        and without division (Public Domain). */
+        var needed = (32 - ctx.pools[0].messageLength) << 5;
+        var b = '';
+        var hi, lo, next;
+        var seed = Math.floor(Math.random() * 0xFFFF);
+        while(b.length < needed) {
+          lo = 16807 * (seed & 0xFFFF);
+          hi = 16807 * (seed >> 16);
+          lo += (hi & 0x7FFF) << 16;
+          lo += hi >> 15;
+          lo = (lo & 0x7FFFFFFF) + (lo >> 31);
+          seed = lo & 0xFFFFFFFF;
+
+          // consume lower 3 bytes of seed
+          for(var i = 0; i < 3; ++i) {
+            // throw in more pseudo random
+            next = seed >>> (i << 3);
+            next ^= Math.floor(Math.random() * 0xFF);
+            b += String.fromCharCode(next & 0xFF);
+          }
+        }
+        // will automatically reseed in collect
+        ctx.collect(b);
+      }
     }
     else {
       // create a SHA-1 message digest

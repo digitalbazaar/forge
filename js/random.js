@@ -63,59 +63,48 @@ prng_aes.md = forge.md.sha1;
 // create default prng context
 var _ctx = forge.prng.create(prng_aes);
 
-// get load time entropy
-_ctx.collectInt(+new Date(), 32);
+// add other sources of entropy only if window.crypto.getRandomValues is not
+// available -- otherwise this source will be automatically used by the prng
+if(!(window && window.crypto && window.crypto.getRandomValues)) {
+  // get load time entropy
+  _ctx.collectInt(+new Date(), 32);
 
-// add some entropy from navigator object
-if(typeof(navigator) !== 'undefined') {
-  var _navBytes = '';
-  for(var key in navigator) {
-    try {
-      if(typeof(navigator[key]) == 'string') {
-        _navBytes += navigator[key];
+  // add some entropy from navigator object
+  if(typeof(navigator) !== 'undefined') {
+    var _navBytes = '';
+    for(var key in navigator) {
+      try {
+        if(typeof(navigator[key]) == 'string') {
+          _navBytes += navigator[key];
+        }
       }
-    } catch(e) {
-      /* Some navigator keys might not be accessible, e.g. the geolocation
-         attribute throws an exception if touched in Mozilla chrome:// context.
+      catch(e) {
+        /* Some navigator keys might not be accessible, e.g. the geolocation
+          attribute throws an exception if touched in Mozilla chrome://
+          context.
 
-         Silently ignore this and just don't use this as a source of entropy. */
+          Silently ignore this and just don't use this as a source of
+          entropy. */
+      }
     }
+    _ctx.collect(_navBytes);
+    _navBytes = null;
   }
-  _ctx.collect(_navBytes);
-  _navBytes = null;
-}
 
-// window.crypto.getRandomValues is a strong source of randomness if available
-if (window && window.crypto && window.crypto.getRandomValues) {
-  // completely fill the generator: 32 pools, each of which wants 32 bytes of data
-  // TODO: is this a good target?
-  var ENTROPY_BYTES = 32*32;
-  var entropy = new Uint32Array(ENTROPY_BYTES/4);
-  try {
-    window.crypto.getRandomValues(entropy);
-    for (var i = 0; i < entropy.length; i++) {
-      _ctx.collectInt(entropy[i], 32);
-    }
-  } catch (e) {
-    // Mozilla claims getRandomValues can throw QuotaExceededError, so ignore errors
-    // https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
-    // However I've never observed this exception
+  // add mouse and keyboard collectors if jquery is available
+  if($) {
+    // set up mouse entropy capture
+    $().mousemove(function(e) {
+      // add mouse coords
+      _ctx.collectInt(e.clientX, 16);
+      _ctx.collectInt(e.clientY, 16);
+    });
+
+    // set up keyboard entropy capture
+    $().keypress(function(e) {
+      _ctx.collectInt(e.charCode, 8);
+    });
   }
-}
-
-// add mouse and keyboard collectors if jquery is available
-if($) {
-  // set up mouse entropy capture
-  $().mousemove(function(e) {
-    // add mouse coords
-    _ctx.collectInt(e.clientX, 16);
-    _ctx.collectInt(e.clientY, 16);
-  });
-
-  // set up keyboard entropy capture
-  $().keypress(function(e) {
-    _ctx.collectInt(e.charCode, 8);
-  });
 }
 
 /* Random API */
