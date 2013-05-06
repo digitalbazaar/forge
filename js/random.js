@@ -144,6 +144,20 @@ forge.random.registerWorker = function(worker) {
   _ctx.registerWorker(worker);
 };
 
+/**
+ * Adds bytes of entropy to forge.random's PRNG.
+ */
+forge.random.collect = function(bytes) {
+  return _ctx.collect(bytes);
+};
+
+/**
+ * Adds n bits of entropy from integer i to forge.random's PRNG.
+ */
+forge.random.collectInt = function(i, n) {
+  return _ctx.collectInt(i, n);
+};
+
 })(typeof(jQuery) !== 'undefined' ? jQuery : null);
 
 } // end module implementation
