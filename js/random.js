@@ -65,7 +65,8 @@ var _ctx = forge.prng.create(prng_aes);
 
 // add other sources of entropy only if window.crypto.getRandomValues is not
 // available -- otherwise this source will be automatically used by the prng
-if(!(window && window.crypto && window.crypto.getRandomValues)) {
+if(!(typeof window !== 'undefined' &&
+  window.crypto && window.crypto.getRandomValues)) {
   // get load time entropy
   _ctx.collectInt(+new Date(), 32);
 

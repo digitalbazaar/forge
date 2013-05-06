@@ -12,6 +12,31 @@ function initModule(forge) {
 /* Utilities API */
 var util = forge.util = forge.util || {};
 
+// define setImmediate and nextTick
+if(typeof process === 'undefined' || !process.nextTick) {
+  if(typeof setImmediate === 'function') {
+    util.setImmediate = setImmediate;
+    util.nextTick = function(callback) {
+      return setImmediate(callback);
+    };
+  }
+  else {
+    util.setImmediate = function(callback) {
+      setTimeout(callback, 0);
+    };
+    util.nextTick = util.setImmediate;
+  }
+}
+else {
+  util.nextTick = process.nextTick;
+  if(typeof setImmediate === 'function') {
+    util.setImmediate = setImmediate;
+  }
+  else {
+    util.setImmediate = util.nextTick;
+  }
+}
+
 /**
  * Constructor for a byte buffer.
  *

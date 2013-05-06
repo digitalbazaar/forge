@@ -56,16 +56,19 @@ prng.create = function(plugin) {
   ctx.pool = 0;
 
   /**
-   * Generates random bytes.
+   * Generates random bytes. The bytes may be generated synchronously or
+   * asynchronously. Web workers must use the asynchronous interface or
+   * else the behavior is undefined.
    *
    * @param count the number of random bytes to generate.
+   * @param [callback(err, bytes)] called once the operation completes.
    *
    * @return count random bytes as a string.
    */
-  ctx.generate = function(count) {
-    // do first seed if necessary
-    if(ctx.key === null) {
-      _reseed();
+  ctx.generate = function(count, callback) {
+    // do synchronously
+    if(!callback) {
+      return ctx.generateSync(count);
     }
 
     // simple generator using counter-based CBC
@@ -74,7 +77,32 @@ prng.create = function(plugin) {
     var formatKey = ctx.plugin.formatKey;
     var formatSeed = ctx.plugin.formatSeed;
     var b = forge.util.createBuffer();
-    while(b.length() < count) {
+
+    generate();
+
+    function generate(err) {
+      if(err) {
+        return callback(err);
+      }
+
+      // sufficient bytes generated
+      if(b.length() >= count) {
+        return callback(null, b.getBytes(count));
+      }
+
+      // if amount of data generated is greater than 1 MiB, trigger reseed
+      if(ctx.generated >= 1048576) {
+        // only do reseed at most every 100 ms
+        var now = +new Date();
+        if(ctx.time === null || (now - ctx.time > 100)) {
+          ctx.key = null;
+        }
+      }
+
+      if(ctx.key === null) {
+        return _reseed(ctx.collector, generate);
+      }
+
       // generate the random bytes
       var bytes = cipher(ctx.key, ctx.seed);
       ctx.generated += bytes.length;
@@ -84,77 +112,81 @@ prng.create = function(plugin) {
       ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
       ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
 
-      // if amount of data generated is greater than 1 MiB, reseed
+      forge.util.setImmediate(generate);
+    }
+  };
+
+  /**
+   * Generates random bytes synchronously.
+   *
+   * @param count the number of random bytes to generate.
+   *
+   * @return count random bytes as a string.
+   */
+  ctx.generateSync = function(count) {
+    // simple generator using counter-based CBC
+    var cipher = ctx.plugin.cipher;
+    var increment = ctx.plugin.increment;
+    var formatKey = ctx.plugin.formatKey;
+    var formatSeed = ctx.plugin.formatSeed;
+    var b = forge.util.createBuffer();
+    while(b.length() < count) {
+      // if amount of data generated is greater than 1 MiB, trigger reseed
       if(ctx.generated >= 1048576) {
-        // only do reseed at most 10 times/second (every 100 ms)
+        // only do reseed at most every 100 ms
         var now = +new Date();
-        if(now - ctx.time < 100) {
-          _reseed();
+        if(ctx.time === null || (now - ctx.time > 100)) {
+          ctx.key = null;
         }
       }
+
+      if(ctx.key === null) {
+        _reseedSync();
+      }
+
+      // generate the random bytes
+      var bytes = cipher(ctx.key, ctx.seed);
+      ctx.generated += bytes.length;
+      b.putBytes(bytes);
+
+      // generate bytes for a new key and seed
+      ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
+      ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
     }
 
     return b.getBytes(count);
   };
 
   /**
-   * Private function that reseeds a generator.
+   * Private function that asynchronously reseeds a generator.
+   *
+   * @param collector the immediate entropy collector to use.
+   * @param callback(err) called once the operation completes.
    */
-  function _reseed() {
-    // not enough seed data...
-    var reseeds = ctx.reseeds;
-    if(ctx.pools[0].messageLength < 32) {
-      // use window.crypto.getRandomValues strong source of entropy if
-      // available
-      if(window && window.crypto && window.crypto.getRandomValues) {
-        var needed = (32 - ctx.pools[0].messageLength) << 5;
-        var entropy = new Uint32Array(needed / 4);
-        try {
-          window.crypto.getRandomValues(entropy);
-          for(var i = 0; i < entropy.length; ++i) {
-            // will automatically reseed in collect
-            ctx.collectInt(entropy[i], 32);
-          }
-        }
-        catch (e) {
-          /* Mozilla claims getRandomValues can throw QuotaExceededError, so
-           ignore errors. In this case, weak entropy will be added, but
-           hopefully this never happens.
-           https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
-           However I've never observed this exception --@evanj */
-        }
-      }
-
-      // be sad and add some weak random data
-      if(reseeds === ctx.reseeds && ctx.pools[0].messageLength < 32) {
-        /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
-        implemented with David G. Carta's optimization: with 32 bit math
-        and without division (Public Domain). */
-        var needed = (32 - ctx.pools[0].messageLength) << 5;
-        var b = '';
-        var hi, lo, next;
-        var seed = Math.floor(Math.random() * 0xFFFF);
-        while(b.length < needed) {
-          lo = 16807 * (seed & 0xFFFF);
-          hi = 16807 * (seed >> 16);
-          lo += (hi & 0x7FFF) << 16;
-          lo += hi >> 15;
-          lo = (lo & 0x7FFFFFFF) + (lo >> 31);
-          seed = lo & 0xFFFFFFFF;
-
-          // consume lower 3 bytes of seed
-          for(var i = 0; i < 3; ++i) {
-            // throw in more pseudo random
-            next = seed >>> (i << 3);
-            next ^= Math.floor(Math.random() * 0xFF);
-            b += String.fromCharCode(next & 0xFF);
-          }
-        }
-        // will automatically reseed in collect
-        ctx.collect(b);
-      }
+  function _reseed(collector, callback) {
+    // synchronous reseeding
+    if(arguments.length === 0) {
+      collector = defaultCollector;
+      callback = function() {};
     }
-    else {
+
+    if(ctx.pools[0].messageLength >= 32) {
+      seed();
+      return callback();
+    }
+
+    // not enough seed data...
+    var needed = (32 - ctx.pools[0].messageLength) << 5;
+    collector(needed, function(err, bytes) {
+      if(err) {
+        return callback(err);
+      }
+      ctx.collect(bytes);
+      seed();
+      callback();
+    });
+
+    function seed() {
       // create a SHA-1 message digest
       var md = forge.md.sha1.create();
 
@@ -190,6 +222,71 @@ prng.create = function(plugin) {
   }
 
   /**
+   * Private function that synchronously reseeds a generator.
+   */
+  function _reseedSync() {
+    _reseed();
+  }
+
+  /**
+   * The built-in default collector. This collector is invoked when entropy
+   * is needed immediately.
+   *
+   * @param needed the number of bytes that are needed.
+   * @param callback(err, bytes) called once the operation completes.
+   */
+  function defaultCollector(needed, callback) {
+    // use window.crypto.getRandomValues strong source of entropy if
+    // available
+    var b = forge.util.createBuffer();
+    if(typeof window !== 'undefined' &&
+      window.crypto && window.crypto.getRandomValues) {
+      var entropy = new Uint32Array(needed / 4);
+      try {
+        window.crypto.getRandomValues(entropy);
+        for(var i = 0; i < entropy.length; ++i) {
+          b.putInt32(entropy[i]);
+        }
+      }
+      catch (e) {
+        /* Mozilla claims getRandomValues can throw QuotaExceededError, so
+         ignore errors. In this case, weak entropy will be added, but
+         hopefully this never happens.
+         https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
+         However I've never observed this exception --@evanj */
+      }
+    }
+
+    // be sad and add some weak random data
+    if(b.length() < needed) {
+      /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
+      implemented with David G. Carta's optimization: with 32 bit math
+      and without division (Public Domain). */
+      var hi, lo, next;
+      var seed = Math.floor(Math.random() * 0xFFFF);
+      while(b.length() < needed) {
+        lo = 16807 * (seed & 0xFFFF);
+        hi = 16807 * (seed >> 16);
+        lo += (hi & 0x7FFF) << 16;
+        lo += hi >> 15;
+        lo = (lo & 0x7FFFFFFF) + (lo >> 31);
+        seed = lo & 0xFFFFFFFF;
+
+        // consume lower 3 bytes of seed
+        for(var i = 0; i < 3; ++i) {
+          // throw in more pseudo random
+          next = seed >>> (i << 3);
+          next ^= Math.floor(Math.random() * 0xFF);
+          b.putByte(String.fromCharCode(next & 0xFF));
+        }
+      }
+    }
+
+    callback(null, b.getBytes());
+  };
+  ctx.collector = defaultCollector;
+
+  /**
    * Adds entropy to a prng ctx's accumulator.
    *
    * @param bytes the bytes of entropy as a string.
@@ -200,16 +297,6 @@ prng.create = function(plugin) {
     for(var i = 0; i < count; ++i) {
       ctx.pools[ctx.pool].update(bytes.substr(i, 1));
       ctx.pool = (ctx.pool === 31) ? 0 : ctx.pool + 1;
-    }
-
-    // do reseed if pool 0 has at least 32 bytes (enough to create a new
-    // key and seed)
-    if(ctx.pools[0].messageLength >= 32) {
-      // only do reseed at most 10 times/second (every 100 ms)
-      var now = +new Date();
-      if(ctx.time === null || (now - ctx.time < 100)) {
-        _reseed();
-      }
     }
   };
 
