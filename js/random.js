@@ -65,8 +65,16 @@ var _ctx = forge.prng.create(prng_aes);
 
 // add other sources of entropy only if window.crypto.getRandomValues is not
 // available -- otherwise this source will be automatically used by the prng
-if(!(typeof window !== 'undefined' &&
+var _nodejs = (typeof module === 'object' && module.exports);
+if(!_nodejs && !(typeof window !== 'undefined' &&
   window.crypto && window.crypto.getRandomValues)) {
+
+  // if this is a web worker, do not use weak entropy, instead register to
+  // receive strong entropy asynchronously from the main thread
+  if(typeof window === 'undefined' || window.document === undefined) {
+    // FIXME:
+  }
+
   // get load time entropy
   _ctx.collectInt(+new Date(), 32);
 

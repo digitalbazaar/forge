@@ -11,6 +11,12 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+var _nodejs = (typeof module === 'object' && module.exports);
+var crypto = null;
+if(_nodejs) {
+  crypto = require('crypto');
+}
+
 /* PRNG API */
 var prng = forge.prng = forge.prng || {};
 
@@ -236,6 +242,16 @@ prng.create = function(plugin) {
    * @param callback(err, bytes) called once the operation completes.
    */
   function defaultCollector(needed, callback) {
+    // nodejs
+    if(crypto) {
+      try {
+        return callback(null, crypto.randomBytes(needed).toString());
+      }
+      catch(e) {
+        // ignore
+      }
+    }
+
     // use window.crypto.getRandomValues strong source of entropy if
     // available
     var b = forge.util.createBuffer();
@@ -248,7 +264,7 @@ prng.create = function(plugin) {
           b.putInt32(entropy[i]);
         }
       }
-      catch (e) {
+      catch(e) {
         /* Mozilla claims getRandomValues can throw QuotaExceededError, so
          ignore errors. In this case, weak entropy will be added, but
          hopefully this never happens.
@@ -284,7 +300,20 @@ prng.create = function(plugin) {
 
     callback(null, b.getBytes());
   };
-  ctx.collector = defaultCollector;
+  if(crypto) {
+    // use nodejs async API
+    ctx.collector = function(needed, callback) {
+      crypto.randomBytes(needed, function(err, bytes) {
+        if(err) {
+          return callback(err);
+        }
+        callback(null, bytes.toString());
+      });
+    };
+  }
+  else {
+    ctx.collector = defaultCollector;
+  }
 
   /**
    * Adds entropy to a prng ctx's accumulator.
