@@ -2823,7 +2823,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
             // iteration count
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
               countBytes.getBytes())
-          ]),
+          ])
         ]),
         // encryptionScheme
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -2831,7 +2831,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
             asn1.oidToDer(encOid).getBytes()),
           // iv
           asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv),
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv)
         ])
       ])
     ]);
