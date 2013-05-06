@@ -132,6 +132,18 @@ forge.random.getBytes = function(count) {
   return _ctx.generate(count);
 };
 
+/**
+ * Registers a Web Worker to receive immediate entropy from the main thread.
+ * This method is required until Web Workers can access the native crypto
+ * API. This method should be called twice for each created worker, once in
+ * the main thread, and once in the worker itself.
+ *
+ * @param worker the worker to register.
+ */
+forge.random.registerWorker = function(worker) {
+  _ctx.registerWorker(worker);
+};
+
 })(typeof(jQuery) !== 'undefined' ? jQuery : null);
 
 } // end module implementation

@@ -345,6 +345,44 @@ prng.create = function(plugin) {
     ctx.collect(bytes);
   };
 
+  /**
+   * Registers a Web Worker to receive immediate entropy from the main thread.
+   * This method is required until Web Workers can access the native crypto
+   * API. This method should be called twice for each created worker, once in
+   * the main thread, and once in the worker itself.
+   *
+   * @param worker the worker to register.
+   */
+  ctx.registerWorker = function(worker) {
+    // worker receives random bytes
+    if(worker === self) {
+      ctx.collector = function(needed, callback) {
+        function listener(e) {
+          var data = e.data;
+          if(data.forge && data.forge.prng) {
+            self.removeEventListener('message', listener);
+            callback(data.forge.prng.err, data.forge.prng.bytes);
+          }
+        }
+        self.addEventListener('message', listener);
+        self.postMessage({forge: {prng: {needed: needed}}});
+      };
+    }
+    // main thread sends random bytes upon request
+    else {
+      function listener(e) {
+        var data = e.data;
+        if(data.forge && data.forge.prng) {
+          ctx.collector(data.forge.prng.needed, function(err, bytes) {
+            worker.postMessage({forge: {prng: {err: err, bytes: bytes}}});
+          });
+        }
+      }
+      // TODO: do we need to remove the event listener when the worker dies?
+      worker.addEventListener('message', listener);
+    }
+  };
+
   return ctx;
 };
 
