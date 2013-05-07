@@ -929,7 +929,7 @@ http.createRequest = function(options) {
   };
 
   /**
-   * Converts an http request into a string that can be sent as a
+   * Converts an http request into a string that can be sent as an
    * HTTP request. Does not include any data.
    *
    * @return the string representation of the request.
@@ -1318,6 +1318,36 @@ http.createResponse = function() {
      }
 
      return rval;
+  };
+
+  /**
+   * Converts an http response into a string that can be sent as an
+   * HTTP response. Does not include any data.
+   *
+   * @return the string representation of the response.
+   */
+  response.toString = function() {
+    /* Sample response header:
+      HTTP/1.0 200 OK
+      Host: www.someurl.com
+      Connection: close
+     */
+
+    // build start line
+    var rval =
+      response.version + ' ' + response.code + ' ' + response.message + '\r\n';
+
+    // add each header
+    for(var name in response.fields) {
+      var fields = response.fields[name];
+      for(var i = 0; i < fields.length; ++i) {
+        rval += name + ': ' + fields[i] + '\r\n';
+      }
+    }
+    // final terminating CRLF
+    rval += '\r\n';
+
+    return rval;
   };
 
   return response;
