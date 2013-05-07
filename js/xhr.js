@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
 (function($) {
 
@@ -81,7 +81,9 @@ var _clients = {};
 var _maxConnections = 10;
 
 // local aliases
-var forge = window.forge;
+if(typeof forge === 'undefined') {
+  forge = {};
+}
 var net = forge.net;
 var http = forge.http;
 

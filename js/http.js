@@ -304,7 +304,7 @@ var _initSocket = function(client, socket, tlsOptions) {
 
   // wrap socket for TLS
   if(tlsOptions) {
-    socket = window.forge.tls.wrapSocket({
+    socket = forge.tls.wrapSocket({
       sessionId: null,
       sessionCache: {},
       caStore: tlsOptions.caStore,
@@ -1370,7 +1370,9 @@ http.withinCookieDomain = function(url, cookie) {
 };
 
 // public access to http namespace
-window.forge = window.forge || {};
-window.forge.http = http;
+if(typeof forge === 'undefined') {
+  forge = {};
+}
+forge.http = http;
 
 })();

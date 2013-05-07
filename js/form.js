@@ -154,7 +154,9 @@ form.serialize = function(input, sep, dict) {
 /**
  * The forge namespace and form API.
  */
-window.forge = window.forge || {};
-window.forge.form = form;
+if(typeof forge === 'undefined') {
+  forge = {};
+}
+forge.form = form;
 
 })(jQuery);

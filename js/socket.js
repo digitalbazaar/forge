@@ -105,7 +105,7 @@ net.createSocketPool = function(options) {
       }
     };
   }
-  var handler = 'window.forge.net.socketPools[\'' + spId + '\'].handler';
+  var handler = 'forge.net.socketPools[\'' + spId + '\'].handler';
   api.subscribe('connect', handler);
   api.subscribe('close', handler);
   api.subscribe('socketData', handler);
@@ -303,7 +303,9 @@ if(typeof define !== 'function') {
   }
   // <script>
   else {
-    forge = window.forge = window.forge || {};
+    if(typeof forge === 'undefined') {
+      forge = {};
+    }
     initModule(forge);
   }
 }
