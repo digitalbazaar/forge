@@ -183,7 +183,7 @@ var getPublicKey = function(data, uri, callback)
          }
       }
       
-      sys.log('Public keys from RDF: ' + JSON.stringify(keys))
+      sys.log('Public keys from RDF: ' + JSON.stringify(keys));
       callback(keys);
    });
    parser.parseString(data);

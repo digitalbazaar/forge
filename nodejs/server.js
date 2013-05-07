@@ -35,7 +35,7 @@ function mountStaticDir(app, route, path) {
       return next.apply(null, arguments);
     });
   });
-};
+}
 
 if(require.main === module) {
   exports.main(function(err) {

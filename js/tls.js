@@ -1573,7 +1573,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
           failing here, we generate 48 random bytes and use that as
           the pre-master secret. */
         sp.pre_master_secret = forge.random.getBytes(48);
-      };
+      }
     }
   }
 

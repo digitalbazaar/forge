@@ -14,7 +14,7 @@ function mockRandomGetBytes(num) {
 exports.testToPkcs12Asn1_CertOnly = function(test) {
   var p12Asn = forge.pkcs12.toPkcs12Asn1(null, certPem, null, {
     useMac: false,
-    generateLocalKeyId: false,
+    generateLocalKeyId: false
   });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 
@@ -30,7 +30,7 @@ exports.testToPkcs12Asn1_KeyOnly = function(test) {
   var privKey = forge.pki.privateKeyFromPem(keyPem);
   var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, null, {
     useMac: false,
-    generateLocalKeyId: false,
+    generateLocalKeyId: false
   });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 
@@ -51,7 +51,7 @@ exports.testToPkcs12Asn1_EncryptedKeyOnly = function(test) {
   var privKey = forge.pki.privateKeyFromPem(keyPem);
   var p12Asn = forge.pkcs12.toPkcs12Asn1(privKey, null, 'nopass', {
     useMac: false,
-    generateLocalKeyId: false,
+    generateLocalKeyId: false
   });
   var p12Der = forge.asn1.toDer(p12Asn).getBytes();
 

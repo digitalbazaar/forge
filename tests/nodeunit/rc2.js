@@ -18,7 +18,7 @@ exports.testExpandKey40 = function(test) {
   var res = forge.rc2.expandKey(key, 40);
   test.equal(res.toHex(), exp);
   test.done();
-}
+};
 
 exports.testEncryptZerosECB = function(test) {
   var key = '88bca90e90875a7f0f79c384627bafb2';
@@ -27,14 +27,14 @@ exports.testEncryptZerosECB = function(test) {
   var input = new forge.util.ByteBuffer();
   input.fillWithByte(0, 8);
 
-  var cipher = forge.rc2.startEncrypting(key, null, null)
+  var cipher = forge.rc2.startEncrypting(key, null, null);
   cipher.update(input);
   cipher.finish();
 
   var res = '2269552ab0f85ca6e35b3b2ce4e02191';
   test.equal(cipher.output.toHex(), res);
   test.done();
-}
+};
 
 exports.testEncryptDataECB = function(test) {
   var key = '88bca90e90875a7f0f79c384627bafb2';
@@ -42,14 +42,14 @@ exports.testEncryptDataECB = function(test) {
 
   var input = new forge.util.ByteBuffer('vegan');
 
-  var cipher = forge.rc2.startEncrypting(key, null, null)
+  var cipher = forge.rc2.startEncrypting(key, null, null);
   cipher.update(input);
   cipher.finish();
 
   var res = '2194adaf4d517e3a';
   test.equal(cipher.output.toHex(), res);
   test.done();
-}
+};
 
 exports.testEncryptDataCBC = function(test) {
   var key = '88bca90e90875a7f0f79c384627bafb2';
@@ -60,14 +60,14 @@ exports.testEncryptDataCBC = function(test) {
 
   var input = new forge.util.ByteBuffer('revolution');
 
-  var cipher = forge.rc2.startEncrypting(key, iv, null)
+  var cipher = forge.rc2.startEncrypting(key, iv, null);
   cipher.update(input);
   cipher.finish();
 
   var res = '50cfd16e0fd7f20b17a622eb2a469b7e';
   test.equal(cipher.output.toHex(), res);
   test.done();
-}
+};
 
 exports.testDecryptDataECB = function(test) {
   var key = '88bca90e90875a7f0f79c384627bafb2';
@@ -76,13 +76,13 @@ exports.testDecryptDataECB = function(test) {
   var input = '2194adaf4d517e3a';
   input = new forge.util.ByteBuffer(forge.util.hexToBytes(input));
 
-  var cipher = forge.rc2.startDecrypting(key, null, null)
+  var cipher = forge.rc2.startDecrypting(key, null, null);
   cipher.update(input);
   cipher.finish();
 
   test.equal(cipher.output, 'vegan');
   test.done();
-}
+};
 
 exports.testDecryptDataCBC = function(test) {
   var key = '88bca90e90875a7f0f79c384627bafb2';
@@ -94,10 +94,10 @@ exports.testDecryptDataCBC = function(test) {
   var input = '50cfd16e0fd7f20b17a622eb2a469b7e';
   input = new forge.util.ByteBuffer(forge.util.hexToBytes(input));
 
-  var cipher = forge.rc2.startDecrypting(key, iv, null)
+  var cipher = forge.rc2.startDecrypting(key, iv, null);
   cipher.update(input);
   cipher.finish();
 
   test.equal(cipher.output, 'revolution');
   test.done();
-}
+};

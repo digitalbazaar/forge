@@ -299,7 +299,7 @@ prng.create = function(plugin) {
     }
 
     callback(null, b.getBytes());
-  };
+  }
   if(crypto) {
     // use nodejs async API
     ctx.seedFile = function(needed, callback) {

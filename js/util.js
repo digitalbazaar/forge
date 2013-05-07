@@ -1205,11 +1205,11 @@ util.parseFragment = function(fragment) {
   }
   // split path based on '/' and ignore first element if empty
   var path = fp.split('/');
-  if(path.length > 0 && path[0] == '') {
+  if(path.length > 0 && path[0] === '') {
     path.shift();
   }
   // convert query into object
-  var query = (fq == '') ? {} : util.getQueryVariables(fq);
+  var query = (fq === '') ? {} : util.getQueryVariables(fq);
 
   return {
     pathString: fp,
