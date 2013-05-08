@@ -330,7 +330,7 @@ util.ByteBuffer.prototype.getInt = function(n) {
 /**
  * Reads bytes out into a UTF-8 string and clears them from the buffer.
  *
- * @param count the number of bytes to read, undefined, null or 0 for all.
+ * @param count the number of bytes to read, undefined or null for all.
  *
  * @return a UTF-8 string of bytes.
  */
