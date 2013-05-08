@@ -117,7 +117,7 @@ if(!_nodejs && !(typeof window !== 'undefined' &&
 }
 
 /* Random API */
-forge.random = forge.random || {};
+forge.random = forge.random || _ctx;
 
 /**
  * Gets random bytes. If a native secure crypto API is unavailable, this
@@ -132,7 +132,7 @@ forge.random = forge.random || {};
  * @return the random bytes in a string.
  */
 forge.random.getBytes = function(count, callback) {
-  return _ctx.generate(count, callback);
+  return forge.random.generate(count, callback);
 };
 
 /**
@@ -146,38 +146,7 @@ forge.random.getBytes = function(count, callback) {
  * @return the random bytes in a string.
  */
 forge.random.getBytesSync = function(count) {
-  return _ctx.generate(count);
-};
-
-/**
- * Registers a Web Worker to receive immediate entropy from the main thread.
- * This method is required until Web Workers can access the native crypto
- * API. This method should be called twice for each created worker, once in
- * the main thread, and once in the worker itself.
- *
- * @param worker the worker to register.
- */
-forge.random.registerWorker = function(worker) {
-  _ctx.registerWorker(worker);
-};
-
-/**
- * Adds bytes of entropy to forge.random's PRNG.
- *
- * @param bytes the bytes to collect.
- */
-forge.random.collect = function(bytes) {
-  return _ctx.collect(bytes);
-};
-
-/**
- * Adds n bits of entropy from integer i to forge.random's PRNG.
- *
- * @param i the integer to collect from.
- * @param n the number of bits of entropy to collect.
- */
-forge.random.collectInt = function(i, n) {
-  return _ctx.collectInt(i, n);
+  return forge.random.generate(count);
 };
 
 })(typeof(jQuery) !== 'undefined' ? jQuery : null);
