@@ -120,15 +120,32 @@ if(!_nodejs && !(typeof window !== 'undefined' &&
 forge.random = forge.random || {};
 
 /**
- * Gets random bytes. This method tries to make the bytes more
- * unpredictable by drawing from data that can be collected from
- * the user of the browser, ie mouse movement.
+ * Gets random bytes. If a native secure crypto API is unavailable, this
+ * method tries to make the bytes more unpredictable by drawing from data that
+ * can be collected from the user of the browser, eg: mouse movement.
+ *
+ * If a callback is given, this method will be called asynchronously.
+ *
+ * @param count the number of random bytes to get.
+ * @param [callback(err, bytes)] called once the operation completes.
+ *
+ * @return the random bytes in a string.
+ */
+forge.random.getBytes = function(count, callback) {
+  return _ctx.generate(count, callback);
+};
+
+/**
+ * Gets random bytes asynchronously. If a native secure crypto API is
+ * unavailable, this method tries to make the bytes more unpredictable by
+ * drawing from data that can be collected from the user of the browser,
+ * eg: mouse movement.
  *
  * @param count the number of random bytes to get.
  *
  * @return the random bytes in a string.
  */
-forge.random.getBytes = function(count) {
+forge.random.getBytesSync = function(count) {
   return _ctx.generate(count);
 };
 
@@ -146,6 +163,8 @@ forge.random.registerWorker = function(worker) {
 
 /**
  * Adds bytes of entropy to forge.random's PRNG.
+ *
+ * @param bytes the bytes to collect.
  */
 forge.random.collect = function(bytes) {
   return _ctx.collect(bytes);
@@ -153,6 +172,9 @@ forge.random.collect = function(bytes) {
 
 /**
  * Adds n bits of entropy from integer i to forge.random's PRNG.
+ *
+ * @param i the integer to collect from.
+ * @param n the number of bits of entropy to collect.
  */
 forge.random.collectInt = function(i, n) {
   return _ctx.collectInt(i, n);

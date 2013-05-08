@@ -106,7 +106,7 @@ prng.create = function(plugin) {
       }
 
       if(ctx.key === null) {
-        return _reseed(ctx.seedFile, generate);
+        return _reseed(generate);
       }
 
       // generate the random bytes
@@ -166,72 +166,73 @@ prng.create = function(plugin) {
   /**
    * Private function that asynchronously reseeds a generator.
    *
-   * @param seedFile the immediate entropy source to use.
    * @param callback(err) called once the operation completes.
    */
-  function _reseed(seedFile, callback) {
-    // synchronous reseeding
-    if(arguments.length === 0) {
-      seedFile = defaultSeedFile;
-      callback = function() {};
-    }
-
+  function _reseed(callback) {
     if(ctx.pools[0].messageLength >= 32) {
-      seed();
+      _seed();
       return callback();
     }
-
     // not enough seed data...
     var needed = (32 - ctx.pools[0].messageLength) << 5;
-    seedFile(needed, function(err, bytes) {
+    ctx.seedFile(needed, function(err, bytes) {
       if(err) {
         return callback(err);
       }
       ctx.collect(bytes);
-      seed();
+      _seed();
       callback();
     });
-
-    function seed() {
-      // create a SHA-1 message digest
-      var md = forge.md.sha1.create();
-
-      // digest pool 0's entropy and restart it
-      md.update(ctx.pools[0].digest().getBytes());
-      ctx.pools[0].start();
-
-      // digest the entropy of other pools whose index k meet the
-      // condition '2^k mod n == 0' where n is the number of reseeds
-      var k = 1;
-      for(var i = 1; i < 32; ++i) {
-        // prevent signed numbers from being used
-        k = (k == 31) ? 2147483648 : (k << 2);
-        if(k % ctx.reseeds === 0) {
-          md.update(ctx.pools[i].digest().getBytes());
-          ctx.pools[i].start();
-        }
-      }
-
-      // get digest for key bytes and iterate again for seed bytes
-      var keyBytes = md.digest().getBytes();
-      md.start();
-      md.update(keyBytes);
-      var seedBytes = md.digest().getBytes();
-
-      // update
-      ctx.key = ctx.plugin.formatKey(keyBytes);
-      ctx.seed = ctx.plugin.formatSeed(seedBytes);
-      ++ctx.reseeds;
-      ctx.generated = 0;
-      ctx.time = +new Date();
-    }
   }
 
   /**
    * Private function that synchronously reseeds a generator.
    */
   function _reseedSync() {
-    _reseed();
+    if(ctx.pools[0].messageLength >= 32) {
+      return _seed();
+    }
+    // not enough seed data...
+    var needed = (32 - ctx.pools[0].messageLength) << 5;
+    ctx.collect(ctx.seedFileSync(needed));
+    _seed();
+  }
+
+  /**
+   * Private function that seeds a generator once enough bytes are available.
+   */
+  function _seed() {
+    // create a SHA-1 message digest
+    var md = forge.md.sha1.create();
+
+    // digest pool 0's entropy and restart it
+    md.update(ctx.pools[0].digest().getBytes());
+    ctx.pools[0].start();
+
+    // digest the entropy of other pools whose index k meet the
+    // condition '2^k mod n == 0' where n is the number of reseeds
+    var k = 1;
+    for(var i = 1; i < 32; ++i) {
+      // prevent signed numbers from being used
+      k = (k == 31) ? 2147483648 : (k << 2);
+      if(k % ctx.reseeds === 0) {
+        md.update(ctx.pools[i].digest().getBytes());
+        ctx.pools[i].start();
+      }
+    }
+
+    // get digest for key bytes and iterate again for seed bytes
+    var keyBytes = md.digest().getBytes();
+    md.start();
+    md.update(keyBytes);
+    var seedBytes = md.digest().getBytes();
+
+    // update
+    ctx.key = ctx.plugin.formatKey(keyBytes);
+    ctx.seed = ctx.plugin.formatSeed(seedBytes);
+    ++ctx.reseeds;
+    ctx.generated = 0;
+    ctx.time = +new Date();
   }
 
   /**
@@ -239,19 +240,10 @@ prng.create = function(plugin) {
    * is needed immediately.
    *
    * @param needed the number of bytes that are needed.
-   * @param callback(err, bytes) called once the operation completes.
+   *
+   * @return the random bytes.
    */
-  function defaultSeedFile(needed, callback) {
-    // nodejs
-    if(crypto) {
-      try {
-        return callback(null, crypto.randomBytes(needed).toString());
-      }
-      catch(e) {
-        // ignore
-      }
-    }
-
+  function defaultSeedFile(needed) {
     // use window.crypto.getRandomValues strong source of entropy if
     // available
     var b = forge.util.createBuffer();
@@ -298,8 +290,9 @@ prng.create = function(plugin) {
       }
     }
 
-    callback(null, b.getBytes());
+    return b.getBytes();
   }
+  // initialize seed file APIs
   if(crypto) {
     // use nodejs async API
     ctx.seedFile = function(needed, callback) {
@@ -310,9 +303,21 @@ prng.create = function(plugin) {
         callback(null, bytes.toString());
       });
     };
+    // use nodejs sync API
+    ctx.seedFileSync = function(needed) {
+      return crypto.randomBytes(needed).toString();
+    };
   }
   else {
-    ctx.seedFile = defaultSeedFile;
+    ctx.seedFile = function(needed, callback) {
+      try {
+        callback(null, defaultSeedFile(needed));
+      }
+      catch(e) {
+        callback(e);
+      }
+    };
+    ctx.seedFileSync = defaultSeedFile;
   }
 
   /**
