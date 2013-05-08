@@ -214,7 +214,7 @@ prng.create = function(plugin) {
     var k = 1;
     for(var i = 1; i < 32; ++i) {
       // prevent signed numbers from being used
-      k = (k == 31) ? 2147483648 : (k << 2);
+      k = (k === 31) ? 0x80000000 : (k << 2);
       if(k % ctx.reseeds === 0) {
         md.update(ctx.pools[i].digest().getBytes());
         ctx.pools[i].start();
@@ -342,11 +342,9 @@ prng.create = function(plugin) {
    */
   ctx.collectInt = function(i, n) {
     var bytes = '';
-    do {
-      n -= 8;
-      bytes += String.fromCharCode((i >> n) & 0xFF);
+    for(var x = 0; x < n; x += 8) {
+      bytes += String.fromCharCode((i >> x) & 0xFF);
     }
-    while(n > 0);
     ctx.collect(bytes);
   };
 
