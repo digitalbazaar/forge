@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <script type="text/javascript" src="forge/debug.js"></script>
+  <script type="text/javascript" src="forge/util.js"></script>
+  <script type="text/javascript" src="forge/md5.js"></script>
+  <script type="text/javascript" src="forge/sha1.js"></script>
+  <script type="text/javascript" src="forge/sha256.js"></script>
+  <script type="text/javascript" src="forge/prng.js"></script>
+  <script type="text/javascript" src="forge/random.js"></script>
+  <script type="text/javascript" src="forge/aes.js"></script>
+  <script type="text/javascript" src="forge/hmac.js"></script>
+  <script type="text/javascript" src="forge/pbkdf2.js"></script>
+  <script type="text/javascript" src="forge/jsbn.js"></script>
+  <script type="text/javascript" src="forge/oids.js"></script>
+  <script type="text/javascript" src="forge/asn1.js"></script>
+  <script type="text/javascript" src="forge/rsa.js"></script>
+  <script type="text/javascript" src="forge/pki.js"></script>
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+function async() {
+  var bits = 2048;
+  console.log('Generating ' + bits + '-bit key-pair...');
+  var st = +new Date();
+  forge.pki.rsa.generateKeyPair({
+    bits: bits,
+    workers: 2,
+    /*workLoad: 100,*/
+    workerScript: 'forge/prime.worker.js',
+  }, function(err, keypair) {
+    var et = +new Date();
+    console.log('Key-pair created in ' + (et - st) + 'ms.');
+    //console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
+    //console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
+  });
+}
+
+function sync() {
+  var bits = 2048;
+  console.log('Generating ' + bits + '-bit key-pair...');
+  var st = +new Date();
+  var keypair = forge.pki.rsa.generateKeyPair(bits);
+  var et = +new Date();
+  console.log('Key-pair created in ' + (et - st) + 'ms.');
+  //console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
+  //console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
+}
+
+async();
+//sync();
+
+</script>
+
+</body>
+</html>

@@ -9,6 +9,8 @@
 function initModule(forge) {
 /* ########## Begin module implementation ########## */
 
+var _nodejs = (typeof module === 'object' && module.exports);
+
 if(typeof BigInteger === 'undefined') {
   BigInteger = forge.jsbn.BigInteger;
 }
@@ -22,6 +24,9 @@ var asn1 = forge.asn1;
 forge.pki = forge.pki || {};
 forge.pki.rsa = forge.rsa = forge.rsa || {};
 var pki = forge.pki;
+
+// for finding primes, which are 30k+i for i = 1, 7, 11, 13, 17, 19, 23, 29
+var GCD_30_K_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 
 /**
  * Wrap digest in DigestInfo object.
@@ -71,7 +76,6 @@ var emsaPkcs1v15encode = function(md) {
   // encode digest info
   return asn1.toDer(digestInfo).getBytes();
 };
-
 
 /**
  * Performs x^c mod n (RSA encryption or decryption operation).
@@ -427,7 +431,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
  * display progress updates.
  *
  * @param bits the size for the private key in bits, defaults to 1024.
- * @param e the public exponent to use, defaults to 65537.
+ * @param e the public exponent to use, defaults to 65537 (0x10001).
  *
  * @return the state object to use to generate the key-pair.
  */
@@ -453,19 +457,17 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
     state: 0,
     bits: bits,
     rng: rng,
-    e: new BigInteger((e || 65537).toString(16), 16),
+    eInt: e || 65537,
+    e: new BigInteger(null),
     p: null,
     q: null,
     qBits: bits >> 1,
     pBits: bits - (bits >> 1),
     pqState: 0,
     num: null,
-    six: new BigInteger(null),
-    modSix: null,
-    addNext: null,
     keys: null
   };
-  rval.six.fromInt(6);
+  rval.e.fromInt(rval.eInt);
 
   return rval;
 };
@@ -502,6 +504,13 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
  */
 pki.rsa.stepKeyPairGenerationState = function(state, n) {
   // do key generation (based on Tom Wu's rsa.js, see jsbn.js license)
+  // with some minor optimizations and designed to run in steps
+
+  // local state vars
+  var THIRTY = new BigInteger(null);
+  THIRTY.fromInt(30);
+  var deltaIdx = 0;
+  var op_or = function(x,y) { return x|y; };
 
   // keep stepping until time limit is reached or done
   var t1 = +new Date();
@@ -510,57 +519,43 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
   while(state.keys === null && (n <= 0 || total < n)) {
     // generate p or q
     if(state.state === 0) {
+      /* Note: All primes are of the form:
+
+        30k+i, for i < 30 and gcd(30, i)=1, where there are 8 values for i
+
+        When we generate a random number, we always align it at 30k + 1. Each
+        time the number is determined not to be prime we add to get to the
+        next 'i', eg: if the number was at 30k + 1 we add 6. */
       var bits = (state.p === null) ? state.pBits : state.qBits;
       var bits1 = bits - 1;
 
       // get a random number
       if(state.pqState === 0) {
-        state.modSix = null;
         state.num = new BigInteger(bits, state.rng);
         // force MSB set
         if(!state.num.testBit(bits1)) {
           state.num.bitwiseTo(
-            BigInteger.ONE.shiftLeft(bits1),
-            function(x,y){ return x|y; }, state.num);
+            BigInteger.ONE.shiftLeft(bits1), op_or, state.num);
         }
-        // force number to be odd
-        if(state.num.isEven()) {
-          state.num.dAddOffset(1, 0);
-        }
+        // align number on 30k+1 boundary
+        state.num.dAddOffset(31 - state.num.mod(THIRTY).byteValue(), 0);
+        deltaIdx = 0;
+
         ++state.pqState;
       }
       // try to make the number a prime
       else if(state.pqState === 1) {
-        /* Note: All primes are of the form 6k +/- 1. So to find
-          a probable prime we first align the number at a possible
-          prime. Then each time the number is determined not to be
-          prime we add 4 if the number was at 6k + 1 or we add 2 if
-          the number was at 6k - 1 or 6k +/- 3. */
-        // FIXME: need to use a faster strategy than this ...
-        // this is a bottleneck
-        if(state.modSix === null) {
-          // mod will be 1, 3, or 5 since num is odd
-          state.modSix = state.num.mod(state.six).byteValue();
+        // overflow, try again
+        if(state.num.bitLength() > bits) {
+          state.pqState = 0;
         }
-        // if r=1, we're at 6k+1, next prime may be at 6k-1, add 4
-        // if r=3, we're at 6k +/- 3, next prime may be at 6k +/- 1, add 2
-        // if r=5, we're at 6k-1, next prime may be at 6k+1, add 2
-        state.addNext = (state.modSix === 1) ? 4 : 2;
-
         // do primality test
-        if(state.modSix !== 3 && state.num.isProbablePrime(1)) {
+        else if(state.num.isProbablePrime(1)) {
           ++state.pqState;
         }
         else {
-          // add addNext to get to next potential prime
-          state.num.dAddOffset(state.addNext, 0);
-          if(state.num.bitLength() > bits) {
-            // overflow, try again
-            state.pqState = 0;
-          }
-          else {
-            state.modSix = (state.modSix + state.addNext) % 6;
-          }
+          // get next potential prime
+          state.num.dAddOffset(GCD_30_K_DELTA[deltaIdx++ % 8], 0);
         }
       }
       // ensure number is coprime with e
@@ -588,86 +583,155 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         state.num = null;
       }
     }
-     // ensure p is larger than q (swap them if not)
-     else if(state.state === 1) {
-       if(state.p.compareTo(state.q) < 0) {
-         state.num = state.p;
-         state.p = state.q;
-         state.q = state.num;
-       }
-       ++state.state;
-     }
-     // compute phi: (p - 1)(q - 1) (Euler's totient function)
-     else if(state.state === 2) {
-       state.p1 = state.p.subtract(BigInteger.ONE);
-       state.q1 = state.q.subtract(BigInteger.ONE);
-       state.phi = state.p1.multiply(state.q1);
-       ++state.state;
-     }
-     // ensure e and phi are coprime
-     else if(state.state === 3) {
-       if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) === 0) {
-         // phi and e are coprime, advance
-         ++state.state;
-       }
-       else {
-         // phi and e aren't coprime, so generate a new p and q
-         state.p = null;
-         state.q = null;
-         state.state = 0;
-       }
-     }
-     // create n, ensure n is has the right number of bits
-     else if(state.state === 4) {
-       state.n = state.p.multiply(state.q);
+    // ensure p is larger than q (swap them if not)
+    else if(state.state === 1) {
+      if(state.p.compareTo(state.q) < 0) {
+        state.num = state.p;
+        state.p = state.q;
+        state.q = state.num;
+      }
+      ++state.state;
+    }
+    // compute phi: (p - 1)(q - 1) (Euler's totient function)
+    else if(state.state === 2) {
+      state.p1 = state.p.subtract(BigInteger.ONE);
+      state.q1 = state.q.subtract(BigInteger.ONE);
+      state.phi = state.p1.multiply(state.q1);
+      ++state.state;
+    }
+    // ensure e and phi are coprime
+    else if(state.state === 3) {
+      if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) === 0) {
+        // phi and e are coprime, advance
+        ++state.state;
+      }
+      else {
+        // phi and e aren't coprime, so generate a new p and q
+        state.p = null;
+        state.q = null;
+        state.state = 0;
+      }
+    }
+    // create n, ensure n is has the right number of bits
+    else if(state.state === 4) {
+      state.n = state.p.multiply(state.q);
 
-       // ensure n is right number of bits
-       if(state.n.bitLength() === state.bits) {
-         // success, advance
-         ++state.state;
-       }
-       else {
-         // failed, get new q
-         state.q = null;
-         state.state = 0;
-       }
-     }
-     // set keys
-     else if(state.state === 5) {
-       var d = state.e.modInverse(state.phi);
-       state.keys = {
-         privateKey: forge.pki.rsa.setPrivateKey(
-           state.n, state.e, d, state.p, state.q,
-           d.mod(state.p1), d.mod(state.q1),
-           state.q.modInverse(state.p)),
-         publicKey: forge.pki.rsa.setPublicKey(state.n, state.e)
-       };
-     }
+      // ensure n is right number of bits
+      if(state.n.bitLength() === state.bits) {
+        // success, advance
+        ++state.state;
+      }
+      else {
+        // failed, get new q
+        state.q = null;
+        state.state = 0;
+      }
+    }
+    // set keys
+    else if(state.state === 5) {
+      var d = state.e.modInverse(state.phi);
+      state.keys = {
+        privateKey: forge.pki.rsa.setPrivateKey(
+          state.n, state.e, d, state.p, state.q,
+          d.mod(state.p1), d.mod(state.q1),
+          state.q.modInverse(state.p)),
+        publicKey: forge.pki.rsa.setPublicKey(state.n, state.e)
+      };
+    }
 
-     // update timing
-     t2 = +new Date();
-     total += t2 - t1;
-     t1 = t2;
+    // update timing
+    t2 = +new Date();
+    total += t2 - t1;
+    t1 = t2;
   }
 
   return state.keys !== null;
 };
 
 /**
- * Generates an RSA public-private key pair in a single call. To generate
- * a key-pair in steps (to allow for progress updates and to prevent
- * blocking or warnings in slow browsers) then use the key-pair generation
- * state functions.
+ * Generates an RSA public-private key pair in a single call.
  *
- * @param bits the size for the private key in bits, defaults to 1024.
- * @param e the public exponent to use, defaults to 65537.
+ * To generate a key-pair in steps (to allow for progress updates and to
+ * prevent blocking or warnings in slow browsers) then use the key-pair
+ * generation state functions.
+ *
+ * To generate a key-pair asynchronously (either through web-workers, if
+ * available, or by breaking up the work on the main thread), pass a
+ * callback function.
+ *
+ * @param [bits] the size for the private key in bits, defaults to 1024.
+ * @param [e] the public exponent to use, defaults to 65537.
+ * @param [options] options for key-pair generation, if given then 'bits'
+ *          and 'e' must *not* be given:
+ *          bits the size for the private key in bits, (default: 1024).
+ *          e the public exponent to use, (default: 65537 (0x10001)).
+ *          workerScript the worker script URL.
+ *          workers the number of web workers (if supported) to use,
+ *            (default: 2).
+ *          workLoad the size of the work load, ie: number of possible prime
+ *            numbers for each web worker to check per work assignment,
+ *            (default: 100).
+ *          e the public exponent to use, defaults to 65537.
+ * @param [callback(err, keypair)] called once the operation completes.
  *
  * @return an object with privateKey and publicKey properties.
  */
-pki.rsa.generateKeyPair = function(bits, e) {
+pki.rsa.generateKeyPair = function(bits, e, options, callback) {
+  // (bits), (options), (callback)
+  if(arguments.length === 1) {
+    if(typeof bits === 'object') {
+      options = bits;
+      bits = undefined;
+    }
+    else if(typeof bits === 'function') {
+      callback = bits;
+      bits = undefined;
+    }
+  }
+  // (bits, options), (bits, callback), (options, callback)
+  else if(arguments.length === 2) {
+    if(typeof bits === 'number') {
+      if(typeof e === 'function') {
+        callback = e;
+      }
+      else {
+        options = e;
+      }
+    }
+    else {
+      options = bits;
+      callback = e;
+      bits = undefined;
+    }
+    e = undefined;
+  }
+  // (bits, e, options), (bits, e, callback), (bits, options, callback)
+  else if(arguments.length === 3) {
+    if(typeof e === 'number') {
+      if(typeof options === 'function') {
+        callback = options;
+        options = undefined;
+      }
+    }
+    else {
+      callback = options;
+      options = e;
+      e = undefined;
+    }
+  }
+  options = options || {};
+  if(bits === undefined) {
+    bits = options.bits || 1024;
+  }
+  if(e === undefined) {
+    e = options.e || 0x10001;
+  }
   var state = pki.rsa.createKeyPairGenerationState(bits, e);
-  pki.rsa.stepKeyPairGenerationState(state, 0);
-  return state.keys;
+  if(!callback) {
+    pki.rsa.stepKeyPairGenerationState(state, 0);
+    return state.keys;
+  }
+  _generateKeyPair(state, options, callback);
 };
 
 /**
@@ -808,6 +872,193 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
 
   return key;
 };
+
+/**
+ * Runs the key-generation algorithm asynchronously, either in the background
+ * via Web Workers, or using the main thread and setImmediate.
+ *
+ * @param state the key-pair generation state.
+ * @param [options] options for key-pair generation:
+ *          workerScript the worker script URL.
+ *          workers the number of web workers (if supported) to use,
+ *            (default: 2).
+ *          workLoad the size of the work load, ie: number of possible prime
+ *            numbers for each web worker to check per work assignment,
+ *            (default: 100).
+ * @param callback(err, keypair) called once the operation completes.
+ */
+function _generateKeyPair(state, options, callback) {
+  if(typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  // web workers unavailable, use setImmediate
+  if(typeof(Worker) === 'undefined') {
+    function step() {
+      // 10 ms gives 5ms of leeway for other calculations before dropping
+      // below 60fps (1000/60 == 16.67), but in reality, the number will
+      // likely be higher due to an 'atomic' big int modPow
+      if(forge.pki.rsa.stepKeyPairGenerationState(state, 10)) {
+        return callback(null, state.keys);
+      }
+      forge.util.setImmediate(step);
+    }
+    return step();
+  }
+
+  // use web workers to generate keys
+  var numWorkers = options.workers || 2;
+  var workLoad = options.workLoad || 100;
+  var range = workLoad * 30/8;
+  var workerScript = options.workerScript || 'forge/prime.worker.js';
+  var THIRTY = new BigInteger(null);
+  THIRTY.fromInt(30);
+  var op_or = function(x,y) { return x|y; };
+  generate();
+
+  function generate() {
+    // find p and then q (done in series to simplify setting worker number)
+    getPrime(state.pBits, function(err, num) {
+      if(err) {
+        return callback(err);
+      }
+      state.p = num;
+      getPrime(state.qBits, finish);
+    });
+  }
+
+  // implement prime number generation using web workers
+  function getPrime(bits, callback) {
+    // TODO: consider optimizing by starting workers outside getPrime() ...
+    // note that in order to clean up they will have to be made internally
+    // asynchronous which may actually be slower
+
+    // start workers immediately
+    var workers = [];
+    for(var i = 0; i < numWorkers; ++i) {
+      // FIXME: fix path or use blob URLs
+      workers[i] = new Worker(workerScript);
+    }
+    var running = numWorkers;
+
+    // initialize random number
+    var num = generateRandom();
+
+    // listen for requests from workers and assign ranges to find prime
+    for(var i = 0; i < numWorkers; ++i) {
+      workers[i].addEventListener('message', workerMessage);
+    }
+
+    /* Note: The distribution of random numbers is unknown. Therefore, each
+    web worker is continuously allocated a range of numbers to check for a
+    random number until one is found.
+
+    Every 30 numbers will be checked just 8 times, because prime numbers
+    have the form:
+
+    30k+i, for i < 30 and gcd(30, i)=1 (there are 8 values of i for this)
+
+    Therefore, if we want a web worker to run N checks before asking for
+    a new range of numbers, each range must contain N*30/8 numbers.
+
+    For 100 checks (workLoad), this is a range of 375. */
+
+    function generateRandom() {
+      var bits1 = bits - 1;
+      var num = new BigInteger(bits, state.rng);
+      // force MSB set
+      if(!num.testBit(bits1)) {
+        num.bitwiseTo(BigInteger.ONE.shiftLeft(bits1), op_or, num);
+      }
+      // align number on 30k+1 boundary
+      num.dAddOffset(31 - num.mod(THIRTY).byteValue(), 0);
+      return num;
+    }
+
+    var found = false;
+    function workerMessage(e) {
+      // ignore message, prime already found
+      if(found) {
+        return;
+      }
+
+      --running;
+      var data = e.data;
+      if(data.found) {
+        // terminate all workers
+        for(var i = 0; i < workers.length; ++i) {
+          workers[i].terminate();
+        }
+        found = true;
+        return callback(null, new BigInteger(data.prime, 16));
+      }
+
+      // overflow, regenerate prime
+      if(num.bitLength() > bits) {
+        num = generateRandom();
+      }
+
+      // assign new range to check
+      var hex = num.toString(16);
+
+      // start prime search
+      e.target.postMessage({
+        e: state.eInt,
+        hex: hex,
+        workLoad: workLoad
+      });
+
+      num.dAddOffset(range, 0);
+    }
+  }
+
+  function finish(err, num) {
+    // set q
+    state.q = num;
+
+    // ensure p is larger than q (swap them if not)
+    if(state.p.compareTo(state.q) < 0) {
+      var tmp = state.p;
+      state.p = state.q;
+      state.q = tmp;
+    }
+
+    // compute phi: (p - 1)(q - 1) (Euler's totient function)
+    state.p1 = state.p.subtract(BigInteger.ONE);
+    state.q1 = state.q.subtract(BigInteger.ONE);
+    state.phi = state.p1.multiply(state.q1);
+
+    // ensure e and phi are coprime
+    if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) !== 0) {
+      // phi and e aren't coprime, so generate a new p and q
+      state.p = state.q = null;
+      generate();
+      return;
+    }
+
+    // create n, ensure n is has the right number of bits
+    state.n = state.p.multiply(state.q);
+    if(state.n.bitLength() !== state.bits) {
+      // failed, get new q
+      state.q = null;
+      getPrime(state.qBits, finish);
+      return;
+    }
+
+    // set keys
+    var d = state.e.modInverse(state.phi);
+    state.keys = {
+      privateKey: forge.pki.rsa.setPrivateKey(
+        state.n, state.e, d, state.p, state.q,
+        d.mod(state.p1), d.mod(state.q1),
+        state.q.modInverse(state.p)),
+      publicKey: forge.pki.rsa.setPublicKey(state.n, state.e)
+    };
+
+    callback(null, state.keys);
+  }
+}
 
 } // end module implementation
 
