@@ -26,7 +26,7 @@ forge.pki.rsa = forge.rsa = forge.rsa || {};
 var pki = forge.pki;
 
 // for finding primes, which are 30k+i for i = 1, 7, 11, 13, 17, 19, 23, 29
-var GCD_30_K_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
+var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 
 /**
  * Wrap digest in DigestInfo object.
@@ -555,7 +555,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         }
         else {
           // get next potential prime
-          state.num.dAddOffset(GCD_30_K_DELTA[deltaIdx++ % 8], 0);
+          state.num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
         }
       }
       // ensure number is coprime with e

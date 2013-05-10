@@ -24,7 +24,7 @@ self.addEventListener('message', function(e) {
 self.postMessage({found: false});
 
 // primes are 30k+i for i = 1, 7, 11, 13, 17, 19, 23, 29
-var GCD_30_K_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
+var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 
 function findPrime(data) {
   // create BigInteger from given random bytes
@@ -51,7 +51,7 @@ function findPrime(data) {
     }
 
     // get next potential prime
-    num.dAddOffset(GCD_30_K_DELTA[deltaIdx++ % 8], 0);
+    num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
   }
 
   return {found: false};
