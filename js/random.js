@@ -17,6 +17,11 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+// forge.random already defined
+if(forge.random && forge.random.getBytes) {
+  return;
+}
+
 (function(jQuery) {
 
 // the default prng plugin, uses AES-128
@@ -117,9 +122,14 @@ if(!_nodejs && !(typeof window !== 'undefined' &&
 }
 
 /* Random API */
-forge.random = forge.random || {};
-for(var key in _ctx) {
-  forge.random[key] = _ctx[key];
+if(!forge.random) {
+  forge.random = _ctx;
+}
+else {
+  // extend forge.random with _ctx
+  for(var key in _ctx) {
+    forge.random[key] = _ctx[key];
+  }
 }
 
 /**
