@@ -17,7 +17,7 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
-(function($) {
+(function(jQuery) {
 
 // the default prng plugin, uses AES-128
 var prng_aes = {};
@@ -101,23 +101,26 @@ if(!_nodejs && !(typeof window !== 'undefined' &&
   }
 
   // add mouse and keyboard collectors if jquery is available
-  if($) {
+  if(jQuery) {
     // set up mouse entropy capture
-    $().mousemove(function(e) {
+    jQuery().mousemove(function(e) {
       // add mouse coords
       _ctx.collectInt(e.clientX, 16);
       _ctx.collectInt(e.clientY, 16);
     });
 
     // set up keyboard entropy capture
-    $().keypress(function(e) {
+    jQuery().keypress(function(e) {
       _ctx.collectInt(e.charCode, 8);
     });
   }
 }
 
 /* Random API */
-forge.random = forge.random || _ctx;
+forge.random = forge.random || {};
+for(var key in _ctx) {
+  forge.random[key] = _ctx[key];
+}
 
 /**
  * Gets random bytes. If a native secure crypto API is unavailable, this
