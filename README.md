@@ -647,10 +647,6 @@ var derOidBuffer = asn1.oidToDer('1.2.840.113549.1.1.5');
 console.log(asn1.derToDer(derOidBuffer));
 // output: 1.2.840.113549.1.1.5
 
-// convert an ASN.1 SubjectPublicKeyInfo to a Forge public key object
-
-
-
 // validates that an ASN.1 object matches a particular ASN.1 structure and
 // captures data of interest from that structure for easy access
 var publicKeyValidator = {
@@ -702,6 +698,9 @@ var oid = asn1.derToOid(capture.publicKeyOid);
 if(oid !== pki.oids['rsaEncryption']) {
   throw 'Unsupported OID.';
 }
+
+// pretty print an ASN.1 object to a string for debugging purposes
+asn1.prettyPrint(object);
 ```
 
 ---------------------------------------
