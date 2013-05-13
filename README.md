@@ -987,4 +987,4 @@ Contact
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
-[X.509]: http://en.wikipedia.org/wiki/SHA-256
+[X.509]: http://en.wikipedia.org/wiki/X.509
