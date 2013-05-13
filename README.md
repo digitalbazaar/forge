@@ -256,16 +256,16 @@ cipher.start(iv);
 cipher.update(forge.util.createBuffer(someBytes));
 cipher.finish();
 var encrypted = cipher.output;
-console.log(encrypted.toHex());
 // outputs encrypted hex
+console.log(encrypted.toHex());
 
 // decrypt some bytes
 var cipher = forge.aes.createDecryptionCipher(key);
 cipher.start(iv);
 cipher.update(encrypted);
 cipher.finish();
-console.log(cipher.output.toHex());
 // outputs decrypted hex
+console.log(cipher.output.toHex());
 
 // generate a password-based 16-byte key
 var salt = forge.random.getBytesSync(128);
@@ -288,16 +288,16 @@ cipher.start(iv);
 cipher.update(forge.util.createBuffer(someBytes));
 cipher.finish();
 var encrypted = cipher.output;
-console.log(encrypted.toHex());
 // outputs encrypted hex
+console.log(encrypted.toHex());
 
 // decrypt some bytes
 var cipher = forge.des.createDecryptionCipher(key);
 cipher.start(iv);
 cipher.update(encrypted);
 cipher.finish();
-console.log(cipher.output.toHex());
 // outputs decrypted hex
+console.log(cipher.output.toHex());
 ```
 
 <a name="rc2" />
@@ -316,16 +316,16 @@ cipher.start(iv);
 cipher.update(forge.util.createBuffer(someBytes));
 cipher.finish();
 var encrypted = cipher.output;
-console.log(encrypted.toHex());
 // outputs encrypted hex
+console.log(encrypted.toHex());
 
 // decrypt some bytes
 var cipher = forge.rc2.createDecryptionCipher(key);
 cipher.start(iv);
 cipher.update(encrypted);
 cipher.finish();
-console.log(cipher.output.toHex());
 // outputs decrypted hex
+console.log(cipher.output.toHex());
 ```
 ---------------------------------------
 ## PKI
@@ -645,7 +645,7 @@ var derOidBuffer = asn1.oidToDer('1.2.840.113549.1.1.5');
 
 // convert a byte buffer with a DER-encoded OID to a dot-separated string
 console.log(asn1.derToDer(derOidBuffer));
-// outputs: 1.2.840.113549.1.1.5
+// output: 1.2.840.113549.1.1.5
 
 // convert an ASN.1 SubjectPublicKeyInfo to a Forge public key object
 
@@ -717,8 +717,8 @@ __Examples__
 ```js
 var md = forge.md.sha1.create();
 md.update('The quick brown fox jumps over the lazy dog');
-console.log(md.digest.toHex());
-// outputs: 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12
+console.log(md.digest().toHex());
+// output: 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12
 ```
 
 <a name="sha256" />
@@ -731,8 +731,8 @@ __Examples__
 ```js
 var md = forge.md.sha256.create();
 md.update('The quick brown fox jumps over the lazy dog');
-console.log(md.digest.toHex());
-// outputs: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
+console.log(md.digest().toHex());
+// output: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
 ```
 
 <a name="md5" />
@@ -745,8 +745,8 @@ __Examples__
 ```js
 var md = forge.md.md5.create();
 md.update('The quick brown fox jumps over the lazy dog');
-console.log(md.digest.toHex());
-// outputs: 9e107d9d372bb6826bd81d3542a419d6
+console.log(md.digest().toHex());
+// output: 9e107d9d372bb6826bd81d3542a419d6
 ```
 
 <a name="hmac" />
@@ -761,7 +761,7 @@ var hmac = forge.hmac.create();
 hmac.start('sha1', 'Jefe');
 hmac.update('what do ya want for nothing?');
 console.log(hmac.digest().toHex());
-// outputs: effcdf6ae5eb2fa2d27416d5f184df9c259a7c79
+// output: effcdf6ae5eb2fa2d27416d5f184df9c259a7c79
 ```
 
 ---------------------------------------
