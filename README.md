@@ -54,7 +54,7 @@ network resources.
 ## Transports
 
 <a name="tls" />
-### TLS (forge.tls)
+### TLS
 
 Provides a native javascript client and server-side [TLS][] implementation.
 
