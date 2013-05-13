@@ -709,7 +709,7 @@ asn1.prettyPrint(object);
 <a name="sha1" />
 ### SHA1
 
-Provides [SHA1][] message digests.
+Provides [SHA-1][] message digests.
 
 __Examples__
 
@@ -723,7 +723,7 @@ console.log(md.digest().toHex());
 <a name="sha256" />
 ### SHA256
 
-Provides [SHA256][] message digests.
+Provides [SHA-256][] message digests.
 
 __Examples__
 
