@@ -1169,7 +1169,7 @@ pki.publicKeyFromPem = function(pem) {
 };
 
 /**
- * Converts an RSA public key to PEM format.
+ * Converts an RSA public key to PEM format (using a SubjectPublicKeyInfo).
  *
  * @param key the public key.
  * @param maxline the maximum characters per line, defaults to 64.
@@ -1184,6 +1184,24 @@ pki.publicKeyToPem = function(key, maxline) {
     '-----BEGIN PUBLIC KEY-----\r\n' +
     out +
     '\r\n-----END PUBLIC KEY-----');
+};
+
+/**
+ * Converts an RSA public key to PEM format (using an RSAPublicKey).
+ *
+ * @param key the public key.
+ * @param maxline the maximum characters per line, defaults to 64.
+ *
+ * @return the PEM-formatted public key.
+ */
+pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
+  // convert to ASN.1, then DER, then base64-encode
+  var out = asn1.toDer(pki.publicKeyToRSAPublicKey(key));
+  out = forge.util.encode64(out.getBytes(), maxline || 64);
+  return (
+    '-----BEGIN RSA PUBLIC KEY-----\r\n' +
+    out +
+    '\r\n-----END RSA PUBLIC KEY-----');
 };
 
 /**
@@ -2516,31 +2534,26 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
 };
 
 /**
- * Converts a public key from an ASN.1 object.
+ * Converts a public key from an ASN.1 SubjectPublicKeyInfo or RSAPublicKey.
  *
- * @param obj the asn1 representation of a SubjectPublicKeyInfo.
+ * @param obj the asn1 representation of a SubjectPublicKeyInfo or RSAPublicKey.
  *
  * @return the public key.
  */
 pki.publicKeyFromAsn1 = function(obj) {
-  // validate subject public key info and capture data
+  // get SubjectPublicKeyInfo
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, publicKeyValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read public key. ' +
-        'ASN.1 object is not a SubjectPublicKeyInfo.',
-      errors: errors
-    };
-  }
-
-  // get oid
-  var oid = asn1.derToOid(capture.publicKeyOid);
-  if(oid !== pki.oids['rsaEncryption']) {
-    throw {
-      message: 'Cannot read public key. Unknown OID.',
-      oid: oid
-    };
+  if(asn1.validate(obj, publicKeyValidator, capture, errors)) {
+    // get oid
+    var oid = asn1.derToOid(capture.publicKeyOid);
+    if(oid !== pki.oids['rsaEncryption']) {
+      throw {
+        message: 'Cannot read public key. Unknown OID.',
+        oid: oid
+      };
+    }
+    obj = capture.rsaPublicKey;
   }
 
   // get RSA params
@@ -2549,7 +2562,7 @@ pki.publicKeyFromAsn1 = function(obj) {
     capture.rsaPublicKey, rsaPublicKeyValidator, capture, errors)) {
     throw {
       message: 'Cannot read public key. ' +
-        'ASN.1 object is not an RSAPublicKey.',
+        'ASN.1 object does not contain an RSAPublicKey.',
       errors: errors
     };
   }
@@ -2565,13 +2578,13 @@ pki.publicKeyFromAsn1 = function(obj) {
 };
 
 /**
- * Converts a public key to an ASN.1 object.
+ * Converts a public key to an ASN.1 SubjectPublicKeyInfo.
  *
  * @param key the public key.
  *
  * @return the asn1 representation of a SubjectPublicKeyInfo.
  */
-pki.publicKeyToAsn1 = function(key) {
+pki.publicKeyToAsn1 = pki.publicKeyToSubjectPublicKeyInfo = function(key) {
   // SubjectPublicKeyInfo
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // AlgorithmIdentifier
@@ -2584,16 +2597,27 @@ pki.publicKeyToAsn1 = function(key) {
     ]),
     // subjectPublicKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
-      // RSAPublicKey
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // modulus (n)
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-          _bnToBytes(key.n)),
-        // publicExponent (e)
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-          _bnToBytes(key.e))
-      ])
+      pki.publicKeyToRSAPublicKey(key)
     ])
+  ]);
+};
+
+/**
+ * Converts a public key to an ASN.1 RSAPublicKey.
+ *
+ * @param key the public key.
+ *
+ * @return the asn1 representation of a RSAPublicKey.
+ */
+pki.publicKeyToRSAPublicKey = function(key) {
+  // RSAPublicKey
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // modulus (n)
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      _bnToBytes(key.n)),
+    // publicExponent (e)
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      _bnToBytes(key.e))
   ]);
 };
 
@@ -2619,7 +2643,7 @@ pki.privateKeyFromAsn1 = function(obj) {
   if(!asn1.validate(obj, rsaPrivateKeyValidator, capture, errors)) {
     throw {
       message: 'Cannot read private key. ' +
-        'ASN.1 object is not an RSAPrivateKey.',
+        'ASN.1 object does not contain an RSAPrivateKey.',
       errors: errors
     };
   }
@@ -2650,13 +2674,13 @@ pki.privateKeyFromAsn1 = function(obj) {
 };
 
 /**
- * Converts a private key to an ASN.1 RsaPrivateKey object.
+ * Converts a private key to an ASN.1 RSAPrivateKey.
  *
  * @param key the private key.
  *
  * @return the ASN.1 representation of an RSAPrivateKey.
  */
-pki.privateKeyToAsn1 = function(key) {
+pki.privateKeyToAsn1 = pki.privateKeyToRSAPrivateKey = function(key) {
   // RSAPrivateKey
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0 = only 2 primes, 1 multiple primes)
