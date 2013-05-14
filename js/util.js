@@ -37,6 +37,16 @@ else {
   }
 }
 
+// define isArray
+if(Array.isArray) {
+  util.isArray = Array.isArray;
+}
+else {
+  util.isArray = function(x) {
+    return x && x.constructor === Array;
+  };
+}
+
 /**
  * Constructor for a byte buffer.
  *
