@@ -901,7 +901,7 @@ http.createRequest = function(options) {
 
   // add custom headers
   var headers = options.headers || [];
-  if(!util.isArray(headers)) {
+  if(!forge.util.isArray(headers)) {
     headers = [headers];
   }
   for(var i = 0; i < headers.length; ++i) {
