@@ -3057,7 +3057,7 @@ tls.createCertificate = function(c) {
       }
       var asn1 = null;
       for(var i = 0; i < cert.length; ++i) {
-        var der = forge.pki.pemToDer(cert);
+        var der = forge.pki.pemToDer(cert[i]);
         if(asn1 === null) {
           asn1 = forge.asn1.fromDer(der.bytes());
         }
