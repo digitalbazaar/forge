@@ -249,10 +249,16 @@ var _getValueLength = function(b) {
  * Parses an asn1 object from a byte buffer in DER format.
  *
  * @param bytes the byte buffer to parse from.
+ * @param strict true to be strict when checking value lengths, false to
+ *          allow truncated values (default: true).
  *
  * @return the parsed asn1 object.
  */
-asn1.fromDer = function(bytes) {
+asn1.fromDer = function(bytes, strict) {
+  if(strict === undefined) {
+    strict = true;
+  }
+
   // wrap in buffer if needed
   if(bytes.constructor == String) {
     bytes = forge.util.createBuffer(bytes);
@@ -280,10 +286,14 @@ asn1.fromDer = function(bytes) {
 
   // ensure there are enough bytes to get the value
   if(bytes.length() < length) {
-    throw {
-      message: 'Too few bytes to read ASN.1 value.',
-      detail: bytes.length() + ' < ' + length
-    };
+    if(strict) {
+      throw {
+        message: 'Too few bytes to read ASN.1 value.',
+        detail: bytes.length() + ' < ' + length
+      };
+    }
+    // Note: be lenient with truncated values
+    length = bytes.length();
   }
 
   // prepare to get value
@@ -339,14 +349,14 @@ asn1.fromDer = function(bytes) {
           bytes.getBytes(2);
           break;
         }
-        value.push(asn1.fromDer(bytes));
+        value.push(asn1.fromDer(bytes, strict));
       }
     }
     else {
       // parsing asn1 object of definite length
       var start = bytes.length();
       while(length > 0) {
-        value.push(asn1.fromDer(bytes));
+        value.push(asn1.fromDer(bytes, strict));
         length -= start - bytes.length();
         start = bytes.length();
       }

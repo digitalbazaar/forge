@@ -1009,15 +1009,17 @@ pki.pemToDer = function(pem) {
  *
  * @param pem the PEM-formatted data.
  * @param func the certificate or key function to convert from ASN.1.
+ * @param strict true to be strict when checking ASN.1 value lengths, false to
+ *          allow truncated values.
  *
  * @return the certificate or key.
  */
-var _fromPem = function(pem, func) {
+var _fromPem = function(pem, func, strict) {
   var rval = null;
 
   // parse DER into asn.1 object
   var der = pki.pemToDer(pem);
-  var obj = asn1.fromDer(der);
+  var obj = asn1.fromDer(der, strict);
 
   // convert from asn.1
   rval = func(obj);
@@ -1130,13 +1132,15 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
  *
  * @param pem the PEM-formatted certificate.
  * @param computeHash true to compute the hash for verification.
+ * @param strict true to be strict when checking ASN.1 value lengths, false to
+ *          allow truncated values (default: true).
  *
  * @return the certificate.
  */
-pki.certificateFromPem = function(pem, computeHash) {
+pki.certificateFromPem = function(pem, computeHash, strict) {
   return _fromPem(pem, function(obj) {
     return pki.certificateFromAsn1(obj, computeHash);
-  });
+  }, strict);
 };
 
 /**

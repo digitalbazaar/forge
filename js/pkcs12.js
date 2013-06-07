@@ -295,11 +295,21 @@ function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
  * Converts a PKCS#12 PFX in ASN.1 notation into a PFX object.
  *
  * @param obj The PKCS#12 PFX in ASN.1 notation.
- * @param {String} password Password to decrypt with (optional)
+ * @param strict true to use strict DER decoding, false not to (default: true).
+ * @param {String} password Password to decrypt with (optional).
  *
  * @return PKCS#12 PFX object.
  */
-p12.pkcs12FromAsn1 = function(obj, password) {
+p12.pkcs12FromAsn1 = function(obj, strict, password) {
+  // handle args
+  if(typeof strict === 'string') {
+    password = strict;
+    strict = true;
+  }
+  else if(strict === undefined) {
+    strict = true;
+  }
+
   // validate PFX and capture data
   var capture = {};
   var errors = [];
@@ -412,7 +422,7 @@ p12.pkcs12FromAsn1 = function(obj, password) {
     }
   }
 
-  _decodeAuthenticatedSafe(pfx, data.value, password);
+  _decodeAuthenticatedSafe(pfx, data.value, strict, password);
   return pfx;
 };
 
@@ -422,12 +432,12 @@ p12.pkcs12FromAsn1 = function(obj, password) {
  * The AuthenticatedSafe is a BER-encoded SEQUENCE OF ContentInfo.
  *
  * @param pfx The PKCS#12 PFX object to fill.
- * @param {String} authSafe BER-encoded AuthenticatedSafe
- * @param {String} password Password to decrypt with (optional)
- * @return void
+ * @param {String} authSafe BER-encoded AuthenticatedSafe.
+ * @param strict true to use strict DER decoding, false not to.
+ * @param {String} password Password to decrypt with (optional).
  */
-function _decodeAuthenticatedSafe(pfx, authSafe, password) {
-  authSafe = asn1.fromDer(authSafe);  /* actually it's BER encoded */
+function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
+  authSafe = asn1.fromDer(authSafe, strict);  /* actually it's BER encoded */
 
   if(authSafe.tagClass !== asn1.Class.UNIVERSAL ||
      authSafe.type !== asn1.Type.SEQUENCE ||
@@ -485,7 +495,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, password) {
         };
     }
 
-    obj.safeBags = _decodeSafeContents(safeContents, password);
+    obj.safeBags = _decodeSafeContents(safeContents, strict, password);
     pfx.safeContents.push(obj);
   }
 }
@@ -537,16 +547,19 @@ function _decryptSafeContents(data, password) {
  *
  * The safeContents is a BER-encoded SEQUENCE OF SafeBag
  *
- * @param {String} safeContents BER-encoded safeContents
- * @param {String} password Password to decrypt with (optional)
+ * @param {String} safeContents BER-encoded safeContents.
+ * @param strict true to use strict DER decoding, false not to.
+ * @param {String} password Password to decrypt with (optional).
+ *
  * @return {Array} Array of Bag objects.
  */
-function _decodeSafeContents(safeContents, password) {
-  safeContents = asn1.fromDer(safeContents);  /* actually it's BER-encoded. */
+function _decodeSafeContents(safeContents, strict, password) {
+  // actually it's BER-encoded
+  safeContents = asn1.fromDer(safeContents, strict);
 
   if(safeContents.tagClass !== asn1.Class.UNIVERSAL ||
-     safeContents.type !== asn1.Type.SEQUENCE ||
-     safeContents.constructed !== true) {
+    safeContents.type !== asn1.Type.SEQUENCE ||
+    safeContents.constructed !== true) {
     throw {
       message: 'PKCS#12 SafeContents expected to be a ' +
         'SEQUENCE OF SafeBag'
@@ -603,7 +616,7 @@ function _decodeSafeContents(safeContents, password) {
         continue;  /* Nothing more to do. */
 
       case pki.oids.certBag:
-        /* A PkCS#12 certBag can wrap both X.509 and sdsi certificates.
+        /* A PKCS#12 certBag can wrap both X.509 and sdsi certificates.
            Therefore put the SafeBag content through another validator to
            capture the fields.  Afterwards check & store the results. */
         validator = certBagValidator;
@@ -615,8 +628,9 @@ function _decodeSafeContents(safeContents, password) {
             };
           }
 
+          // true=produce cert hash
           bag.cert = pki.certificateFromAsn1(
-            asn1.fromDer(capture.cert), true);
+            asn1.fromDer(capture.cert, strict), true);
         };
         break;
 
