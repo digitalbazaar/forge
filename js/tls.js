@@ -857,16 +857,88 @@ tls.Alert.Description = {
 
 /**
  * Supported cipher suites.
- *
- * TODO: Make cipher suites modular.
  */
 tls.CipherSuites = {
-  TLS_RSA_WITH_AES_128_CBC_SHA: [0x00,0x2f],
-  TLS_RSA_WITH_AES_256_CBC_SHA: [0x00,0x35]
+  TLS_RSA_WITH_AES_128_CBC_SHA: {
+    id: [0x00,0x2f],
+    name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
+    keyLength: 16,
+    initConnectionState: function(state, c, sp) {
+      var client = (c.entity === tls.ConnectionEnd.client);
+      switch(sp.bulk_cipher_algorithm) {
+      case tls.BulkCipherAlgorithm.aes:
+        state.read.cipherState = {
+          init: false,
+          cipher: forge.aes.createDecryptionCipher(client ?
+            sp.keys.server_write_key : sp.keys.client_write_key),
+          iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
+        };
+        state.write.cipherState = {
+          init: false,
+          cipher: forge.aes.createEncryptionCipher(client ?
+            sp.keys.client_write_key : sp.keys.server_write_key),
+          iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
+        };
+        state.read.cipherFunction = decrypt_aes_cbc_sha1;
+        state.write.cipherFunction = encrypt_aes_cbc_sha1;
+        break;
+      default:
+        throw {
+          message: 'Unsupported cipher algorithm.'
+        };
+      }
+      switch(sp.cipher_type) {
+      case tls.CipherType.block:
+        break;
+      default:
+        throw {
+          message: 'Unsupported cipher type.'
+        };
+      }
+    }
+  },
+  TLS_RSA_WITH_AES_256_CBC_SHA: {
+    id: [0x00,0x35],
+    name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
+    keyLength: 32,
+    initConnectionState: function(state, c, sp) {
+      var client = (c.entity === tls.ConnectionEnd.client);
+      switch(sp.bulk_cipher_algorithm) {
+      case tls.BulkCipherAlgorithm.aes:
+        state.read.cipherState = {
+          init: false,
+          cipher: forge.aes.createDecryptionCipher(client ?
+            sp.keys.server_write_key : sp.keys.client_write_key),
+          iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
+        };
+        state.write.cipherState = {
+          init: false,
+          cipher: forge.aes.createEncryptionCipher(client ?
+            sp.keys.client_write_key : sp.keys.server_write_key),
+          iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
+        };
+        state.read.cipherFunction = decrypt_aes_cbc_sha1;
+        state.write.cipherFunction = encrypt_aes_cbc_sha1;
+        break;
+      default:
+        throw {
+          message: 'Unsupported cipher algorithm.'
+        };
+      }
+      switch(sp.cipher_type) {
+      case tls.CipherType.block:
+        break;
+      default:
+        throw {
+          message: 'Unsupported cipher type.'
+        };
+      }
+    }
+  }
 };
 
 /**
- * Gets a supported cipher suite from 2 bytes.
+ * Gets a supported cipher suite from its 2 byte ID.
  *
  * @param twoBytes two bytes in a string.
  *
@@ -876,8 +948,8 @@ tls.getCipherSuite = function(twoBytes) {
   var rval = null;
   for(var key in tls.CipherSuites) {
     var cs = tls.CipherSuites[key];
-    if(cs[0] === twoBytes.charCodeAt(0) &&
-      cs[1] === twoBytes.charCodeAt(1)) {
+    if(cs.id[0] === twoBytes.charCodeAt(0) &&
+      cs.id[1] === twoBytes.charCodeAt(1)) {
       rval = cs;
       break;
     }
@@ -1087,18 +1159,6 @@ tls.createSecurityParameters = function(c, msg) {
 
   // TODO: handle other options from server when more supported
 
-  // only AES CBC is presently supported, so just change the key length based
-  // on the chosen cipher suite
-  var keyLength;
-  switch(c.session.cipherSuite) {
-  case tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA:
-    keyLength = 16;
-    break;
-  case tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA:
-    keyLength = 32;
-    break;
-  }
-
   // get client and server randoms
   var client = (c.entity === tls.ConnectionEnd.client);
   var msgRandom = msg.random.bytes();
@@ -1111,7 +1171,7 @@ tls.createSecurityParameters = function(c, msg) {
     prf_algorithm: tls.PRFAlgorithm.tls_prf_sha256,
     bulk_cipher_algorithm: tls.BulkCipherAlgorithm.aes,
     cipher_type: tls.CipherType.block,
-    enc_key_length: keyLength,
+    enc_key_length: c.session.cipherSuite.keyLength,
     block_length: 16,
     fixed_iv_length: 16,
     record_iv_length: 16,
@@ -2476,7 +2536,7 @@ hsTable[tls.ConnectionEnd.server] = [
  */
 tls.generateKeys = function(c, sp) {
   // TLS_RSA_WITH_AES_128_CBC_SHA (required to be compliant with TLS 1.2) &
-  // TLS_RSA_WITH_AES_128_CBC_SHA are the only cipher suites implemented
+  // TLS_RSA_WITH_AES_256_CBC_SHA are the only cipher suites implemented
   // at present
 
   // TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA is required to be compliant with
@@ -2697,36 +2757,7 @@ tls.createConnectionState = function(c) {
     }
 
     // cipher setup
-    switch(sp.bulk_cipher_algorithm) {
-    case tls.BulkCipherAlgorithm.aes:
-      state.read.cipherState = {
-        init: false,
-        cipher: forge.aes.createDecryptionCipher(client ?
-          sp.keys.server_write_key : sp.keys.client_write_key),
-        iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
-      };
-      state.write.cipherState = {
-        init: false,
-        cipher: forge.aes.createEncryptionCipher(client ?
-          sp.keys.client_write_key : sp.keys.server_write_key),
-        iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
-      };
-      state.read.cipherFunction = decrypt_aes_cbc_sha1;
-      state.write.cipherFunction = encrypt_aes_cbc_sha1;
-      break;
-    default:
-      throw {
-        message: 'Unsupported cipher algorithm.'
-      };
-    }
-    switch(sp.cipher_type) {
-    case tls.CipherType.block:
-      break;
-    default:
-      throw {
-        message: 'Unsupported cipher type.'
-      };
-    }
+    c.session.cipherSuite.initConnectionState(state, c, sp);
 
     // compression setup
     switch(sp.compression_algorithm) {
@@ -2889,8 +2920,8 @@ tls.createClientHello = function(c) {
   var cipherSuites = forge.util.createBuffer();
   for(var i = 0; i < c.cipherSuites.length; ++i) {
     var cs = c.cipherSuites[i];
-    cipherSuites.putByte(cs[0]);
-    cipherSuites.putByte(cs[1]);
+    cipherSuites.putByte(cs.id[0]);
+    cipherSuites.putByte(cs.id[1]);
   }
   var cSuites = cipherSuites.length();
 
@@ -3007,8 +3038,8 @@ tls.createServerHello = function(c) {
   rval.putByte(tls.Version.minor);           // minor version
   rval.putBytes(c.session.sp.server_random); // random time + bytes
   writeVector(rval, 1, forge.util.createBuffer(sessionId));
-  rval.putByte(c.session.cipherSuite[0]);
-  rval.putByte(c.session.cipherSuite[1]);
+  rval.putByte(c.session.cipherSuite.id[0]);
+  rval.putByte(c.session.cipherSuite.id[1]);
   rval.putByte(c.session.compressionMethod);
   return rval;
 };
@@ -3788,8 +3819,9 @@ tls.createConnection = function(options) {
   var cipherSuites = options.cipherSuites || null;
   if(cipherSuites === null) {
     cipherSuites = [];
-    cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA);
-    cipherSuites.push(tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA);
+    for(var key in tls.CipherSuites) {
+      cipherSuites.push(tls.CipherSuites[key]);
+    }
   }
 
   // set default entity
