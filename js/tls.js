@@ -922,6 +922,7 @@ tls.createSecurityParameters = function(c, msg) {
     block_length: null,
     fixed_iv_length: null,
     record_iv_length: null,
+    // FIXME: also get MAC params from cipher suite
     mac_algorithm: tls.MACAlgorithm.hmac_sha1,
     mac_length: 20,
     mac_key_length: 20,
@@ -2484,7 +2485,7 @@ tls.createConnectionState = function(c) {
   // handle security parameters
   if(c.session) {
     var sp = c.session.sp;
-    c.session.cipherSuite.initCipherParameters(sp);
+    c.session.cipherSuite.initSecurityParameters(sp);
 
     // generate keys
     sp.keys = tls.generateKeys(c, sp);

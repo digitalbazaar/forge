@@ -18,7 +18,7 @@ var tls = forge.tls;
 tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   id: [0x00,0x2f],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
-  initCipherParameters: function(sp) {
+  initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
     sp.enc_key_length = 16;
@@ -31,7 +31,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
 tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
   id: [0x00,0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
-  initCipherParameters: function(sp) {
+  initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
     sp.enc_key_length = 32;
@@ -80,7 +80,7 @@ function encrypt_aes_cbc_sha1(record, s) {
   // TLS 1.1 & 1.2 use an explicit IV every time to protect against
   // CBC attacks
   var iv;
-  if(false) {//record.version.minor > 1) {
+  if(record.version.minor > 1) {
     iv = forge.random.getBytes(16);
   }
   else {
@@ -95,9 +95,9 @@ function encrypt_aes_cbc_sha1(record, s) {
   cipher.start(iv);
 
   // TLS 1.1 & 1.2 write IV into output
-  /*if(record.version.minor > 1) {
+  if(record.version.minor > 1) {
     cipher.output.putBytes(iv);
-  }*/
+  }
 
   // do encryption (default padding is appropriate)
   cipher.update(record.fragment);
