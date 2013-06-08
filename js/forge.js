@@ -8,6 +8,7 @@
 (function() {
 var deps = [
   './aes',
+  './aesCipherSuites',
   './asn1',
   './debug',
   './des',
