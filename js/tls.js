@@ -440,7 +440,7 @@ var inflate = function(c, record, s) {
 };
 
 /**
- * Encrypts the TLSCompressed record into a TLSCipherText record using AES-128
+ * Encrypts the TLSCompressed record into a TLSCipherText record using AES
  * in CBC mode.
  *
  * @param record the TLSCompressed record to encrypt.
@@ -448,7 +448,7 @@ var inflate = function(c, record, s) {
  *
  * @return true on success, false on failure.
  */
-var encrypt_aes_128_cbc_sha1 = function(record, s) {
+var encrypt_aes_cbc_sha1 = function(record, s) {
   var rval = false;
 
   // append MAC to fragment, update sequence number
@@ -474,7 +474,7 @@ var encrypt_aes_128_cbc_sha1 = function(record, s) {
 
   // do encryption (default padding is appropriate)
   cipher.update(record.fragment);
-  if(cipher.finish(encrypt_aes_128_cbc_sha1_padding)) {
+  if(cipher.finish(encrypt_aes_cbc_sha1_padding)) {
     // set record fragment to encrypted output
     record.fragment = cipher.output;
     record.length = record.fragment.length();
@@ -485,7 +485,7 @@ var encrypt_aes_128_cbc_sha1 = function(record, s) {
 };
 
 /**
- * Handles padding for aes_128_cbc_sha1 in encrypt mode.
+ * Handles padding for aes_cbc_sha1 in encrypt mode.
  *
  * @param blockSize the block size.
  * @param input the input buffer.
@@ -493,7 +493,7 @@ var encrypt_aes_128_cbc_sha1 = function(record, s) {
  *
  * @return true on success, false on failure.
  */
-var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt) {
+var encrypt_aes_cbc_sha1_padding = function(blockSize, input, decrypt) {
   /* The encrypted data length (TLSCiphertext.length) is one more than the sum
    of SecurityParameters.block_length, TLSCompressed.length,
    SecurityParameters.mac_length, and padding_length.
@@ -524,7 +524,7 @@ var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt) {
 };
 
 /**
- * Handles padding for aes_128_cbc_sha1 in decrypt mode.
+ * Handles padding for aes_cbc_sha1 in decrypt mode.
  *
  * @param blockSize the block size.
  * @param output the output buffer.
@@ -532,7 +532,7 @@ var encrypt_aes_128_cbc_sha1_padding = function(blockSize, input, decrypt) {
  *
  * @return true on success, false on failure.
  */
-var decrypt_aes_128_cbc_sha1_padding = function(blockSize, output, decrypt) {
+var decrypt_aes_cbc_sha1_padding = function(blockSize, output, decrypt) {
   var rval = true;
   if(decrypt) {
     /* The last byte in the output specifies the number of padding bytes not
@@ -555,14 +555,14 @@ var decrypt_aes_128_cbc_sha1_padding = function(blockSize, output, decrypt) {
 
 /**
  * Decrypts a TLSCipherText record into a TLSCompressed record using
- * AES-128 in CBC mode.
+ * AES in CBC mode.
  *
  * @param record the TLSCipherText record to decrypt.
  * @param s the ConnectionState to use.
  *
  * @return true on success, false on failure.
  */
-var decrypt_aes_128_cbc_sha1 = function(record, s) {
+var decrypt_aes_cbc_sha1 = function(record, s) {
   var rval = false;
 
   // TODO: TLS 1.1 & 1.2 use an explicit IV every time to protect against
@@ -580,7 +580,7 @@ var decrypt_aes_128_cbc_sha1 = function(record, s) {
 
   // do decryption
   cipher.update(record.fragment);
-  rval = cipher.finish(decrypt_aes_128_cbc_sha1_padding);
+  rval = cipher.finish(decrypt_aes_cbc_sha1_padding);
 
   // even if decryption fails, keep going to minimize timing attacks
 
@@ -2711,8 +2711,8 @@ tls.createConnectionState = function(c) {
           sp.keys.client_write_key : sp.keys.server_write_key),
         iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
       };
-      state.read.cipherFunction = decrypt_aes_128_cbc_sha1;
-      state.write.cipherFunction = encrypt_aes_128_cbc_sha1;
+      state.read.cipherFunction = decrypt_aes_cbc_sha1;
+      state.write.cipherFunction = encrypt_aes_cbc_sha1;
       break;
     default:
       throw {
