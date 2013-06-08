@@ -922,7 +922,7 @@ tls.createSecurityParameters = function(c, msg) {
     block_length: null,
     fixed_iv_length: null,
     record_iv_length: null,
-    // FIXME: also get MAC params from cipher suite
+    // TODO: also get MAC params from cipher suite
     mac_algorithm: tls.MACAlgorithm.hmac_sha1,
     mac_length: 20,
     mac_key_length: 20,
@@ -2495,6 +2495,8 @@ tls.createConnectionState = function(c) {
       sp.keys.server_write_MAC_key : sp.keys.client_write_MAC_key;
     state.write.macKey = client ?
       sp.keys.client_write_MAC_key : sp.keys.server_write_MAC_key;
+    // TODO: move to cipher suite module, expose hmac functions from
+    // TLS for external use by cipher suites
     state.read.macLength = state.write.macLength = sp.mac_length;
     switch(sp.mac_algorithm) {
     case tls.MACAlgorithm.hmac_sha1:
