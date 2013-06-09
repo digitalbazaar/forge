@@ -25,6 +25,9 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
     sp.block_length = 16;
     sp.fixed_iv_length = 16;
     sp.record_iv_length = 16;
+    sp.mac_algorithm = tls.MACAlgorithm.hmac_sha1;
+    sp.mac_length = 20;
+    sp.mac_key_length = 20;
   },
   initConnectionState: initConnectionState
 };
@@ -38,12 +41,17 @@ tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
     sp.block_length = 16;
     sp.fixed_iv_length = 16;
     sp.record_iv_length = 16;
+    sp.mac_algorithm = tls.MACAlgorithm.hmac_sha1;
+    sp.mac_length = 20;
+    sp.mac_key_length = 20;
   },
   initConnectionState: initConnectionState
 };
 
 function initConnectionState(state, c, sp) {
   var client = (c.entity === forge.tls.ConnectionEnd.client);
+
+  // cipher setup
   state.read.cipherState = {
     init: false,
     cipher: forge.aes.createDecryptionCipher(client ?
@@ -58,6 +66,10 @@ function initConnectionState(state, c, sp) {
   };
   state.read.cipherFunction = decrypt_aes_cbc_sha1;
   state.write.cipherFunction = encrypt_aes_cbc_sha1;
+
+  // MAC setup
+  state.read.macLength = state.write.macLength = sp.mac_length;
+  state.read.macFunction = state.write.macFunction = tls.hmac_sha1;
 };
 
 /**

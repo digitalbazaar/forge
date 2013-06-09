@@ -922,10 +922,9 @@ tls.createSecurityParameters = function(c, msg) {
     block_length: null,
     fixed_iv_length: null,
     record_iv_length: null,
-    // TODO: also get MAC params from cipher suite
-    mac_algorithm: tls.MACAlgorithm.hmac_sha1,
-    mac_length: 20,
-    mac_key_length: 20,
+    mac_algorithm: null,
+    mac_length: null,
+    mac_key_length: null,
     compression_algorithm: c.session.compressionMethod,
     pre_master_secret: null,
     master_secret: null,
@@ -2489,26 +2488,12 @@ tls.createConnectionState = function(c) {
 
     // generate keys
     sp.keys = tls.generateKeys(c, sp);
-
-    // mac setup
     state.read.macKey = client ?
       sp.keys.server_write_MAC_key : sp.keys.client_write_MAC_key;
     state.write.macKey = client ?
       sp.keys.client_write_MAC_key : sp.keys.server_write_MAC_key;
-    // TODO: move to cipher suite module, expose hmac functions from
-    // TLS for external use by cipher suites
-    state.read.macLength = state.write.macLength = sp.mac_length;
-    switch(sp.mac_algorithm) {
-    case tls.MACAlgorithm.hmac_sha1:
-      state.read.macFunction = state.write.macFunction = hmac_sha1;
-      break;
-    default:
-      throw {
-        message: 'Unsupported MAC algorithm.'
-      };
-    }
 
-    // cipher setup
+    // cipher suite setup
     c.session.cipherSuite.initConnectionState(state, c, sp);
 
     // compression setup
@@ -3991,6 +3976,9 @@ for(var key in tls) {
 
 // expose prf_tls1 for testing
 forge.tls.prf_tls1 = prf_TLS1;
+
+// expost sha1 hmac method
+forge.tls.hmac_sha1 = hmac_sha1;
 
 // expose session cache creation
 forge.tls.createSessionCache = tls.createSessionCache;
