@@ -33,7 +33,7 @@
   "keywords": [
     "aes",
     "asn",
-    "asn.1"
+    "asn.1",
     "crypto",
     "cryptography",
     "des",
@@ -44,7 +44,7 @@
     "network",
     "pkcs",
     "pki",
-    "prng"
+    "prng",
     "rc2",
     "rsa",
     "sha1",
