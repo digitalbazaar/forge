@@ -41,8 +41,8 @@ AC_DEFUN([AS_PATH_PYTHON],
 
   dnl should we do the version check?
   PYTHON_CANDIDATES="$PYTHON python python2 \
-                     python2.6 pyton2.5 python2.4 python2.3 python2.2 \
-		     python2.1 python2.0 \
+                     python2.7 python2.6 pyton2.5 python2.4 python2.3 \
+                     python2.2 python2.1 python2.0 \
                      python1.6 python1.5"
   dnl Declare PYTHON as a special var
   AC_ARG_VAR([PYTHON], [path to Python interpreter])
@@ -58,9 +58,9 @@ minver = '$1'
 minver_info = map(string.atoi, string.split(minver, '.'))
 # we can now do comparisons on the two lists:
 if sys.version_info >= tuple(minver_info):
-	sys.exit(0)
+    sys.exit(0)
 else:
-	sys.exit(1)"
+    sys.exit(1)"
     changequote([, ])dnl
 
     python_good=false
@@ -72,7 +72,7 @@ else:
 
       if $PYTHON -c "$prog" 1>&AC_FD_CC 2>&AC_FD_CC; then
         AC_MSG_CHECKING(["$PYTHON":])
-	AC_MSG_RESULT([okay])
+        AC_MSG_RESULT([okay])
         python_good=true
         break;
       else

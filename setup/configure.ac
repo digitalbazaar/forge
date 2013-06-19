@@ -130,7 +130,7 @@ PKG_PROG_PKG_CONFIG
 # Checking for standard build tools
 AC_PROG_CPP
 AC_PROG_INSTALL
-AS_PATH_PYTHON([2.6])
+AS_PATH_PYTHON([2.7])
 
 if test "x$PYTHON" != x; then
    save_CPPFLAGS="$CPPFLAGS"
@@ -144,7 +144,7 @@ if test "x$PYTHON" != x; then
       AC_MSG_WARN([Python.h not found, SSL bindings will not be build.])])
    CPPFLAGS="$save_CPPFLAGS"
 else
-   AC_MSG_WARN([Need at least Python 2.6 to build SSL bindings.])
+   AC_MSG_WARN([Need at least Python 2.7 to build SSL bindings.])
 fi
 
 AC_SUBST(BUILD_PYTHON_MODULES)

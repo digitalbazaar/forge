@@ -100,7 +100,7 @@ def create_http_server(options, script_dir):
     httpd = ThreadedTCPServer((options.host, options.port), Handler)
     if options.tls:
         if not have_ssl:
-            raise Exception("SSL support from Python 2.6 or later is required.")
+            raise Exception("SSL support from Python 2.7 or later is required.")
 
         # setup session args if we session support
         sess_args = {}
