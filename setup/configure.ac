@@ -151,15 +151,21 @@ AC_SUBST(BUILD_PYTHON_MODULES)
 
 dnl ----------------------------------
 
-# Generating files
-AC_CONFIG_FILES([
-   .gitignore
-   Makefile
-])
-
-# add newlines to internal output file list
-CONFIGURE_GENERATED_FILES="`echo $ac_config_files | tr ' ' '\n'`"
-AC_SUBST(CONFIGURE_GENERATED_FILES)
+dnl NOTE:
+dnl This code was used previously to autogenerate the .gitignore file but due
+dnl to the current more common use of just the js files, it's likely people
+dnl who checkout the code will never run the build scripts. The files are now
+dnl just hardcoded into .gitignore and should be updated by hand as needed.
+dnl
+dnl # Generating files
+dnl AC_CONFIG_FILES([
+dnl    .gitignore
+dnl    Makefile
+dnl ])
+dnl
+dnl # add newlines to internal output file list
+dnl CONFIGURE_GENERATED_FILES="`echo $ac_config_files | tr ' ' '\n'`"
+dnl AC_SUBST(CONFIGURE_GENERATED_FILES)
 
 AC_OUTPUT
 
