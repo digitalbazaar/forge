@@ -1,7 +1,7 @@
 {
   "name": "node-forge",
   "version": "0.1.1",
-  "description": "A native implementation of TLS in JavaScript and tools to write network based web apps.",
+  "description": "JavaScript implementations of network transports, ciphers, PKI, message digests, and various utilties.",
   "homepage": "http://github.com/digitalbazaar/forge",
   "author": {
     "name": "Digital Bazaar, Inc.",
@@ -31,17 +31,26 @@
     "node": "*"
   },
   "keywords": [
-    "tls",
-    "http",
-    "https",
-    "network",
+    "aes",
+    "asn",
+    "asn.1"
     "crypto",
     "cryptography",
-    "rsa",
-    "pki",
-    "aes",
-    "pkcs",
     "des",
-    "rc2"
+    "hmac",
+    "http",
+    "https",
+    "md5",
+    "network",
+    "pkcs",
+    "pki",
+    "prng"
+    "rc2",
+    "rsa",
+    "sha1",
+    "sha256",
+    "tls",
+    "x.509",
+    "x509"
   ]
 }
