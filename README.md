@@ -903,7 +903,21 @@ modify an [Apache][] server to allow cross domain requests to be made to it.
 Getting Started
 ---------------
 
-Requirements
+### Node.js ###
+
+If you want to use forge with [node.js][], it is available through `npm`:
+
+https://npmjs.org/package/node-forge
+
+Installation:
+
+    npm install node-forge
+    
+You can then use forge as a regular module:
+
+    var forge = require('node-forge');
+
+### Requirements ###
 
 * General
   * GNU autotools for the build infrastructure.
@@ -947,7 +961,7 @@ More advanced tests need TLS enabled::
 NodeJS & RequireJS
 ------------------
 
-A test server for [NodeJS](http://nodejs.org/) can be found at `./nodejs`. The following are included:
+A test server for [node.js][] can be found at `./nodejs`. The following are included:
 
   * Example of how to use `forge` within NodeJS in the form of a [mocha](http://visionmedia.github.io/mocha/) test.
   * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
@@ -987,3 +1001,4 @@ Contact
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [X.509]: http://en.wikipedia.org/wiki/X.509
+[node.js]: http://nodejs.org/
