@@ -2143,7 +2143,7 @@ var F3 = tls.handleApplicationData;
 var ctTable = [];
 ctTable[tls.ConnectionEnd.client] = [
 //      CC,AL,HS,AD
-/*SHE*/[__,__,F2,__],
+/*SHE*/[__,F1,F2,__],
 /*SCE*/[__,F1,F2,__],
 /*SKE*/[__,F1,F2,__],
 /*SCR*/[__,F1,F2,__],
@@ -2157,7 +2157,7 @@ ctTable[tls.ConnectionEnd.client] = [
 // map server current expect state and content type to function
 ctTable[tls.ConnectionEnd.server] = [
 //      CC,AL,HS,AD
-/*CHE*/[__,__,F2,__],
+/*CHE*/[__,F1,F2,__],
 /*CCE*/[__,F1,F2,__],
 /*CKE*/[__,F1,F2,__],
 /*CCV*/[__,F1,F2,__],
