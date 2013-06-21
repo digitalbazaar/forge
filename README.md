@@ -217,10 +217,10 @@ var client = forge.tls.createConnection({
 
 socket.on('connect', function() {
   console.log('[socket] connected');
-  tls.handshake();
+  client.handshake();
 });
 socket.on('data', function(data) {
-  tls.process(data.toString('binary')); // encoding should be 'binary'
+  client.process(data.toString('binary')); // encoding should be 'binary'
 });
 socket.on('end', function() {
   console.log('[socket] disconnected');
@@ -230,7 +230,7 @@ socket.on('end', function() {
 socket.connect(443, 'google.com');
 
 // or connect to gmail's imap server (but don't send the HTTP header above)
-// socket.connect(993, 'imap.gmail.com');
+//socket.connect(993, 'imap.gmail.com');
 ```
 
 <a name="http" />
