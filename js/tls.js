@@ -869,7 +869,7 @@ tls.parseHelloMessage = function(c, record, length) {
 
     // cipher suite not supported
     if(c.session.cipherSuite === null) {
-      c.error(c, {
+      return c.error(c, {
         message: 'No cipher suites in common.',
         send: true,
         alert: {
