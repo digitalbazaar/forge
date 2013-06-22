@@ -16,6 +16,7 @@ var deps = [
   './log',
   './pbkdf2',
   './pkcs7',
+  './pkcs1',
   './pkcs12',
   './pki',
   './prng',
