@@ -42,6 +42,7 @@ var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
  * Digest ::= OCTET STRING
  *
  * @param md the message digest object with the hash to sign.
+ *
  * @return the encoded message (ready for RSA encrytion)
  */
 var emsaPkcs1v15encode = function(md) {
@@ -206,85 +207,45 @@ var _modPow = function(x, key, pub) {
 };
 
 /**
+ * NOTE: THIS METHOD IS DEPRECATED, use 'sign' on a private key object or
+ * 'encrypt' on a public key object instead.
+ *
  * Performs RSA encryption.
  *
  * The parameter bt controls whether to put padding bytes before the
- * message passed in.  Set bt to either true or false to disable padding
+ * message passed in. Set bt to either true or false to disable padding
  * completely (in order to handle e.g. EMSA-PSS encoding seperately before),
  * signaling whether the encryption operation is a public key operation
  * (i.e. encrypting data) or not, i.e. private key operation (data signing).
  *
  * For PKCS#1 v1.5 padding pass in the block type to use, i.e. either 0x01
- * (for signing) or 0x02 (for encryption).  The key operation mode (private
+ * (for signing) or 0x02 (for encryption). The key operation mode (private
  * or public) is derived from this flag in that case).
  *
  * @param m the message to encrypt as a byte string.
  * @param key the RSA key to use.
  * @param bt for PKCS#1 v1.5 padding, the block type to use
  *   (0x01 for private key, 0x02 for public),
- *   to disable padding: true = public key, false = private key
+ *   to disable padding: true = public key, false = private key.
+ *
  * @return the encrypted bytes as a string.
  */
 pki.rsa.encrypt = function(m, key, bt) {
   var pub = bt;
-  var eb = forge.util.createBuffer();
+  var eb;
 
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
 
   if(bt !== false && bt !== true) {
-    /* use PKCS#1 v1.5 padding */
-    if(m.length > (k - 11)) {
-      throw {
-        message: 'Message is too long to encrypt.',
-        length: m.length,
-        max: (k - 11)
-      };
-    }
-
-    /* A block type BT, a padding string PS, and the data D shall be
-      formatted into an octet string EB, the encryption block:
-
-      EB = 00 || BT || PS || 00 || D
-
-      The block type BT shall be a single octet indicating the structure of
-      the encryption block. For this version of the document it shall have
-      value 00, 01, or 02. For a private-key operation, the block type
-      shall be 00 or 01. For a public-key operation, it shall be 02.
-
-      The padding string PS shall consist of k-3-||D|| octets. For block
-      type 00, the octets shall have value 00; for block type 01, they
-      shall have value FF; and for block type 02, they shall be
-      pseudorandomly generated and nonzero. This makes the length of the
-      encryption block EB equal to k. */
-
-    // build the encryption block
-    eb.putByte(0x00);
-    eb.putByte(bt);
-
-    // create the padding, get key type
-    var padNum = k - 3 - m.length;
-    var padByte;
-    if(bt === 0x00 || bt === 0x01) {
-      pub = false;
-      padByte = (bt === 0x00) ? 0x00 : 0xFF;
-      for(var i = 0; i < padNum; ++i) {
-        eb.putByte(padByte);
-      }
-    }
-    else {
-      pub = true;
-      for(var i = 0; i < padNum; ++i) {
-        padByte = Math.floor(Math.random() * 255) + 1;
-        eb.putByte(padByte);
-      }
-    }
-
-    // zero followed by message
-    eb.putByte(0x00);
+    // legacy, default to PKCS#1 v1.5 padding
+    pub = (bt === 0x02);
+    eb = _encodePkcs1_v1_5(m, key, bt);
   }
-
-  eb.putBytes(m);
+  else {
+    eb = forge.util.createBuffer();
+    eb.putBytes(m);
+  }
 
   // load encryption block as big integer 'x'
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
@@ -308,6 +269,9 @@ pki.rsa.encrypt = function(m, key, bt) {
 };
 
 /**
+ * NOTE: THIS METHOD IS DEPRECATED, use 'decrypt' on a private key object or
+ * 'verify' on a public key object instead.
+ *
  * Performs RSA decryption.
  *
  * The parameter ml controls whether to apply PKCS#1 v1.5 padding
@@ -318,7 +282,7 @@ pki.rsa.encrypt = function(m, key, bt) {
  * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
  * @param pub true for a public key operation, false for private.
- * @param ml the message length, if known.  false to disable padding.
+ * @param ml the message length, if known, false to disable padding.
  *
  * @return the decrypted message as a byte string.
  */
@@ -355,70 +319,8 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   eb.putBytes(forge.util.hexToBytes(xhex));
 
   if(ml !== false) {
-    /* It is an error if any of the following conditions occurs:
-
-      1. The encryption block EB cannot be parsed unambiguously.
-      2. The padding string PS consists of fewer than eight octets
-        or is inconsisent with the block type BT.
-      3. The decryption process is a public-key operation and the block
-        type BT is not 00 or 01, or the decryption process is a
-        private-key operation and the block type is not 02.
-     */
-
-    // parse the encryption block
-    var first = eb.getByte();
-    var bt = eb.getByte();
-    if(first !== 0x00 ||
-      (pub && bt !== 0x00 && bt !== 0x01) ||
-      (!pub && bt != 0x02) ||
-      (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
-      throw {
-        message: 'Encryption block is invalid.'
-      };
-    }
-
-    var padNum = 0;
-    if(bt === 0x00) {
-      // check all padding bytes for 0x00
-      padNum = k - 3 - ml;
-      for(var i = 0; i < padNum; ++i) {
-        if(eb.getByte() !== 0x00) {
-          throw {
-            message: 'Encryption block is invalid.'
-          };
-        }
-      }
-    }
-    else if(bt === 0x01) {
-      // find the first byte that isn't 0xFF, should be after all padding
-      padNum = 0;
-      while(eb.length() > 1) {
-        if(eb.getByte() !== 0xFF) {
-          --eb.read;
-          break;
-        }
-        ++padNum;
-      }
-    }
-    else if(bt === 0x02) {
-      // look for 0x00 byte
-      padNum = 0;
-      while(eb.length() > 1) {
-        if(eb.getByte() === 0x00) {
-          --eb.read;
-          break;
-        }
-        ++padNum;
-      }
-    }
-
-    // zero must be 0x00 and padNum must be (k - 3 - message length)
-    var zero = eb.getByte();
-    if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
-      throw {
-        message: 'Encryption block is invalid.'
-      };
-    }
+    // legacy, default to PKCS#1 v1.5 padding
+    return _decodePkcs1_v1_5(eb.getBytes(), key, pub);
   }
 
   // return message
@@ -749,14 +651,43 @@ pki.rsa.setPublicKey = function(n, e) {
   };
 
   /**
-   * Encrypts the given data with this public key.
+   * Encrypts the given data with this public key. Newer applications
+   * should use the 'RSA-OAEP' decryption scheme, 'RSAES-PKCS1-v1_5' is for
+   * legacy applications.
    *
    * @param data the byte string to encrypt.
+   * @param scheme the decryption scheme to use:
+   *          'RSAES-PKCS1-v1_5' or 'RSA-OAEP', defaults to 'RSAES-PKCS1-v1_5'.
    *
    * @return the encrypted byte string.
    */
-  key.encrypt = function(data) {
-    return pki.rsa.encrypt(data, key, 0x02);
+  key.encrypt = function(data, scheme) {
+    if(typeof scheme === 'string') {
+      scheme = scheme.toUpperCase();
+    }
+    else if(scheme === undefined) {
+      scheme = 'RSAES-PKCS1-v1_5';
+    }
+
+    if(scheme === 'RSAES-PKCS1-v1_5') {
+      scheme = {
+        encode: function(m, key, pub) {
+          return _encodePkcs1_v1_5(m, key, 0x02).getBytes();
+        }
+      };
+    }
+    else if(scheme === 'RSA-OAEP') {
+      // FIXME: implement OAEP
+    }
+    else {
+      throw {
+        message: 'Unsupported encryption scheme: "' + scheme + '".'
+      };
+    }
+
+    // do scheme-based encoding then rsa encryption
+    var e = scheme.encode(data, key, true);
+    return pki.rsa.encrypt(e, key, true);
   };
 
   /**
@@ -777,29 +708,51 @@ pki.rsa.setPublicKey = function(n, e) {
    * Digest ::= OCTET STRING
    *
    * To perform PSS signature verification, provide an instance
-   * of Forge PSS object as scheme parameter.
+   * of Forge PSS object as the scheme parameter.
    *
    * @param digest the message digest hash to compare against the signature.
    * @param signature the signature to verify.
-   * @param scheme signature scheme to use, undefined for PKCS#1 v1.5
-   *   padding style.
+   * @param scheme signature verification scheme to use:
+   *          'RSASSA-PKCS1-v1_5' or undefined for RSASSA PKCS#1 v1.5,
+   *          a Forge PSS object for RSASSA-PSS,
+   *          'NONE' or null for none, DigestInfo will not be expected, but
+   *            PKCS#1 v1.5 padding will still be used.
+   *
    * @return true if the signature was verified, false if not.
    */
    key.verify = function(digest, signature, scheme) {
-     // do rsa decryption
-     var ml = scheme === undefined ? undefined : false;
-     var d = pki.rsa.decrypt(signature, key, true, ml);
-
-     if(scheme === undefined) {
-       // d is ASN.1 BER-encoded DigestInfo
-       var obj = asn1.fromDer(d);
-
-       // compare the given digest to the decrypted one
-       return digest === obj.value[1].value;
+     if(typeof scheme === 'string') {
+       scheme = scheme.toUpperCase();
      }
-     else {
-       return scheme.verify(digest, d, key.n.bitLength());
+     else if(scheme === undefined) {
+       scheme = 'RSASSA-PKCS1-v1_5';
      }
+
+     if(scheme === 'RSASSA-PKCS1-v1_5') {
+       scheme = {
+         verify: function(digest, d) {
+           // remove padding
+           d = _decodePkcs1_v1_5(d, key, true);
+           // d is ASN.1 BER-encoded DigestInfo
+           var obj = asn1.fromDer(d);
+           // compare the given digest to the decrypted one
+           return digest === obj.value[1].value;
+         }
+       };
+     }
+     else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+       scheme = {
+         verify: function(digest, d) {
+           // remove padding
+           d = _decodePkcs1_v1_5(d, key, true);
+           return digest === d;
+         }
+       };
+     }
+
+     // do rsa decryption w/o any decoding, then verify -- which does decoding
+     var d = pki.rsa.decrypt(signature, key, true, false);
+     return scheme.verify(digest, d, key.n.bitLength());
   };
 
   return key;
@@ -833,14 +786,40 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
   };
 
   /**
-   * Decrypts the given data with this private key.
+   * Decrypts the given data with this private key. The decryption scheme
+   * must match the one used to encrypt the data.
    *
    * @param data the byte string to decrypt.
+   * @param scheme the decryption scheme to use:
+   *          'RSAES-PKCS1-v1_5' or 'RSA-OAEP', defaults to 'RSAES-PKCS1-v1_5'.
    *
    * @return the decrypted byte string.
    */
-  key.decrypt = function(data) {
-    return pki.rsa.decrypt(data, key, false);
+  key.decrypt = function(data, scheme) {
+    if(typeof scheme === 'string') {
+      scheme = scheme.toUpperCase();
+    }
+    else if(scheme === undefined) {
+      scheme = 'RSAES-PKCS1-v1_5';
+    }
+
+    // do rsa decryption w/o any decoding
+    var d = pki.rsa.decrypt(data, key, false, false);
+
+    if(scheme === 'RSAES-PKCS1-v1_5') {
+      scheme = { decode: _decodePkcs1_v1_5 };
+    }
+    else if(scheme === 'RSA-OAEP') {
+      // FIXME: implement OAEP
+    }
+    else {
+      throw {
+        message: 'Unsupported encryption scheme: "' + scheme + '".'
+      };
+    }
+
+    // decode according to scheme
+    return scheme.decode(d, key, false);
   };
 
   /**
@@ -850,28 +829,200 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
    * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
    *
    * By default this implementation uses the "old scheme", i.e.
-   * RSASSA-PKCS1-v1_5.  In order to generate a PSS signature, provide
-   * an instance of Forge PSS object as scheme parameter.
+   * RSASSA-PKCS1-v1_5. In order to generate a PSS signature, provide
+   * an instance of Forge PSS object as the scheme parameter.
    *
    * @param md the message digest object with the hash to sign.
-   * @param scheme signature scheme to use, undefined for PKCS#1 v1.5
-   *   padding style.
+   * @param scheme the signature scheme to use:
+   *          'RSASSA-PKCS1-v1_5' or undefined for RSASSA PKCS#1 v1.5,
+   *          a Forge PSS object for RSASSA-PSS,
+   *          'NONE' or null for none, DigestInfo will not be used but
+   *            PKCS#1 v1.5 padding will still be used.
+   *
    * @return the signature as a byte string.
    */
   key.sign = function(md, scheme) {
-    var bt = false;  /* private key operation */
+    /* Note: The internal implementation of RSA operations is being
+      transitioned away from a PKCS#1 v1.5 hard-coded scheme. Some legacy
+      code like the use of an encoding block identifier 'bt' will eventually
+      be removed. */
 
-    if(scheme === undefined) {
+    // private key operation
+    var bt = false;
+
+    if(typeof scheme === 'string') {
+      scheme = scheme.toUpperCase();
+    }
+
+    if(scheme === undefined || scheme === 'RSASSA-PKCS1-v1_5') {
       scheme = { encode: emsaPkcs1v15encode };
       bt = 0x01;
     }
+    else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+      scheme = { encode: function() { return md; } };
+      bt = 0x01;
+    }
 
+    // encode and then encrypt
     var d = scheme.encode(md, key.n.bitLength());
     return pki.rsa.encrypt(d, key, bt);
   };
 
   return key;
 };
+
+/**
+ * Encodes a message using PKCS#1 v1.5 padding.
+ *
+ * @param m the message to encode.
+ * @param key the RSA key to use.
+ * @param bt the block type to use, i.e. either 0x01 (for signing) or 0x02
+ *          (for encryption).
+ *
+ * @return the padded byte buffer.
+ */
+function _encodePkcs1_v1_5(m, key, bt) {
+  var eb = forge.util.createBuffer();
+
+  // get the length of the modulus in bytes
+  var k = Math.ceil(key.n.bitLength() / 8);
+
+  /* use PKCS#1 v1.5 padding */
+  if(m.length > (k - 11)) {
+    throw {
+      message: 'Message is too long for PKCS#1 v1.5 padding.',
+      length: m.length,
+      max: (k - 11)
+    };
+  }
+
+  /* A block type BT, a padding string PS, and the data D shall be
+    formatted into an octet string EB, the encryption block:
+
+    EB = 00 || BT || PS || 00 || D
+
+    The block type BT shall be a single octet indicating the structure of
+    the encryption block. For this version of the document it shall have
+    value 00, 01, or 02. For a private-key operation, the block type
+    shall be 00 or 01. For a public-key operation, it shall be 02.
+
+    The padding string PS shall consist of k-3-||D|| octets. For block
+    type 00, the octets shall have value 00; for block type 01, they
+    shall have value FF; and for block type 02, they shall be
+    pseudorandomly generated and nonzero. This makes the length of the
+    encryption block EB equal to k. */
+
+  // build the encryption block
+  eb.putByte(0x00);
+  eb.putByte(bt);
+
+  // create the padding
+  var padNum = k - 3 - m.length;
+  var padByte;
+  // private key op
+  if(bt === 0x00 || bt === 0x01) {
+    padByte = (bt === 0x00) ? 0x00 : 0xFF;
+    for(var i = 0; i < padNum; ++i) {
+      eb.putByte(padByte);
+    }
+  }
+  // public key op
+  else {
+    for(var i = 0; i < padNum; ++i) {
+      padByte = Math.floor(Math.random() * 255) + 1;
+      eb.putByte(padByte);
+    }
+  }
+
+  // zero followed by message
+  eb.putByte(0x00);
+  eb.putBytes(m);
+
+  return eb;
+}
+
+/**
+ * Decodes a message using PKCS#1 v1.5 padding.
+ *
+ * @param em the message to decode.
+ * @param key the RSA key to use.
+ * @param pub true if the key is a public key, false if it is private.
+ * @param ml the message length, if specified.
+ *
+ * @return the decoded bytes.
+ */
+function _decodePkcs1_v1_5(em, key, pub, ml) {
+  // get the length of the modulus in bytes
+  var k = Math.ceil(key.n.bitLength() / 8);
+
+  /* It is an error if any of the following conditions occurs:
+
+    1. The encryption block EB cannot be parsed unambiguously.
+    2. The padding string PS consists of fewer than eight octets
+      or is inconsisent with the block type BT.
+    3. The decryption process is a public-key operation and the block
+      type BT is not 00 or 01, or the decryption process is a
+      private-key operation and the block type is not 02.
+   */
+
+  // parse the encryption block
+  var eb = forge.util.createBuffer(em);
+  var first = eb.getByte();
+  var bt = eb.getByte();
+  if(first !== 0x00 ||
+    (pub && bt !== 0x00 && bt !== 0x01) ||
+    (!pub && bt != 0x02) ||
+    (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
+    throw {
+      message: 'Encryption block is invalid.'
+    };
+  }
+
+  var padNum = 0;
+  if(bt === 0x00) {
+    // check all padding bytes for 0x00
+    padNum = k - 3 - ml;
+    for(var i = 0; i < padNum; ++i) {
+      if(eb.getByte() !== 0x00) {
+        throw {
+          message: 'Encryption block is invalid.'
+        };
+      }
+    }
+  }
+  else if(bt === 0x01) {
+    // find the first byte that isn't 0xFF, should be after all padding
+    padNum = 0;
+    while(eb.length() > 1) {
+      if(eb.getByte() !== 0xFF) {
+        --eb.read;
+        break;
+      }
+      ++padNum;
+    }
+  }
+  else if(bt === 0x02) {
+    // look for 0x00 byte
+    padNum = 0;
+    while(eb.length() > 1) {
+      if(eb.getByte() === 0x00) {
+        --eb.read;
+        break;
+      }
+      ++padNum;
+    }
+  }
+
+  // zero must be 0x00 and padNum must be (k - 3 - message length)
+  var zero = eb.getByte();
+  if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
+    throw {
+      message: 'Encryption block is invalid.'
+    };
+  }
+
+  return eb.getBytes();
+}
 
 /**
  * Runs the key-generation algorithm asynchronously, either in the background

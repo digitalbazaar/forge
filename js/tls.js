@@ -1499,9 +1499,10 @@ tls.handleCertificateVerify = function(c, record, length) {
 
     try {
       var cert = c.session.clientCertificate;
-      b = forge.pki.rsa.decrypt(
+      /*b = forge.pki.rsa.decrypt(
         msg.signature, cert.publicKey, true, verify.length);
-      if(b !== verify) {
+      if(b !== verify) {*/
+      if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
         throw {
           message: 'CertificateVerify signature does not match.'
         };
@@ -3027,7 +3028,7 @@ tls.getClientSignature = function(c, callback) {
       });
     }
     else {
-      b = forge.pki.rsa.encrypt(b, privateKey, 0x01);
+      b = privateKey.sign(b, null);
     }
     callback(c, b);
   };
