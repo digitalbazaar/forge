@@ -48,10 +48,10 @@ pkcs1.rsa_oaep_encrypt = function(key, message, label, seed) {
   }
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, md);
-  var maskedDB = xorString(DB, dbMask);
+  var maskedDB = forge.util.xorBytes(DB, dbMask, DB.length);
 
   var seedMask = rsa_mgf1(maskedDB, md.digestLength, md);
-  var maskedSeed = xorString(seed, seedMask);
+  var maskedSeed = forge.util.xorBytes(seed, seedMask, seed.length);
 
   var EM = '\x00' + maskedSeed + maskedDB;
 
@@ -91,10 +91,10 @@ pkcs1.rsa_oaep_decrypt = function(key, ciphertext, label) {
   var maskedDB = EM.substring(1 + md.digestLength);
 
   var seedMask = rsa_mgf1(maskedDB, md.digestLength, md);
-  var seed = xorString(maskedSeed, seedMask);
+  var seed = forge.util.xorBytes(maskedSeed, seedMask, maskedSeed.length);
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, md);
-  var db = xorString(maskedDB, dbMask);
+  var db = forge.util.xorBytes(maskedDB, dbMask, maskedDB.length);
 
   var lHashPrime = db.substring(0, md.digestLength);
 
@@ -129,18 +129,6 @@ pkcs1.rsa_oaep_decrypt = function(key, ciphertext, label) {
   }
   return db.substring(index + 1);
 };
-
-function xorString(string1, string2) {
-  if (string1.length != string2.length) {
-    throw new Error("mismatched string lengths: "+ string1.length + ", " + string2.length);
-  }
-
-  var out = '';
-  for (var i = 0; i < string1.length; i++) {
-    out += String.fromCharCode(string1.charCodeAt(i) ^ string2.charCodeAt(i));
-  }
-  return out;
-}
 
 function rsa_mgf1(seed, maskLength, hash) {
   var t = '';
