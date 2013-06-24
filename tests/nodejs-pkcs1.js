@@ -7,29 +7,31 @@ var assert = require('assert');
 var forge = require('../js/forge');
 
 function _bytesToBigInteger(bytes) {
-    var buffer = forge.util.createBuffer(bytes);
-    var hex = buffer.toHex();
-    return new BigInteger(hex, 16);
+  var buffer = forge.util.createBuffer(bytes);
+  var hex = buffer.toHex();
+  return new BigInteger(hex, 16);
 }
 
 function _base64ToBn(s) {
-    var decoded = forge.util.decode64(s);
-    return _bytesToBigInteger(decoded);
+  var decoded = forge.util.decode64(s);
+  return _bytesToBigInteger(decoded);
 }
 
-function checkOAEPEncrypt(pubkey, privateKey, message, seed, expected) {
+function checkOAEPEncrypt(publicKey, privateKey, message, seed, expected) {
   message = forge.util.decode64(message);
   seed = forge.util.decode64(seed);
-  var ciphertext = forge.pkcs1.rsa_oaep_encrypt(pubkey, message, '', seed);
+  var encoded = forge.pkcs1.encode_rsa_oaep(publicKey, message, '', seed);
+  var ciphertext = publicKey.encrypt(encoded, null);
   assert.equal(expected, forge.util.encode64(ciphertext));
 
-  var decrypted = forge.pkcs1.rsa_oaep_decrypt(privateKey, ciphertext);
-  assert.equal(message, decrypted);
+  var decrypted = privateKey.decrypt(ciphertext, null);
+  var decoded = forge.pkcs1.decode_rsa_oaep(privateKey, decrypted);
+  assert.equal(message, decoded);
 
-  // Test with default label and generating a seed
-  ciphertext = forge.pkcs1.rsa_oaep_encrypt(pubkey, message);
-  decrypted = forge.pkcs1.rsa_oaep_decrypt(privateKey, ciphertext);
-  assert.equal(message, decrypted);
+  // test with higher-level API, default label, and generating a seed
+  ciphertext = publicKey.encrypt(message, 'RSA-OAEP');
+  decoded = privateKey.decrypt(ciphertext, 'RSA-OAEP');
+  assert.equal(message, decoded);
 }
 
 function decodeBase64PublicKey(modulus, exponent) {
@@ -51,7 +53,7 @@ function decodeBase64PrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv) {
 }
 
 function makeKey() {
-  var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey, message, seed, encrypted;
+  var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey;
 
   // Example 1: A 1024-bit RSA Key Pair
   modulus = 'qLOyhK+OtQs4cDSoYPFGxJGfMYdjzWxVmMiuSBGh4KvEx+CwgtaTpef87Wdc9GaFEncsDLxkp0LGxjD1M8jMcvYq6DPEC/JYQumEu3i9v5fAEH1VvbZi9cTg+rmEXLUUjvc5LdOq/5OuHmtme7PUJHYW1PW6ENTP0ibeiNOfFvs=';
@@ -76,8 +78,10 @@ function testCorruptDecrypt() {
 
   // Test decrypting corrupted data: flip every bit in the message
   // this tests the padding error handling
-  var encrypted = forge.pkcs1.rsa_oaep_encrypt(keys.publicKey, 'datadatadatadata', '', seed);
-  for (var bit = 0; bit < encrypted.length * 8; bit++) {
+  var encoded = forge.pkcs1.encode_rsa_oaep(
+    keys.publicKey, 'datadatadatadata', '', seed);
+  var encrypted = keys.publicKey.encrypt(encoded, null);
+  for(var bit = 0; bit < encrypted.length * 8; ++bit) {
     var byteIndex = bit / 8;
     var bitInByte = bit % 8;
 
@@ -87,12 +91,15 @@ function testCorruptDecrypt() {
     out += encrypted.substring(byteIndex + 1);
 
     try {
-      output = forge.pkcs1.rsa_oaep_decrypt(keys.privateKey, out);
-      console.log('Error: expected an exception!', bit, byteIndex, bitInByte, mask);
+      var decrypted = keys.privateKey.decrypt(out, null);
+      output = forge.pkcs1.decode_rsa_oaep(keys.privateKey, decrypted);
+      console.log('Error: expected an exception!',
+        bit, byteIndex, bitInByte, mask);
       console.log(output);
       assert(false);
-    } catch (e) {
-      if (e.message != 'Decryption error: invalid padding') {
+    }
+    catch(e) {
+      if(e.message !== 'Invalid RSAES-OAEP padding.') {
         throw e;
       }
     }
@@ -104,18 +111,17 @@ function testCorruptDecrypt() {
 function testZeroMessage() {
   var keys = makeKey();
 
-  var message = '';
-  for (var i = 0; i < 80; i++) {
-    message += '\x00';
-  }
-
-  var ciphertext = forge.pkcs1.rsa_oaep_encrypt(keys.publicKey, message);
-  var decrypted = forge.pkcs1.rsa_oaep_decrypt(keys.privateKey, ciphertext);
-  assert.equal(message, decrypted);
+  var message = forge.util.fillString('\x00', 80);
+  var encoded = forge.pkcs1.encode_rsa_oaep(keys.publicKey, message);
+  var ciphertext = keys.publicKey.encrypt(encoded, null);
+  var decrypted = keys.privateKey.decrypt(ciphertext, null);
+  var decoded = forge.pkcs1.decode_rsa_oaep(keys.privateKey, decrypted);
+  assert.equal(message, decoded);
 }
 
 function testOAEP() {
-  var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey, message, seed, encrypted;
+  var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey;
+  var message, seed, encrypted;
 
   // Example 1: A 1024-bit RSA Key Pair
   // Components of the RSA Key Pair
@@ -608,9 +614,10 @@ function testOAEP() {
   checkOAEPEncrypt(pubkey, privateKey, message, seed, encrypted);
 }
 
-var tests = [testCorruptDecrypt, testZeroMessage, testOAEP];
-for (var i = 0; i < tests.length; i++) {
+var tests = [testOAEP, testCorruptDecrypt, testZeroMessage];
+for(var i = 0; i < tests.length; ++i) {
   process.stdout.write('.');
   tests[i]();
 }
+
 console.log('SUCCESS');

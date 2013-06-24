@@ -656,8 +656,10 @@ pki.rsa.setPublicKey = function(n, e) {
    * legacy applications.
    *
    * @param data the byte string to encrypt.
-   * @param scheme the decryption scheme to use:
-   *          'RSAES-PKCS1-v1_5' or 'RSA-OAEP', defaults to 'RSAES-PKCS1-v1_5'.
+   * @param scheme the encryption scheme to use:
+   *          'RSAES-PKCS1-v1_5' (default),
+   *          'RSA-OAEP',
+   *          'RAW', 'NONE', or null to perform raw RSA encryption.
    *
    * @return the encrypted byte string.
    */
@@ -676,8 +678,15 @@ pki.rsa.setPublicKey = function(n, e) {
         }
       };
     }
-    else if(scheme === 'RSA-OAEP') {
-      // FIXME: implement OAEP
+    else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
+      scheme = {
+        encode: function(m, key) {
+          return forge.pkcs1.encode_rsa_oaep(key, m);
+        }
+      };
+    }
+    else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+      scheme = { encode: function(e) { return e; } };
     }
     else {
       throw {
@@ -791,7 +800,9 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
    *
    * @param data the byte string to decrypt.
    * @param scheme the decryption scheme to use:
-   *          'RSAES-PKCS1-v1_5' or 'RSA-OAEP', defaults to 'RSAES-PKCS1-v1_5'.
+   *          'RSAES-PKCS1-v1_5' (default),
+   *          'RSA-OAEP',
+   *          'RAW', 'NONE', or null to perform raw RSA decryption.
    *
    * @return the decrypted byte string.
    */
@@ -809,8 +820,15 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
     if(scheme === 'RSAES-PKCS1-v1_5') {
       scheme = { decode: _decodePkcs1_v1_5 };
     }
-    else if(scheme === 'RSA-OAEP') {
-      // FIXME: implement OAEP
+    else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
+      scheme = {
+        decode: function(d, key) {
+          return forge.pkcs1.decode_rsa_oaep(key, d);
+        }
+      };
+    }
+    else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+      scheme = { decode: function(d) { return d; } };
     }
     else {
       throw {
@@ -1215,7 +1233,7 @@ function _generateKeyPair(state, options, callback) {
 
 /* ########## Begin module wrapper ########## */
 var name = 'rsa';
-var deps = ['./asn1', './oids', './random', './util', './jsbn'];
+var deps = ['./asn1', './oids', './random', './util', './jsbn', './pkcs1'];
 var nodeDefine = null;
 if(typeof define !== 'function') {
   // NodeJS -> AMD

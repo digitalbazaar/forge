@@ -425,11 +425,23 @@ var signature = privateKey.sign(md);
 // verify data with a public key
 var verified = publicKey.verify(md, signature);
 
-// encrypt data with a public key
+// encrypt data with a public key (defaults to RSAES PKCS#1 v1.5) 
 var encrypted = publicKey.encrypt(bytes);
 
-// decrypt data with a private key
+// decrypt data with a private key (defaults to RSAES PKCS#1 v1.5)
 var decrypted = privateKey.decrypt(encrypted);
+
+// encrypt data with a public key using RSAES PKCS#1 v1.5
+var encrypted = publicKey.encrypt(bytes, 'RSAES-PKCS1-v1_5');
+
+// decrypt data with a private key using RSAES PKCS#1 v1.5
+var decrypted = privateKey.decrypt(encrypted, 'RSAES-PKCS1-v1_5');
+
+// encrypt data with a public key using RSAES-OAEP
+var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP');
+
+// decrypt data with a private key using RSAES-OAEP
+var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP');
 ```
 
 <a name="x509" />
