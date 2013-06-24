@@ -50,7 +50,7 @@ function decodeBase64PrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv) {
   return forge.pki.setRsaPrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv);
 }
 
-function testCorruptDecrypt() {
+function makeKey() {
   var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey, message, seed, encrypted;
 
   // Example 1: A 1024-bit RSA Key Pair
@@ -65,23 +65,30 @@ function testCorruptDecrypt() {
   pubkey = decodeBase64PublicKey(modulus, exponent);
   privateKey = decodeBase64PrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv);
 
-  seed = forge.util.decode64('JRTfRpV1WmeyiOr0kFw27sZv0v0=');
+  return {publicKey: pubkey, privateKey: privateKey};
+}
+
+function testCorruptDecrypt() {
+  var keys = makeKey();
+
+  // provide the seed to test the same input each time
+  var seed = forge.util.decode64('JRTfRpV1WmeyiOr0kFw27sZv0v0=');
 
   // Test decrypting corrupted data: flip every bit in the message
   // this tests the padding error handling
-  encrypted = forge.pkcs1.rsa_oaep_encrypt(pubkey, 'datadatadatadata', '', seed);
+  var encrypted = forge.pkcs1.rsa_oaep_encrypt(keys.publicKey, 'datadatadatadata', '', seed);
   for (var bit = 0; bit < encrypted.length * 8; bit++) {
-    var byte = bit / 8;
+    var byteIndex = bit / 8;
     var bitInByte = bit % 8;
 
-    out = encrypted.substring(0, byte);
+    var out = encrypted.substring(0, byteIndex);
     var mask = 0x1 << bitInByte;
-    out += String.fromCharCode(encrypted.charCodeAt(byte) ^ mask);
-    out += encrypted.substring(byte + 1);
+    out += String.fromCharCode(encrypted.charCodeAt(byteIndex) ^ mask);
+    out += encrypted.substring(byteIndex + 1);
 
     try {
-      output = forge.pkcs1.rsa_oaep_decrypt(privateKey, out);
-      console.log('Error: expected an exception!', bit, byte, bitInByte, mask);
+      output = forge.pkcs1.rsa_oaep_decrypt(keys.privateKey, out);
+      console.log('Error: expected an exception!', bit, byteIndex, bitInByte, mask);
       console.log(output);
       assert(false);
     } catch (e) {
@@ -91,6 +98,20 @@ function testCorruptDecrypt() {
     }
     process.stdout.write('.');
   }
+}
+
+// Test leading zero bytes since unpadding looks for them
+function testZeroMessage() {
+  var keys = makeKey();
+
+  var message = '';
+  for (var i = 0; i < 80; i++) {
+    message += '\x00';
+  }
+
+  var ciphertext = forge.pkcs1.rsa_oaep_encrypt(keys.publicKey, message);
+  var decrypted = forge.pkcs1.rsa_oaep_decrypt(keys.privateKey, ciphertext);
+  assert.equal(message, decrypted);
 }
 
 function testOAEP() {
@@ -587,7 +608,7 @@ function testOAEP() {
   checkOAEPEncrypt(pubkey, privateKey, message, seed, encrypted);
 }
 
-var tests = [testCorruptDecrypt, testOAEP];
+var tests = [testCorruptDecrypt, testZeroMessage, testOAEP];
 for (var i = 0; i < tests.length; i++) {
   process.stdout.write('.');
   tests[i]();
