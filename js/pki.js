@@ -1714,6 +1714,15 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     };
   }
 
+  // ensure signature is not interpreted as an embedded ASN.1 object
+  if(typeof capture.certSignature !== 'string') {
+    var certSignature = '\x00';
+    for(var i = 0; i < capture.certSignature.length; ++i) {
+      certSignature += asn1.toDer(capture.certSignature[i]).getBytes();
+    }
+    capture.certSignature = certSignature;
+  }
+
   // get oid
   var oid = asn1.derToOid(capture.publicKeyOid);
   if(oid !== pki.oids['rsaEncryption']) {

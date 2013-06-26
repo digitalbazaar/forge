@@ -321,8 +321,7 @@ asn1.fromDer = function(bytes, strict) {
       // and the length is valid, assume we've got an ASN.1 object
       b1 = bytes.getByte();
       var tc = (b1 & 0xC0);
-      if(tc === asn1.Class.UNIVERSAL ||
-        tc === asn1.Class.CONTEXT_SPECIFIC) {
+      if(tc === asn1.Class.UNIVERSAL || tc === asn1.Class.CONTEXT_SPECIFIC) {
         try {
           var len = _getValueLength(bytes);
           composed = (len === length - (bytes.read - read));
