@@ -65,19 +65,29 @@ oids['1.2.840.113549.1.7.6'] = 'encryptedData';
 oids['encryptedData'] = '1.2.840.113549.1.7.6';
 
 // pkcs#9 oids
+oids['1.2.840.113549.1.9.1'] = 'emailAddress';
+oids['emailAddress'] = '1.2.840.113549.1.9.1';
+oids['1.2.840.113549.1.9.2'] = 'unstructuredName';
+oids['unstructuredName'] = '1.2.840.113549.1.9.2';
+oids['1.2.840.113549.1.9.3'] = 'contentType';
+oids['contentType'] = '1.2.840.113549.1.9.3';
+oids['1.2.840.113549.1.9.4'] = 'messageDigest';
+oids['messageDigest'] = '1.2.840.113549.1.9.4';
+oids['1.2.840.113549.1.9.5'] = 'signingTime';
+oids['signingTime'] = '1.2.840.113549.1.9.5';
+oids['1.2.840.113549.1.9.6'] = 'counterSignature';
+oids['counterSignature'] = '1.2.840.113549.1.9.6';
+oids['1.2.840.113549.1.9.7'] = 'challengePassword';
+oids['challengePassword'] = '1.2.840.113549.1.9.7';
+oids['1.2.840.113549.1.9.8'] = 'unstructuredAddress';
+oids['unstructuredAddress'] = '1.2.840.113549.1.9.8';
+
 oids['1.2.840.113549.1.9.20'] = 'friendlyName';
 oids['friendlyName'] = '1.2.840.113549.1.9.20';
 oids['1.2.840.113549.1.9.21'] = 'localKeyId';
 oids['localKeyId'] = '1.2.840.113549.1.9.21';
 oids['1.2.840.113549.1.9.22.1'] = 'x509Certificate';
 oids['x509Certificate'] = '1.2.840.113549.1.9.22.1';
-
-oids['1.2.840.113549.1.9.4'] = 'messageDigest';
-oids['messageDigest'] = '1.2.840.113549.1.9.4';
-oids['1.2.840.113549.1.9.3'] = 'contentType';
-oids['contentType'] = '1.2.840.113549.1.9.3';
-oids['1.2.840.113549.1.9.5'] = 'signingTime';
-oids['signingTime'] = '1.2.840.113549.1.9.5';
 
 // pkcs#12 safe bags
 oids['1.2.840.113549.1.12.10.1.1'] = 'keyBag';
@@ -137,8 +147,6 @@ oids['2.5.4.10'] = 'organizationName';
 oids['organizationName'] = '2.5.4.10';
 oids['2.5.4.11'] = 'organizationalUnitName';
 oids['organizationalUnitName'] = '2.5.4.11';
-oids['1.2.840.113549.1.9.1'] = 'emailAddress';
-oids['emailAddress'] = '1.2.840.113549.1.9.1';
 
 // X.509 extension OIDs
 oids['2.5.29.1'] = 'authorityKeyIdentifier'; // deprecated, use .35

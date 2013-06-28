@@ -31,6 +31,7 @@ network resources.
 * [PKCS#5](#pkcs5)
 * [PKCS#7](#pkcs7)
 * [PKCS#8](#pkcs8)
+* [PKCS#10](#pkcs10)
 * [PKCS#12](#pkcs12)
 * [ASN.1](#asn)
 
@@ -641,6 +642,56 @@ var privateKey = pki.decryptRsaPrivateKey(pem, 'password');
 var publicKey = pki.setRsaPublicKey(privateKey.n, privateKey.e);
 ```
 
+<a name="pkcs10" />
+### PKCS#10
+
+Provides the certification requests or certificate signing requests (CSR) from
+[PKCS#10][].
+
+__Examples__
+
+```js
+// generate a key pair
+var keys = forge.pki.rsa.generateKeyPair(1024);
+
+// create a certification request (CSR)
+var csr = forge.pki.createCertificationRequest();
+csr.publicKey = keys.publicKey;
+csr.setSubject([{
+  name: 'commonName',
+  value: 'example.org'
+}, {
+  name: 'countryName',
+  value: 'US'
+}, {
+  shortName: 'ST',
+  value: 'Virginia'
+}, {
+  name: 'localityName',
+  value: 'Blacksburg'
+}, {
+  name: 'organizationName',
+  value: 'Test'
+}, {
+  shortName: 'OU',
+  value: 'Test'
+}]);
+// set (optional) attributes
+csr.setAttributes([{
+  name: 'challengePassword',
+  value: 'password'
+}, {
+  name: 'unstructuredName',
+  value: 'My Company, Inc.'
+}]);
+
+// sign certification request
+csr.sign(keys.privateKey);
+
+// verify certification request
+var verified = csr.verify();
+```
+
 <a name="pkcs12" />
 ### PKCS#12
 
@@ -1061,6 +1112,7 @@ Contact
 [MD5]: http://en.wikipedia.org/wiki/MD5
 [PKCS#5]: http://en.wikipedia.org/wiki/PKCS
 [PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
+[PKCS#10]: http://en.wikipedia.org/wiki/Certificate_signing_request
 [PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
