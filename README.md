@@ -645,7 +645,7 @@ var publicKey = pki.setRsaPublicKey(privateKey.n, privateKey.e);
 <a name="pkcs10" />
 ### PKCS#10
 
-Provides the certification requests or certificate signing requests (CSR) from
+Provides certification requests or certificate signing requests (CSR) from
 [PKCS#10][].
 
 __Examples__
