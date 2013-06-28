@@ -2801,7 +2801,13 @@ pki.createCaStore = function(certs) {
   caStore.getIssuer = function(cert) {
     var rval = null;
 
-    // TODO: produce issuer hash if it doesn't exist
+    // produce issuer hash if it doesn't exist
+    if(!cert.issuer.hash) {
+      var md = forge.md.sha1.create();
+      cert.issuer.attributes =  pki.RDNAttributesAsArray(
+        _dnToAsn1(cert.issuer), md);
+      cert.issuer.hash = md.digest().toHex();
+    }
 
     // get the entry using the cert's issuer hash
     if(cert.issuer.hash in caStore.certs) {
@@ -2830,11 +2836,18 @@ pki.createCaStore = function(certs) {
    */
   caStore.addCertificate = function(cert) {
     // convert from pem if necessary
-    if(cert.constructor == String) {
+    if(typeof cert === 'string') {
       cert = forge.pki.certificateFromPem(cert);
     }
 
-    // TODO: produce subject hash if it doesn't exist
+    // produce subject hash if it doesn't exist
+    if(!cert.subject.hash) {
+      var md = forge.md.sha1.create();
+      cert.subject.attributes =  pki.RDNAttributesAsArray(
+        _dnToAsn1(cert.subject), md);
+      cert.subject.hash = md.digest().toHex();
+    }
+
     if(cert.subject.hash in caStore.certs) {
       // subject hash already exists, append to array
       var tmp = caStore.certs[cert.subject.hash];
