@@ -690,6 +690,12 @@ csr.sign(keys.privateKey);
 
 // verify certification request
 var verified = csr.verify();
+
+// convert certification request to PEM-format
+var pem = forge.pki.certificationRequestToPem(csr);
+
+// convert a Forge certification request from PEM-format
+var csr = forge.pki.certificationRequestFromPem(pem);
 ```
 
 <a name="pkcs12" />
