@@ -19,7 +19,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
-var init = false; // not yet initialized
+
+  var init = false; // not yet initialized
 var Nb = 4;       // number of words comprising the state (AES = 4)
 var sbox;         // non-linear substitution table used in key expansion
 var isbox;        // inversion of sbox
@@ -1161,26 +1162,32 @@ if(typeof define !== 'function') {
   }
 }
 // AMD
-if(nodeDefine || typeof define === 'function') {
-  // define module AMD style
-  (nodeDefine || define)(['require', 'module'].concat(deps),
-  function(require, module) {
-    module.exports = function(forge) {
-      var mods = deps.map(function(dep) {
-        return require(dep);
-      }).concat(initModule);
-      // handle circular dependencies
-      forge = forge || {};
-      forge.defined = forge.defined || {};
-      if(forge.defined[name]) {
-        return forge[name];
-      }
-      forge.defined[name] = true;
-      for(var i = 0; i < mods.length; ++i) {
-        mods[i](forge);
-      }
+var defineDeps = ['require', 'module'].concat(deps);
+var defineFunc = function(require, module) {
+  module.exports = function(forge) {
+    var mods = deps.map(function(dep) {
+      return require(dep);
+    }).concat(initModule);
+    // handle circular dependencies
+    forge = forge || {};
+    forge.defined = forge.defined || {};
+    if(forge.defined[name]) {
       return forge[name];
-    };
+    }
+    forge.defined[name] = true;
+    for(var i = 0; i < mods.length; ++i) {
+      mods[i](forge);
+    }
+    return forge[name];
+  };
+};
+if (typeof nodeDefine === 'function') {
+  nodeDefine(defineDeps, defineFunc);
+}
+else if (typeof define === 'function') {
+  define([].concat(defineDeps), function() {
+    defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
+
 })();
