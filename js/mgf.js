@@ -53,13 +53,12 @@ var defineFunc = function(require, module) {
     return forge[name];
   };
 };
-if (typeof nodeDefine === 'function') {
+if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
-else if (typeof define === 'function') {
+else if(typeof define === 'function') {
   define([].concat(defineDeps), function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
-
 })();
