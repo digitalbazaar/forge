@@ -19,8 +19,7 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
-
-  var init = false; // not yet initialized
+var init = false; // not yet initialized
 var Nb = 4;       // number of words comprising the state (AES = 4)
 var sbox;         // non-linear substitution table used in key expansion
 var isbox;        // inversion of sbox
