@@ -711,10 +711,10 @@ pki.rsa.setPublicKey = function(n, e) {
    * Verifies the given signature against the given digest.
    *
    * PKCS#1 supports multiple (currently two) signature schemes:
-   * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
+   * RSASSA-PKCS1-V1_5 and RSASSA-PSS.
    *
    * By default this implementation uses the "old scheme", i.e.
-   * RSASSA-PKCS1-v1_5, in which case once RSA-decrypted, the
+   * RSASSA-PKCS1-V1_5, in which case once RSA-decrypted, the
    * signature is an OCTET STRING that holds a DigestInfo.
    *
    * DigestInfo ::= SEQUENCE {
@@ -730,7 +730,7 @@ pki.rsa.setPublicKey = function(n, e) {
    * @param digest the message digest hash to compare against the signature.
    * @param signature the signature to verify.
    * @param scheme signature verification scheme to use:
-   *          'RSASSA-PKCS1-v1_5' or undefined for RSASSA PKCS#1 v1.5,
+   *          'RSASSA-PKCS1-V1_5' or undefined for RSASSA PKCS#1 v1.5,
    *          a Forge PSS object for RSASSA-PSS,
    *          'NONE' or null for none, DigestInfo will not be expected, but
    *            PKCS#1 v1.5 padding will still be used.
@@ -742,10 +742,10 @@ pki.rsa.setPublicKey = function(n, e) {
        scheme = scheme.toUpperCase();
      }
      else if(scheme === undefined) {
-       scheme = 'RSASSA-PKCS1-v1_5';
+       scheme = 'RSASSA-PKCS1-V1_5';
      }
 
-     if(scheme === 'RSASSA-PKCS1-v1_5') {
+     if(scheme === 'RSASSA-PKCS1-V1_5') {
        scheme = {
          verify: function(digest, d) {
            // remove padding

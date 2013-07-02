@@ -433,10 +433,10 @@ var encrypted = publicKey.encrypt(bytes);
 var decrypted = privateKey.decrypt(encrypted);
 
 // encrypt data with a public key using RSAES PKCS#1 v1.5
-var encrypted = publicKey.encrypt(bytes, 'RSAES-PKCS1-v1_5');
+var encrypted = publicKey.encrypt(bytes, 'RSAES-PKCS1-V1_5');
 
 // decrypt data with a private key using RSAES PKCS#1 v1.5
-var decrypted = privateKey.decrypt(encrypted, 'RSAES-PKCS1-v1_5');
+var decrypted = privateKey.decrypt(encrypted, 'RSAES-PKCS1-V1_5');
 
 // encrypt data with a public key using RSAES-OAEP
 var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP');
