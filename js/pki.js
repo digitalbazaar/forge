@@ -3414,25 +3414,17 @@ pki.privateKeyToAsn1 = pki.privateKeyToRSAPrivateKey = function(key) {
  * @return the ASN.1 PrivateKeyInfo.
  */
 pki.wrapRsaPrivateKey = function(rsaKey) {
-  // get the oid for the algorithm
-  var oid = oids['rsaEncryption'];
-  var oidBytes = asn1.oidToDer(oid).getBytes();
-
-  // create the algorithm identifier
-  var algorithm = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-  algorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
-  algorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
-
   // PrivateKeyInfo
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(0x00)),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, '\x00'),
     // privateKeyAlgorithm
-    algorithm,
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.oidToDer(oids['rsaEncryption']).getBytes()),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+    ]),
     // PrivateKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
       asn1.toDer(rsaKey).getBytes())
