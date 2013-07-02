@@ -306,8 +306,6 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
   if(y.compareTo(key.n) >= 0) {
-    console.log('y', y.toString());
-    console.log('key.n', key.n.toString());
     throw {
       message: 'Encrypted message is invalid.'
     };
