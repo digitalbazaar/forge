@@ -1755,8 +1755,8 @@ pki.createCertificate = function() {
     var md = child.md;
     if(md === null) {
       // check signature OID for supported signature types
-      if(cert.signatureOid in oids) {
-        var oid = oids[cert.signatureOid];
+      if(child.signatureOid in oids) {
+        var oid = oids[child.signatureOid];
         switch(oid) {
         case 'sha1withRSAEncryption':
           md = forge.md.sha1.create();
@@ -1776,7 +1776,7 @@ pki.createCertificate = function() {
         throw {
           message: 'Could not compute certificate digest. ' +
             'Unknown signature OID.',
-          signatureOid: cert.signatureOid
+          signatureOid: child.signatureOid
         };
       }
 
