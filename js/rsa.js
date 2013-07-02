@@ -652,12 +652,12 @@ pki.rsa.setPublicKey = function(n, e) {
 
   /**
    * Encrypts the given data with this public key. Newer applications
-   * should use the 'RSA-OAEP' decryption scheme, 'RSAES-PKCS1-v1_5' is for
+   * should use the 'RSA-OAEP' decryption scheme, 'RSAES-PKCS1-V1_5' is for
    * legacy applications.
    *
    * @param data the byte string to encrypt.
    * @param scheme the encryption scheme to use:
-   *          'RSAES-PKCS1-v1_5' (default),
+   *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA encryption.
    *
@@ -668,10 +668,10 @@ pki.rsa.setPublicKey = function(n, e) {
       scheme = scheme.toUpperCase();
     }
     else if(scheme === undefined) {
-      scheme = 'RSAES-PKCS1-v1_5';
+      scheme = 'RSAES-PKCS1-V1_5';
     }
 
-    if(scheme === 'RSAES-PKCS1-v1_5') {
+    if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = {
         encode: function(m, key, pub) {
           return _encodePkcs1_v1_5(m, key, 0x02).getBytes();
@@ -800,7 +800,7 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
    *
    * @param data the byte string to decrypt.
    * @param scheme the decryption scheme to use:
-   *          'RSAES-PKCS1-v1_5' (default),
+   *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA decryption.
    *
@@ -811,13 +811,13 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
       scheme = scheme.toUpperCase();
     }
     else if(scheme === undefined) {
-      scheme = 'RSAES-PKCS1-v1_5';
+      scheme = 'RSAES-PKCS1-V1_5';
     }
 
     // do rsa decryption w/o any decoding
     var d = pki.rsa.decrypt(data, key, false, false);
 
-    if(scheme === 'RSAES-PKCS1-v1_5') {
+    if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = { decode: _decodePkcs1_v1_5 };
     }
     else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
