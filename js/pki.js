@@ -3817,7 +3817,7 @@ pki.encryptedPrivateKeyFromPem = function(pem) {
  * @param rsaKey the RSA key to encrypt.
  * @param password the password to use.
  * @param options:
- *          encAlg the encryption algorithm to use
+ *          algorithm the encryption algorithm to use
  *            ('aes128', 'aes192', 'aes256').
  *          count the iteration count to use.
  *          saltSize the salt size to use.
