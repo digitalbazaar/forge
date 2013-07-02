@@ -76,12 +76,13 @@ function testCorruptDecrypt() {
   // provide the seed to test the same input each time
   var seed = forge.util.decode64('JRTfRpV1WmeyiOr0kFw27sZv0v0=');
 
-  // Test decrypting corrupted data: flip every bit in the message
-  // this tests the padding error handling
+  // Test decrypting corrupted data: flip every bit (skip first byte to
+  // avoid triggering other invalid encryption error) in the message this
+  // tests the padding error handling
   var encoded = forge.pkcs1.encode_rsa_oaep(
     keys.publicKey, 'datadatadatadata', '', seed);
   var encrypted = keys.publicKey.encrypt(encoded, null);
-  for(var bit = 0; bit < encrypted.length * 8; ++bit) {
+  for(var bit = 8; bit < encrypted.length * 8; ++bit) {
     var byteIndex = bit / 8;
     var bitInByte = bit % 8;
 

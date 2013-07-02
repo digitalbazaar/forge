@@ -291,7 +291,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   var k = Math.ceil(key.n.bitLength() / 8);
 
   // error if the length of the encrypted data ED is not k
-  if(ed.length != k) {
+  if(ed.length !== k) {
     throw {
       message: 'Encrypted message length is invalid.',
       length: ed.length,
@@ -302,6 +302,16 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   // convert encrypted data into a big integer
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var y = new BigInteger(forge.util.createBuffer(ed).toHex(), 16);
+
+  // y must be less than the modulus or it wasn't the result of
+  // a previous mod operation (encryption) using that modulus
+  if(y.compareTo(key.n) >= 0) {
+    console.log('y', y.toString());
+    console.log('key.n', key.n.toString());
+    throw {
+      message: 'Encrypted message is invalid.'
+    };
+  }
 
   // do RSA decryption
   var x = _modPow(y, key, pub);

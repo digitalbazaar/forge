@@ -102,7 +102,9 @@ pkcs1.encode_rsa_oaep = function(key, message, label, seed, md) {
   else if(seed.length !== md.digestLength) {
     throw {
       message: 'Invalid RSAES-OAEP seed. The seed length must match the ' +
-        'digest length.'
+        'digest length.',
+      seedLength: seed.length,
+      digestLength: md.digestLength
     };
   }
 
