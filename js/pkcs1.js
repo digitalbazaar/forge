@@ -59,16 +59,36 @@ var pkcs1 = forge.pkcs1 = forge.pkcs1 || {};
  *
  * @param key the RSA key to use.
  * @param message the message to encode.
- * @param label an optional label to use.
- * @param seed the seed to use.
- * @param md the message digest object to use, undefined for SHA-1.
+ * @param options the options to use:
+ *          label an optional label to use.
+ *          seed the seed to use.
+ *          md the message digest object to use, undefined for SHA-1.
  *
  * @return the encoded message bytes.
  */
-pkcs1.encode_rsa_oaep = function(key, message, label, seed, md) {
+pkcs1.encode_rsa_oaep = function(key, message, options) {
+  // parse arguments
+  var label = undefined;
+  var seed = undefined;
+  var md = undefined;
+  // legacy args (label, seed, md)
+  if(typeof options === 'string') {
+    label = options;
+    seed = arguments[3] || undefined;
+    md = arguments[4] || undefined;
+  }
+  else if(options) {
+    label = options.label || undefined;
+    seed = options.seed || undefined;
+    md = options.md || undefined;
+  }
+
   // default to SHA-1 message digest
-  if(md === undefined) {
+  if(!md) {
     md = forge.md.sha1.create();
+  }
+  else {
+    md.start();
   }
 
   // compute length in bytes and check output
@@ -132,7 +152,20 @@ pkcs1.encode_rsa_oaep = function(key, message, label, seed, md) {
  *
  * @return the decoded message bytes.
  */
-pkcs1.decode_rsa_oaep = function(key, em, label, md) {
+pkcs1.decode_rsa_oaep = function(key, em, options) {
+  // parse args
+  var label = undefined;
+  var md = undefined;
+  // legacy args
+  if(typeof options === 'string') {
+    label = options;
+    md = arguments[3] || undefined;
+  }
+  else if(options) {
+    label = options.label || undefined;
+    md = options.md || undefined;
+  }
+
   // compute length in bytes
   var keyLength = Math.ceil(key.n.bitLength() / 8);
 
@@ -147,6 +180,9 @@ pkcs1.decode_rsa_oaep = function(key, em, label, md) {
   // default to SHA-1 message digest
   if(md === undefined) {
     md = forge.md.sha1.create();
+  }
+  else {
+    md.start();
   }
 
   if(keyLength < 2 * md.digestLength + 2) {

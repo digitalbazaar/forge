@@ -668,10 +668,11 @@ pki.rsa.setPublicKey = function(n, e) {
    *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA encryption.
+   * @param schemeOptions any scheme-specific options.
    *
    * @return the encrypted byte string.
    */
-  key.encrypt = function(data, scheme) {
+  key.encrypt = function(data, scheme, schemeOptions) {
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     }
@@ -689,7 +690,7 @@ pki.rsa.setPublicKey = function(n, e) {
     else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
         encode: function(m, key) {
-          return forge.pkcs1.encode_rsa_oaep(key, m);
+          return forge.pkcs1.encode_rsa_oaep(key, m, schemeOptions);
         }
       };
     }
@@ -811,10 +812,11 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
    *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA decryption.
+   * @param schemeOptions any scheme-specific options.
    *
    * @return the decrypted byte string.
    */
-  key.decrypt = function(data, scheme) {
+  key.decrypt = function(data, scheme, schemeOptions) {
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     }
@@ -831,7 +833,7 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
     else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
         decode: function(d, key) {
-          return forge.pkcs1.decode_rsa_oaep(key, d);
+          return forge.pkcs1.decode_rsa_oaep(key, d, schemeOptions);
         }
       };
     }
