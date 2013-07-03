@@ -330,7 +330,7 @@ util.ByteBuffer.prototype.getInt32Le = function() {
 util.ByteBuffer.prototype.getInt = function(n) {
   var rval = 0;
   do {
-    rval = (rval << n) + this.data.charCodeAt(this.read++);
+    rval = (rval << 8) + this.data.charCodeAt(this.read++);
     n -= 8;
   }
   while(n > 0);
