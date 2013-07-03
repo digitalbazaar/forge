@@ -852,15 +852,15 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
    * Signs the given digest, producing a signature.
    *
    * PKCS#1 supports multiple (currently two) signature schemes:
-   * RSASSA-PKCS1-v1_5 and RSASSA-PSS.
+   * RSASSA-PKCS1-V1_5 and RSASSA-PSS.
    *
    * By default this implementation uses the "old scheme", i.e.
-   * RSASSA-PKCS1-v1_5. In order to generate a PSS signature, provide
+   * RSASSA-PKCS1-V1_5. In order to generate a PSS signature, provide
    * an instance of Forge PSS object as the scheme parameter.
    *
    * @param md the message digest object with the hash to sign.
    * @param scheme the signature scheme to use:
-   *          'RSASSA-PKCS1-v1_5' or undefined for RSASSA PKCS#1 v1.5,
+   *          'RSASSA-PKCS1-V1_5' or undefined for RSASSA PKCS#1 v1.5,
    *          a Forge PSS object for RSASSA-PSS,
    *          'NONE' or null for none, DigestInfo will not be used but
    *            PKCS#1 v1.5 padding will still be used.
@@ -880,7 +880,7 @@ pki.rsa.setPrivateKey = function(n, e, d, p, q, dP, dQ, qInv) {
       scheme = scheme.toUpperCase();
     }
 
-    if(scheme === undefined || scheme === 'RSASSA-PKCS1-v1_5') {
+    if(scheme === undefined || scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = { encode: emsaPkcs1v15encode };
       bt = 0x01;
     }
