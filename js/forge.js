@@ -15,6 +15,7 @@ var deps = [
   './hmac',
   './log',
   './pbkdf2',
+  './pem',
   './pkcs7',
   './pkcs1',
   './pkcs12',

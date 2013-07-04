@@ -3888,6 +3888,7 @@ var deps = [
   './md',
   './mgf',
   './oids',
+  './pem',
   './pbkdf2',
   './pkcs12',
   './pss',

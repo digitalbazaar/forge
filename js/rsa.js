@@ -1,5 +1,5 @@
 /**
- * Javascript implementation of a basic RSA algorithms.
+ * Javascript implementation of basic RSA algorithms.
  *
  * @author Dave Longley
  *
