@@ -183,7 +183,7 @@ var _createCipher = function(key, encrypt)
      */
     start: function(iv, output) {
       if(iv) {
-        if(key.constructor == String && iv.length == 8) {
+        if(iv.constructor == String && iv.length == 8) {
           iv = forge.util.createBuffer(iv);
         }
 
