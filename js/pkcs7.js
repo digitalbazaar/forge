@@ -33,8 +33,24 @@ var p7 = forge.pkcs7 = forge.pkcs7 || {};
  * @return the PKCS#7 message.
  */
 p7.messageFromPem = function(pem) {
-  var der = forge.pki.pemToDer(pem);
-  var obj = asn1.fromDer(der);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'PKCS7') {
+    throw {
+      message: 'Could not convert PKCS#7 message from PEM; PEM header type ' +
+        'is not "PKCS#7".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert PKCS#7 message from PEM; PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  var obj = asn1.fromDer(msg.body);
+
   return p7.messageFromAsn1(obj);
 };
 
@@ -47,12 +63,12 @@ p7.messageFromPem = function(pem) {
  * @return The PEM-formatted PKCS#7 message.
  */
 p7.messageToPem = function(msg, maxline) {
-  var out = asn1.toDer(msg.toAsn1());
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN PKCS7-----\r\n' +
-    out +
-    '\r\n-----END PKCS7-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var pemObj = {
+    type: 'PKCS7',
+    body: asn1.toDer(msg.toAsn1()).getBytes()
+  };
+  return forge.pem.encode(pemObj, {maxline: maxline});
 };
 
 /**
@@ -663,6 +679,7 @@ var deps = [
   './aes',
   './asn1',
   './des',
+  './pem',
   './pkcs7asn1',
   './pki',
   './random',
