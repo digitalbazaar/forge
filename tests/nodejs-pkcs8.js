@@ -1,26 +1,20 @@
-var sys = require('sys');
+var assert = require('assert');
 var forge = require('../js/forge');
 
-sys.puts('Generating 512-bit private key...');
+console.log('Generating 512-bit private key...');
 var keys = forge.pki.rsa.generateKeyPair(512);
 var pem1 = forge.pki.privateKeyToPem(keys.privateKey);
-sys.puts('Private key:\n' + pem1 + '\n');
+console.log('Private key:\n' + pem1 );
 
-sys.puts('Encrypting private key with password "password"...');
+console.log('Encrypting private key with password "password"...');
 var pem2 = forge.pki.encryptRsaPrivateKey(
-   keys.privateKey, 'password', {'encAlg': 'aes128'});
-sys.puts('Encrypted private key:\n' + pem2 + '\n');
+  keys.privateKey, 'password', {'encAlg': 'aes128'});
+console.log('Encrypted private key:\n' + pem2);
 
-sys.puts('Decrypting private key...');
+console.log('Decrypting private key...');
 var privateKey = forge.pki.decryptRsaPrivateKey(pem2, 'password');
 var pem3 = forge.pki.privateKeyToPem(privateKey);
-sys.puts('Decrypted private key:\n' + pem3 + '\n');
+console.log('Decrypted private key:\n' + pem3);
 
-if(pem1 === pem3)
-{
-   require('sys').puts('Keys match. PASS');
-}
-else
-{
-   require('sys').puts('Keys DO NOT match. FAIL');
-}
+assert(pem1 === pem3);
+console.log('Keys match. SUCCESS.');
