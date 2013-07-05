@@ -635,6 +635,10 @@ var encryptedPrivateKeyInfo = pki.encryptedPrivateKeyFromPem(pem);
 // wraps and encrypts a Forge private key and outputs it in PEM format
 var pem = pki.encryptRsaPrivateKey(privateKey, 'password');
 
+// encrypts a Forge private key and outputs it in PEM format using OpenSSL's
+// proprietary legacy format + encapsulated PEM headers (DEK-Info)
+var pem = pki.encryptRsaPrivateKey(privateKey, 'password', {legacy: true});
+
 // decrypts a PEM-formatted, encrypted private key
 var privateKey = pki.decryptRsaPrivateKey(pem, 'password');
 
