@@ -1084,26 +1084,28 @@ tls.handleClientHello = function(c, record, length) {
         data: tls.createCertificate(c)
       }));
 
-      // queue server key exchange
-      tls.queue(c, tls.createRecord({
-        type: tls.ContentType.handshake,
-        data: tls.createServerKeyExchange(c)
-      }));
-
-      // request client certificate if set
-      if(c.verifyClient !== false) {
-        // queue certificate request
+      if(!c.fail) {
+        // queue server key exchange
         tls.queue(c, tls.createRecord({
           type: tls.ContentType.handshake,
-          data: tls.createCertificateRequest(c)
+          data: tls.createServerKeyExchange(c)
+        }));
+
+        // request client certificate if set
+        if(c.verifyClient !== false) {
+          // queue certificate request
+          tls.queue(c, tls.createRecord({
+            type: tls.ContentType.handshake,
+            data: tls.createCertificateRequest(c)
+          }));
+        }
+
+        // queue server hello done
+        tls.queue(c, tls.createRecord({
+          type: tls.ContentType.handshake,
+          data: tls.createServerHelloDone(c)
         }));
       }
-
-      // queue server hello done
-      tls.queue(c, tls.createRecord({
-        type: tls.ContentType.handshake,
-        data: tls.createServerHelloDone(c)
-      }));
     }
 
     // send records
@@ -2556,6 +2558,9 @@ tls.createRandom = function() {
  * @return the created record.
  */
 tls.createRecord = function(options) {
+  if(!options.data) {
+    return null;
+  }
   var record = {
     type: options.type,
     version: {
@@ -2826,9 +2831,26 @@ tls.createCertificate = function(c) {
       }
       var asn1 = null;
       for(var i = 0; i < cert.length; ++i) {
-        var der = forge.pki.pemToDer(cert[i]);
+        var msg = forge.pem.decode(cert[i])[0];
+        if(msg.type !== 'CERTIFICATE' &&
+          msg.type !== 'X509 CERTIFICATE' &&
+          msg.type !== 'TRUSTED CERTIFICATE') {
+          throw {
+            message: 'Could not convert certificate from PEM; PEM header ' +
+              'type is not "CERTIFICATE", "X509 CERTIFICATE", or ' +
+              '"TRUSTED CERTIFICATE".',
+            headerType: msg.type
+          };
+        }
+        if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+          throw {
+            message: 'Could not convert certificate from PEM; PEM is encrypted.'
+          };
+        }
+
+        var der = forge.util.createBuffer(msg.body);
         if(asn1 === null) {
-          asn1 = forge.asn1.fromDer(der.bytes());
+          asn1 = forge.asn1.fromDer(der.bytes(), false);
         }
 
         // certificate entry is itself a vector with 3 length bytes
@@ -2847,17 +2869,18 @@ tls.createCertificate = function(c) {
       else {
         c.session.serverCertificate = cert;
       }
-   }
-   catch(ex) {
-     c.error(c, {
-       message: 'Could not send certificate list.',
-       cause: ex,
-       send: true,
-       alert: {
-         level: tls.Alert.Level.fatal,
-         description: tls.Alert.Description.bad_certificate
-       }
-     });
+    }
+    catch(ex) {
+      console.log('ex', ex, ex.stack);
+      return c.error(c, {
+        message: 'Could not send certificate list.',
+        cause: ex,
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.bad_certificate
+        }
+      });
     }
   }
 
@@ -3248,6 +3271,11 @@ tls.createFinished = function(c) {
  * @param record the record to queue.
  */
 tls.queue = function(c, record) {
+  // error during record creation
+  if(!record) {
+    return;
+  }
+
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
     var bytes = record.fragment.bytes();
@@ -4091,6 +4119,7 @@ var deps = [
   './asn1',
   './hmac',
   './md',
+  './pem',
   './pki',
   './random',
   './util'
