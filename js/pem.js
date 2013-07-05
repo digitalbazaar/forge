@@ -37,10 +37,13 @@ var pem = forge.pem = forge.pem || {};
  * Encodes (serializes) the given PEM object.
  *
  * @param msg the PEM message object to encode.
+ * @param options the options to use:
+ *          maxline the maximum characters per line for the body, (default: 64).
  *
  * @return the PEM-formatted string.
  */
-pem.encode = function(msg) {
+pem.encode = function(msg, options) {
+  options = options || {};
   var rval = '-----BEGIN ' + msg.type + '-----\r\n';
 
   // encode special headers
@@ -64,9 +67,11 @@ pem.encode = function(msg) {
     rval += foldHeader(header);
   }
 
-  // encode all other headers
-  for(var i = 0; i < msg.headers.length; ++i) {
-    rval += foldHeader(msg.headers[i]);
+  if(msg.headers) {
+    // encode all other headers
+    for(var i = 0; i < msg.headers.length; ++i) {
+      rval += foldHeader(msg.headers[i]);
+    }
   }
 
   // terminate header
@@ -75,7 +80,7 @@ pem.encode = function(msg) {
   }
 
   // add body
-  rval += forge.util.encode64(msg.body, 64) + '\r\n';
+  rval += forge.util.encode64(msg.body, options.maxline || 64) + '\r\n';
 
   rval += '-----END ' + msg.type + '-----\r\n';
   return rval;
