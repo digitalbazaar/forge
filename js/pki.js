@@ -1133,6 +1133,8 @@ var _pemRegex = new RegExp(
   '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
 
 /**
+ * NOTE: THIS METHOD IS DEPRECATED. Use pem.decode() instead.
+ *
  * Converts PEM-formatted data to DER.
  *
  * @param pem the PEM-formatted data.
@@ -1140,19 +1142,13 @@ var _pemRegex = new RegExp(
  * @return the DER-formatted data.
  */
 pki.pemToDer = function(pem) {
-  var rval = null;
-
-  // get matching base64
-  var m = _pemRegex.exec(pem);
-  if(m) {
-    // base64 decode to get DER
-    rval = forge.util.createBuffer(forge.util.decode64(m[1]));
+  var msg = forge.pem.decode(pem)[0];
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert PEM to DER; PEM is encrypted.'
+    };
   }
-  else {
-    throw 'Invalid PEM format';
-  }
-
-  return rval;
+  return forge.util.createBuffer(msg.body);
 };
 
 /**
