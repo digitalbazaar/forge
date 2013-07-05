@@ -3465,7 +3465,7 @@ pki.wrapRsaPrivateKey = function(rsaKey) {
 };
 
 /**
- * Encrypts a ASN.1 PrivateKeyInfo object.
+ * Encrypts a ASN.1 PrivateKeyInfo object, producing an EncryptedPrivateKeyInfo.
  *
  * PBES2Algorithms ALGORITHM-IDENTIFIER ::=
  *   { {PBES2-params IDENTIFIED BY id-PBES2}, ...}
@@ -3860,23 +3860,95 @@ pki.encryptedPrivateKeyFromPem = function(pem) {
 };
 
 /**
- * Encrypts an RSA private key.
+ * Encrypts an RSA private key. By default, the key will be wrapped in
+ * a PrivateKeyInfo and encrypted to produce a PKCS#8 EncryptedPrivateKeyInfo.
+ * This is the standard, preferred way to encrypt a private key.
+ *
+ * To produce a non-standard PEM-encrypted private key that uses encapsulated
+ * headers to indicate the encryption algorithm (old-style non-PKCS#8 OpenSSL
+ * private key encryption), set the 'legacy' option to true. Note: Using this
+ * option will cause the iteration count to be forced to 1.
  *
  * @param rsaKey the RSA key to encrypt.
  * @param password the password to use.
  * @param options:
- *          algorithm the encryption algorithm to use
- *            ('aes128', 'aes192', 'aes256').
- *          count the iteration count to use.
- *          saltSize the salt size to use.
+ *          algorithm: the encryption algorithm to use
+ *            ('aes128', 'aes192', 'aes256', '3des').
+ *          count: the iteration count to use.
+ *          saltSize: the salt size to use.
+ *          legacy: output an old non-PKCS#8 PEM-encrypted+encapsulated
+ *            headers (DEK-Info) private key.
  *
  * @return the PEM-encoded ASN.1 EncryptedPrivateKeyInfo.
  */
 pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
-  // encrypt PrivateKeyInfo
-  var rval = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(rsaKey));
-  rval = pki.encryptPrivateKeyInfo(rval, password, options);
-  return pki.encryptedPrivateKeyToPem(rval);
+  // standard PKCS#8
+  options = options || {};
+  if(!options.legacy) {
+    // encrypt PrivateKeyInfo
+    var rval = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(rsaKey));
+    rval = pki.encryptPrivateKeyInfo(rval, password, options);
+    return pki.encryptedPrivateKeyToPem(rval);
+  }
+
+  // legacy non-PKCS#8
+  var algorithm;
+  var iv;
+  var dkLen;
+  var cipherFn;
+  switch(options.algorithm) {
+  case 'aes128':
+    algorithm = 'AES-128-CBC';
+    dkLen = 16;
+    iv = forge.random.getBytes(16);
+    cipherFn = forge.aes.createEncryptionCipher;
+    break;
+  case 'aes192':
+    algorithm = 'AES-192-CBC';
+    dkLen = 24;
+    iv = forge.random.getBytes(16);
+    cipherFn = forge.aes.createEncryptionCipher;
+    break;
+  case 'aes256':
+    algorithm = 'AES-256-CBC';
+    dkLen = 32;
+    iv = forge.random.getBytes(16);
+    cipherFn = forge.aes.createEncryptionCipher;
+    break;
+  case '3des':
+    algorithm = 'DES-EDE3-CBC';
+    dkLen = 24;
+    iv = forge.random.getBytes(8);
+    cipherFn = forge.des.createEncryptionCipher;
+    break;
+  default:
+    throw {
+      message: 'Could not encrypt RSA private key; unsupported encryption ' +
+        'algorithm "' + options.algorithm + '".',
+      algorithm: options.algorithm
+    };
+  }
+
+  // encrypt private key using OpenSSL legacy key derivation
+  var dk = evpBytesToKey(password, iv.substr(0, 8), dkLen);
+  var cipher = cipherFn(dk);
+  cipher.start(iv);
+  cipher.update(asn1.toDer(pki.privateKeyToAsn1(rsaKey)));
+  cipher.finish();
+
+  var msg = {
+    type: 'RSA PRIVATE KEY',
+    procType: {
+      version: '4',
+      type: 'ENCRYPTED'
+    },
+    dekInfo: {
+      algorithm: algorithm,
+      parameters: forge.util.bytesToHex(iv).toUpperCase()
+    },
+    body: cipher.output.getBytes()
+  };
+  return forge.pem.encode(msg);
 };
 
 /**
@@ -3888,26 +3960,89 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
  * @return the RSA key on success, null on failure.
  */
 pki.decryptRsaPrivateKey = function(pem, password) {
+  var rval = null;
+
   var msg = forge.pem.decode(pem)[0];
 
-  if(msg.type !== 'ENCRYPTED PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
+  if(msg.type !== 'ENCRYPTED PRIVATE KEY' &&
+    msg.type !== 'PRIVATE KEY' &&
+    msg.type !== 'RSA PRIVATE KEY') {
     throw {
       message: 'Could not convert private key from PEM; PEM header type is ' +
-        'not "ENCRYPTED PRIVATE KEY" or "RSA PRIVATE KEY".',
+        'not "ENCRYPTED PRIVATE KEY", "PRIVATE KEY", or "RSA PRIVATE KEY".',
       headerType: msg.type
     };
   }
 
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    // FIXME: check dekInfo
+    var dkLen;
+    var cipherFn;
+    switch(msg.dekInfo.algorithm) {
+    case 'DES-EDE3-CBC':
+      dkLen = 24;
+      cipherFn = forge.des.createDecryptionCipher;
+      break;
+    case 'AES-128-CBC':
+      dkLen = 16;
+      cipherFn = forge.aes.createDecryptionCipher;
+      break;
+    case 'AES-192-CBC':
+      dkLen = 24;
+      cipherFn = forge.aes.createDecryptionCipher;
+      break;
+    case 'AES-256-CBC':
+      dkLen = 32;
+      cipherFn = forge.aes.createDecryptionCipher;
+      break;
+    case 'RC2-40-CBC':
+      dkLen = 5;
+      cipherFn = function(key) {
+        return forge.rc2.createDecryptionCipher(key, 40);
+      };
+      break;
+    case 'RC2-64-CBC':
+      dkLen = 8;
+      cipherFn = function(key) {
+        return forge.rc2.createDecryptionCipher(key, 64);
+      };
+      break;
+    case 'RC2-128-CBC':
+      dkLen = 16;
+      cipherFn = function(key) {
+        return forge.rc2.createDecryptionCipher(key, 128);
+      };
+      break;
+    default:
+      throw {
+        message: 'Could not decrypt private key; unsupported encryption ' +
+          'algorithm "' + msg.dekInfo.algorithm + '".',
+        algorithm: msg.dekInfo.algorithm
+      };
+    }
+
+    // use OpenSSL legacy key derivation
+    var iv = forge.util.hexToBytes(msg.dekInfo.parameters);
+    var dk = evpBytesToKey(password, iv.substr(0, 8), dkLen);
+    var cipher = cipherFn(dk);
+    cipher.start(iv);
+    cipher.update(forge.util.createBuffer(msg.body));
+    if(cipher.finish()) {
+      rval = cipher.output.getBytes();
+    }
+    else {
+      return rval;
+    }
+  }
+  else {
+    rval = msg.body;
   }
 
   if(msg.type === 'ENCRYPTED PRIVATE KEY') {
-    rval = pki.decryptPrivateKeyInfo(asn1.fromDer(msg.body), password);
+    rval = pki.decryptPrivateKeyInfo(asn1.fromDer(rval), password);
   }
   else {
     // decryption already performed above
-    rval = asn1.fromDer(msg.body);
+    rval = asn1.fromDer(rval);
   }
 
   if(rval !== null) {
@@ -3916,6 +4051,27 @@ pki.decryptRsaPrivateKey = function(pem, password) {
 
   return rval;
 };
+
+/**
+ * OpenSSL's legacy key derivation function.
+ *
+ * See: http://www.openssl.org/docs/crypto/EVP_BytesToKey.html
+ *
+ * @param password the password to derive the key from.
+ * @param salt the salt to use.
+ * @param dkLen the number of bytes needed for the derived key.
+ */
+function evpBytesToKey(password, salt, dkLen) {
+  var digests = [md5(password + salt)];
+  for(var length = 16, i = 1; length < dkLen; ++i, length += 16) {
+    digests.push(md5(digests[i - 1] + password + salt));
+  }
+  return digests.join('').substr(0, dkLen);
+}
+
+function md5(bytes) {
+  return forge.md.md5.create().update(bytes).digest().getBytes();
+}
 
 /**
  * Sets an RSA public key from BigIntegers modulus and exponent.
