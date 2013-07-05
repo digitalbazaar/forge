@@ -1128,10 +1128,6 @@ var _parseExtensions = function(exts) {
   return rval;
 };
 
-// regex for stripping PEM header and footer
-var _pemRegex = new RegExp(
-  '-----BEGIN [^-]+-----([A-Za-z0-9+\/=\\s]+)-----END [^-]+-----');
-
 /**
  * NOTE: THIS METHOD IS DEPRECATED. Use pem.decode() instead.
  *
@@ -1149,29 +1145,6 @@ pki.pemToDer = function(pem) {
     };
   }
   return forge.util.createBuffer(msg.body);
-};
-
-/**
- * Converts PEM-formatted data into an certificate or key.
- *
- * @param pem the PEM-formatted data.
- * @param func the certificate or key function to convert from ASN.1.
- * @param strict true to be strict when checking ASN.1 value lengths, false to
- *          allow truncated values.
- *
- * @return the certificate or key.
- */
-var _fromPem = function(pem, func, strict) {
-  var rval = null;
-
-  // parse DER into asn.1 object
-  var der = pki.pemToDer(pem);
-  var obj = asn1.fromDer(der, strict);
-
-  // convert from asn.1
-  rval = func(obj);
-
-  return rval;
 };
 
 /**
@@ -1285,9 +1258,25 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
  * @return the certificate.
  */
 pki.certificateFromPem = function(pem, computeHash, strict) {
-  return _fromPem(pem, function(obj) {
-    return pki.certificateFromAsn1(obj, computeHash);
-  }, strict);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'CERTIFICATE') {
+    throw {
+      message: 'Could not convert certificate from PEM; PEM header type is ' +
+        'not "CERTIFICATE".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert certificate from PEM; PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  var obj = asn1.fromDer(msg.body, strict);
+
+  return pki.certificateFromAsn1(obj, computeHash);
 };
 
 /**
@@ -1299,13 +1288,12 @@ pki.certificateFromPem = function(pem, computeHash, strict) {
  * @return the PEM-formatted certificate.
  */
 pki.certificateToPem = function(cert, maxline) {
-  // convert to ASN.1, then DER, then base64-encode
-  var out = asn1.toDer(pki.certificateToAsn1(cert));
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN CERTIFICATE-----\r\n' +
-    out +
-    '\r\n-----END CERTIFICATE-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var msg = {
+    type: 'CERTIFICATE',
+    body: asn1.toDer(pki.certificateToAsn1(cert)).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -1316,7 +1304,25 @@ pki.certificateToPem = function(cert, maxline) {
  * @return the public key.
  */
 pki.publicKeyFromPem = function(pem) {
-  return _fromPem(pem, pki.publicKeyFromAsn1);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'PUBLIC KEY' && msg.type !== 'RSA PUBLIC KEY') {
+    throw {
+      message: 'Could not convert public key from PEM; PEM header type is ' +
+        'not "PUBLIC KEY" or "RSA PUBLIC KEY".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert public key from PEM; PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  var obj = asn1.fromDer(msg.body);
+
+  return pki.publicKeyFromAsn1(obj);
 };
 
 /**
@@ -1328,13 +1334,12 @@ pki.publicKeyFromPem = function(pem) {
  * @return the PEM-formatted public key.
  */
 pki.publicKeyToPem = function(key, maxline) {
-  // convert to ASN.1, then DER, then base64-encode
-  var out = asn1.toDer(pki.publicKeyToAsn1(key));
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN PUBLIC KEY-----\r\n' +
-    out +
-    '\r\n-----END PUBLIC KEY-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var msg = {
+    type: 'PUBLIC KEY',
+    body: asn1.toDer(pki.publicKeyToAsn1(key)).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -1346,13 +1351,12 @@ pki.publicKeyToPem = function(key, maxline) {
  * @return the PEM-formatted public key.
  */
 pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
-  // convert to ASN.1, then DER, then base64-encode
-  var out = asn1.toDer(pki.publicKeyToRSAPublicKey(key));
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN RSA PUBLIC KEY-----\r\n' +
-    out +
-    '\r\n-----END RSA PUBLIC KEY-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var msg = {
+    type: 'RSA PUBLIC KEY',
+    body: asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -1363,7 +1367,25 @@ pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
  * @return the private key.
  */
 pki.privateKeyFromPem = function(pem) {
-  return _fromPem(pem, pki.privateKeyFromAsn1);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
+    throw {
+      message: 'Could not convert private key from PEM; PEM header type is ' +
+        'not "PRIVATE KEY" or "RSA PRIVATE KEY".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert private key from PEM; PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  var obj = asn1.fromDer(msg.body);
+
+  return pki.privateKeyFromAsn1(obj);
 };
 
 /**
@@ -1375,13 +1397,12 @@ pki.privateKeyFromPem = function(pem) {
  * @return the PEM-formatted private key.
  */
 pki.privateKeyToPem = function(key, maxline) {
-  // convert to ASN.1, then DER, then base64-encode
-  var out = asn1.toDer(pki.privateKeyToAsn1(key));
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN RSA PRIVATE KEY-----\r\n' +
-    out +
-    '\r\n-----END RSA PRIVATE KEY-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var msg = {
+    type: 'RSA PRIVATE KEY',
+    body: asn1.toDer(pki.privateKeyToAsn1(key)).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -1400,9 +1421,26 @@ pki.privateKeyToPem = function(key, maxline) {
  * @return the certification request (CSR).
  */
 pki.certificationRequestFromPem = function(pem, computeHash, strict) {
-  return _fromPem(pem, function(obj) {
-    return pki.certificationRequestFromAsn1(obj, computeHash);
-  }, strict);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'CERTIFICATE REQUEST') {
+    throw {
+      message: 'Could not convert certification request from PEM; PEM header ' +
+        'type is not "CERTIFICATE REQUEST".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert certification request from PEM; ' +
+        'PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  var obj = asn1.fromDer(msg.body, strict);
+
+  return pki.certificationRequestFromAsn1(obj, computeHash);
 };
 
 /**
@@ -1414,13 +1452,12 @@ pki.certificationRequestFromPem = function(pem, computeHash, strict) {
  * @return the PEM-formatted certification request.
  */
 pki.certificationRequestToPem = function(csr, maxline) {
-  // convert to ASN.1, then DER, then base64-encode
-  var out = asn1.toDer(pki.certificationRequestToAsn1(csr));
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN CERTIFICATE REQUEST-----\r\n' +
-    out +
-    '\r\n-----END CERTIFICATE REQUEST-----');
+  // convert to ASN.1, then DER, then PEM-encode
+  var msg = {
+    type: 'CERTIFICATE REQUEST',
+    body: asn1.toDer(pki.certificationRequestToAsn1(key)).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -3785,26 +3822,41 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
  * @return the PEM-formatted encrypted private key.
  */
 pki.encryptedPrivateKeyToPem = function(epki, maxline) {
-  // convert to DER, then base64-encode
-  var out = asn1.toDer(epki);
-  out = forge.util.encode64(out.getBytes(), maxline || 64);
-  return (
-    '-----BEGIN ENCRYPTED PRIVATE KEY-----\r\n' +
-    out +
-    '\r\n-----END ENCRYPTED PRIVATE KEY-----');
+  // convert to DER, then PEM-encode
+  var msg = {
+    type: 'ENCRYPTED PRIVATE KEY',
+    body: asn1.toDer(epki).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
 };
 
 /**
- * Converts a PEM-encoded EncryptedPrivateKeyInfo to ASN.1 format.
+ * Converts a PEM-encoded EncryptedPrivateKeyInfo to ASN.1 format. Decryption
+ * is not performed.
  *
  * @param pem the EncryptedPrivateKeyInfo in PEM-format.
  *
  * @return the ASN.1 EncryptedPrivateKeyInfo.
  */
 pki.encryptedPrivateKeyFromPem = function(pem) {
-  // parse DER into asn.1 object
-  var der = pki.pemToDer(pem);
-  return asn1.fromDer(der);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'ENCRYPTED PRIVATE KEY') {
+    throw {
+      message: 'Could not convert encrypted private key from PEM; PEM header ' +
+        'type is "ENCRYPTED PRIVATE KEY".',
+      headerType: msg.type
+    };
+  }
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    throw {
+      message: 'Could not convert encrypted private key from PEM; ' +
+        'PEM is encrypted.'
+    };
+  }
+
+  // convert DER to ASN.1 object
+  return asn1.fromDer(msg.body);
 };
 
 /**
@@ -3836,12 +3888,32 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
  * @return the RSA key on success, null on failure.
  */
 pki.decryptRsaPrivateKey = function(pem, password) {
-  // get EncryptedPrivateKeyInfo as ASN.1
-  var rval = pki.encryptedPrivateKeyFromPem(pem);
-  rval = pki.decryptPrivateKeyInfo(rval, password);
+  var msg = forge.pem.decode(pem)[0];
+
+  if(msg.type !== 'ENCRYPTED PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
+    throw {
+      message: 'Could not convert private key from PEM; PEM header type is ' +
+        'not "ENCRYPTED PRIVATE KEY" or "RSA PRIVATE KEY".',
+      headerType: msg.type
+    };
+  }
+
+  if(msg.procType && msg.procType.type === 'ENCRYPTED') {
+    // FIXME: check dekInfo
+  }
+
+  if(msg.type === 'ENCRYPTED PRIVATE KEY') {
+    rval = pki.decryptPrivateKeyInfo(asn1.fromDer(msg.body), password);
+  }
+  else {
+    // decryption already performed above
+    rval = asn1.fromDer(msg.body);
+  }
+
   if(rval !== null) {
     rval = pki.privateKeyFromAsn1(rval);
   }
+
   return rval;
 };
 
