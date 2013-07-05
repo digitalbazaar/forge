@@ -175,6 +175,8 @@ sha256.create = function() {
 
   /**
    * Starts the digest.
+   *
+   * @return this digest object.
    */
   md.start = function() {
     md.messageLength = 0;
@@ -189,6 +191,7 @@ sha256.create = function() {
       h6: 0x1F83D9AB,
       h7: 0x5BE0CD19
     };
+    return md;
   };
   // start digest automatically for first time
   md.start();
@@ -200,6 +203,8 @@ sha256.create = function() {
    *
    * @param msg the message input to update with.
    * @param encoding the encoding to use (default: 'raw', other: 'utf8').
+   *
+   * @return this digest object.
    */
   md.update = function(msg, encoding) {
     if(encoding === 'utf8') {
@@ -219,6 +224,8 @@ sha256.create = function() {
     if(_input.read > 2048 || _input.length() === 0) {
       _input.compact();
     }
+
+    return md;
   };
 
   /**

@@ -157,6 +157,8 @@ md5.create = function() {
 
   /**
    * Starts the digest.
+   *
+   * @return this digest object.
    */
   md.start = function() {
     md.messageLength = 0;
@@ -167,6 +169,7 @@ md5.create = function() {
       h2: 0x98BADCFE,
       h3: 0x10325476
     };
+    return md;
   };
   // start digest automatically for first time
   md.start();
@@ -178,6 +181,8 @@ md5.create = function() {
    *
    * @param msg the message input to update with.
    * @param encoding the encoding to use (default: 'raw', other: 'utf8').
+   *
+   * @return this digest object.
    */
   md.update = function(msg, encoding) {
     if(encoding === 'utf8') {
@@ -197,6 +202,8 @@ md5.create = function() {
     if(_input.read > 2048 || _input.length() === 0) {
       _input.compact();
     }
+
+    return md;
   };
 
   /**
