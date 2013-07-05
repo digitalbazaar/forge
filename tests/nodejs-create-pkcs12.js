@@ -139,11 +139,14 @@ function loadPkcs12(pkcs12Der, password, caStore) {
 
       console.log('\nPrivate Key:');
       console.log(privateKeyP12Pem);
-      console.log('\nEncrypted Private Key (password: "' + password + '"):');
+      console.log('Encrypted Private Key (password: "' + password + '"):');
       console.log(encryptedPrivateKeyP12Pem);
     }
+    else {
+      console.log('');
+    }
     if(entry.certChain.length > 0) {
-      console.log('\nCertificate chain:');
+      console.log('Certificate chain:');
       var certChain = entry.certChain;
       for(var i = 0; i < certChain.length; ++i) {
         var certP12Pem = forge.pki.certificateToPem(certChain[i]);
@@ -157,7 +160,7 @@ function loadPkcs12(pkcs12Der, password, caStore) {
       catch(ex) {
         chainVerified = ex;
       }
-      console.log('\nCertificate chain verified: ', chainVerified);
+      console.log('Certificate chain verified: ', chainVerified);
     }
   }
 }
