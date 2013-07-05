@@ -70,7 +70,8 @@ var _ctx = forge.prng.create(prng_aes);
 
 // add other sources of entropy only if window.crypto.getRandomValues is not
 // available -- otherwise this source will be automatically used by the prng
-var _nodejs = (typeof process !== 'undefined' && process.versions && process.versions.node);
+var _nodejs = (typeof process !== 'undefined' &&
+  process.versions && process.versions.node);
 if(!_nodejs && !(typeof window !== 'undefined' &&
   window.crypto && window.crypto.getRandomValues)) {
 
