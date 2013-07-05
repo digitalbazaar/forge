@@ -1260,10 +1260,12 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
 pki.certificateFromPem = function(pem, computeHash, strict) {
   var msg = forge.pem.decode(pem)[0];
 
-  if(msg.type !== 'CERTIFICATE') {
+  if(msg.type !== 'CERTIFICATE' &&
+    msg.type !== 'X509 CERTIFICATE' &&
+    msg.type !== 'TRUSTED CERTIFICATE') {
     throw {
       message: 'Could not convert certificate from PEM; PEM header type is ' +
-        'not "CERTIFICATE".',
+        'not "CERTIFICATE", "X509 CERTIFICATE", or "TRUSTED CERTIFICATE".',
       headerType: msg.type
     };
   }
