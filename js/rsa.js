@@ -9,8 +9,6 @@
 function initModule(forge) {
 /* ########## Begin module implementation ########## */
 
-var _nodejs = (typeof module === 'object' && module.exports);
-
 if(typeof BigInteger === 'undefined') {
   BigInteger = forge.jsbn.BigInteger;
 }
