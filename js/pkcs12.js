@@ -710,7 +710,7 @@ function _decodeBagAttributes(attributes) {
  *          to specify a certificate chain).
  * @param password the password to use.
  * @param options:
- *          encAlgorithm the encryption algorithm to use
+ *          algorithm the encryption algorithm to use
  *            ('aes128', 'aes192', 'aes256', '3des'), defaults to 'aes128'.
  *          count the iteration count to use.
  *          saltSize the salt size to use.
@@ -726,7 +726,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   options = options || {};
   options.saltSize = options.saltSize || 8;
   options.count = options.count || 2048;
-  options.encAlgorithm = options.encAlgorithm || 'aes128';
+  options.algorithm = options.algorithm || options.encAlgorithm || 'aes128';
   if(!('useMac' in options)) {
     options.useMac = true;
   }
