@@ -744,7 +744,23 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   }
   else if(options.generateLocalKeyId) {
     // set localKeyId and friendlyName (if specified)
-    localKeyId = forge.random.getBytes(20);
+
+    // use SHA-1 of paired cert, if available
+    if(cert) {
+      var pairedCert = forge.util.isArray(cert) ? cert[0] : cert;
+      if(typeof pairedCert === 'string') {
+        pairedCert = pki.certificateFromPem(pairedCert);
+      }
+      var sha1 = forge.md.sha1.create();
+      sha1.update(asn1.toDer(pki.certificateToAsn1(pairedCert)).getBytes());
+      localKeyId = sha1.digest().getBytes();
+    }
+    // FIXME: consider using SHA-1 of public key (which can be generated
+    // from private key components)
+    // generate random bytes
+    else {
+      localKeyId = forge.random.getBytes(20);
+    }
   }
 
   if(localKeyId !== null) {
@@ -828,7 +844,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   // create safe bag(s) for certificate chain
   var chain = [];
   if(cert !== null) {
-    if((Array.isArray && Array.isArray(cert)) || cert.constructor === Array) {
+    if(forge.util.isArray(cert)) {
       chain = cert;
     }
     else {
