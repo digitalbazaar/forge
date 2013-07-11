@@ -1162,7 +1162,8 @@ util.getQueryVariables = function(query) {
       if(!(key in rval)) {
         rval[key] = [];
       }
-      if(val !== null) {
+      // disallow overriding object prototype keys
+      if(!(key in Object.prototype) && val !== null) {
         rval[key].push(unescape(val));
       }
     }
