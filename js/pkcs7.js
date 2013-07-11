@@ -282,7 +282,7 @@ var _fromAsn1 = function(msg, obj, validator) {
 
   if(capture.encContent) {
     var content = '';
-    if(capture.encContent.constructor === Array) {
+    if(forge.util.isArray(capture.encContent)) {
       for(var i = 0; i < capture.encContent.length; ++i) {
         if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
           throw {
@@ -305,7 +305,7 @@ var _fromAsn1 = function(msg, obj, validator) {
 
   if(capture.content) {
     var content = '';
-    if(capture.content.constructor === Array) {
+    if(forge.util.isArray(capture.content)) {
       for(var i = 0; i < capture.content.length; ++i) {
         if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
           throw {

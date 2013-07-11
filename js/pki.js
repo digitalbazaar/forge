@@ -935,7 +935,7 @@ pki.CRIAttributesAsArray = function(attributes) {
  * @return the attribute.
  */
 var _getAttribute = function(obj, options) {
-  if(options.constructor == String) {
+  if(typeof options === 'string') {
     options = {shortName: options};
   }
 
@@ -1052,15 +1052,15 @@ var _parseExtensions = function(exts) {
             b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
           }
           // set flags
-          e.digitalSignature = (b2 & 0x80) == 0x80;
-          e.nonRepudiation = (b2 & 0x40) == 0x40;
-          e.keyEncipherment = (b2 & 0x20) == 0x20;
-          e.dataEncipherment = (b2 & 0x10) == 0x10;
-          e.keyAgreement = (b2 & 0x08) == 0x08;
-          e.keyCertSign = (b2 & 0x04) == 0x04;
-          e.cRLSign = (b2 & 0x02) == 0x02;
-          e.encipherOnly = (b2 & 0x01) == 0x01;
-          e.decipherOnly = (b3 & 0x80) == 0x80;
+          e.digitalSignature = (b2 & 0x80) === 0x80;
+          e.nonRepudiation = (b2 & 0x40) === 0x40;
+          e.keyEncipherment = (b2 & 0x20) === 0x20;
+          e.dataEncipherment = (b2 & 0x10) === 0x10;
+          e.keyAgreement = (b2 & 0x08) === 0x08;
+          e.keyCertSign = (b2 & 0x04) === 0x04;
+          e.cRLSign = (b2 & 0x02) === 0x02;
+          e.encipherOnly = (b2 & 0x01) === 0x01;
+          e.decipherOnly = (b3 & 0x80) === 0x80;
         }
         // handle basic constraints
         else if(e.name === 'basicConstraints') {
@@ -1736,10 +1736,8 @@ pki.createCertificate = function() {
    * @return the extension or null if not found.
    */
   cert.getExtension = function(options) {
-    if(options.constructor == String) {
-      options = {
-        name: options
-      };
+    if(typeof options === 'string') {
+      options = {name: options};
     }
 
     var rval = null;
@@ -2525,7 +2523,7 @@ function _extensionsToAsn1(exts) {
     }
 
     var value = ext.value;
-    if(ext.value.constructor != String) {
+    if(typeof ext.value !== 'string') {
       // value is asn.1
       value = asn1.toDer(value).getBytes();
     }
@@ -2849,7 +2847,7 @@ pki.createCaStore = function(certs) {
       rval = caStore.certs[cert.issuer.hash];
 
       // see if there are multiple matches
-      if(rval.constructor == Array) {
+      if(forge.util.isArray(rval)) {
         // TODO: resolve multiple matches by checking
         // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
         // FIXME: or alternatively do authority key mapping
@@ -2886,7 +2884,7 @@ pki.createCaStore = function(certs) {
     if(cert.subject.hash in caStore.certs) {
       // subject hash already exists, append to array
       var tmp = caStore.certs[cert.subject.hash];
-      if(tmp.constructor != Array) {
+      if(!forge.util.isArray(tmp)) {
         tmp = [tmp];
       }
       tmp.push(cert);
@@ -3123,7 +3121,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
           // can't be determined from the certificate (unlikely case for
           // old certificates) so normalize by always putting parents into
           // an array
-          if(parents.constructor !== Array) {
+          if(!forge.util.isArray(parents)) {
             parents = [parents];
           }
 
@@ -3234,7 +3232,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
       // check for custom error info
       if(ret || ret === 0) {
         // set custom message and error
-        if(ret.constructor === Object) {
+        if(typeof ret === 'object' && !forge.util.isArray(ret)) {
           if(ret.message) {
              error.message = ret.message;
           }
@@ -3242,7 +3240,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
             error.error = ret.error;
           }
         }
-        else if(ret.constructor === String) {
+        else if(typeof ret === 'string') {
           // set custom error
           error.error = ret;
         }

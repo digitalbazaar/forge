@@ -258,7 +258,7 @@ Task.prototype.next = function(name, subrun) {
  */
 Task.prototype.parallel = function(name, subrun) {
   // juggle parameters if it looks like no name is given
-  if(name.constructor == Array) {
+  if(forge.util.isArray(name)) {
     subrun = name;
 
     // inherit parent's name

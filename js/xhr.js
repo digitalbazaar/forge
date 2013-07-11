@@ -235,7 +235,7 @@ xhrApi.getCookie = function(name, path, domain) {
           if(rval === null) {
             rval = cookie;
           }
-          else if(rval.constructor != Array) {
+          else if(!forge.util.isArray(rval)) {
             rval = [rval, cookie];
           }
           else {
@@ -689,8 +689,8 @@ xhrApi.create = function(options) {
     _state.response = null;
 
     // 6. if state is DONE or UNSENT, or if OPENED and send flag is false
-    if(xhr.readyState == DONE || xhr.readyState == UNSENT ||
-     (xhr.readyState == OPENED && !_state.sendFlag)) {
+    if(xhr.readyState === DONE || xhr.readyState === UNSENT ||
+     (xhr.readyState === OPENED && !_state.sendFlag)) {
       // 7. set ready state to unsent
       xhr.readyState = UNSENT;
     }
@@ -741,8 +741,8 @@ xhrApi.create = function(options) {
     if(_state.response !== null) {
       if(header in _state.response.fields) {
         rval = _state.response.fields[header];
-        if(rval.constructor == Array) {
-           rval = rval.join();
+        if(forge.util.isArray(rval)) {
+          rval = rval.join();
         }
       }
     }

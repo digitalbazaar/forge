@@ -43,7 +43,7 @@ if(Array.isArray) {
 }
 else {
   util.isArray = function(x) {
-    return x && x.constructor === Array;
+    return Object.prototype.toString.call(x) === '[object Array]';
   };
 }
 

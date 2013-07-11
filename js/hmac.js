@@ -45,7 +45,7 @@ hmac.create = function() {
    */
   ctx.start = function(md, key) {
     if(md !== null) {
-      if(md.constructor == String) {
+      if(typeof md === 'string') {
         // create builtin message digest
         md = md.toLowerCase();
         if(md in forge.md.algorithms) {
@@ -67,11 +67,11 @@ hmac.create = function() {
     }
     else {
       // convert string into byte buffer
-      if(key.constructor == String) {
+      if(typeof key === 'string') {
         key = forge.util.createBuffer(key);
       }
       // convert byte array into byte buffer
-      else if(key.constructor == Array) {
+      else if(forge.util.isArray(key)) {
         var tmp = key;
         key = forge.util.createBuffer();
         for(var i = 0; i < tmp.length; ++i) {

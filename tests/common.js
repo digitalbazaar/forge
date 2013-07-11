@@ -1110,7 +1110,7 @@ jQuery(function($)
       'I83fWK/mZWUjBM33a68KumRiH238v8XyQxj7+C8i6D8G2GXvkigFAehAkb7LZZd+\r\n' +
       'KLuGFyPlWv3fVWHf99KpAkBQFKk3MRMl6IGJZUEFQe4l5whm8LkGU4acSqv9B3xt\r\n' +
       'qROkCrsFrMPqjuuzEmyHoQZ64r2PLJg7FOuyhBnQUOt4\r\n' +
-      '-----END RSA PRIVATE KEY-----';
+      '-----END RSA PRIVATE KEY-----\r\n';
 
       var _publicKey =
       '-----BEGIN PUBLIC KEY-----\r\n' +
@@ -1118,7 +1118,7 @@ jQuery(function($)
       'EJOqdsUMpx9U0YZI7szokJqQNIwokiQ6EonNnWSMlIvy46AhnlRYn+ezeTeU7eMG\r\n' +
       'TkP3VF29vXBo+dLq5e+8VyAyQ3FzM1wI4ts4hRACF8w6mqygXQ7i/SDu8/rXqRGt\r\n' +
       'vnM+z0MYDdKo80efzwIDAQAB\r\n' +
-      '-----END PUBLIC KEY-----';
+      '-----END PUBLIC KEY-----\r\n';
 
       var _certificate =
       '-----BEGIN CERTIFICATE-----\r\n' +
@@ -1139,7 +1139,7 @@ jQuery(function($)
       'BQADgYEARdH2KOlJWTC1CS2y/PAvg4uiM31PXMC1hqSdJlnLM1MY4hRfuf9VyTeX\r\n' +
       'Y6FdybcyDLSxKn9id+g9229ci9/s9PI+QmD5vXd8yZyScLc2JkYB4GC6+9D1+/+x\r\n' +
       's2hzMxuK6kzZlP+0l9LGcraMQPGRydjCARZZm4Uegln9rh85XFQ=\r\n' +
-      '-----END CERTIFICATE-----';
+      '-----END CERTIFICATE-----\r\n';
 
       var _signature =
          '9200ece65cdaed36bcc20b94c65af852e4f88f0b4fe5b249d54665f815992ac4' +

@@ -447,7 +447,7 @@ var expandKey = function(key, decrypt) {
         sbox[temp >>> 24] ^ (rcon[iNk] << 24);
       iNk++;
     }
-    else if(Nk > 6 && (i % Nk == 4)) {
+    else if(Nk > 6 && (i % Nk === 4)) {
       // temp = SubWord(temp)
       temp =
         sbox[temp >>> 24] << 24 ^
@@ -825,13 +825,13 @@ var _createCipher = function(key, iv, output, decrypt) {
     integers, it must be 4, 6, or 8 integers long. */
 
   // convert key string into byte buffer
-  if(key.constructor == String &&
-    (key.length == 16 || key.length == 24 || key.length == 32)) {
+  if(typeof key === 'string' &&
+    (key.length === 16 || key.length === 24 || key.length === 32)) {
     key = forge.util.createBuffer(key);
   }
   // convert key integer array into byte buffer
-  else if(key.constructor == Array &&
-    (key.length == 16 || key.length == 24 || key.length == 32)) {
+  else if(forge.util.isArray(key) &&
+    (key.length === 16 || key.length === 24 || key.length === 32)) {
     var tmp = key;
     var key = forge.util.createBuffer();
     for(var i = 0; i < tmp.length; ++i) {
@@ -840,13 +840,13 @@ var _createCipher = function(key, iv, output, decrypt) {
   }
 
   // convert key byte buffer into 32-bit integer array
-  if(key.constructor != Array) {
+  if(!forge.util.isArray(key)) {
     var tmp = key;
     key = [];
 
     // key lengths of 16, 24, 32 bytes allowed
     var len = tmp.length();
-    if(len == 16 || len == 24 || len == 32) {
+    if(len === 16 || len === 24 || len === 32) {
       len = len >>> 2;
       for(var i = 0; i < len; ++i) {
         key.push(tmp.getInt32());
@@ -855,8 +855,8 @@ var _createCipher = function(key, iv, output, decrypt) {
   }
 
   // key must be an array of 32-bit integers by now
-  if(key.constructor == Array &&
-    (key.length == 4 || key.length == 6 || key.length == 8)) {
+  if(forge.util.isArray(key) &&
+    (key.length === 4 || key.length === 6 || key.length === 8)) {
     // private vars for state
     var _w = expandKey(key, decrypt);
     var _blockSize = Nb << 2;
@@ -943,7 +943,7 @@ var _createCipher = function(key, iv, output, decrypt) {
         else {
           // add PKCS#7 padding to block (each pad byte is the
           // value of the number of pad bytes)
-          var padding = (_input.length() == _blockSize) ?
+          var padding = (_input.length() === _blockSize) ?
             _blockSize : (_blockSize - _input.length());
           _input.fillWithByte(padding, padding);
         }
@@ -1001,11 +1001,11 @@ var _createCipher = function(key, iv, output, decrypt) {
         32-bit integers, then it must be 4 integers long. */
 
       // convert iv string into byte buffer
-      if(iv.constructor == String && iv.length == 16) {
+      if(typeof iv === 'string' && iv.length === 16) {
         iv = forge.util.createBuffer(iv);
       }
       // convert iv byte array into byte buffer
-      else if(iv.constructor == Array && iv.length == 16) {
+      else if(forge.util.isArray(iv) && iv.length === 16) {
         var tmp = iv;
         var iv = forge.util.createBuffer();
         for(var i = 0; i < 16; ++i) {
@@ -1014,7 +1014,7 @@ var _createCipher = function(key, iv, output, decrypt) {
       }
 
       // convert iv byte buffer into 32-bit integer array
-      if(iv.constructor != Array) {
+      if(!forge.util.isArray(iv)) {
         var tmp = iv;
         iv = new Array(4);
         iv[0] = tmp.getInt32();

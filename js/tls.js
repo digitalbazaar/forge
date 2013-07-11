@@ -758,7 +758,7 @@ tls.handleHelloRequest = function(c, record, length) {
 tls.parseHelloMessage = function(c, record, length) {
   var msg = null;
 
-  var client = (c.entity == tls.ConnectionEnd.client);
+  var client = (c.entity === tls.ConnectionEnd.client);
 
   // minimum of 38 bytes in message
   if(length < 38) {
@@ -1591,7 +1591,7 @@ tls.handleServerHelloDone = function(c, record, length) {
       // check for custom alert info
       if(ret || ret === 0) {
         // set custom message and alert description
-        if(ret.constructor == Object) {
+        if(typeof ret === 'object' && !forge.util.isArray(ret)) {
           if(ret.message) {
             error.message = ret.message;
           }
@@ -1599,7 +1599,7 @@ tls.handleServerHelloDone = function(c, record, length) {
             error.alert.description = ret.alert;
           }
         }
-        else if(ret.constructor == Number) {
+        else if(typeof ret === 'number') {
           // set custom alert description
           error.alert.description = ret;
         }
@@ -1689,7 +1689,7 @@ tls.handleServerHelloDone = function(c, record, length) {
  * @param record the record.
  */
 tls.handleChangeCipherSpec = function(c, record) {
-  if(record.fragment.getByte() != 0x01) {
+  if(record.fragment.getByte() !== 0x01) {
     c.error(c, {
       message: 'Invalid ChangeCipherSpec message received.',
       send: true,
@@ -2411,7 +2411,7 @@ tls.createConnectionState = function(c) {
       compressionState: null,
       compressFunction: function(record){return true;},
       updateSequenceNumber: function() {
-        if(mode.sequenceNumber[1] == 0xFFFFFFFF) {
+        if(mode.sequenceNumber[1] === 0xFFFFFFFF) {
           mode.sequenceNumber[1] = 0;
           ++mode.sequenceNumber[0];
         }
@@ -2825,8 +2825,7 @@ tls.createCertificate = function(c) {
   if(cert !== null) {
     try {
       // normalize cert to a chain of certificates
-      if((Array.isArray && !Array.isArray(cert)) ||
-        cert.constructor !== Array) {
+      if(!forge.util.isArray(cert)) {
         cert = [cert];
       }
       var asn1 = null;
@@ -3421,7 +3420,7 @@ tls.verifyCertificateChain = function(c, chain) {
         // call application callback
         var ret = c.verify(c, vfd, depth, chain);
         if(ret !== true) {
-          if(ret.constructor === Object) {
+          if(typeof ret === 'object' && !forge.util.isArray(ret)) {
             // throw custom error
             var error = {
               message: 'The application rejected the certificate.',
@@ -3451,7 +3450,7 @@ tls.verifyCertificateChain = function(c, chain) {
   }
   catch(ex) {
     // build tls error if not already customized
-    if(ex.constructor !== Object) {
+    if(typeof ex !== 'object' || forge.util.isArray(ex)) {
       ex = {
         send: true,
         alert: {
@@ -3568,8 +3567,7 @@ tls.createConnection = function(options) {
   var caStore = null;
   if(options.caStore) {
     // if CA store is an array, convert it to a CA store object
-    if((Array.isArray && Array.isArray(options.caStore)) ||
-      options.caStore.constructor == Array) {
+    if(forge.util.isArray(options.caStore)) {
       caStore = forge.pki.createCaStore(options.caStore);
     }
     else {
@@ -3732,8 +3730,8 @@ tls.createConnection = function(options) {
       };
 
       // check record version
-      if(c.record.version.major != tls.Version.major ||
-        c.record.version.minor != tls.Version.minor) {
+      if(c.record.version.major !== tls.Version.major ||
+        c.record.version.minor !== tls.Version.minor) {
         c.error(c, {
           message: 'Incompatible TLS version.',
           send: true,

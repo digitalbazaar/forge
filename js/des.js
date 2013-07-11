@@ -39,8 +39,6 @@ var spfunction6 = [0x20000010,0x20400000,0x4000,0x20404010,0x20400000,0x10,0x204
 var spfunction7 = [0x200000,0x4200002,0x4000802,0,0x800,0x4000802,0x200802,0x4200800,0x4200802,0x200000,0,0x4000002,0x2,0x4000000,0x4200002,0x802,0x4000800,0x200802,0x200002,0x4000800,0x4000002,0x4200000,0x4200800,0x200002,0x4200000,0x800,0x802,0x4200802,0x200800,0x2,0x4000000,0x200800,0x4000000,0x200800,0x200000,0x4000802,0x4000802,0x4200002,0x4200002,0x2,0x200002,0x4000000,0x4000800,0x200000,0x4200800,0x802,0x200802,0x4200800,0x802,0x4000002,0x4200802,0x4200000,0x200800,0,0x2,0x4200802,0,0x200802,0x4200000,0x800,0x4000002,0x4000800,0x800,0x200002];
 var spfunction8 = [0x10001040,0x1000,0x40000,0x10041040,0x10000000,0x10001040,0x40,0x10000000,0x40040,0x10040000,0x10041040,0x41000,0x10041000,0x41040,0x1000,0x40,0x10040000,0x10000040,0x10001000,0x1040,0x41000,0x40040,0x10040040,0x10041000,0x1040,0,0,0x10040040,0x10000040,0x10001000,0x41040,0x40000,0x41040,0x40000,0x10041000,0x1000,0x40,0x10040040,0x1000,0x41040,0x10001000,0x40,0x10000040,0x10040000,0x10040040,0x10000000,0x40000,0x10001040,0,0x10041040,0x40040,0x10000040,0x10040000,0x10001000,0x10001040,0,0x10041040,0x41000,0x41000,0x1040,0x1040,0x40040,0x10000000,0x10041000];
 
-
-
 /**
  * Create necessary sub keys.
  *
@@ -123,9 +121,6 @@ function des_createKeys (key) {
   return keys;
 }
 
-
-
-
 /**
  * Creates an DES cipher object.
  *
@@ -134,9 +129,8 @@ function des_createKeys (key) {
  *
  * @return the cipher.
  */
-var _createCipher = function(key, encrypt)
-{
-  if(key.constructor == String && (key.length == 8 || key.length == 24)) {
+var _createCipher = function(key, encrypt) {
+  if(typeof key === 'string' && (key.length === 8 || key.length === 24)) {
     key = forge.util.createBuffer(key);
   }
 
@@ -155,10 +149,10 @@ var _createCipher = function(key, encrypt)
   var _finish = false, _input = null, _output = null;
 
   /* Set up the loops for single and triple DES. */
-  var iterations = keys.length == 32 ? 3 : 9;  // single or triple des
+  var iterations = keys.length === 32 ? 3 : 9;  // single or triple des
   var looping;
 
-  if(iterations == 3) {
+  if(iterations === 3) {
     looping = encrypt
       ? [0, 32, 2]
       : [30, -2, -2];
@@ -183,7 +177,7 @@ var _createCipher = function(key, encrypt)
      */
     start: function(iv, output) {
       if(iv) {
-        if(iv.constructor == String && iv.length == 8) {
+        if(typeof iv === 'string' && iv.length === 8) {
           iv = forge.util.createBuffer(iv);
         }
 
@@ -221,7 +215,7 @@ var _createCipher = function(key, encrypt)
         var right = _input.getInt32();
 
         //for Cipher Block Chaining mode, xor the message with the previous result
-        if(mode == 1) {
+        if(mode === 1) {
           if(encrypt) {
             left ^= cbcleft;
             right ^= cbcright;
@@ -275,7 +269,7 @@ var _createCipher = function(key, encrypt)
         temp = ((left >>> 4) ^ right) & 0x0f0f0f0f; right ^= temp; left ^= (temp << 4);
 
         //for Cipher Block Chaining mode, xor the message with the previous result
-        if(mode == 1) {
+        if(mode === 1) {
           if(encrypt) {
             cbcleft = left;
             cbcright = right;
@@ -307,7 +301,7 @@ var _createCipher = function(key, encrypt)
         } else {
           // add PKCS#7 padding to block (each pad byte is the
           // value of the number of pad bytes)
-          var padding = (_input.length() == 8) ? 8 : (8 - _input.length());
+          var padding = (_input.length() === 8) ? 8 : (8 - _input.length());
           _input.fillWithByte(padding, padding);
         }
       }
@@ -362,8 +356,7 @@ forge.des = forge.des || {};
  *
  * @return the cipher.
  */
-forge.des.startEncrypting = function(key, iv, output)
-{
+forge.des.startEncrypting = function(key, iv, output) {
   var cipher = _createCipher(key, true);
   cipher.start(iv, output);
   return cipher;
@@ -382,8 +375,7 @@ forge.des.startEncrypting = function(key, iv, output)
  *
  * @return the cipher.
  */
-forge.des.createEncryptionCipher = function(key)
-{
+forge.des.createEncryptionCipher = function(key) {
   return _createCipher(key, true);
 };
 
@@ -400,8 +392,7 @@ forge.des.createEncryptionCipher = function(key)
  *
  * @return the cipher.
  */
-forge.des.startDecrypting = function(key, iv, output)
-{
+forge.des.startDecrypting = function(key, iv, output) {
   var cipher = _createCipher(key, false);
   cipher.start(iv, output);
   return cipher;
@@ -420,8 +411,7 @@ forge.des.startDecrypting = function(key, iv, output)
  *
  * @return the cipher.
  */
-forge.des.createDecryptionCipher = function(key)
-{
+forge.des.createDecryptionCipher = function(key) {
   return _createCipher(key, false);
 };
 
