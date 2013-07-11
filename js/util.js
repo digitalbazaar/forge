@@ -38,14 +38,9 @@ else {
 }
 
 // define isArray
-if(Array.isArray) {
-  util.isArray = Array.isArray;
-}
-else {
-  util.isArray = function(x) {
-    return Object.prototype.toString.call(x) === '[object Array]';
-  };
-}
+util.isArray = Array.isArray || function(x) {
+  return Object.prototype.toString.call(x) === '[object Array]';
+};
 
 /**
  * Constructor for a byte buffer.
