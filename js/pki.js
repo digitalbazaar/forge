@@ -1471,7 +1471,7 @@ pki.certificationRequestToPem = function(csr, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'CERTIFICATE REQUEST',
-    body: asn1.toDer(pki.certificationRequestToAsn1(key)).getBytes()
+    body: asn1.toDer(pki.certificationRequestToAsn1(csr)).getBytes()
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
