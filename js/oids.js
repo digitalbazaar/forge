@@ -195,6 +195,18 @@ oids['extKeyUsage'] = '2.5.29.37';
 oids['2.5.29.46'] = 'freshestCRL';
 oids['2.5.29.54'] = 'inhibitAnyPolicy';
 
+// extKeyUsage purposes
+oids['1.3.6.1.5.5.7.3.1'] = 'serverAuth';
+oids['serverAuth'] = '1.3.6.1.5.5.7.3.1';
+oids['1.3.6.1.5.5.7.3.2'] = 'clientAuth';
+oids['clientAuth'] = '1.3.6.1.5.5.7.3.2';
+oids['1.3.6.1.5.5.7.3.3'] = 'codeSigning';
+oids['codeSigning'] = '1.3.6.1.5.5.7.3.3';
+oids['1.3.6.1.5.5.7.3.4'] = 'emailProtection';
+oids['emailProtection'] = '1.3.6.1.5.5.7.3.4';
+oids['1.3.6.1.5.5.7.3.8'] = 'timeStamping';
+oids['timeStamping'] = '1.3.6.1.5.5.7.3.8';
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */

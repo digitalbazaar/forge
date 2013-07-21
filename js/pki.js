@@ -1079,6 +1079,20 @@ var _parseExtensions = function(exts) {
             e.pathLenConstraint = tmp.getInt(tmp.length() << 3);
           }
         }
+        // handle extKeyUsage
+        else if(e.name === 'extKeyUsage') {
+          // value is a SEQUENCE of OIDs
+          var ev = asn1.fromDer(e.value);
+          for(var vi = 0; vi < ev.value.length; ++vi) {
+            var oid = asn1.derToOid(ev.value[vi].value);
+            if(oid in oids) {
+              e[oids[oid]] = true;
+            }
+            else {
+              e[oid] = true;
+            }
+          }
+        }
         // handle subjectAltName/issuerAltName
         else if(
           e.name === 'subjectAltName' ||
@@ -1691,6 +1705,27 @@ pki.createCertificate = function() {
             e.value.value.push(asn1.create(
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
               tmp.getBytes()));
+          }
+        }
+        // extKeyUsage is a SEQUENCE of OIDs
+        else if(e.name === 'extKeyUsage') {
+          e.value = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+          var seq = e.value.value;
+          for(var key in e) {
+            if(e[key] !== true) {
+              continue;
+            }
+            // key is name in OID map
+            if(key in oids) {
+              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
+                false, asn1.oidToDer(oids[key]).getBytes()));
+            }
+            // assume key is an OID
+            else if(key.indexOf('.') !== -1) {
+              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
+                false, asn1.oidToDer(key).getBytes()));
+            }
           }
         }
         else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {

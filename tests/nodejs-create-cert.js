@@ -42,6 +42,13 @@ cert.setExtensions([{
   keyEncipherment: true,
   dataEncipherment: true
 }, {
+  name: 'extKeyUsage',
+  serverAuth: true,
+  clientAuth: true,
+  codeSigning: true,
+  emailProtection: true,
+  timeStamping: true
+}, {
   name: 'subjectAltName',
   altNames: [{
     type: 6, // URI
