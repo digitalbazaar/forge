@@ -783,64 +783,6 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   // collect contents for AuthenticatedSafe
   var contents = [];
 
-  // create safe contents for private key
-  var keyBag = null;
-  if(key !== null) {
-    // SafeBag
-    var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
-    if(password === null) {
-      // no encryption
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['keyBag']).getBytes()),
-        // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-          // PrivateKeyInfo
-          pkAsn1
-        ]),
-        // bagAttributes (OPTIONAL)
-        bagAttrs
-      ]);
-    }
-    else {
-      // encrypted PrivateKeyInfo
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['pkcs8ShroudedKeyBag']).getBytes()),
-        // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-          // EncryptedPrivateKeyInfo
-          pki.encryptPrivateKeyInfo(pkAsn1, password, options)
-        ]),
-        // bagAttributes (OPTIONAL)
-        bagAttrs
-      ]);
-    }
-
-    // SafeContents
-    var keySafeContents =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [keyBag]);
-
-    // ContentInfo
-    var keyCI =
-      // PKCS#7 ContentInfo
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-        // contentType
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          // OID for the content type is 'data'
-          asn1.oidToDer(pki.oids['data']).getBytes()),
-        // content
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-          asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-            asn1.toDer(keySafeContents).getBytes())
-        ])
-      ]);
-    contents.push(keyCI);
-  }
-
   // create safe bag(s) for certificate chain
   var chain = [];
   if(cert !== null) {
@@ -908,6 +850,64 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         ])
       ]);
     contents.push(certCI);
+  }
+
+  // create safe contents for private key
+  var keyBag = null;
+  if(key !== null) {
+    // SafeBag
+    var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
+    if(password === null) {
+      // no encryption
+      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        // bagId
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+          asn1.oidToDer(pki.oids['keyBag']).getBytes()),
+        // bagValue
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          // PrivateKeyInfo
+          pkAsn1
+        ]),
+        // bagAttributes (OPTIONAL)
+        bagAttrs
+      ]);
+    }
+    else {
+      // encrypted PrivateKeyInfo
+      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        // bagId
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+          asn1.oidToDer(pki.oids['pkcs8ShroudedKeyBag']).getBytes()),
+        // bagValue
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          // EncryptedPrivateKeyInfo
+          pki.encryptPrivateKeyInfo(pkAsn1, password, options)
+        ]),
+        // bagAttributes (OPTIONAL)
+        bagAttrs
+      ]);
+    }
+
+    // SafeContents
+    var keySafeContents =
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [keyBag]);
+
+    // ContentInfo
+    var keyCI =
+      // PKCS#7 ContentInfo
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        // contentType
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+          // OID for the content type is 'data'
+          asn1.oidToDer(pki.oids['data']).getBytes()),
+        // content
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            asn1.toDer(keySafeContents).getBytes())
+        ])
+      ]);
+    contents.push(keyCI);
   }
 
   // create AuthenticatedSafe by stringing together the contents
