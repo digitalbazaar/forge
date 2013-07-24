@@ -3319,8 +3319,7 @@ pki.publicKeyFromAsn1 = function(obj) {
 
   // get RSA params
   errors = [];
-  if(!asn1.validate(
-    capture.rsaPublicKey, rsaPublicKeyValidator, capture, errors)) {
+  if(!asn1.validate(obj, rsaPublicKeyValidator, capture, errors)) {
     throw {
       message: 'Cannot read public key. ' +
         'ASN.1 object does not contain an RSAPublicKey.',
