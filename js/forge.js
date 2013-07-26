@@ -42,7 +42,8 @@ if(typeof define !== 'function') {
   // <script>
   else {
     if(typeof forge === 'undefined') {
-      forge = {};
+      // set to true to disable native code if even it's available
+      forge = {disableNativeCode: false};
     }
   }
 }
@@ -65,6 +66,8 @@ var defineFunc = function(require, module) {
     }
     return forge;
   };
+  // set to true to disable native code if even it's available
+  module.exports.disableNativeCode = false;
   module.exports(module.exports);
 };
 if(nodeDefine) {

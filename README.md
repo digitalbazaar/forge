@@ -52,6 +52,25 @@ network resources.
 * [Flash Socket Policy Module](#fsp)
 
 ---------------------------------------
+
+If at any time you wish to disable the use of native code (where available)
+for particular forge features like its secure random number generator, you
+may set the ```disableNativeCode``` flag on ```forge``` to ```true```.
+
+To disable native code when including forge in the browser:
+
+```js
+forge = {disableNativeCode: true};
+// now include other files
+```
+
+To disable native code when using node.js:
+
+```js
+var forge = require('node-forge')({disableNativeCode: true});
+```
+
+---------------------------------------
 ## Transports
 
 <a name="tls" />
@@ -199,7 +218,7 @@ var client = forge.tls.createConnection({
     client.prepare('GET / HTTP/1.0\r\n\r\n');
   },
   tlsDataReady: function(connection) {
-    // encrypted data is ready to be sent to the server 
+    // encrypted data is ready to be sent to the server
     var data = connection.tlsData.getBytes();
     socket.write(data, 'binary'); // encoding should be 'binary'
   },
@@ -227,7 +246,7 @@ socket.on('end', function() {
   console.log('[socket] disconnected');
 });
 
-// connect to google.com 
+// connect to google.com
 socket.connect(443, 'google.com');
 
 // or connect to gmail's imap server (but don't send the HTTP header above)
@@ -323,7 +342,7 @@ console.log(cipher.output.toHex());
 
 // generate a password-based 16-byte key
 var salt = forge.random.getBytesSync(128);
-var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16); 
+var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 ```
 
 <a name="des" />
@@ -426,7 +445,7 @@ var signature = privateKey.sign(md);
 // verify data with a public key
 var verified = publicKey.verify(md, signature);
 
-// encrypt data with a public key (defaults to RSAES PKCS#1 v1.5) 
+// encrypt data with a public key (defaults to RSAES PKCS#1 v1.5)
 var encrypted = publicKey.encrypt(bytes);
 
 // decrypt data with a private key (defaults to RSAES PKCS#1 v1.5)
@@ -471,7 +490,7 @@ var caStore = pki.createCaStore([/* PEM-encoded cert */, ...]);
 // add a certificate to the CA store
 caStore.addCertificate(certObjectOrPemString);
 
-// gets the issuer (its certificate) for the given certificate 
+// gets the issuer (its certificate) for the given certificate
 var issuerCert = caStore.getIssuer(subjectCert);
 
 // verifies a certificate chain against a CA store
@@ -555,7 +574,7 @@ __Examples__
 ```js
 // generate a password-based 16-byte key
 var salt = forge.random.getBytesSync(128);
-var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16); 
+var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 ```
 
 <a name="pkcs7" />
@@ -1038,7 +1057,7 @@ https://npmjs.org/package/node-forge
 Installation:
 
     npm install node-forge
-    
+
 You can then use forge as a regular module:
 
     var forge = require('node-forge');
