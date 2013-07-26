@@ -6,6 +6,7 @@
  * Copyright 2011-2013 Digital Bazaar, Inc.
  */
 (function() {
+var name = 'forge';
 var deps = [
   './aes',
   './aesCipherSuites',
@@ -30,14 +31,12 @@ var deps = [
   './md',
   './mgf1'
 ];
-var cjsDefine = null;
+var nodeDefine = null;
 if(typeof define !== 'function') {
-  // CommonJS -> AMD
+  // NodeJS -> AMD
   if(typeof module === 'object' && module.exports) {
-    cjsDefine = function(ids, factory) {
-      module.exports = factory.apply(null, ids.map(function(id) {
-        return require(id);
-      }));
+    nodeDefine = function(ids, factory) {
+      factory(require, module);
     };
   }
   // <script>
@@ -45,19 +44,35 @@ if(typeof define !== 'function') {
     if(typeof forge === 'undefined') {
       forge = {};
     }
-    initModule(forge);
   }
 }
 // AMD
-if(cjsDefine || typeof define === 'function') {
-  // define module AMD style
-  (cjsDefine || define)(deps, function() {
-    var forge = {};
-    var mods = Array.prototype.slice.call(arguments);
+var defineDeps = ['require', 'module'].concat(deps);
+var defineFunc = function(require, module) {
+  module.exports = function(forge) {
+    var mods = deps.map(function(dep) {
+      return require(dep);
+    });
+    // handle circular dependencies
+    forge = forge || {};
+    forge.defined = forge.defined || {};
+    if(forge.defined[name]) {
+      return forge[name];
+    }
+    forge.defined[name] = true;
     for(var i = 0; i < mods.length; ++i) {
       mods[i](forge);
     }
-    return forge;
+    return forge[name];
+  };
+  module.exports(module.exports);
+};
+if(nodeDefine) {
+  nodeDefine(defineDeps, defineFunc);
+}
+else if(typeof define === 'function') {
+  define([].concat(defineDeps), function() {
+    defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
 })();
