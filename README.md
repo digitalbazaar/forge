@@ -53,9 +53,13 @@ network resources.
 
 ---------------------------------------
 
-If at any time you wish to disable the use of native code (where available)
+If at any time you wish to disable the use of native code, where available,
 for particular forge features like its secure random number generator, you
-may set the ```disableNativeCode``` flag on ```forge``` to ```true```.
+may set the ```disableNativeCode``` flag on ```forge``` to ```true```. It
+is not recommended that you set this flag as native code is typically more
+performant and may have stronger security properties. It may be useful to
+set this flag to test certain features that you plan to run in environments
+that are different from your testing environment.
 
 To disable native code when including forge in the browser:
 
