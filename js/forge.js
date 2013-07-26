@@ -63,7 +63,7 @@ var defineFunc = function(require, module) {
     for(var i = 0; i < mods.length; ++i) {
       mods[i](forge);
     }
-    return forge[name];
+    return forge;
   };
   module.exports(module.exports);
 };
