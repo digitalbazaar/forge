@@ -60,7 +60,7 @@ cert.setExtensions([{
 cert.publicKey = keys.publicKey;
 
 // self-sign certificate
-cert.sign(keys.privateKey);
+cert.sign(keys.privateKey/*, forge.md.sha256.create()*/);
 console.log('Certificate created.');
 
 // PEM-format keys and cert

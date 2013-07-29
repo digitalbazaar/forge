@@ -1793,12 +1793,21 @@ pki.createCertificate = function() {
    * Signs this certificate using the given private key.
    *
    * @param key the private key to sign with.
+   * @param md the message digest object to use (defaults to forge.md.sha1).
    */
-  cert.sign = function(key) {
+  cert.sign = function(key, md) {
     // TODO: get signature OID from private key
-    cert.signatureOid = oids['sha1withRSAEncryption'];
-    cert.siginfo.algorithmOid = oids['sha1withRSAEncryption'];
-    cert.md = forge.md.sha1.create();
+    cert.md = md || forge.md.sha1.create();
+    var algorithmOid = oids[cert.md.algorithm + 'WithRSAEncryption'];
+    if(!algorithmOid) {
+      throw {
+        message: 'Could not compute certificate digest. ' +
+          'Unknown message digest algorithm OID.',
+        algorithm: cert.md.algorithm
+      };
+    }
+    cert.signatureOid = cert.siginfo.algorithmOid = algorithmOid;
+    console.log('algorithmOID: ' + algorithmOid);
 
     // get TBSCertificate, convert to DER
     cert.tbsCertificate = pki.getTBSCertificate(cert);
@@ -1826,10 +1835,10 @@ pki.createCertificate = function() {
       if(child.signatureOid in oids) {
         var oid = oids[child.signatureOid];
         switch(oid) {
-        case 'sha1withRSAEncryption':
+        case 'sha1WithRSAEncryption':
           md = forge.md.sha1.create();
           break;
-        case 'md5withRSAEncryption':
+        case 'md5WithRSAEncryption':
           md = forge.md.md5.create();
           break;
         case 'sha256WithRSAEncryption':
@@ -1858,7 +1867,7 @@ pki.createCertificate = function() {
       var scheme = undefined;
 
       switch(child.signatureOid) {
-      case oids['sha1withRSAEncryption']:
+      case oids['sha1WithRSAEncryption']:
         scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
         break;
       case oids['RSASSA-PSS']:
@@ -2045,10 +2054,10 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     if(cert.signatureOid in oids) {
       var oid = oids[cert.signatureOid];
       switch(oid) {
-      case 'sha1withRSAEncryption':
+      case 'sha1WithRSAEncryption':
         cert.md = forge.md.sha1.create();
         break;
-      case 'md5withRSAEncryption':
+      case 'md5WithRSAEncryption':
         cert.md = forge.md.md5.create();
         break;
       case 'sha256WithRSAEncryption':
@@ -2181,10 +2190,10 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
     if(csr.signatureOid in oids) {
       var oid = oids[csr.signatureOid];
       switch(oid) {
-      case 'sha1withRSAEncryption':
+      case 'sha1WithRSAEncryption':
         csr.md = forge.md.sha1.create();
         break;
-      case 'md5withRSAEncryption':
+      case 'md5WithRSAEncryption':
         csr.md = forge.md.md5.create();
         break;
       case 'sha256WithRSAEncryption':
@@ -2351,12 +2360,20 @@ pki.createCertificationRequest = function() {
    * Signs this certification request using the given private key.
    *
    * @param key the private key to sign with.
+   * @param md the message digest object to use (defaults to forge.md.sha1).
    */
-  csr.sign = function(key) {
+  csr.sign = function(key, md) {
     // TODO: get signature OID from private key
-    csr.signatureOid = oids['sha1withRSAEncryption'];
-    csr.siginfo.algorithmOid = oids['sha1withRSAEncryption'];
-    csr.md = forge.md.sha1.create();
+    csr.md = md || forge.md.sha1.create();
+    var algorithmOid = oids[csr.md.algorithm + 'WithRSAEncryption'];
+    if(!algorithmOid) {
+      throw {
+        message: 'Could not compute certification request digest. ' +
+          'Unknown message digest algorithm OID.',
+        algorithm: csr.md.algorithm
+      };
+    }
+    csr.signatureOid = csr.siginfo.algorithmOid = algorithmOid;
 
     // get CertificationRequestInfo, convert to DER
     csr.certificationRequestInfo = pki.getCertificationRequestInfo(csr);

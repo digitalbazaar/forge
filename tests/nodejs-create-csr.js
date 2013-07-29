@@ -36,7 +36,7 @@ csr.setAttributes([{
 }]);
 
 // sign certification request
-csr.sign(keys.privateKey);
+csr.sign(keys.privateKey/*, forge.md.sha256.create()*/);
 console.log('Certification request (CSR) created.');
 
 // PEM-format keys and csr
