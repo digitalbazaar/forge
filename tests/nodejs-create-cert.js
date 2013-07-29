@@ -49,6 +49,15 @@ cert.setExtensions([{
   emailProtection: true,
   timeStamping: true
 }, {
+  name: 'nsCertType',
+  client: true,
+  server: true,
+  email: true,
+  objsign: true,
+  sslCA: true,
+  emailCA: true,
+  objCA: true
+}, {
   name: 'subjectAltName',
   altNames: [{
     type: 6, // URI

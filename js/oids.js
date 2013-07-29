@@ -149,6 +149,8 @@ oids['2.5.4.11'] = 'organizationalUnitName';
 oids['organizationalUnitName'] = '2.5.4.11';
 
 // X.509 extension OIDs
+oids['2.16.840.1.113730.1.1'] = 'nsCertType';
+oids['nsCertType'] = '2.16.840.1.113730.1.1';
 oids['2.5.29.1'] = 'authorityKeyIdentifier'; // deprecated, use .35
 oids['2.5.29.2'] = 'keyAttributes'; // obsolete use .37 or .15
 oids['2.5.29.3'] = 'certificatePolicies'; // deprecated, use .32

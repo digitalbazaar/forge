@@ -1093,6 +1093,27 @@ var _parseExtensions = function(exts) {
             }
           }
         }
+        // handle nsCertType
+        else if(e.name === 'nsCertType') {
+          // get value as BIT STRING
+          var ev = asn1.fromDer(e.value);
+          var b2 = 0x00;
+          if(ev.value.length > 1) {
+            // skip first byte, just indicates unused bits which
+            // will be padded with 0s anyway
+            // get bytes with flag bits
+            b2 = ev.value.charCodeAt(1);
+          }
+          // set flags
+          e.client = (b2 & 0x80) === 0x80;
+          e.server = (b2 & 0x40) === 0x40;
+          e.email = (b2 & 0x20) === 0x20;
+          e.objsign = (b2 & 0x10) === 0x10;
+          e.reserved = (b2 & 0x08) === 0x08;
+          e.sslCA = (b2 & 0x04) === 0x04;
+          e.emailCA = (b2 & 0x02) === 0x02;
+          e.objCA = (b2 & 0x01) === 0x01;
+        }
         // handle subjectAltName/issuerAltName
         else if(
           e.name === 'subjectAltName' ||
@@ -1727,6 +1748,53 @@ pki.createCertificate = function() {
                 false, asn1.oidToDer(key).getBytes()));
             }
           }
+        }
+        // nsCertType is a BIT STRING
+        else if(e.name === 'nsCertType') {
+          // build flags
+          var unused = 0;
+          var b2 = 0x00;
+
+          if(e.client) {
+            b2 |= 0x80;
+            unused = 7;
+          }
+          if(e.server) {
+            b2 |= 0x40;
+            unused = 6;
+          }
+          if(e.email) {
+            b2 |= 0x20;
+            unused = 5;
+          }
+          if(e.objsign) {
+            b2 |= 0x10;
+            unused = 4;
+          }
+          if(e.reserved) {
+            b2 |= 0x08;
+            unused = 3;
+          }
+          if(e.sslCA) {
+            b2 |= 0x04;
+            unused = 2;
+          }
+          if(e.emailCA) {
+            b2 |= 0x02;
+            unused = 1;
+          }
+          if(e.objCA) {
+            b2 |= 0x01;
+            unused = 0;
+          }
+
+          // create bit string
+          var value = String.fromCharCode(unused);
+          if(b2 !== 0) {
+            value += String.fromCharCode(b2);
+          }
+          e.value = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
         }
         else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {
           // SYNTAX SEQUENCE
