@@ -1875,7 +1875,6 @@ pki.createCertificate = function() {
       };
     }
     cert.signatureOid = cert.siginfo.algorithmOid = algorithmOid;
-    console.log('algorithmOID: ' + algorithmOid);
 
     // get TBSCertificate, convert to DER
     cert.tbsCertificate = pki.getTBSCertificate(cert);
