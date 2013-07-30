@@ -1814,6 +1814,33 @@ pki.createCertificate = function() {
               value));
           }
         }
+        else if(e.name === 'subjectKeyIdentifier') {
+          /* See: 4.2.1.2 section of the the RFC3280, keyIdentifier is either:
+
+            (1) The keyIdentifier is composed of the 160-bit SHA-1 hash of the
+              value of the BIT STRING subjectPublicKey (excluding the tag,
+              length, and number of unused bits).
+
+            (2) The keyIdentifier is composed of a four bit type field with
+              the value 0100 followed by the least significant 60 bits of the
+              SHA-1 hash of the value of the BIT STRING subjectPublicKey
+              (excluding the tag, length, and number of unused bit string bits).
+          */
+
+          // skipping the tag, length, and number of unused bits is the same
+          // as just using the RSAPublicKey (for RSA keys, which are the
+          // only ones supported)
+          var der = asn1.toDer(pki.publicKeyToRSAPublicKey(cert.publicKey));
+
+          // hash public key
+          var md = forge.md.sha1.create();
+          md.update(der.getBytes());
+
+          // OCTETSTRING w/digest
+          e.value = asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            md.digest().getBytes());
+        }
 
         // ensure value has been defined by now
         if(typeof(e.value) === 'undefined') {

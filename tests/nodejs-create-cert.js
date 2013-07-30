@@ -6,6 +6,7 @@ console.log('Key-pair created.');
 
 console.log('Creating self-signed certificate...');
 var cert = forge.pki.createCertificate();
+cert.publicKey = keys.publicKey;
 cert.serialNumber = '01';
 cert.validity.notBefore = new Date();
 cert.validity.notAfter = new Date();
@@ -63,10 +64,10 @@ cert.setExtensions([{
     type: 6, // URI
     value: 'http://example.org/webid#me'
   }]
+}, {
+  name: 'subjectKeyIdentifier'
 }]);
-// FIXME: add subjectKeyIdentifier extension
 // FIXME: add authorityKeyIdentifier extension
-cert.publicKey = keys.publicKey;
 
 // self-sign certificate
 cert.sign(keys.privateKey/*, forge.md.sha256.create()*/);
