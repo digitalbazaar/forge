@@ -94,6 +94,8 @@ try {
   forge.pki.verifyCertificateChain(caStore, [cert],
     function(vfd, depth, chain) {
       if(vfd === true) {
+        console.log('SubjectKeyIdentifier verified: ' +
+          cert.verifySubjectKeyIdentifier());
         console.log('Certificate verified.');
       }
       return true;

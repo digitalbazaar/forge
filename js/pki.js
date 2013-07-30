@@ -1155,6 +1155,12 @@ var _parseExtensions = function(exts) {
             }
           }
         }
+        else if(e.name === 'subjectKeyIdentifier') {
+          // value is an OCTETSTRING w/the hash of the key-type specific
+          // public key structure (eg: RSAPublicKey)
+          var ev = asn1.fromDer(e.value);
+          e.subjectKeyIdentifier = forge.util.bytesToHex(ev.value);
+        }
       }
       rval.push(e);
     }
@@ -1815,31 +1821,11 @@ pki.createCertificate = function() {
           }
         }
         else if(e.name === 'subjectKeyIdentifier') {
-          /* See: 4.2.1.2 section of the the RFC3280, keyIdentifier is either:
-
-            (1) The keyIdentifier is composed of the 160-bit SHA-1 hash of the
-              value of the BIT STRING subjectPublicKey (excluding the tag,
-              length, and number of unused bits).
-
-            (2) The keyIdentifier is composed of a four bit type field with
-              the value 0100 followed by the least significant 60 bits of the
-              SHA-1 hash of the value of the BIT STRING subjectPublicKey
-              (excluding the tag, length, and number of unused bit string bits).
-          */
-
-          // skipping the tag, length, and number of unused bits is the same
-          // as just using the RSAPublicKey (for RSA keys, which are the
-          // only ones supported)
-          var der = asn1.toDer(pki.publicKeyToRSAPublicKey(cert.publicKey));
-
-          // hash public key
-          var md = forge.md.sha1.create();
-          md.update(der.getBytes());
-
+          var ski = cert.generateSubjectKeyIdentifier();
+          e.subjectKeyIdentifier = ski.toHex();
           // OCTETSTRING w/digest
           e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-            md.digest().getBytes());
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski.getBytes());
         }
 
         // ensure value has been defined by now
@@ -2045,6 +2031,55 @@ pki.createCertificate = function() {
     }
 
     return rval;
+  };
+
+  /**
+   * Generates the subjectKeyIdentifier for this certificate as byte buffer.
+   *
+   * @return the subjectKeyIdentifier for this certificate as byte buffer.
+   */
+  cert.generateSubjectKeyIdentifier = function() {
+    /* See: 4.2.1.2 section of the the RFC3280, keyIdentifier is either:
+
+      (1) The keyIdentifier is composed of the 160-bit SHA-1 hash of the
+        value of the BIT STRING subjectPublicKey (excluding the tag,
+        length, and number of unused bits).
+
+      (2) The keyIdentifier is composed of a four bit type field with
+        the value 0100 followed by the least significant 60 bits of the
+        SHA-1 hash of the value of the BIT STRING subjectPublicKey
+        (excluding the tag, length, and number of unused bit string bits).
+    */
+
+    // skipping the tag, length, and number of unused bits is the same
+    // as just using the RSAPublicKey (for RSA keys, which are the
+    // only ones supported)
+    var der = asn1.toDer(pki.publicKeyToRSAPublicKey(cert.publicKey));
+
+    // hash public key
+    var md = forge.md.sha1.create();
+    md.update(der.getBytes());
+    return md.digest();
+  };
+
+  /**
+   * Verifies the subjectKeyIdentifier extension value for this certificate
+   * against its public key. If no extension is found, false will be
+   * returned.
+   *
+   * @return true if verified, false if not.
+   */
+  cert.verifySubjectKeyIdentifier = function() {
+    var rval = false;
+    var oid = oids['subjectKeyIdentifier'];
+    for(var i = 0; i < cert.extensions.length; ++i) {
+      var ext = cert.extensions[i];
+      if(ext.id === oid) {
+        var ski = cert.generateSubjectKeyIdentifier().getBytes();
+        return (forge.util.hexToBytes(ext.subjectKeyIdentifier) === ski);
+      }
+    }
+    return false;
   };
 
   return cert;
