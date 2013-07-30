@@ -505,6 +505,9 @@ pki.verifyCertificateChain(caStore, chain, customVerifyCallback);
 // signs a certificate using the given private key
 cert.sign(privateKey);
 
+// signs a certificate using SHA-256 instead of SHA-1
+cert.sign(privateKey, forge.md.sha256.create());
+
 // verifies an issued certificate using the certificates public key
 var verified = issuer.verify(issued);
 
