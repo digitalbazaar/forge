@@ -864,8 +864,8 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     return cipher;
   }
 
-  // private vars for state (CFB always uses encryption)
-  var _w = expandKey(key, decrypt && mode !== 'CFB');
+  // private vars for state (CFB/OFB always uses encryption)
+  var _w = expandKey(key, decrypt && mode !== 'CFB' && mode !== 'OFB');
   var _blockSize = Nb << 2;
   var _input;
   var _output;
@@ -884,6 +884,9 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
   }
   else if(mode === 'CFB') {
     _op = cfbOp;
+  }
+  else if(mode === 'OFB') {
+    _op = ofbOp;
   }
   else {
     throw {
@@ -1023,8 +1026,8 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     _finish = false;
     cipher.output = _output;
 
-    // CFB uses IV as first input
-    if(mode === 'CFB') {
+    // OFB/CFB uses IV as first input
+    if(mode === 'CFB' || mode === 'OFB') {
       for(var i = 0; i < Nb; ++i) {
         _inBlock[i] = _prev[i];
       }
@@ -1088,6 +1091,22 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
         _inBlock[i] = result;
       }
       _output.putInt32(result);
+    }
+  }
+
+  function ofbOp() {
+    // update block (OFB always uses encryption mode)
+    _updateBlock(_w, _inBlock, _outBlock, false);
+
+    // get next input
+    for(var i = 0; i < Nb; ++i) {
+      _inBlock[i] = _input.getInt32();
+    }
+
+    // XOR input with output and update next input
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_inBlock[i] ^ _outBlock[i]);
+      _inBlock[i] = _outBlock[i];
     }
   }
 };

@@ -1105,6 +1105,69 @@ jQuery(function($)
       }
    })();
 
+   (function()
+   {
+      var keys = [
+         '00000000000000000000000000000000',
+         '00000000000000000000000000000000'
+      ];
+
+      var ivs = [
+         '80000000000000000000000000000000',
+         'c8ca0d6a35dbeac776e911ee16bea7d3'
+      ];
+
+      var inputs = [
+         '00000000000000000000000000000000',
+         'This is a 48-byte message (exactly 3 AES blocks)'
+      ];
+
+      var outputs = [
+         '3ad78e726c1ec02b7ebfe92b23d9ec34',
+         '39c0190727a76b2a90963426f63689cf' +
+           'cdb8a2be8e20c5e877a81a724e3611f6' +
+           '2ecc386f2e941b2441c838906002be19'
+      ];
+
+      for(var i = 0; i < keys.length; ++i)
+      {
+         (function(i)
+         {
+            var key = forge.util.hexToBytes(keys[i]);
+            var iv = forge.util.hexToBytes(ivs[i]);
+            var input = (i !== 1) ?
+               forge.util.hexToBytes(inputs[i]) : inputs[i];
+            var output = forge.util.hexToBytes(outputs[i]);
+
+            addTest('aes-128 ofb encrypt', function(task, test)
+            {
+               // encrypt w/no padding
+               test.expect.html(outputs[i]);
+               var cipher = forge.aes.createEncryptionCipher(key, 'OFB');
+               cipher.start(iv);
+               cipher.update(forge.util.createBuffer(input));
+               cipher.finish(function(){return true;});
+               test.result.html(cipher.output.toHex());
+               test.check();
+            });
+
+            addTest('aes-128 ofb decrypt', function(task, test)
+            {
+               // decrypt w/no padding
+               test.expect.html(inputs[i]);
+               var cipher = forge.aes.createDecryptionCipher(key, 'OFB');
+               cipher.start(iv);
+               cipher.update(forge.util.createBuffer(output));
+               cipher.finish(function(){return true;});
+               var out = (i !== 1) ?
+                 cipher.output.toHex() : cipher.output.getBytes();
+               test.result.html(out);
+               test.check();
+            });
+         })(i);
+      }
+   })();
+
    addTest('private key encryption', function(task, test)
    {
       var _privateKey =
