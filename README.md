@@ -318,7 +318,7 @@ __Examples__
 <a name="aes" />
 ### AES
 
-Provides basic [AES][] encryption and decryption in CBC mode.
+Provides basic [AES][] encryption and decryption in CBC, CFB, OFB, or CTR mode.
 
 __Examples__
 
@@ -328,6 +328,7 @@ var key = forge.random.getBytesSync(16);
 var iv = forge.random.getBytesSync(16);
 
 // encrypt some bytes using CBC mode
+// (other modes include: CFB, OFB, and CTR)
 var cipher = forge.aes.createEncryptionCipher(key, 'CBC');
 cipher.start(iv);
 cipher.update(forge.util.createBuffer(someBytes));
@@ -337,24 +338,8 @@ var encrypted = cipher.output;
 console.log(encrypted.toHex());
 
 // decrypt some bytes using CBC mode
+// (other modes include: CFB, OFB, and CTR)
 var cipher = forge.aes.createDecryptionCipher(key, 'CBC');
-cipher.start(iv);
-cipher.update(encrypted);
-cipher.finish();
-// outputs decrypted hex
-console.log(cipher.output.toHex());
-
-// encrypt some bytes using CFB mode
-var cipher = forge.aes.createEncryptionCipher(key, 'CFB');
-cipher.start(iv);
-cipher.update(forge.util.createBuffer(someBytes));
-cipher.finish();
-var encrypted = cipher.output;
-// outputs encrypted hex
-console.log(encrypted.toHex());
-
-// decrypt some bytes using CFB mode
-var cipher = forge.aes.createDecryptionCipher(key, 'CFB');
 cipher.start(iv);
 cipher.update(encrypted);
 cipher.finish();

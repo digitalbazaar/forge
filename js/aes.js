@@ -864,8 +864,9 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     return cipher;
   }
 
-  // private vars for state (CFB/OFB always uses encryption)
-  var _w = expandKey(key, decrypt && mode !== 'CFB' && mode !== 'OFB');
+  // private vars for state (CFB/OFB/CTR always uses encryption)
+  var alwaysEncrypt = (['CFB', 'OFB', 'CTR'].indexOf(mode) !== -1);
+  var _w = expandKey(key, decrypt && !alwaysEncrypt);
   var _blockSize = Nb << 2;
   var _input;
   var _output;
@@ -887,6 +888,9 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
   }
   else if(mode === 'OFB') {
     _op = ofbOp;
+  }
+  else if(mode === 'CTR') {
+    _op = ctrOp;
   }
   else {
     throw {
@@ -1026,8 +1030,8 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     _finish = false;
     cipher.output = _output;
 
-    // OFB/CFB uses IV as first input
-    if(mode === 'CFB' || mode === 'OFB') {
+    // CFB/OFB/CTR uses IV as first input
+    if(['CFB', 'OFB', 'CTR'].indexOf(mode) !== -1) {
       for(var i = 0; i < Nb; ++i) {
         _inBlock[i] = _prev[i];
       }
@@ -1107,6 +1111,27 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     for(var i = 0; i < Nb; ++i) {
       _output.putInt32(_inBlock[i] ^ _outBlock[i]);
       _inBlock[i] = _outBlock[i];
+    }
+  }
+
+  function ctrOp() {
+    // update block (CTR always uses encryption mode)
+    _updateBlock(_w, _inBlock, _outBlock, false);
+
+    // increment counter (input block)
+    for(var i = Nb - 1; i >= 0; --i) {
+      if(_inBlock[i] === 0xFFFFFFFF) {
+        _inBlock[i] = 0;
+      }
+      else {
+        ++_inBlock[i];
+        break;
+      }
+    }
+
+    // XOR input with output
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_input.getInt32() ^ _outBlock[i]);
     }
   }
 };
