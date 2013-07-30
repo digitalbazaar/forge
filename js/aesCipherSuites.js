@@ -153,11 +153,10 @@ function encrypt_aes_cbc_sha1_padding(blockSize, input, decrypt) {
    padding_length uint8 itself as a padding byte. */
   if(!decrypt) {
     // get the number of padding bytes required to reach the blockSize and
-    // subtract 1 to make room for the padding_length uint8 but add it during
-    // fillWithByte
-    var padding = (input.length() == blockSize) ?
-      (blockSize - 1) : (blockSize - input.length() - 1);
-    input.fillWithByte(padding, padding + 1);
+    // subtract 1 for the padding value (to make room for the padding_length
+    // uint8)
+    var padding = blockSize - (input.length() % blockSize);
+    input.fillWithByte(padding - 1, padding);
   }
   return true;
 }

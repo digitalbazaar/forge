@@ -864,8 +864,13 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     return cipher;
   }
 
-  // private vars for state (CFB/OFB/CTR always uses encryption)
+  // (CFB/OFB/CTR always uses encryption)
   var alwaysEncrypt = (['CFB', 'OFB', 'CTR'].indexOf(mode) !== -1);
+
+  // CBC mode requires padding
+  var requirePadding = (mode === 'CBC');
+
+  // private vars for state
   var _w = expandKey(key, decrypt && !alwaysEncrypt);
   var _blockSize = Nb << 2;
   var _input;
@@ -909,22 +914,16 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
       _input.putBuffer(input);
     }
 
-    /* In encrypt mode, the threshold for updating a block is the
-      block size. As soon as enough input is available to update
-      a block, encryption may occur. In decrypt mode, we wait for
-      2 blocks to be available or for the finish flag to be set
-      with only 1 block available. This is done so that the output
-      buffer will not be populated with padding bytes at the end
-      of the decryption -- they can be truncated before returning
-      from finish(). */
-    var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
-    while(_input.length() >= threshold) { _op(); }
+    // do cipher operation while input contains full blocks or if finishing
+    while(_input.length() >= _blockSize || (_input.length() > 0 && _finish)) {
+      _op();
+    }
   };
 
   /**
    * Finishes encrypting or decrypting.
    *
-   * @param pad a padding function to use, null for default,
+   * @param pad a padding function to use in CBC mode, null for default,
    *          signature(blockSize, buffer, decrypt).
    *
    * @return true if successful, false on error.
@@ -932,11 +931,14 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
   cipher.finish = function(pad) {
     var rval = true;
 
+    // get # of bytes that won't fill a block
+    var overflow = _input.length() % _blockSize;
+
     if(!decrypt) {
       if(pad) {
         rval = pad(_blockSize, _input, decrypt);
       }
-      else {
+      else if(requirePadding) {
         // add PKCS#7 padding to block (each pad byte is the
         // value of the number of pad bytes)
         var padding = (_input.length() === _blockSize) ?
@@ -952,13 +954,15 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     }
 
     if(decrypt) {
-      // check for error: input data not a multiple of blockSize
-      rval = (_input.length() === 0);
+      if(requirePadding) {
+        // check for error: input data not a multiple of blockSize
+        rval = (overflow === 0);
+      }
       if(rval) {
         if(pad) {
           rval = pad(_blockSize, _output, decrypt);
         }
-        else {
+        else if(requirePadding) {
           // ensure padding byte count is valid
           var len = _output.length();
           var count = _output.at(len - 1);
@@ -971,6 +975,11 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
           }
         }
       }
+    }
+
+    // handle stream mode truncation if padding not set
+    if(!requirePadding && !pad && overflow > 0) {
+      _output.truncate(_blockSize - overflow);
     }
 
     return rval;

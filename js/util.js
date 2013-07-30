@@ -69,7 +69,7 @@ util.ByteBuffer.prototype.length = function() {
  * @return true if this buffer is empty, false if not.
  */
 util.ByteBuffer.prototype.isEmpty = function() {
-  return (this.data.length - this.read) === 0;
+  return this.length() <= 0;
 };
 
 /**

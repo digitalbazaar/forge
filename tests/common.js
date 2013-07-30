@@ -1078,26 +1078,81 @@ jQuery(function($)
 
             addTest('aes-128 cfb encrypt', function(task, test)
             {
-               // encrypt w/no padding
+               // encrypt
                test.expect.html(outputs[i]);
                var cipher = forge.aes.createEncryptionCipher(key, 'CFB');
                cipher.start(iv);
                cipher.update(forge.util.createBuffer(input));
-               cipher.finish(function(){return true;});
+               cipher.finish();
                test.result.html(cipher.output.toHex());
                test.check();
             });
 
             addTest('aes-128 cfb decrypt', function(task, test)
             {
-               // decrypt w/no padding
+               // decrypt
                test.expect.html(inputs[i]);
                var cipher = forge.aes.createDecryptionCipher(key, 'CFB');
                cipher.start(iv);
                cipher.update(forge.util.createBuffer(output));
-               cipher.finish(function(){return true;});
+               cipher.finish();
                var out = (i !== 5) ?
                  cipher.output.toHex() : cipher.output.getBytes();
+               test.result.html(out);
+               test.check();
+            });
+         })(i);
+      }
+   })();
+
+   (function()
+   {
+      var keys = [
+         '861009ec4d599fab1f40abc76e6f89880cff5833c79c548c99f9045f191cd90b'
+      ];
+
+      var ivs = [
+         'd927ad81199aa7dcadfdb4e47b6dc694'
+      ];
+
+      var inputs = [
+         'MY-DATA-AND-HERE-IS-MORE-DATA'
+      ];
+
+      var outputs = [
+         '80eb666a9fc9e263faf71e87ffc94451d7d8df7cfcf2606470351dd5ac'
+      ];
+
+      for(var i = 0; i < keys.length; ++i)
+      {
+         (function(i)
+         {
+            var key = forge.util.hexToBytes(keys[i]);
+            var iv = forge.util.hexToBytes(ivs[i]);
+            var input = inputs[i];
+            var output = forge.util.hexToBytes(outputs[i]);
+
+            addTest('aes-256 cfb encrypt', function(task, test)
+            {
+               // encrypt
+               test.expect.html(outputs[i]);
+               var cipher = forge.aes.createEncryptionCipher(key, 'CFB');
+               cipher.start(iv);
+               cipher.update(forge.util.createBuffer(input));
+               cipher.finish();
+               test.result.html(cipher.output.toHex());
+               test.check();
+            });
+
+            addTest('aes-256 cfb decrypt', function(task, test)
+            {
+               // decrypt
+               test.expect.html(inputs[i]);
+               var cipher = forge.aes.createDecryptionCipher(key, 'CFB');
+               cipher.start(iv);
+               cipher.update(forge.util.createBuffer(output));
+               cipher.finish();
+               var out = cipher.output.getBytes();
                test.result.html(out);
                test.check();
             });
