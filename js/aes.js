@@ -798,7 +798,7 @@ var _updateBlock = function(w, input, output, decrypt) {
 
 /**
  * Creates an AES cipher object. CBC (cipher-block-chaining) mode will be
- * used.
+ * used by default, the other supported modes are: CFB.
  *
  * The key and iv may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words. If an iv is provided, then
@@ -809,15 +809,19 @@ var _updateBlock = function(w, input, output, decrypt) {
  * @param iv the initialization vector to start with, null not to start.
  * @param output the buffer to write to.
  * @param decrypt true for decryption, false for encryption.
+ * @param mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-var _createCipher = function(key, iv, output, decrypt) {
+var _createCipher = function(key, iv, output, decrypt, mode) {
   var cipher = null;
 
   if(!init) {
     initialize();
   }
+
+  // default to CBC mode
+  mode = (mode || 'CBC').toUpperCase();
 
   /* Note: The key may be a string of bytes, an array of bytes, a byte
     buffer, or an array of 32-bit integers. If the key is in bytes, then
@@ -857,8 +861,8 @@ var _createCipher = function(key, iv, output, decrypt) {
   // key must be an array of 32-bit integers by now
   if(forge.util.isArray(key) &&
     (key.length === 4 || key.length === 6 || key.length === 8)) {
-    // private vars for state
-    var _w = expandKey(key, decrypt);
+    // private vars for state (CFB always uses encryption)
+    var _w = expandKey(key, decrypt && mode !== 'CFB');
     var _blockSize = Nb << 2;
     var _input;
     var _output;
@@ -872,58 +876,99 @@ var _createCipher = function(key, iv, output, decrypt) {
     };
 
     /**
-     * Updates the next block using CBC mode.
+     * Updates the next block according to the cipher mode.
      *
      * @param input the buffer to read from.
      */
-    cipher.update = function(input) {
-      if(!_finish) {
-        // not finishing, so fill the input buffer with more input
-        _input.putBuffer(input);
-      }
+    cipher.update = null;
 
-      /* In encrypt mode, the threshold for updating a block is the
-        block size. As soon as enough input is available to update
-        a block, encryption may occur. In decrypt mode, we wait for
-        2 blocks to be available or for the finish flag to be set
-        with only 1 block available. This is done so that the output
-        buffer will not be populated with padding bytes at the end
-        of the decryption -- they can be truncated before returning
-        from finish(). */
-      var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
-      while(_input.length() >= threshold) {
-        // get next block
-        if(decrypt) {
+    if(mode === 'CBC') {
+      cipher.update = function(input) {
+        if(!_finish) {
+          // not finishing, so fill the input buffer with more input
+          _input.putBuffer(input);
+        }
+
+        /* In encrypt mode, the threshold for updating a block is the
+          block size. As soon as enough input is available to update
+          a block, encryption may occur. In decrypt mode, we wait for
+          2 blocks to be available or for the finish flag to be set
+          with only 1 block available. This is done so that the output
+          buffer will not be populated with padding bytes at the end
+          of the decryption -- they can be truncated before returning
+          from finish(). */
+        var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
+        while(_input.length() >= threshold) {
+          // get next block
+          if(decrypt) {
+            for(var i = 0; i < Nb; ++i) {
+              _inBlock[i] = _input.getInt32();
+            }
+          }
+          else {
+            // CBC XOR's IV (or previous block) with plaintext
+            for(var i = 0; i < Nb; ++i) {
+              _inBlock[i] = _prev[i] ^ _input.getInt32();
+            }
+          }
+
+          // update block
+          _updateBlock(_w, _inBlock, _outBlock, decrypt);
+
+          // write output, save previous ciphered block
+          if(decrypt) {
+            // CBC XOR's IV (or previous block) with ciphertext
+            for(var i = 0; i < Nb; ++i) {
+              _output.putInt32(_prev[i] ^ _outBlock[i]);
+            }
+            _prev = _inBlock.slice(0);
+          }
+          else {
+            for(var i = 0; i < Nb; ++i) {
+              _output.putInt32(_outBlock[i]);
+            }
+            _prev = _outBlock;
+          }
+        }
+      };
+    }
+    else if(mode === 'CFB') {
+      cipher.update = function(input) {
+        if(!_finish) {
+          // not finishing, so fill the input buffer with more input
+          _input.putBuffer(input);
+        }
+
+        /* In encrypt mode, the threshold for updating a block is the
+          block size. As soon as enough input is available to update
+          a block, encryption may occur. In decrypt mode, we wait for
+          2 blocks to be available or for the finish flag to be set
+          with only 1 block available. This is done so that the output
+          buffer will not be populated with padding bytes at the end
+          of the decryption -- they can be truncated before returning
+          from finish(). */
+        var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
+        while(_input.length() >= threshold) {
+          // update block (CFB always uses encryption mode)
+          _updateBlock(_w, _inBlock, _outBlock, false);
+
+          // get next input
           for(var i = 0; i < Nb; ++i) {
             _inBlock[i] = _input.getInt32();
           }
-        }
-        else {
-          // CBC mode XOR's IV (or previous block) with plaintext
-          for(var i = 0; i < Nb; ++i) {
-            _inBlock[i] = _prev[i] ^ _input.getInt32();
-          }
-        }
 
-        // update block
-        _updateBlock(_w, _inBlock, _outBlock, decrypt);
-
-        // write output, save previous ciphered block
-        if(decrypt) {
-          // CBC mode XOR's IV (or previous block) with plaintext
+          // XOR input with output
           for(var i = 0; i < Nb; ++i) {
-            _output.putInt32(_prev[i] ^ _outBlock[i]);
+            var result = _inBlock[i] ^ _outBlock[i];
+            if(!decrypt) {
+              // update next input block when encrypting
+              _inBlock[i] = result;
+            }
+            _output.putInt32(result);
           }
-          _prev = _inBlock.slice(0);
         }
-        else {
-          for(var i = 0; i < Nb; ++i) {
-            _output.putInt32(_outBlock[i]);
-          }
-          _prev = _outBlock;
-        }
-      }
-    };
+      };
+    }
 
     /**
      * Finishes encrypting or decrypting.
@@ -993,7 +1038,9 @@ var _createCipher = function(key, iv, output, decrypt) {
      */
     cipher.start = function(iv, output) {
       // if IV is null, reuse block from previous encryption/decryption
-      iv = iv || _prev.slice(0);
+      if(iv === null) {
+        iv = _prev.slice(0);
+      }
 
       /* Note: The IV may be a string of bytes, an array of bytes, a
         byte buffer, or an array of 32-bit integers. If the IV is in
@@ -1031,6 +1078,14 @@ var _createCipher = function(key, iv, output, decrypt) {
       _outBlock = new Array(Nb);
       _finish = false;
       cipher.output = _output;
+
+      // CFB uses IV as first input
+      if(mode === 'CFB') {
+        for(var i = 0; i < Nb; ++i) {
+          _inBlock[i] = _prev[i];
+        }
+        _prev = null;
+      }
     };
     if(iv !== null) {
       cipher.start(iv, output);
@@ -1043,9 +1098,8 @@ var _createCipher = function(key, iv, output, decrypt) {
 forge.aes = forge.aes || {};
 
 /**
- * Creates an AES cipher object to encrypt data in CBC mode using the
- * given symmetric key. The output will be stored in the 'output' member
- * of the returned cipher.
+ * Creates an AES cipher object to encrypt data using the given symmetric key.
+ * The output will be stored in the 'output' member of the returned cipher.
  *
  * The key and iv may be given as a string of bytes, an array of bytes,
  * a byte buffer, or an array of 32-bit words.
@@ -1053,16 +1107,16 @@ forge.aes = forge.aes || {};
  * @param key the symmetric key to use.
  * @param iv the initialization vector to use.
  * @param output the buffer to write to, null to create one.
+ * @param mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-forge.aes.startEncrypting = function(key, iv, output) {
-  return _createCipher(key, iv, output, false);
+forge.aes.startEncrypting = function(key, iv, output, mode) {
+  return _createCipher(key, iv, output, false, mode);
 };
 
 /**
- * Creates an AES cipher object to encrypt data in CBC mode using the
- * given symmetric key.
+ * Creates an AES cipher object to encrypt data using the given symmetric key.
  *
  * The key may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words.
@@ -1071,17 +1125,17 @@ forge.aes.startEncrypting = function(key, iv, output) {
  * output buffer.
  *
  * @param key the symmetric key to use.
+ * @param mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-forge.aes.createEncryptionCipher = function(key) {
-  return _createCipher(key, null, null, false);
+forge.aes.createEncryptionCipher = function(key, mode) {
+  return _createCipher(key, null, null, false, mode);
 };
 
 /**
- * Creates an AES cipher object to decrypt data in CBC mode using the
- * given symmetric key. The output will be stored in the 'output' member
- * of the returned cipher.
+ * Creates an AES cipher object to decrypt data using the given symmetric key.
+ * The output will be stored in the 'output' member of the returned cipher.
  *
  * The key and iv may be given as a string of bytes, an array of bytes,
  * a byte buffer, or an array of 32-bit words.
@@ -1089,16 +1143,16 @@ forge.aes.createEncryptionCipher = function(key) {
  * @param key the symmetric key to use.
  * @param iv the initialization vector to use.
  * @param output the buffer to write to, null to create one.
+ * @param mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-forge.aes.startDecrypting = function(key, iv, output) {
-  return _createCipher(key, iv, output, true);
+forge.aes.startDecrypting = function(key, iv, output, mode) {
+  return _createCipher(key, iv, output, true, mode);
 };
 
 /**
- * Creates an AES cipher object to decrypt data in CBC mode using the
- * given symmetric key.
+ * Creates an AES cipher object to decrypt data using the given symmetric key.
  *
  * The key may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words.
@@ -1107,11 +1161,12 @@ forge.aes.startDecrypting = function(key, iv, output) {
  * optional output buffer.
  *
  * @param key the symmetric key to use.
+ * @param mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-forge.aes.createDecryptionCipher = function(key) {
-  return _createCipher(key, null, null, true);
+forge.aes.createDecryptionCipher = function(key, mode) {
+  return _createCipher(key, null, null, true, mode);
 };
 
 /**
