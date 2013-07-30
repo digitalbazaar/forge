@@ -859,239 +859,237 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
   }
 
   // key must be an array of 32-bit integers by now
-  if(forge.util.isArray(key) &&
-    (key.length === 4 || key.length === 6 || key.length === 8)) {
-    // private vars for state (CFB always uses encryption)
-    var _w = expandKey(key, decrypt && mode !== 'CFB');
-    var _blockSize = Nb << 2;
-    var _input;
-    var _output;
-    var _inBlock;
-    var _outBlock;
-    var _prev;
-    var _finish;
-    cipher = {
-      // output from AES (either encrypted or decrypted bytes)
-      output: null
-    };
+  if(!forge.util.isArray(key) ||
+    !(key.length === 4 || key.length === 6 || key.length === 8)) {
+    return cipher;
+  }
 
-    /**
-     * Updates the next block according to the cipher mode.
-     *
-     * @param input the buffer to read from.
-     */
-    cipher.update = null;
+  // private vars for state (CFB always uses encryption)
+  var _w = expandKey(key, decrypt && mode !== 'CFB');
+  var _blockSize = Nb << 2;
+  var _input;
+  var _output;
+  var _inBlock;
+  var _outBlock;
+  var _prev;
+  var _finish;
+  var _op;
+  cipher = {
+    // output from AES (either encrypted or decrypted bytes)
+    output: null
+  };
 
-    if(mode === 'CBC') {
-      cipher.update = function(input) {
-        if(!_finish) {
-          // not finishing, so fill the input buffer with more input
-          _input.putBuffer(input);
-        }
-
-        /* In encrypt mode, the threshold for updating a block is the
-          block size. As soon as enough input is available to update
-          a block, encryption may occur. In decrypt mode, we wait for
-          2 blocks to be available or for the finish flag to be set
-          with only 1 block available. This is done so that the output
-          buffer will not be populated with padding bytes at the end
-          of the decryption -- they can be truncated before returning
-          from finish(). */
-        var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
-        while(_input.length() >= threshold) {
-          // get next block
-          if(decrypt) {
-            for(var i = 0; i < Nb; ++i) {
-              _inBlock[i] = _input.getInt32();
-            }
-          }
-          else {
-            // CBC XOR's IV (or previous block) with plaintext
-            for(var i = 0; i < Nb; ++i) {
-              _inBlock[i] = _prev[i] ^ _input.getInt32();
-            }
-          }
-
-          // update block
-          _updateBlock(_w, _inBlock, _outBlock, decrypt);
-
-          // write output, save previous ciphered block
-          if(decrypt) {
-            // CBC XOR's IV (or previous block) with ciphertext
-            for(var i = 0; i < Nb; ++i) {
-              _output.putInt32(_prev[i] ^ _outBlock[i]);
-            }
-            _prev = _inBlock.slice(0);
-          }
-          else {
-            for(var i = 0; i < Nb; ++i) {
-              _output.putInt32(_outBlock[i]);
-            }
-            _prev = _outBlock;
-          }
-        }
-      };
-    }
-    else if(mode === 'CFB') {
-      cipher.update = function(input) {
-        if(!_finish) {
-          // not finishing, so fill the input buffer with more input
-          _input.putBuffer(input);
-        }
-
-        /* In encrypt mode, the threshold for updating a block is the
-          block size. As soon as enough input is available to update
-          a block, encryption may occur. In decrypt mode, we wait for
-          2 blocks to be available or for the finish flag to be set
-          with only 1 block available. This is done so that the output
-          buffer will not be populated with padding bytes at the end
-          of the decryption -- they can be truncated before returning
-          from finish(). */
-        var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
-        while(_input.length() >= threshold) {
-          // update block (CFB always uses encryption mode)
-          _updateBlock(_w, _inBlock, _outBlock, false);
-
-          // get next input
-          for(var i = 0; i < Nb; ++i) {
-            _inBlock[i] = _input.getInt32();
-          }
-
-          // XOR input with output
-          for(var i = 0; i < Nb; ++i) {
-            var result = _inBlock[i] ^ _outBlock[i];
-            if(!decrypt) {
-              // update next input block when encrypting
-              _inBlock[i] = result;
-            }
-            _output.putInt32(result);
-          }
-        }
-      };
-    }
-
-    /**
-     * Finishes encrypting or decrypting.
-     *
-     * @param pad a padding function to use, null for default,
-     *          signature(blockSize, buffer, decrypt).
-     *
-     * @return true if successful, false on error.
-     */
-    cipher.finish = function(pad) {
-      var rval = true;
-
-      if(!decrypt) {
-        if(pad) {
-          rval = pad(_blockSize, _input, decrypt);
-        }
-        else {
-          // add PKCS#7 padding to block (each pad byte is the
-          // value of the number of pad bytes)
-          var padding = (_input.length() === _blockSize) ?
-            _blockSize : (_blockSize - _input.length());
-          _input.fillWithByte(padding, padding);
-        }
-      }
-
-      if(rval) {
-        // do final update
-        _finish = true;
-        cipher.update();
-      }
-
-      if(decrypt) {
-        // check for error: input data not a multiple of blockSize
-        rval = (_input.length() === 0);
-        if(rval) {
-          if(pad) {
-            rval = pad(_blockSize, _output, decrypt);
-          }
-          else {
-            // ensure padding byte count is valid
-            var len = _output.length();
-            var count = _output.at(len - 1);
-            if(count > (Nb << 2)) {
-              rval = false;
-            }
-            else {
-              // trim off padding bytes
-              _output.truncate(count);
-            }
-          }
-        }
-      }
-
-      return rval;
-    };
-
-    /**
-     * Starts or restarts the encryption or decryption process, whichever
-     * was previously configured.
-     *
-     * The iv may be given as a string of bytes, an array of bytes, a
-     * byte buffer, or an array of 32-bit words.
-     *
-     * @param iv the initialization vector to use, null to reuse the
-     *          last ciphered block from a previous update().
-     * @param output the output the buffer to write to, null to create one.
-     */
-    cipher.start = function(iv, output) {
-      // if IV is null, reuse block from previous encryption/decryption
-      if(iv === null) {
-        iv = _prev.slice(0);
-      }
-
-      /* Note: The IV may be a string of bytes, an array of bytes, a
-        byte buffer, or an array of 32-bit integers. If the IV is in
-        bytes, then it must be Nb (16) bytes in length. If it is in
-        32-bit integers, then it must be 4 integers long. */
-
-      // convert iv string into byte buffer
-      if(typeof iv === 'string' && iv.length === 16) {
-        iv = forge.util.createBuffer(iv);
-      }
-      // convert iv byte array into byte buffer
-      else if(forge.util.isArray(iv) && iv.length === 16) {
-        var tmp = iv;
-        var iv = forge.util.createBuffer();
-        for(var i = 0; i < 16; ++i) {
-          iv.putByte(tmp[i]);
-        }
-      }
-
-      // convert iv byte buffer into 32-bit integer array
-      if(!forge.util.isArray(iv)) {
-        var tmp = iv;
-        iv = new Array(4);
-        iv[0] = tmp.getInt32();
-        iv[1] = tmp.getInt32();
-        iv[2] = tmp.getInt32();
-        iv[3] = tmp.getInt32();
-      }
-
-      // set private vars
-      _input = forge.util.createBuffer();
-      _output = output || forge.util.createBuffer();
-      _prev = iv.slice(0);
-      _inBlock = new Array(Nb);
-      _outBlock = new Array(Nb);
-      _finish = false;
-      cipher.output = _output;
-
-      // CFB uses IV as first input
-      if(mode === 'CFB') {
-        for(var i = 0; i < Nb; ++i) {
-          _inBlock[i] = _prev[i];
-        }
-        _prev = null;
-      }
-    };
-    if(iv !== null) {
-      cipher.start(iv, output);
+  if(mode === 'CBC') {
+    _op = cbcOp;
+  }
+  else if(mode === 'CFB') {
+    _op = cfbOp;
+  }
+  else {
+    throw {
+      message: 'Unsupported block cipher mode of operation: "' + mode + '"'
     }
   }
+
+  /**
+   * Updates the next block according to the cipher mode.
+   *
+   * @param input the buffer to read from.
+   */
+  cipher.update = function(input) {
+    if(!_finish) {
+      // not finishing, so fill the input buffer with more input
+      _input.putBuffer(input);
+    }
+
+    /* In encrypt mode, the threshold for updating a block is the
+      block size. As soon as enough input is available to update
+      a block, encryption may occur. In decrypt mode, we wait for
+      2 blocks to be available or for the finish flag to be set
+      with only 1 block available. This is done so that the output
+      buffer will not be populated with padding bytes at the end
+      of the decryption -- they can be truncated before returning
+      from finish(). */
+    var threshold = decrypt && !_finish ? _blockSize << 1 : _blockSize;
+    while(_input.length() >= threshold) { _op(); }
+  };
+
+  /**
+   * Finishes encrypting or decrypting.
+   *
+   * @param pad a padding function to use, null for default,
+   *          signature(blockSize, buffer, decrypt).
+   *
+   * @return true if successful, false on error.
+   */
+  cipher.finish = function(pad) {
+    var rval = true;
+
+    if(!decrypt) {
+      if(pad) {
+        rval = pad(_blockSize, _input, decrypt);
+      }
+      else {
+        // add PKCS#7 padding to block (each pad byte is the
+        // value of the number of pad bytes)
+        var padding = (_input.length() === _blockSize) ?
+          _blockSize : (_blockSize - _input.length());
+        _input.fillWithByte(padding, padding);
+      }
+    }
+
+    if(rval) {
+      // do final update
+      _finish = true;
+      cipher.update();
+    }
+
+    if(decrypt) {
+      // check for error: input data not a multiple of blockSize
+      rval = (_input.length() === 0);
+      if(rval) {
+        if(pad) {
+          rval = pad(_blockSize, _output, decrypt);
+        }
+        else {
+          // ensure padding byte count is valid
+          var len = _output.length();
+          var count = _output.at(len - 1);
+          if(count > (Nb << 2)) {
+            rval = false;
+          }
+          else {
+            // trim off padding bytes
+            _output.truncate(count);
+          }
+        }
+      }
+    }
+
+    return rval;
+  };
+
+  /**
+   * Starts or restarts the encryption or decryption process, whichever
+   * was previously configured.
+   *
+   * The iv may be given as a string of bytes, an array of bytes, a
+   * byte buffer, or an array of 32-bit words.
+   *
+   * @param iv the initialization vector to use, null to reuse the
+   *          last ciphered block from a previous update().
+   * @param output the output the buffer to write to, null to create one.
+   */
+  cipher.start = function(iv, output) {
+    // if IV is null, reuse block from previous encryption/decryption
+    if(iv === null) {
+      iv = _prev.slice(0);
+    }
+
+    /* Note: The IV may be a string of bytes, an array of bytes, a
+      byte buffer, or an array of 32-bit integers. If the IV is in
+      bytes, then it must be Nb (16) bytes in length. If it is in
+      32-bit integers, then it must be 4 integers long. */
+
+    // convert iv string into byte buffer
+    if(typeof iv === 'string' && iv.length === 16) {
+      iv = forge.util.createBuffer(iv);
+    }
+    // convert iv byte array into byte buffer
+    else if(forge.util.isArray(iv) && iv.length === 16) {
+      var tmp = iv;
+      var iv = forge.util.createBuffer();
+      for(var i = 0; i < 16; ++i) {
+        iv.putByte(tmp[i]);
+      }
+    }
+
+    // convert iv byte buffer into 32-bit integer array
+    if(!forge.util.isArray(iv)) {
+      var tmp = iv;
+      iv = new Array(4);
+      iv[0] = tmp.getInt32();
+      iv[1] = tmp.getInt32();
+      iv[2] = tmp.getInt32();
+      iv[3] = tmp.getInt32();
+    }
+
+    // set private vars
+    _input = forge.util.createBuffer();
+    _output = output || forge.util.createBuffer();
+    _prev = iv.slice(0);
+    _inBlock = new Array(Nb);
+    _outBlock = new Array(Nb);
+    _finish = false;
+    cipher.output = _output;
+
+    // CFB uses IV as first input
+    if(mode === 'CFB') {
+      for(var i = 0; i < Nb; ++i) {
+        _inBlock[i] = _prev[i];
+      }
+      _prev = null;
+    }
+  };
+  if(iv !== null) {
+    cipher.start(iv, output);
+  }
   return cipher;
+
+  // block cipher mode operations:
+
+  function cbcOp() {
+    // get next block
+    if(decrypt) {
+      for(var i = 0; i < Nb; ++i) {
+        _inBlock[i] = _input.getInt32();
+      }
+    }
+    else {
+      // CBC XOR's IV (or previous block) with plaintext
+      for(var i = 0; i < Nb; ++i) {
+        _inBlock[i] = _prev[i] ^ _input.getInt32();
+      }
+    }
+
+    // update block
+    _updateBlock(_w, _inBlock, _outBlock, decrypt);
+
+    // write output, save previous ciphered block
+    if(decrypt) {
+      // CBC XOR's IV (or previous block) with ciphertext
+      for(var i = 0; i < Nb; ++i) {
+        _output.putInt32(_prev[i] ^ _outBlock[i]);
+      }
+      _prev = _inBlock.slice(0);
+    }
+    else {
+      for(var i = 0; i < Nb; ++i) {
+        _output.putInt32(_outBlock[i]);
+      }
+      _prev = _outBlock;
+    }
+  }
+
+  function cfbOp() {
+    // update block (CFB always uses encryption mode)
+    _updateBlock(_w, _inBlock, _outBlock, false);
+
+    // get next input
+    for(var i = 0; i < Nb; ++i) {
+      _inBlock[i] = _input.getInt32();
+    }
+
+    // XOR input with output
+    for(var i = 0; i < Nb; ++i) {
+      var result = _inBlock[i] ^ _outBlock[i];
+      if(!decrypt) {
+        // update next input block when encrypting
+        _inBlock[i] = result;
+      }
+      _output.putInt32(result);
+    }
+  }
 };
 
 /* AES API */
