@@ -514,6 +514,7 @@ var verified = issuer.verify(issued);
 // generate a keypair and create an X.509v3 certificate
 var keys = pki.rsa.generateKeyPair(2048);
 var cert = pki.createCertificate();
+cert.publicKey = keys.publicKey;
 cert.serialNumber = '01';
 cert.validity.notBefore = new Date();
 cert.validity.notAfter = new Date();
@@ -550,13 +551,30 @@ cert.setExtensions([{
   keyEncipherment: true,
   dataEncipherment: true
 }, {
+  name: 'extKeyUsage',
+  serverAuth: true,
+  clientAuth: true,
+  codeSigning: true,
+  emailProtection: true,
+  timeStamping: true
+}, {
+  name: 'nsCertType',
+  client: true,
+  server: true,
+  email: true,
+  objsign: true,
+  sslCA: true,
+  emailCA: true,
+  objCA: true
+}, {
   name: 'subjectAltName',
   altNames: [{
     type: 6, // URI
     value: 'http://example.org/webid#me'
   }]
+}, {
+  name: 'subjectKeyIdentifier'
 }]);
-cert.publicKey = keys.publicKey;
 // self-sign certificate
 cert.sign(keys.privateKey);
 
