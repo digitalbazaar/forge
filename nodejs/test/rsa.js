@@ -1,7 +1,6 @@
-((function() {
+(function() {
 
 function Tests(ASSERT, PKI, RSA) {
-
   describe('pki', function() {
     it('generate 128 bit key pair', function() {
       var pair = RSA.generateKeyPair(128);
@@ -9,7 +8,6 @@ function Tests(ASSERT, PKI, RSA) {
       ASSERT.equal(PKI.publicKeyToPem(pair.publicKey).indexOf('-----BEGIN PUBLIC KEY-----'), 0);
     });
   });
-
 }
 
 // check for AMD
@@ -34,4 +32,4 @@ else if(typeof module === 'object' && module.exports) {
     require('../../js/rsa')());
 }
 
-})());
+})();
