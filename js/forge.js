@@ -74,7 +74,32 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define([
+    'require',
+    'module',
+    './aes',
+    './aesCipherSuites',
+    './asn1',
+    './debug',
+    './des',
+    './hmac',
+    './log',
+    './pbkdf2',
+    './pem',
+    './pkcs7',
+    './pkcs1',
+    './pkcs12',
+    './pki',
+    './prng',
+    './pss',
+    './random',
+    './rc2',
+    './task',
+    './tls',
+    './util',
+    './md',
+    './mgf1'
+  ], function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
