@@ -4341,7 +4341,25 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define([
+    "require",
+    "module",
+    "./aes",
+    "./asn1",
+    "./des",
+    "./jsbn",
+    "./md",
+    "./mgf",
+    "./oids",
+    "./pem",
+    "./pbkdf2",
+    "./pkcs12",
+    "./pss",
+    "./random",
+    "./rc2",
+    "./rsa",
+    "./util"
+  ] , function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }

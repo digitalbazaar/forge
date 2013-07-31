@@ -151,7 +151,7 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define(['require', 'module', './hmac', './md', './util'], function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
