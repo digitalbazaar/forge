@@ -675,21 +675,11 @@ p7.createEnvelopedData = function() {
 
 /* ########## Begin module wrapper ########## */
 var name = 'pkcs7';
-var deps = [
-  './aes',
-  './asn1',
-  './des',
-  './pem',
-  './pkcs7asn1',
-  './pki',
-  './random',
-  './util'
-];
-var nodeDefine = null;
 if(typeof define !== 'function') {
   // NodeJS -> AMD
   if(typeof module === 'object' && module.exports) {
-    nodeDefine = function(ids, factory) {
+    var nodeJS = true;
+    define = function(ids, factory) {
       factory(require, module);
     };
   }
@@ -698,11 +688,11 @@ if(typeof define !== 'function') {
     if(typeof forge === 'undefined') {
       forge = {};
     }
-    initModule(forge);
+    return initModule(forge);
   }
 }
 // AMD
-var defineDeps = ['require', 'module'].concat(deps);
+var deps;
 var defineFunc = function(require, module) {
   module.exports = function(forge) {
     var mods = deps.map(function(dep) {
@@ -721,23 +711,28 @@ var defineFunc = function(require, module) {
     return forge[name];
   };
 };
-if(nodeDefine) {
-  nodeDefine(defineDeps, defineFunc);
-}
-else if(typeof define === 'function') {
-  define([
-    'require',
-    'module',
-    './aes',
-    './asn1',
-    './des',
-    './pem',
-    './pkcs7asn1',
-    './pki',
-    './random',
-    './util'
-  ], function() {
-    defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-  });
-}
+var tmpDefine = define;
+define = function(ids, factory) {
+  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
+  if(nodeJS) {
+    delete define;
+    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
+  }
+  define = tmpDefine;
+  return define.apply(null, Array.prototype.slice.call(arguments, 0));
+};
+define([
+  'require',
+  'module',
+  './aes',
+  './asn1',
+  './des',
+  './pem',
+  './pkcs7asn1',
+  './pki',
+  './random',
+  './util'
+], function() {
+  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
+});
 })();
