@@ -16,3 +16,4 @@ config.status
 configure
 dist
 tests/forge
+node_modules
