@@ -725,7 +725,18 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define([
+    'require',
+    'module',
+    './aes',
+    './asn1',
+    './des',
+    './pem',
+    './pkcs7asn1',
+    './pki',
+    './random',
+    './util'
+  ], function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }

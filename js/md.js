@@ -64,7 +64,7 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define(['require', 'module', './md5', './sha1', './sha256'], function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }

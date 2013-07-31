@@ -1138,7 +1138,17 @@ if(nodeDefine) {
   nodeDefine(defineDeps, defineFunc);
 }
 else if(typeof define === 'function') {
-  define([].concat(defineDeps), function() {
+  define([
+    'require',
+    'module',
+    './asn1',
+    './sha1',
+    './pkcs7asn1',
+    './pki',
+    './util',
+    './random',
+    './hmac'
+  ], function() {
     defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
   });
 }
