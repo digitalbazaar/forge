@@ -25,7 +25,7 @@ var pkcs5 = forge.pkcs5 = forge.pkcs5 || {};
  *
  * @return the derived key, as a string of bytes.
  */
-pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
+forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   // default prf to SHA-1
   if(typeof(md) === 'undefined' || md === null) {
     md = forge.md.sha1.create();

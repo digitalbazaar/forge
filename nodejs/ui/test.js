@@ -14,6 +14,8 @@ requirejs([
     'test/sha1',
     'test/sha256',
     'test/hmac',
+    'test/pbkdf2',
+    'test/random',
     'test/rsa',
     'test/aes',
     'test/tls'
