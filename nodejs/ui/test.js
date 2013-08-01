@@ -12,6 +12,7 @@ requirejs([
     'test/util',
     'test/md5',
     'test/sha1',
+    'test/sha256',
     'test/rsa',
     'test/aes',
     'test/tls'
