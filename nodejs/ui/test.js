@@ -10,7 +10,8 @@ requirejs.config({
 });
 requirejs([
     'test/rsa',
-    'test/aes'
+    'test/aes',
+    'test/tls'
 ], function() {
     mocha.run();
 });
