@@ -9,6 +9,7 @@ try {
   // create a certificate
   console.log('Creating self-signed certificate...');
   var cert = forge.pki.createCertificate();
+  cert.publicKey = keys.publicKey;
   cert.serialNumber = '01';
   cert.validity.notBefore = new Date();
   cert.validity.notAfter = new Date();
@@ -51,7 +52,6 @@ try {
       value: 'http://example.org/webid#me'
     }]
   }]);
-  cert.publicKey = keys.publicKey;
 
   // self-sign certificate
   cert.sign(keys.privateKey);
@@ -62,7 +62,7 @@ try {
   var password = 'password';
   var newPkcs12Asn1 = forge.pkcs12.toPkcs12Asn1(
     keys.privateKey, [cert], password,
-    {generateLocalKeyId: true});
+    {generateLocalKeyId: true, friendlyName: 'test'});
   var newPkcs12Der = forge.asn1.toDer(newPkcs12Asn1).getBytes();
 
   console.log('\nBase64-encoded new PKCS#12:');

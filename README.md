@@ -764,6 +764,15 @@ var p12Asn1 = forge.asn1.fromDer(p12Der);
 var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, 'password');
 // look at pkcs12.safeContents
 
+// get bags by friendlyName
+var bags = pkcs12.getBags({friendlyName: 'test'});
+
+// get bags by localKeyId
+var bags = pkcs12.getBags({localKeyId: buffer});
+
+// get bags by localKeyId (input in hex)
+var bags = pkcs12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879'});
+
 // generate p12, base64 encode
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');

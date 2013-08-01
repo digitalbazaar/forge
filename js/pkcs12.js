@@ -265,11 +265,12 @@ var certBagValidator = {
  *
  * The search can optionally be narrowed by a certain bag type.
  *
- * @param safeContents The SafeContents structure to search in.
- * @param attrName The name of the attribute to compare against.
- * @param attrValue The attribute value to search for.
- * @param bagType Optional bag type to narrow search by.
- * @return Array of matching bags
+ * @param safeContents the SafeContents structure to search in.
+ * @param attrName the name of the attribute to compare against.
+ * @param attrValue the attribute value to search for.
+ * @param [bagType] bag type to narrow search by.
+ *
+ * @return an array of matching bags.
  */
 function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
   var result = [];
@@ -282,7 +283,7 @@ function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
       }
 
       if(bag.attributes[attrName] !== undefined &&
-         bag.attributes[attrName].indexOf(attrValue) >= 0) {
+        bag.attributes[attrName].indexOf(attrValue) >= 0) {
         result.push(bag);
       }
     }
@@ -326,27 +327,69 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     safeContents: [],
 
     /**
-     * Get bags with matching friendlyName attribute
+     * Gets bags with matching attributes.
      *
-     * @param friendlyName The friendly name to search for
-     * @param bagType Optional bag type to narrow search by
-     * @return Array of bags with matching friendlyName attribute
+     * @param filter the attributes to filter by:
+     *          [localKeyId] the localKeyId to search for.
+     *          [localKeyIdHex] the localKeyId in hex to search for.
+     *          [friendlyName] the friendly name to search for.
+     *          [bagType] bag type to narrow each attribute search by.
+     *
+     * @return a map of attribute type to an array of matching bags.
      */
-    getBagsByFriendlyName: function(friendlyName, bagType) {
-      return _getBagsByAttribute(pfx.safeContents, 'friendlyName',
-        friendlyName, bagType);
+    getBags: function(filter) {
+      var rval = {};
+
+      var localKeyId;
+      if('localKeyId' in filter) {
+        localKeyId = filter.localKeyId;
+      }
+      else if('localKeyIdHex' in filter) {
+        localKeyId = forge.util.hexToBytes(filter.localKeyIdHex);
+      }
+
+      if(localKeyId !== undefined) {
+        rval.localKeyId = _getBagsByAttribute(
+          pfx.safeContents, 'localKeyId',
+          localKeyId, filter.bagType);
+      }
+      if('friendlyName' in filter) {
+        rval.friendlyName = _getBagsByAttribute(
+          pfx.safeContents, 'friendlyName',
+          filter.friendlyName, filter.bagType);
+      }
+
+      return rval;
     },
 
     /**
-     * Get bags with matching localKeyId attribute
+     * DEPRECATED: use getBags() instead.
      *
-     * @param localKeyId The localKeyId name to search for
-     * @param bagType Optional bag type to narrow search by
-     * @return Array of bags with matching localKeyId attribute
+     * Get bags with matching friendlyName attribute.
+     *
+     * @param friendlyName the friendly name to search for.
+     * @param [bagType] bag type to narrow search by.
+     *
+     * @return an array of bags with matching friendlyName attribute.
+     */
+    getBagsByFriendlyName: function(friendlyName, bagType) {
+      return _getBagsByAttribute(
+        pfx.safeContents, 'friendlyName', friendlyName, bagType);
+    },
+
+    /**
+     * DEPRECATED: use getBags() instead.
+     *
+     * Get bags with matching localKeyId attribute.
+     *
+     * @param localKeyId the localKeyId to search for.
+     * @param [bagType] bag type to narrow search by.
+     *
+     * @return an array of bags with matching localKeyId attribute.
      */
     getBagsByLocalKeyId: function(localKeyId, bagType) {
-      return _getBagsByAttribute(pfx.safeContents, 'localKeyId',
-        localKeyId, bagType);
+      return _getBagsByAttribute(
+        pfx.safeContents, 'localKeyId', localKeyId, bagType);
     }
   };
 
@@ -658,16 +701,17 @@ function _decodeSafeContents(safeContents, strict, password) {
 }
 
 /**
- * Decode PKCS#12 SET OF PKCS12Attribute into JavaScript object
+ * Decode PKCS#12 SET OF PKCS12Attribute into JavaScript object.
  *
- * @param attributes SET OF PKCS12Attribute (ASN.1 object)
- * @return the decoded attributes
+ * @param attributes SET OF PKCS12Attribute (ASN.1 object).
+ *
+ * @return the decoded attributes.
  */
 function _decodeBagAttributes(attributes) {
   var decodedAttrs = {};
 
   if(attributes !== undefined) {
-    for(var i = 0; i < attributes.length; i ++) {
+    for(var i = 0; i < attributes.length; ++i) {
       var capture = {};
       var errors = [];
       if(!asn1.validate(attributes[i], attributeValidator, capture, errors)) {
@@ -682,9 +726,9 @@ function _decodeBagAttributes(attributes) {
         // unsupported attribute type, ignore.
         continue;
       }
-
+      
       decodedAttrs[pki.oids[oid]] = [];
-      for(var j = 0; j < capture.values.length; j ++) {
+      for(var j = 0; j < capture.values.length; ++j) {
         decodedAttrs[pki.oids[oid]].push(capture.values[j].value);
       }
     }
@@ -716,6 +760,7 @@ function _decodeBagAttributes(attributes) {
  *          saltSize the salt size to use.
  *          useMac true to include a MAC, false not to, defaults to true.
  *          localKeyId the local key ID to use, in hex.
+ *          friendlyName the friendly name to use.
  *          generateLocalKeyId true to generate a random local key ID,
  *            false not to, defaults to true.
  *
@@ -743,8 +788,6 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     localKeyId = forge.util.hexToBytes(localKeyId);
   }
   else if(options.generateLocalKeyId) {
-    // set localKeyId and friendlyName (if specified)
-
     // use SHA-1 of paired cert, if available
     if(cert) {
       var pairedCert = forge.util.isArray(cert) ? cert[0] : cert;
@@ -763,8 +806,9 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     }
   }
 
+  var attrs = [];
   if(localKeyId !== null) {
-    var attrs = [
+    attrs.push(
       // localKeyID
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
@@ -775,8 +819,24 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
             localKeyId)
         ])
-      ])
-    ];
+      ]));
+  }
+  if('friendlyName' in options) {
+    attrs.push(
+      // friendlyName
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        // attrId
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+          asn1.oidToDer(pki.oids['friendlyName']).getBytes()),
+        // attrValues
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BMPSTRING, false,
+            options.friendlyName)
+        ])
+      ]));
+  }
+
+  if(attrs.length > 0) {
     bagAttrs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, attrs);
   }
 
