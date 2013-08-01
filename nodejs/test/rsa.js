@@ -22,26 +22,7 @@ function Tests(ASSERT, PKI, RSA, MD, UTIL) {
       'EJOqdsUMpx9U0YZI7szokJqQNIwokiQ6EonNnWSMlIvy46AhnlRYn+ezeTeU7eMG\r\n' +
       'TkP3VF29vXBo+dLq5e+8VyAyQ3FzM1wI4ts4hRACF8w6mqygXQ7i/SDu8/rXqRGt\r\n' +
       'vnM+z0MYDdKo80efzwIDAQAB\r\n' +
-      '-----END PUBLIC KEY-----\r\n',
-    certificate: '-----BEGIN CERTIFICATE-----\r\n' +
-      'MIIDIjCCAougAwIBAgIJANE2aHSbwpaRMA0GCSqGSIb3DQEBBQUAMGoxCzAJBgNV\r\n' +
-      'BAYTAlVTMREwDwYDVQQIEwhWaXJnaW5pYTETMBEGA1UEBxMKQmxhY2tzYnVyZzEN\r\n' +
-      'MAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDEVMBMGA1UEAxMMbXlzZXJ2ZXIu\r\n' +
-      'Y29tMB4XDTEwMDYxOTE3MzYyOFoXDTExMDYxOTE3MzYyOFowajELMAkGA1UEBhMC\r\n' +
-      'VVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYDVQQHEwpCbGFja3NidXJnMQ0wCwYD\r\n' +
-      'VQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MRUwEwYDVQQDEwxteXNlcnZlci5jb20w\r\n' +
-      'gZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMvQS6BSI0YxaxwsBUzRWgx2ENkQ\r\n' +
-      'k6p2xQynH1TRhkjuzOiQmpA0jCiSJDoSic2dZIyUi/LjoCGeVFif57N5N5Tt4wZO\r\n' +
-      'Q/dUXb29cGj50url77xXIDJDcXMzXAji2ziFEAIXzDqarKBdDuL9IO7z+tepEa2+\r\n' +
-      'cz7PQxgN0qjzR5/PAgMBAAGjgc8wgcwwHQYDVR0OBBYEFPV1Y+DHXW6bA/r9sv1y\r\n' +
-      'NJ8jAwMAMIGcBgNVHSMEgZQwgZGAFPV1Y+DHXW6bA/r9sv1yNJ8jAwMAoW6kbDBq\r\n' +
-      'MQswCQYDVQQGEwJVUzERMA8GA1UECBMIVmlyZ2luaWExEzARBgNVBAcTCkJsYWNr\r\n' +
-      'c2J1cmcxDTALBgNVBAoTBFRlc3QxDTALBgNVBAsTBFRlc3QxFTATBgNVBAMTDG15\r\n' +
-      'c2VydmVyLmNvbYIJANE2aHSbwpaRMAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQEF\r\n' +
-      'BQADgYEARdH2KOlJWTC1CS2y/PAvg4uiM31PXMC1hqSdJlnLM1MY4hRfuf9VyTeX\r\n' +
-      'Y6FdybcyDLSxKn9id+g9229ci9/s9PI+QmD5vXd8yZyScLc2JkYB4GC6+9D1+/+x\r\n' +
-      's2hzMxuK6kzZlP+0l9LGcraMQPGRydjCARZZm4Uegln9rh85XFQ=\r\n' +
-      '-----END CERTIFICATE-----\r\n'
+      '-----END PUBLIC KEY-----\r\n'
   };
   var _signature =
     '9200ece65cdaed36bcc20b94c65af852e4f88f0b4fe5b249d54665f815992ac4' +
@@ -72,11 +53,6 @@ function Tests(ASSERT, PKI, RSA, MD, UTIL) {
       ASSERT.equal(PKI.publicKeyToPem(publicKey), _pem.publicKey);
     });
 
-    it('should convert certificate to/from PEM', function() {
-      var certificate = PKI.certificateFromPem(_pem.certificate);
-      ASSERT.equal(PKI.certificateToPem(certificate), _pem.certificate);
-    });
-
     it('should encrypt and decrypt private key', function() {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
       var encryptedPem = PKI.encryptRsaPrivateKey(
@@ -100,11 +76,6 @@ function Tests(ASSERT, PKI, RSA, MD, UTIL) {
       md.update('0123456789abcdef');
       var signature = privateKey.sign(md);
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
-    });
-
-    it('should verify self-signed certificate', function() {
-      var certificate = PKI.certificateFromPem(_pem.certificate);
-      ASSERT.ok(certificate.verify(certificate));
     });
   });
 }
