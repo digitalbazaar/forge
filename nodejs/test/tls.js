@@ -2,6 +2,23 @@
 
 function Tests(ASSERT, forge) {
   describe('tls', function() {
+    it('should test TLS 1.0 PRF', function() {
+      // Note: This test vector is originally from:
+      // http://www.imc.org/ietf-tls/mail-archive/msg01589.html
+      // But that link is now dead.
+      var secret = forge.util.createBuffer().fillWithByte(0xAB, 48).getBytes();
+      var seed = forge.util.createBuffer().fillWithByte(0xCD, 64).getBytes();
+      var bytes = forge.tls.prf_tls1(secret, 'PRF Testvector',  seed, 104);
+      var expect =
+        'd3d4d1e349b5d515044666d51de32bab258cb521' +
+        'b6b053463e354832fd976754443bcf9a296519bc' +
+        '289abcbc1187e4ebd31e602353776c408aafb74c' +
+        'bc85eff69255f9788faa184cbb957a9819d84a5d' +
+        '7eb006eb459d3ae8de9810454b8b2d8f1afbc655' +
+        'a8c9a013';
+      ASSERT.equal(bytes.toHex(), expect);
+    });
+
     it('should establish a TLS connection and transfer data', function(done) {
       var end = {};
       var data = {};
