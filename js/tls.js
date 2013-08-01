@@ -1326,7 +1326,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
   }
   else {
     var b = record.fragment;
-    msg = {
+    var msg = {
       enc_pre_master_secret: readVector(b, 2).getBytes()
     };
 
@@ -1487,7 +1487,7 @@ tls.handleCertificateVerify = function(c, record, length) {
     var msgBytes = b.bytes();
     b.read += 4;
 
-    msg = {
+    var msg = {
       signature: readVector(b, 2).getBytes()
     };
 
@@ -2870,7 +2870,6 @@ tls.createCertificate = function(c) {
       }
     }
     catch(ex) {
-      console.log('ex', ex, ex.stack);
       return c.error(c, {
         message: 'Could not send certificate list.',
         cause: ex,
