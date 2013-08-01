@@ -9,6 +9,9 @@ requirejs.config({
     }
 });
 requirejs([
+    'test/util',
+    'test/md5',
+    'test/sha1',
     'test/rsa',
     'test/aes',
     'test/tls'
