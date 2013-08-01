@@ -76,9 +76,12 @@ util.ByteBuffer.prototype.isEmpty = function() {
  * Puts a byte in this buffer.
  *
  * @param b the byte to put.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putByte = function(b) {
   this.data += String.fromCharCode(b);
+  return this;
 };
 
 /**
@@ -86,6 +89,8 @@ util.ByteBuffer.prototype.putByte = function(b) {
  *
  * @param b the byte to put.
  * @param n the number of bytes of value b to put.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.fillWithByte = function(b, n) {
   b = String.fromCharCode(b);
@@ -100,53 +105,68 @@ util.ByteBuffer.prototype.fillWithByte = function(b, n) {
     }
   }
   this.data = d;
+  return this;
 };
 
 /**
  * Puts bytes in this buffer.
  *
  * @param bytes the bytes (as a UTF-8 encoded string) to put.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putBytes = function(bytes) {
   this.data += bytes;
+  return this;
 };
 
 /**
  * Puts a UTF-16 encoded string into this buffer.
  *
  * @param str the string to put.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putString = function(str) {
   this.data += util.encodeUtf8(str);
+  return this;
 };
 
 /**
  * Puts a 16-bit integer in this buffer in big-endian order.
  *
  * @param i the 16-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt16 = function(i) {
   this.data +=
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i & 0xFF);
+  return this;
 };
 
 /**
  * Puts a 24-bit integer in this buffer in big-endian order.
  *
  * @param i the 24-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt24 = function(i) {
   this.data +=
     String.fromCharCode(i >> 16 & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i & 0xFF);
+  return this;
 };
 
 /**
  * Puts a 32-bit integer in this buffer in big-endian order.
  *
  * @param i the 32-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt32 = function(i) {
   this.data +=
@@ -154,35 +174,44 @@ util.ByteBuffer.prototype.putInt32 = function(i) {
     String.fromCharCode(i >> 16 & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i & 0xFF);
+  return this;
 };
 
 /**
  * Puts a 16-bit integer in this buffer in little-endian order.
  *
  * @param i the 16-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt16Le = function(i) {
   this.data +=
     String.fromCharCode(i & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF);
+  return this;
 };
 
 /**
  * Puts a 24-bit integer in this buffer in little-endian order.
  *
  * @param i the 24-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt24Le = function(i) {
   this.data +=
     String.fromCharCode(i & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i >> 16 & 0xFF);
+  return this;
 };
 
 /**
  * Puts a 32-bit integer in this buffer in little-endian order.
  *
  * @param i the 32-bit integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt32Le = function(i) {
   this.data +=
@@ -190,6 +219,7 @@ util.ByteBuffer.prototype.putInt32Le = function(i) {
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i >> 16 & 0xFF) +
     String.fromCharCode(i >> 24 & 0xFF);
+  return this;
 };
 
 /**
@@ -197,6 +227,8 @@ util.ByteBuffer.prototype.putInt32Le = function(i) {
  *
  * @param i the n-bit integer.
  * @param n the number of bits in the integer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putInt = function(i, n) {
   do {
@@ -204,15 +236,19 @@ util.ByteBuffer.prototype.putInt = function(i, n) {
     this.data += String.fromCharCode((i >> n) & 0xFF);
   }
   while(n > 0);
+  return this;
 };
 
 /**
  * Puts the given buffer into this buffer.
  *
  * @param buffer the buffer to put into this one.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.putBuffer = function(buffer) {
   this.data += buffer.getBytes();
+  return this;
 };
 
 /**
@@ -388,11 +424,14 @@ util.ByteBuffer.prototype.at = function(i) {
  *
  * @param i the byte index.
  * @param b the byte to put.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.setAt = function(i, b) {
   this.data = this.data.substr(0, this.read + i) +
     String.fromCharCode(b) +
     this.data.substr(this.read + i + 1);
+  return this;
 };
 
 /**
@@ -417,31 +456,40 @@ util.ByteBuffer.prototype.copy = function() {
 
 /**
  * Compacts this buffer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.compact = function() {
   if(this.read > 0) {
     this.data = this.data.slice(this.read);
     this.read = 0;
   }
+  return this;
 };
 
 /**
  * Clears this buffer.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.clear = function() {
   this.data = '';
   this.read = 0;
+  return this;
 };
 
 /**
  * Shortens this buffer by triming bytes off of the end of this buffer.
  *
  * @param count the number of bytes to trim off.
+ *
+ * @return this buffer.
  */
 util.ByteBuffer.prototype.truncate = function(count) {
   var len = Math.max(0, this.length() - count);
   this.data = this.data.substr(this.read, len);
   this.read = 0;
+  return this;
 };
 
 /**
