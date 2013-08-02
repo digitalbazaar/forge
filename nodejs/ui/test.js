@@ -19,6 +19,7 @@ requirejs([
     'test/asn1',
     'test/rsa',
     'test/x509',
+    'test/csr',
     'test/aes',
     'test/tls'
 ], function() {
