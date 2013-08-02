@@ -16,7 +16,7 @@ function Tests(ASSERT, RC2, UTIL) {
 
     it('should rc2-ecb encrypt zeros', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
-      var input = new UTIL.ByteBuffer().fillWithByte(0, 8);
+      var input = new UTIL.createBuffer().fillWithByte(0, 8);
       var cipher = RC2.startEncrypting(key, null, null);
       cipher.update(input);
       cipher.finish();
@@ -25,7 +25,7 @@ function Tests(ASSERT, RC2, UTIL) {
 
     it('should rc2-ecb encrypt: vegan', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
-      var input = new UTIL.ByteBuffer('vegan');
+      var input = new UTIL.createBuffer('vegan');
       var cipher = RC2.startEncrypting(key, null, null);
       cipher.update(input);
       cipher.finish();
@@ -34,7 +34,7 @@ function Tests(ASSERT, RC2, UTIL) {
 
     it('should rc2-ecb decrypt: 2194adaf4d517e3a', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
-      var input = new UTIL.ByteBuffer(UTIL.hexToBytes('2194adaf4d517e3a'));
+      var input = new UTIL.createBuffer(UTIL.hexToBytes('2194adaf4d517e3a'));
       var cipher = RC2.startDecrypting(key, null, null);
       cipher.update(input);
       cipher.finish();
@@ -43,8 +43,8 @@ function Tests(ASSERT, RC2, UTIL) {
 
     it('should rc2-cbc encrypt: revolution', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
-      var iv = new UTIL.ByteBuffer(UTIL.hexToBytes('0123456789abcdef'));
-      var input = new UTIL.ByteBuffer('revolution');
+      var iv = new UTIL.createBuffer(UTIL.hexToBytes('0123456789abcdef'));
+      var input = new UTIL.createBuffer('revolution');
       var cipher = RC2.startEncrypting(key, iv, null);
       cipher.update(input);
       cipher.finish();
@@ -53,8 +53,8 @@ function Tests(ASSERT, RC2, UTIL) {
 
     it('should rc2-cbc decrypt: 50cfd16e0fd7f20b17a622eb2a469b7e', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
-      var iv = new UTIL.ByteBuffer(UTIL.hexToBytes('0123456789abcdef'));
-      var input = new UTIL.ByteBuffer(
+      var iv = new UTIL.createBuffer(UTIL.hexToBytes('0123456789abcdef'));
+      var input = new UTIL.createBuffer(
         UTIL.hexToBytes('50cfd16e0fd7f20b17a622eb2a469b7e'));
       var cipher = RC2.startDecrypting(key, iv, null);
       cipher.update(input);
