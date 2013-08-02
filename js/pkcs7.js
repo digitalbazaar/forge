@@ -515,6 +515,8 @@ p7.createEnvelopedData = function() {
           return r;
         }
       }
+
+      return null;
     },
 
     /**

@@ -26,6 +26,7 @@ requirejs([
     'test/aes',
     'test/rc2',
     'test/des',
+    'test/pkcs7',
     'test/tls'
 ], function() {
     mocha.run();
