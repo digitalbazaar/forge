@@ -16,7 +16,11 @@ function Tests(ASSERT, PKI, PKCS1, MD, UTIL) {
       var encoded = PKCS1.encode_rsa_oaep(
         keys.publicKey, 'datadatadatadata', {seed: seed});
       var encrypted = keys.publicKey.encrypt(encoded, null);
-      for(var bit = 8; bit < encrypted.length * 8; ++bit) {
+      var bitLength = encrypted.length * 8;
+      // FIXME: test it too slow to run all the time -- temporary
+      // change only does partial checks, need a longer term fix
+      bitLength /= 8;
+      for(var bit = 8; bit < bitLength; ++bit) {
         var byteIndex = bit / 8;
         var bitInByte = bit % 8;
 
@@ -27,7 +31,7 @@ function Tests(ASSERT, PKI, PKCS1, MD, UTIL) {
 
         try {
           var decrypted = keys.privateKey.decrypt(out, null);
-          var output = PKCS1.decode_rsa_oaep(keys.privateKey, decrypted);
+          PKCS1.decode_rsa_oaep(keys.privateKey, decrypted);
           throw {
             message: 'Expected an exception.'
           };
