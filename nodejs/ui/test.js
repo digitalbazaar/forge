@@ -24,6 +24,7 @@ requirejs([
     'test/x509',
     'test/csr',
     'test/aes',
+    'test/rc2',
     'test/tls'
 ], function() {
     mocha.run();
