@@ -32,9 +32,9 @@ describe('browser', function() {
         if(err) {
           return done(err);
         }
-        return info.server.close(function() {
-          return done(null);
-        });
+        // finish immediately
+        done(null);
+        return info.server.close();
       });
     });
   });
