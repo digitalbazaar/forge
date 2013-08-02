@@ -2533,10 +2533,10 @@ pki.createCertificationRequest = function() {
       if(csr.signatureOid in oids) {
         var oid = oids[csr.signatureOid];
         switch(oid) {
-        case 'sha1withRSAEncryption':
+        case 'sha1WithRSAEncryption':
           md = forge.md.sha1.create();
           break;
-        case 'md5withRSAEncryption':
+        case 'md5WithRSAEncryption':
           md = forge.md.md5.create();
           break;
         case 'sha256WithRSAEncryption':
@@ -2566,7 +2566,7 @@ pki.createCertificationRequest = function() {
       var scheme = undefined;
 
       switch(csr.signatureOid) {
-      case oids['sha1withRSAEncryption']:
+      case oids['sha1WithRSAEncryption']:
         scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
         break;
       case oids['RSASSA-PSS']:
