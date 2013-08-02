@@ -67,6 +67,20 @@ function Tests(ASSERT, PKI, RSA, MD, UTIL) {
       }
     })();
 
+    (function() {
+      var algorithms = ['aes128', 'aes192', 'aes256', '3des'];
+      for(var i = 0; i < algorithms.length; ++i) {
+        var algorithm = algorithms[i];
+        it('should legacy (OpenSSL style) encrypt and decrypt private key with ' + algorithm, function() {
+          var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+          var encryptedPem = PKI.encryptRsaPrivateKey(
+             privateKey, 'password', {algorithm: algorithm, legacy: true});
+          var privateKey = PKI.decryptRsaPrivateKey(encryptedPem, 'password');
+          ASSERT.equal(PKI.privateKeyToPem(privateKey), _pem.privateKey);
+        });
+      }
+    })();
+
     it('should verify signature', function() {
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
