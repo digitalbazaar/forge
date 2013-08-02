@@ -223,15 +223,17 @@ function foldHeader(header) {
       var insert = rval[candidate];
       if(insert === ',') {
         ++candidate;
-        insert = ' ';
+        rval = rval.substr(0, candidate) + '\r\n ' + rval.substr(candidate);
       }
-      rval = rval.substr(0, candidate) +
-        '\r\n' + insert + rval.substr(candidate + 1);
+      else {
+        rval = rval.substr(0, candidate) +
+          '\r\n' + insert + rval.substr(candidate + 1);
+      }
       length = (i - candidate - 1);
       candidate = -1;
       ++i;
     }
-    if(rval[i] === ' ' || rval[i] === '\t' || rval[i] === ',') {
+    else if(rval[i] === ' ' || rval[i] === '\t' || rval[i] === ',') {
       candidate = i;
     }
   }
