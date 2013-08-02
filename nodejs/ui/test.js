@@ -17,6 +17,7 @@ requirejs([
     'test/pbkdf2',
     'test/random',
     'test/asn1',
+    'test/pem',
     'test/rsa',
     'test/x509',
     'test/csr',
