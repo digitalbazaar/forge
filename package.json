@@ -36,6 +36,7 @@
     "asn.1",
     "crypto",
     "cryptography",
+    "csr",
     "des",
     "hmac",
     "http",

@@ -234,7 +234,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
        *
        * Uses different key sizes (1024, 1025, 1031, 1032). The test functions are
        * generated from "templates" below, one for each key size to provide sensible
-       * output to nodeunit.
+       * output.
        *
        * Key material in was created with OpenSSL using these commands:
        *
