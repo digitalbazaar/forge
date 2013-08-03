@@ -1,3 +1,9 @@
+Running all the tests (headless-browser and node.js)
+====================================================
+
+    npm install
+    npm test
+
 Running the browser-based tests
 ===============================
 
