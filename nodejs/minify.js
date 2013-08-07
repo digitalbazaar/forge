@@ -3,6 +3,6 @@
         forge: '../js'
     },
     name: '../js/forge',
-    out: 'forge.min.js',
+    out: '../js/forge.min.js',
     preserveLicenseComments: false
 })
