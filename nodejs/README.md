@@ -23,3 +23,11 @@ tests and all the forge dependencies.
 
 Now edit ui/index.html and change `data-main="test"` to `data-main="test.min"`,
 then reload http://localhost:8083/.
+
+Building a minimized single file for all forge modules
+------------------------------------------------------
+
+    npm install -g requirejs
+    r.js -o minify.js
+
+You will now have forge.min.js which will contain all forge modules.
