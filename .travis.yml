@@ -2,9 +2,9 @@ language: node_js
 node_js:
   - "0.8"
   - "0.10"
-install: cd nodejs && npm install
+install: (cd nodejs && npm install)
 script: 
-  - cd nodejs && npm test
+  - (cd nodejs && npm test)
 notifications:
   email:
     on_success: change
