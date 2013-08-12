@@ -142,7 +142,7 @@ var _recipientInfoFromAsn1 = function(obj) {
     version: capture.version.charCodeAt(0),
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
     serialNumber: forge.util.createBuffer(capture.serial).toHex(),
-    encContent: {
+    encryptedContent: {
       algorithm: asn1.derToOid(capture.encAlgorithm),
       parameter: capture.encParameter.value,
       content: capture.encKey
@@ -174,13 +174,13 @@ var _recipientInfoToAsn1 = function(obj) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(obj.encContent.algorithm).getBytes()),
+        asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
       // Parameter, force NULL, only RSA supported for now.
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      obj.encContent.content)
+      obj.encryptedContent.content)
   ]);
 };
 
@@ -217,11 +217,11 @@ var _recipientInfosToAsn1 = function(recipientsArr) {
 /**
  * Map messages encrypted content to ASN.1 objects.
  *
- * @param ec The encContent object of the message.
+ * @param ec The encryptedContent object of the message.
  *
- * @return ASN.1 representation of the encContent object (SEQUENCE).
+ * @return ASN.1 representation of the encryptedContent object (SEQUENCE).
  */
-var _encContentToAsn1 = function(ec) {
+var _encryptedContentToAsn1 = function(ec) {
   return [
     // ContentType, always Data for the moment
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
@@ -280,23 +280,23 @@ var _fromAsn1 = function(msg, obj, validator) {
     };
   }
 
-  if(capture.encContent) {
+  if(capture.encryptedContent) {
     var content = '';
-    if(forge.util.isArray(capture.encContent)) {
-      for(var i = 0; i < capture.encContent.length; ++i) {
-        if(capture.encContent[i].type !== asn1.Type.OCTETSTRING) {
+    if(forge.util.isArray(capture.encryptedContent)) {
+      for(var i = 0; i < capture.encryptedContent.length; ++i) {
+        if(capture.encryptedContent[i].type !== asn1.Type.OCTETSTRING) {
           throw {
             message: 'Malformed PKCS#7 message, expecting encrypted ' +
               'content constructed of only OCTET STRING objects.'
           };
         }
-        content += capture.encContent[i].value;
+        content += capture.encryptedContent[i].value;
       }
     }
     else {
-      content = capture.encContent;
+      content = capture.encryptedContent;
     }
-    msg.encContent = {
+    msg.encryptedContent = {
       algorithm: asn1.derToOid(capture.encAlgorithm),
       parameter: forge.util.createBuffer(capture.encParameter.value),
       content: forge.util.createBuffer(content)
@@ -333,13 +333,13 @@ var _fromAsn1 = function(msg, obj, validator) {
  *
  * Decryption is skipped in case the PKCS#7 message object already has a
  * (decrypted) content attribute.  The algorithm, key and cipher parameters
- * (probably the iv) are taken from the encContent attribute of the message
- * object.
+ * (probably the iv) are taken from the encryptedContent attribute of the
+ * message object.
  *
  * @param The PKCS#7 message object.
  */
 var _decryptContent = function (msg) {
-  if(msg.encContent.key === undefined) {
+  if(msg.encryptedContent.key === undefined) {
     throw {
       message: 'Symmetric key not available.'
     };
@@ -348,26 +348,26 @@ var _decryptContent = function (msg) {
   if(msg.content === undefined) {
     var ciph;
 
-    switch(msg.encContent.algorithm) {
+    switch(msg.encryptedContent.algorithm) {
       case forge.pki.oids['aes128-CBC']:
       case forge.pki.oids['aes192-CBC']:
       case forge.pki.oids['aes256-CBC']:
-        ciph = forge.aes.createDecryptionCipher(msg.encContent.key);
+        ciph = forge.aes.createDecryptionCipher(msg.encryptedContent.key);
         break;
 
       case forge.pki.oids['des-EDE3-CBC']:
-        ciph = forge.des.createDecryptionCipher(msg.encContent.key);
+        ciph = forge.des.createDecryptionCipher(msg.encryptedContent.key);
         break;
 
       default:
         throw {
-          message: 'Unsupported symmetric cipher, '
-            + 'OID ' + msg.encContent.algorithm
+          message: 'Unsupported symmetric cipher, OID ' +
+            msg.encryptedContent.algorithm
         };
     }
 
-    ciph.start(msg.encContent.parameter);
-    ciph.update(msg.encContent.content);
+    ciph.start(msg.encryptedContent.parameter);
+    ciph.update(msg.encryptedContent.content);
 
     if(!ciph.finish()) {
       throw {
@@ -402,7 +402,7 @@ p7.createEncryptedData = function() {
   msg = {
     type: forge.pki.oids.encryptedData,
     version: 0,
-    encContent: {
+    encryptedContent: {
       algorithm: forge.pki.oids['aes256-CBC']
     },
 
@@ -423,7 +423,7 @@ p7.createEncryptedData = function() {
      */
     decrypt: function(key) {
       if(key !== undefined) {
-        msg.encContent.key = key;
+        msg.encryptedContent.key = key;
       }
       _decryptContent(msg);
     }
@@ -442,17 +442,17 @@ p7.createEnvelopedData = function() {
     type: forge.pki.oids.envelopedData,
     version: 0,
     recipients: [],
-    encContent: {
+    encryptedContent: {
       algorithm: forge.pki.oids['aes256-CBC']
     },
 
     /**
      * Reads an EnvelopedData content block (in ASN.1 format)
      *
-     * @param obj The ASN.1 representation of the EnvelopedData content block
+     * @param obj the ASN.1 representation of the EnvelopedData content block.
      */
     fromAsn1: function(obj) {
-      // Validate EnvelopedData content block and capture data.
+      // validate EnvelopedData content block and capture data
       var capture = _fromAsn1(msg, obj, p7.asn1.envelopedDataValidator);
       msg.recipients = _recipientInfosFromAsn1(capture.recipientInfos.value);
     },
@@ -474,7 +474,7 @@ p7.createEnvelopedData = function() {
               _recipientInfosToAsn1(msg.recipients)),
             // EncryptedContentInfo
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
-              _encContentToAsn1(msg.encContent))
+              _encryptedContentToAsn1(msg.encryptedContent))
           ])
         ])
       ]);
@@ -526,18 +526,18 @@ p7.createEnvelopedData = function() {
      * @param privKey The (RSA) private key object
      */
     decrypt: function(recipient, privKey) {
-      if(msg.encContent.key === undefined && recipient !== undefined
+      if(msg.encryptedContent.key === undefined && recipient !== undefined
         && privKey !== undefined) {
-        switch(recipient.encContent.algorithm) {
+        switch(recipient.encryptedContent.algorithm) {
           case forge.pki.oids.rsaEncryption:
-            var key = privKey.decrypt(recipient.encContent.content);
-            msg.encContent.key = forge.util.createBuffer(key);
+            var key = privKey.decrypt(recipient.encryptedContent.content);
+            msg.encryptedContent.key = forge.util.createBuffer(key);
             break;
 
           default:
             throw {
               message: 'Unsupported asymmetric cipher, '
-                + 'OID ' + recipient.encContent.algorithm
+                + 'OID ' + recipient.encryptedContent.algorithm
             };
         }
       }
@@ -555,7 +555,7 @@ p7.createEnvelopedData = function() {
         version: 0,
         issuer: cert.subject.attributes,
         serialNumber: cert.serialNumber,
-        encContent: {
+        encryptedContent: {
           // We simply assume rsaEncryption here, since forge.pki only
           // supports RSA so far.  If the PKI module supports other
           // ciphers one day, we need to modify this one as well.
@@ -570,8 +570,8 @@ p7.createEnvelopedData = function() {
      *
      * This function supports two optional arguments, cipher and key, which
      * can be used to influence symmetric encryption.  Unless cipher is
-     * provided, the cipher specified in encContent.algorithm is used
-     * (defaults to AES-256-CBC).  If no key is provided, encContent.key
+     * provided, the cipher specified in encryptedContent.algorithm is used
+     * (defaults to AES-256-CBC).  If no key is provided, encryptedContent.key
      * is (re-)used.  If that one's not set, a random key will be generated
      * automatically.
      *
@@ -580,9 +580,9 @@ p7.createEnvelopedData = function() {
      */
     encrypt: function(key, cipher) {
       // Part 1: Symmetric encryption
-      if(msg.encContent.content === undefined) {
-        cipher = cipher || msg.encContent.algorithm;
-        key = key || msg.encContent.key;
+      if(msg.encryptedContent.content === undefined) {
+        cipher = cipher || msg.encryptedContent.algorithm;
+        key = key || msg.encryptedContent.key;
 
         var keyLen, ivLen, ciphFn;
         switch(cipher) {
@@ -627,13 +627,13 @@ p7.createEnvelopedData = function() {
 
         // Keep a copy of the key & IV in the object, so the caller can
         // use it for whatever reason.
-        msg.encContent.algorithm = cipher;
-        msg.encContent.key = key;
-        msg.encContent.parameter
-          = forge.util.createBuffer(forge.random.getBytes(ivLen));
+        msg.encryptedContent.algorithm = cipher;
+        msg.encryptedContent.key = key;
+        msg.encryptedContent.parameter = forge.util.createBuffer(
+          forge.random.getBytes(ivLen));
 
         var ciph = ciphFn(key);
-        ciph.start(msg.encContent.parameter.copy());
+        ciph.start(msg.encryptedContent.parameter.copy());
         ciph.update(msg.content);
 
         // The finish function does PKCS#7 padding by default, therefore
@@ -644,30 +644,47 @@ p7.createEnvelopedData = function() {
           };
         }
 
-        msg.encContent.content = ciph.output;
+        msg.encryptedContent.content = ciph.output;
       }
 
       // Part 2: asymmetric encryption for each recipient
       for(var i = 0; i < msg.recipients.length; i ++) {
         var recipient = msg.recipients[i];
 
-        if(recipient.encContent.content !== undefined) {
-          continue;   // Nothing to do, encryption already done.
+        // Nothing to do, encryption already done.
+        if(recipient.encryptedContent.content !== undefined) {
+          continue;
         }
 
-        switch(recipient.encContent.algorithm) {
+        switch(recipient.encryptedContent.algorithm) {
           case forge.pki.oids.rsaEncryption:
-            recipient.encContent.content =
-              recipient.encContent.key.encrypt(msg.encContent.key.data);
+            recipient.encryptedContent.content =
+              recipient.encryptedContent.key.encrypt(
+                msg.encryptedContent.key.data);
             break;
 
           default:
             throw {
-              message: 'Unsupported asymmetric cipher, OID '
-                + recipient.encContent.algorithm
+              message: 'Unsupported asymmetric cipher, OID ' +
+                recipient.encryptedContent.algorithm
             };
         }
       }
+    },
+
+    /**
+     * Sign enveloped content.
+     *
+     * TODO: Support an array for the signer parameter to sign with multiple
+     * signers.
+     *
+     * @param signer the signer of the content, containing:
+     *          cert the certificate associated with the signer.
+     *          key the private key associated with the signer.
+     */
+    sign: function(signers) {
+      // TODO: implement
+      throw 'PKCS#7 signing not yet implemented.'
     }
   };
   return msg;

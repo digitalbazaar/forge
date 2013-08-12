@@ -131,19 +131,19 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.equal(p7.recipients[0].issuer[6].type, '1.2.840.113549.1.9.1');
       ASSERT.equal(p7.recipients[0].issuer[6].value, 'stesie@brokenpipe.de');
 
-      ASSERT.equal(p7.recipients[0].encContent.algorithm, PKI.oids.rsaEncryption);
-      ASSERT.equal(p7.recipients[0].encContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.algorithm, PKI.oids.rsaEncryption);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
 
-      ASSERT.equal(p7.encContent.algorithm, PKI.oids['aes256-CBC']);
-      ASSERT.equal(p7.encContent.parameter.data.length, 16);  // IV
+      ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['aes256-CBC']);
+      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16);  // IV
     });
 
     it('should import indefinite length message from PEM', function() {
       ASSERT.doesNotThrow(function() {
         var p7 = PKCS7.messageFromPem(_pem.p7IndefiniteLength);
         ASSERT.equal(p7.type, PKI.oids.envelopedData);
-        ASSERT.equal(p7.encContent.parameter.toHex(), '536da6a06653733d');
-        ASSERT.equal(p7.encContent.content.length(), 80);
+        ASSERT.equal(p7.encryptedContent.parameter.toHex(), '536da6a06653733d');
+        ASSERT.equal(p7.encryptedContent.content.length(), 80);
       });
     });
 
@@ -166,7 +166,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       p7.decrypt(p7.recipients[0], privateKey);
 
       // symmetric key must be 32 bytes long (AES 256 key)
-      ASSERT.equal(p7.encContent.key.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.key.data.length, 32);
       ASSERT.equal(
         p7.content,
         'Today is Boomtime, the 9th day of Discord in the YOLD 3178\r\n');
@@ -178,7 +178,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       p7.decrypt(p7.recipients[0], privateKey);
 
       // symmetric key must be 24 bytes long (DES3 key)
-      ASSERT.equal(p7.encContent.key.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.key.data.length, 24);
       ASSERT.equal(
         p7.content,
         'Today is Prickle-Prickle, ' +
@@ -197,7 +197,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.equal(p7.recipients.length, 1);
       ASSERT.deepEqual(p7.recipients[0].serialNumber, cert.serialNumber);
       ASSERT.deepEqual(p7.recipients[0].issuer, cert.subject.attributes);
-      ASSERT.deepEqual(p7.recipients[0].encContent.key, cert.publicKey);
+      ASSERT.deepEqual(p7.recipients[0].encryptedContent.key, cert.publicKey);
     });
 
     it('should aes-encrypt a message', function() {
@@ -209,36 +209,36 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       p7.content = UTIL.createBuffer('Just a little test');
 
       // pre-condition, PKCS#7 module should default to AES-256-CBC
-      ASSERT.equal(p7.encContent.algorithm, PKI.oids['aes256-CBC']);
+      ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['aes256-CBC']);
       p7.encrypt();
 
       // since we did not provide a key, a random key should have been created
       // automatically, AES256 requires 32 bytes of key material
-      ASSERT.equal(p7.encContent.key.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.key.data.length, 32);
 
       // furthermore an IV must be generated, AES256 has 16 byte IV
-      ASSERT.equal(p7.encContent.parameter.data.length, 16);
+      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16);
 
       // content is 18 bytes long, AES has 16 byte blocksize,
       // with padding that makes 32 bytes
-      ASSERT.equal(p7.encContent.content.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.content.data.length, 32);
 
       // RSA encryption should yield 256 bytes
-      ASSERT.equal(p7.recipients[0].encContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
 
       // rewind Key & IV
-      p7.encContent.key.read = 0;
-      p7.encContent.parameter.read = 0;
+      p7.encryptedContent.key.read = 0;
+      p7.encryptedContent.parameter.read = 0;
 
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
-        p7.recipients[0].encContent.content);
-      ASSERT.equal(decryptedKey, p7.encContent.key.data);
+        p7.recipients[0].encryptedContent.content);
+      ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = AES.createDecryptionCipher(decryptedKey);
-      ciph.start(p7.encContent.parameter);
-      ciph.update(p7.encContent.content);
+      ciph.start(p7.encryptedContent.parameter);
+      ciph.update(p7.encryptedContent.content);
       ciph.finish();
       ASSERT.equal(ciph.output, 'Just a little test');
     });
@@ -250,36 +250,36 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
 
       p7.addRecipient(cert);
       p7.content = UTIL.createBuffer('Just a little test');
-      p7.encContent.algorithm = PKI.oids['des-EDE3-CBC'];
+      p7.encryptedContent.algorithm = PKI.oids['des-EDE3-CBC'];
       p7.encrypt();
 
       // since we did not provide a key, a random key should have been created
       // automatically, 3DES-EDE requires 24 bytes of key material
-      ASSERT.equal(p7.encContent.key.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.key.data.length, 24);
 
       // furthermore an IV must be generated, DES3 has 8 byte IV
-      ASSERT.equal(p7.encContent.parameter.data.length, 8);
+      ASSERT.equal(p7.encryptedContent.parameter.data.length, 8);
 
       // content is 18 bytes long, DES has 8 byte blocksize,
       // with padding that makes 24 bytes
-      ASSERT.equal(p7.encContent.content.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.content.data.length, 24);
 
       // RSA encryption should yield 256 bytes
-      ASSERT.equal(p7.recipients[0].encContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
 
       // rewind Key & IV
-      p7.encContent.key.read = 0;
-      p7.encContent.parameter.read = 0;
+      p7.encryptedContent.key.read = 0;
+      p7.encryptedContent.parameter.read = 0;
 
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
-        p7.recipients[0].encContent.content);
-      ASSERT.equal(decryptedKey, p7.encContent.key.data);
+        p7.recipients[0].encryptedContent.content);
+      ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = DES.createDecryptionCipher(decryptedKey);
-      ciph.start(p7.encContent.parameter);
-      ciph.update(p7.encContent.content);
+      ciph.start(p7.encryptedContent.parameter);
+      ciph.update(p7.encryptedContent.content);
       ciph.finish();
       ASSERT.equal(ciph.output, 'Just a little test');
     });
@@ -306,9 +306,9 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.doesNotThrow(function() {
         var p7 = PKCS7.messageFromPem(_pem.encryptedData);
         ASSERT.equal(p7.type, PKI.oids.encryptedData);
-        ASSERT.equal(p7.encContent.algorithm, PKI.oids['des-EDE3-CBC']);
-        ASSERT.equal(p7.encContent.parameter.toHex(), 'ba9305a2ee57dc35');
-        ASSERT.equal(p7.encContent.content.length(), 80);
+        ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['des-EDE3-CBC']);
+        ASSERT.equal(p7.encryptedContent.parameter.toHex(), 'ba9305a2ee57dc35');
+        ASSERT.equal(p7.encryptedContent.content.length(), 80);
 
         p7.decrypt(key);
         ASSERT.equal(p7.content.getBytes(), UTIL.hexToBytes(result));

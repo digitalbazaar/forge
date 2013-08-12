@@ -573,7 +573,7 @@ function _decryptSafeContents(data, password) {
   var cipher = pki.pbe.getCipher(oid, capture.encParameter, password);
 
   // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encContent);
+  var encrypted = forge.util.createBuffer(capture.encryptedContent);
 
   cipher.update(encrypted);
   if(!cipher.finish()) {
@@ -726,7 +726,7 @@ function _decodeBagAttributes(attributes) {
         // unsupported attribute type, ignore.
         continue;
       }
-      
+
       decodedAttrs[pki.oids[oid]] = [];
       for(var j = 0; j < capture.values.length; ++j) {
         decodedAttrs[pki.oids[oid]].push(capture.values[j].value);

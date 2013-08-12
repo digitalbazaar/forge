@@ -162,7 +162,7 @@ var encryptedContentInfoValidator = {
      * In order to support both, we just capture the context specific
      * field here.  The OCTET STRING bit is removed below.
      */
-    capture: 'encContent'
+    capture: 'encryptedContent'
   }]
 };
 
