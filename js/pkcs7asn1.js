@@ -283,6 +283,7 @@ p7v.signedDataValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SET,
     capture: 'signerInfos',
+    optional: true,
     value: [signerValidator]
   }]
 };

@@ -254,19 +254,19 @@ var _encryptedContentToAsn1 = function(ec) {
  * to allow the caller to extract further data, e.g. the list of recipients
  * in case of a EnvelopedData object.
  *
- * @param msg The PKCS#7 object to read the data to
- * @param obj The ASN.1 representation of the content block
- * @param validator The ASN.1 structure validator object to use
- * @return Map with values captured by validator object
+ * @param msg the PKCS#7 object to read the data to.
+ * @param obj the ASN.1 representation of the content block.
+ * @param validator the ASN.1 structure validator object to use.
+ *
+ * @return the value map captured by validator object.
  */
 var _fromAsn1 = function(msg, obj, validator) {
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, validator, capture, errors))
-  {
+  if(!asn1.validate(obj, validator, capture, errors)) {
     throw {
       message: 'Cannot read PKCS#7 message. ' +
-        'ASN.1 object is not an PKCS#7 EnvelopedData.',
+        'ASN.1 object is not a supported PKCS#7 message.',
       errors: errors
     };
   }
@@ -276,7 +276,7 @@ var _fromAsn1 = function(msg, obj, validator) {
   if(contentType !== forge.pki.oids.data) {
     throw {
       message: 'Unsupported PKCS#7 message. ' +
-        'Only contentType Data supported within EnvelopedData.'
+        'Only wrapped ContentType Data supported.'
     };
   }
 
@@ -384,9 +384,140 @@ p7.createSignedData = function() {
   msg = {
     type: forge.pki.oids.signedData,
     version: 1,
+    certificates: [],
+    crls: [],
+    // populated during sign()
+    digestAlgorithmIdentifiers: [],
+    contentInfo: null,
+    signerInfos: [],
+
     fromAsn1: function(obj) {
       // validate SignedData content block and capture data.
       _fromAsn1(msg, obj, p7.asn1.signedDataValidator);
+      msg.certificates = [];
+      msg.crls = [];
+      msg.digestAlgorithmIdentifiers = [];
+      msg.contentInfo = null;
+      msg.signerInfos = [];
+
+      var certs = msg.rawCapture.certificates.value;
+      for(var i = 0; i < certs.length; ++i) {
+        msg.certificates.push(forge.pki.certificateFromAsn1(certs[i]));
+      }
+
+      // TODO: parse crls
+    },
+
+    toAsn1: function() {
+      // TODO: add support for more data types here
+      if('content' in msg) {
+        throw 'Signing PKCS#7 content not yet implemented.';
+      }
+
+      // degenerate case with no content
+      if(!msg.contentInfo) {
+        msg.sign();
+      }
+
+      var certs = [];
+      for(var i = 0; i < msg.certificates.length; ++i) {
+        certs.push(forge.pki.certificateToAsn1(msg.certificates[0]));
+      }
+
+      var crls = [];
+      // TODO: implement CRLs
+
+      // ContentInfo
+      return asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          // ContentType
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(msg.type).getBytes()),
+          // [0] SignedData
+          asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+              // Version
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                String.fromCharCode(msg.version)),
+              // DigestAlgorithmIdentifiers
+              asn1.create(
+                asn1.Class.UNIVERSAL, asn1.Type.SET, true,
+                msg.digestAlgorithmIdentifiers),
+              // ContentInfo
+              msg.contentInfo,
+              // [0] IMPLICIT ExtendedCertificatesAndCertificates
+              asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, certs),
+              // [1] IMPLICIT CertificateRevocationLists
+              asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, crls),
+              // SignerInfos
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
+                msg.signerInfos)
+            ])
+          ])
+      ]);
+    },
+
+    /**
+     * Signs the content.
+     *
+     * @param signer the signer (or array of signers) to sign as, for each:
+     *          key the private key to sign with.
+     *          [md] the message digest to use, defaults to sha-1.
+     */
+    sign: function(signer) {
+      if('content' in msg) {
+        throw 'PKCS#7 signing not yet implemented.';
+      }
+
+      if(typeof msg.content !== 'object') {
+        // use Data ContentInfo
+        msg.contentInfo = asn1.create(
+          asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // ContentType
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(forge.pki.oids.data).getBytes())
+          ]);
+
+        // add actual content, if present
+        if('content' in msg) {
+          msg.contentInfo.value.push(
+            // [0] EXPLICIT content
+            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+                msg.content)
+            ]));
+        }
+      }
+
+      // TODO: generate digest algorithm identifiers
+
+      // TODO: generate signerInfos
+    },
+
+    verify: function() {
+      throw 'PKCS#7 signature verification not yet implemented.';
+    },
+
+    /**
+     * Add a certificate.
+     *
+     * @param cert the certificate to add.
+     */
+    addCertificate: function(cert) {
+      // convert from PEM
+      if(typeof cert === 'string') {
+        cert = forge.pki.certificateFromPem(cert);
+      }
+      msg.certificates.push(cert);
+    },
+
+    /**
+     * Add a certificate revokation list.
+     *
+     * @param crl the certificate revokation list to add.
+     */
+    addCertificateRevokationList: function(crl) {
+      throw 'PKCS#7 CRL support not yet implemented.';
     }
   };
   return msg;
@@ -670,21 +801,6 @@ p7.createEnvelopedData = function() {
             };
         }
       }
-    },
-
-    /**
-     * Sign enveloped content.
-     *
-     * TODO: Support an array for the signer parameter to sign with multiple
-     * signers.
-     *
-     * @param signer the signer of the content, containing:
-     *          cert the certificate associated with the signer.
-     *          key the private key associated with the signer.
-     */
-    sign: function(signers) {
-      // TODO: implement
-      throw 'PKCS#7 signing not yet implemented.'
     }
   };
   return msg;

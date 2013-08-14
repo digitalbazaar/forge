@@ -641,6 +641,13 @@ p7.encrypt();
 
 // convert message to PEM
 var pem = forge.pkcs7.messageToPem(p7);
+
+// create a degenerate PKCS#7 certificate container
+// (CRLs not currently supported, only certificates)
+var p7 = forge.pkcs7.createSignedData();
+p7.addCertificate(certOrCertPem1);
+p7.addCertificate(certOrCertPem2);
+var pem = forge.pkcs7.messageToPem(p7);
 ```
 
 <a name="pkcs8" />
