@@ -862,11 +862,12 @@ define([
   './aes',
   './asn1',
   './des',
+  './oids',
   './pem',
   './pkcs7asn1',
-  './pki',
   './random',
-  './util'
+  './util',
+  './x509'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });

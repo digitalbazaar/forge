@@ -1080,6 +1080,7 @@ if(typeof define === 'function') {
     'forge/pki',
     'forge/pkcs1',
     'forge/md',
+    'forge/jsbn',
     'forge/util'
   ], function(PKI, PKCS1, MD, JSBN, UTIL) {
     Tests(

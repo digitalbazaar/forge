@@ -783,7 +783,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   }
 
   var localKeyId = options.localKeyId;
-  var bagAttrs = undefined;
+  var bagAttrs;
   if(localKeyId !== null) {
     localKeyId = forge.util.hexToBytes(localKeyId);
   }
@@ -799,7 +799,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       localKeyId = sha1.digest().getBytes();
     }
     // FIXME: consider using SHA-1 of public key (which can be generated
-    // from private key components)
+    // from private key components), see: cert.generateSubjectKeyIdentifier
     // generate random bytes
     else {
       localKeyId = forge.random.getBytes(20);
@@ -813,7 +813,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['localKeyId']).getBytes()),
+          asn1.oidToDer(pki.oids.localKeyId).getBytes()),
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
@@ -827,7 +827,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['friendlyName']).getBytes()),
+          asn1.oidToDer(pki.oids.friendlyName).getBytes()),
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BMPSTRING, false,
@@ -869,14 +869,14 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['certBag']).getBytes()),
+          asn1.oidToDer(pki.oids.certBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // CertBag
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // certId
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(pki.oids['x509Certificate']).getBytes()),
+              asn1.oidToDer(pki.oids.x509Certificate).getBytes()),
             // certValue (x509Certificate)
             asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
               asn1.create(
@@ -901,7 +901,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(pki.oids['data']).getBytes()),
+          asn1.oidToDer(pki.oids.data).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -922,7 +922,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['keyBag']).getBytes()),
+          asn1.oidToDer(pki.oids.keyBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // PrivateKeyInfo
@@ -937,7 +937,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids['pkcs8ShroudedKeyBag']).getBytes()),
+          asn1.oidToDer(pki.oids.pkcs8ShroudedKeyBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // EncryptedPrivateKeyInfo
@@ -959,7 +959,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(pki.oids['data']).getBytes()),
+          asn1.oidToDer(pki.oids.data).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -974,7 +974,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   var safe = asn1.create(
     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, contents);
 
-  var macData = undefined;
+  var macData;
   if(options.useMac) {
     // MacData
     var sha1 = forge.md.sha1.create();
@@ -1023,7 +1023,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       // contentType
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         // OID for the content type is 'data'
-        asn1.oidToDer(pki.oids['data']).getBytes()),
+        asn1.oidToDer(pki.oids.data).getBytes()),
       // content
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
         asn1.create(
@@ -1038,112 +1038,16 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
 /**
  * Derives a PKCS#12 key.
  *
- * @param {String} password the password to derive the key material from.
- * @param {ByteBuffer} salt the salt to use.
- * @param {int} id the PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC).
- * @param {int} iter the iteration count.
- * @param {int} n the number of bytes to derive from the password.
+ * @param password the password to derive the key material from.
+ * @param salt the salt, as a ByteBuffer, to use.
+ * @param id the PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC).
+ * @param iter the iteration count.
+ * @param n the number of bytes to derive from the password.
  * @param md the message digest to use, defaults to SHA-1.
  *
- * @return {ByteBuffer} The bytes derived from the password.
+ * @return a ByteBuffer with the bytes derived from the password.
  */
-p12.generateKey = function(password, salt, id, iter, n, md) {
-  var j, l;
-
-  if(typeof md === 'undefined' || md === null) {
-    md = forge.md.sha1.create();
-  }
-
-  var u = md.digestLength;
-  var v = md.blockLength;
-  var result = new forge.util.ByteBuffer();
-
-  /* Convert password to Unicode byte buffer + trailing 0-byte. */
-  var passBuf = new forge.util.ByteBuffer();
-  for(l = 0; l < password.length; l++) {
-    passBuf.putInt16(password.charCodeAt(l));
-  }
-  passBuf.putInt16(0);
-
-  /* Length of salt and password in BYTES. */
-  var p = passBuf.length();
-  var s = salt.length();
-
-  /* 1. Construct a string, D (the "diversifier"), by concatenating
-        v copies of ID. */
-  var D = new forge.util.ByteBuffer();
-  D.fillWithByte(id, v);
-
-  /* 2. Concatenate copies of the salt together to create a string S of length
-        v * ceil(s / v) bytes (the final copy of the salt may be trunacted
-        to create S).
-        Note that if the salt is the empty string, then so is S. */
-  var Slen = v * Math.ceil(s / v);
-  var S = new forge.util.ByteBuffer();
-  for(l = 0; l < Slen; l ++) {
-    S.putByte(salt.at(l % s));
-  }
-
-  /* 3. Concatenate copies of the password together to create a string P of
-        length v * ceil(p / v) bytes (the final copy of the password may be
-        truncated to create P).
-        Note that if the password is the empty string, then so is P. */
-  var Plen = v * Math.ceil(p / v);
-  var P = new forge.util.ByteBuffer();
-  for(l = 0; l < Plen; l ++) {
-    P.putByte(passBuf.at(l % p));
-  }
-
-  /* 4. Set I=S||P to be the concatenation of S and P. */
-  var I = S;
-  I.putBuffer(P);
-
-  /* 5. Set c=ceil(n / u). */
-  var c = Math.ceil(n / u);
-
-  /* 6. For i=1, 2, ..., c, do the following: */
-  for(var i = 1; i <= c; i ++) {
-    /* a) Set Ai=H^r(D||I). (l.e. the rth hash of D||I, H(H(H(...H(D||I)))) */
-    var buf = new forge.util.ByteBuffer();
-    buf.putBytes(D.bytes());
-    buf.putBytes(I.bytes());
-    for(var round = 0; round < iter; round ++) {
-      md.start();
-      md.update(buf.getBytes());
-      buf = md.digest();
-    }
-
-    /* b) Concatenate copies of Ai to create a string B of length v bytes (the
-          final copy of Ai may be truncated to create B). */
-    var B = new forge.util.ByteBuffer();
-    for(l = 0; l < v; l ++) {
-      B.putByte(buf.at(l % u));
-    }
-
-    /* c) Treating I as a concatenation I0, I1, ..., Ik-1 of v-byte blocks,
-          where k=ceil(s / v) + ceil(p / v), modify I by setting
-          Ij=(Ij+B+1) mod 2v for each j.  */
-    var k = Math.ceil(s / v) + Math.ceil(p / v);
-    var Inew = new forge.util.ByteBuffer();
-    for(j = 0; j < k; j ++) {
-      var chunk = new forge.util.ByteBuffer(I.getBytes(v));
-      var x = 0x1ff;
-      for(l = B.length() - 1; l >= 0; l --) {
-        x = x >> 8;
-        x += B.at(l) + chunk.at(l);
-        chunk.setAt(l, x & 0xff);
-      }
-      Inew.putBuffer(chunk);
-    }
-    I = Inew;
-
-    /* Add Ai to A. */
-    result.putBuffer(buf);
-  }
-
-  result.truncate(result.length() - n);
-  return result;
-};
+p12.generateKey = forge.pbe.generatePkcs12Key;
 
 } // end module implementation
 
@@ -1199,12 +1103,15 @@ define([
   'require',
   'module',
   './asn1',
-  './sha1',
+  './hmac',
+  './oids',
   './pkcs7asn1',
-  './pki',
-  './util',
+  './pbe',
   './random',
-  './hmac'
+  './rsa',
+  './sha1',
+  './util',
+  './x509'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
