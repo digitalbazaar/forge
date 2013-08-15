@@ -1,6 +1,8 @@
 (function() {
 
-function Tests(ASSERT, PKI, PKCS1, MD, UTIL) {
+function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
+  var BigInteger = JSBN.BigInteger;
+
   // RSA's test vectors for Forge's RSA-OAEP implementation:
   // http://www.rsa.com/rsalabs/node.asp?id=2125
   describe('pkcs1', function() {
@@ -1079,13 +1081,14 @@ if(typeof define === 'function') {
     'forge/pkcs1',
     'forge/md',
     'forge/util'
-  ], function(PKI, PKCS1, MD, UTIL) {
+  ], function(PKI, PKCS1, MD, JSBN, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
       PKI(),
       PKCS1(),
       MD(),
+      JSBN(),
       UTIL()
     );
   });
@@ -1097,6 +1100,7 @@ else if(typeof module === 'object' && module.exports) {
     require('../../js/pki')(),
     require('../../js/pkcs1')(),
     require('../../js/md')(),
+    require('../../js/jsbn')(),
     require('../../js/util')());
 }
 
