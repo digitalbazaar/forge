@@ -22,10 +22,12 @@
       <script type="text/javascript" src="forge/random.js"></script>
       <script type="text/javascript" src="forge/oids.js"></script>
       <script type="text/javascript" src="forge/rsa.js"></script>
+      <script type="text/javascript" src="forge/pbe.js"></script>
+      <script type="text/javascript" src="forge/x509.js"></script>
       <script type="text/javascript" src="forge/pki.js"></script>
       <script type="text/javascript" src="forge/tls.js"></script>
       <script type="text/javascript" src="forge/aesCipherSuites.js"></script>
-      
+
       <script type="text/javascript">
       //<![CDATA[
       // logging category
@@ -39,7 +41,7 @@
 	         var canvas = document.getElementById("canvas");
 	         var ctx = canvas.getContext("2d");
 	         var imgData = ctx.createImageData(canvas.width, canvas.height);
-	         
+
 	         // generate random bytes
 	         var bytes = forge.random.getBytes(canvas.width * canvas.height * 3);
 	         var n = 0;
@@ -49,7 +51,7 @@
 	            {
 	               // index of the pixel in the array
 	               var idx = (x + y * imgData.width) * 4;
-	               
+
 	               // set values
 	               imgData.data[idx + 0] = bytes.charCodeAt(n++); // Red
 	               imgData.data[idx + 1] = bytes.charCodeAt(n++); // Green
@@ -57,7 +59,7 @@
 	               imgData.data[idx + 3] = 255;                   // Alpha
 	            }
 	         }
-	         
+
 	         ctx.putImageData(imgData, 0, 0);
 	         forge.log.debug(cat, 'done');
          }, 0);
@@ -88,7 +90,7 @@
 	            et = +new Date();
 	            passed += (et - st);
 	         }
-	
+
 	         // do optimized fill
 	         var buf = forge.util.createBuffer();
 	         st = +new Date();
@@ -128,7 +130,7 @@
 	         st = +new Date();
 	         output = forge.util.xorBytes(b1.getBytes(), b2.getBytes(), count);
 	         et = +new Date();
-	         
+
 	         forge.log.debug(cat, 'xor times', (et - st) + ' < ' + passed);
          });
       };
@@ -179,7 +181,7 @@
          {
 	         // get starting time to make test run for only 5 seconds
 	         var start = +new Date();
-	
+
 	         // build data to decode
 	         var str = '';
 	         for(var i = 0; i < 100; i++)
@@ -187,7 +189,7 @@
 	            str +=
 		            'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
 	         }
-	
+
 	         // keep encoding for 5 seconds, keep track of total and count
 	         var total = 0, count = 0, st, et;
 	         var passed = 0;
@@ -207,7 +209,7 @@
 	            'decode:', (count*kb/total) + ' KiB/s');
          });
       };
-      
+
       var test_md5 = function()
       {
          // create input data
@@ -228,7 +230,7 @@
          {
             input[4] += input[3];
          }
-         
+
          var md = forge.md.md5.create();
 
          forge.log.debug(cat, 'md5 times in 1000s of bytes/sec processed:');
@@ -288,7 +290,7 @@
          {
             input[4] += input[3];
          }
-         
+
          var md = forge.md.sha1.create();
 
          forge.log.debug(cat, 'sha-1 times in 1000s of bytes/sec processed:');
@@ -348,7 +350,7 @@
          {
             input[4] += input[3];
          }
-         
+
          var md = forge.md.sha256.create();
 
          forge.log.debug(cat, 'sha-256 times in 1000s of bytes/sec processed:');
@@ -398,7 +400,7 @@
          block.push(0x44556677);
          block.push(0x8899aabb);
          block.push(0xccddeeff);
-         
+
          var key = [];
          key.push(0x00010203);
          key.push(0x04050607);
@@ -421,14 +423,14 @@
 	            now = +new Date();
 	            forge.aes._updateBlock(w, block, output, false);
 	            totalEncrypt += +new Date() - now;
-	
+
 	            block = output;
 	            output = [];
 	            w = forge.aes._expandKey(key, true);
 	            now = +new Date();
 	            forge.aes._updateBlock(w, block, output, true);
 	            totalDecrypt += +new Date() - now;
-	            
+
                ++count;
 	            passed = +new Date() - start;
 	         }
@@ -466,14 +468,14 @@
 	         while(passed < 5000)
 	         {
                var input = forge.util.createBuffer(plain);
-               
+
                // encrypt, only measuring update() and finish()
                cipher = forge.aes.startEncrypting(key, iv);
                now = +new Date();
                cipher.update(input);
                cipher.finish();
                totalEncrypt += +new Date() - now;
-               
+
                // decrypt, only measuring update() and finish()
                var ct = cipher.output;
                cipher = forge.aes.startDecrypting(key, iv);
@@ -497,7 +499,7 @@
                'decrypt: ' + (count / totalDecrypt) + ' k/sec');
          }, 0);
       };
-      
+
       //]]>
       </script>
    </head>
