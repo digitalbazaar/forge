@@ -27,7 +27,7 @@ var pkcs5 = forge.pkcs5 = forge.pkcs5 || {};
  */
 forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   // default prf to SHA-1
-  if(typeof(md) === 'undefined' || md === null) {
+  if(typeof md === 'undefined' || md === null) {
     md = forge.md.sha1.create();
   }
 
@@ -81,6 +81,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   var xor, u_c, u_c1;
   for(var i = 1; i <= len; ++i) {
     // PRF(P, S || INT(i)) (first iteration)
+    prf.start(null, null);
     prf.update(s);
     prf.update(forge.util.int32ToBytes(i));
     xor = u_c1 = prf.digest().getBytes();
