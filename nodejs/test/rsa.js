@@ -98,6 +98,15 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
 
+    it('should generate CRT parameters, sign, and verify ', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var md = MD.sha1.create();
+      md.update('0123456789abcdef');
+      var signature = privateKey.sign(md);
+      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+    });
+
     (function() {
       var tests = [{
         keySize: 1024,
