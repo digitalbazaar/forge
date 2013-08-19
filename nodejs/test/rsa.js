@@ -98,6 +98,27 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
 
+    it('should sign and verify a private key containing only e, n and d parameters', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+
+      // now, remove all CRT parameters from private key, so that it consists
+      // only of e, n and d (which make a perfectly valid private key, but its
+      // operations are slower)
+      privateKey.p = undefined;
+      privateKey.q = undefined;
+      privateKey.dP = undefined;
+      privateKey.dQ = undefined;
+      privateKey.qInv = undefined;
+
+
+
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var md = MD.sha1.create();
+      md.update('0123456789abcdef');
+      var signature = privateKey.sign(md);
+      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+    });
+
     (function() {
       var tests = [{
         keySize: 1024,
