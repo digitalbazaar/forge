@@ -98,8 +98,33 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
 
-    it('should generate CRT parameters, sign, and verify ', function() {
+    it('should generate missing CRT parameters, sign, and verify', function() {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+      
+      // remove dQ, dP, and qInv
+      delete privateKey.dQ;
+      delete privateKey.dP;
+      delete privateKey.qInv;
+      
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var md = MD.sha1.create();
+      md.update('0123456789abcdef');
+      var signature = privateKey.sign(md);
+      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+    });
+
+    it('should sign and verify a private key containing only e, n, and d parameters', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+
+      // remove all CRT parameters from private key, so that it consists
+      // only of e, n and d (which make a perfectly valid private key, but its
+      // operations are slower)
+      delete privateKey.p;
+      delete privateKey.q;
+      delete privateKey.dP;
+      delete privateKey.dQ;
+      delete privateKey.qInv;
+
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
       md.update('0123456789abcdef');

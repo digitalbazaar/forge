@@ -319,6 +319,10 @@ var _modPow = function(x, key, pub) {
   if(pub) {
     y = x.modPow(key.e, key.n);
   }
+  else if(!key.p || !key.q) {
+    // allow calculation without CRT params (slow)
+    y = x.modPow(key.d, key.n);
+  }
   else {
     // pre-compute dP, dQ, and qInv if necessary
     if(!key.dP) {
