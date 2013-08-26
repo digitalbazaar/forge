@@ -428,6 +428,12 @@ asn1.toDer = function(obj) {
         value.putInt16(obj.value.charCodeAt(i));
       }
     }
+    else if(obj.type === asn1.Type.BITSTRING) {
+      // BER say that the first content byte should be the number of unused bits.
+      // we just put in 0x00 here
+      value.putByte(0x00);
+      value.putBytes(obj.value);
+    }
     else {
       value.putBytes(obj.value);
     }

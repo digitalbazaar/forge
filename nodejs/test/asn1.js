@@ -100,6 +100,16 @@ function Tests(ASSERT, ASN1, UTIL) {
         });
       }
     })();
+
+
+    it("should correctly DER encode and decode BIT STRING type", function() {
+      var bs = UTIL.hexToBytes("01020304ff");
+      var value = ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.BITSTRING, false, bs);
+
+      var expectedHex = "03060001020304ff";
+      var derHex = UTIL.bytesToHex(ASN1.toDer(value).bytes());
+      ASSERT.equal(derHex, expectedHex);
+    });
   });
 }
 
