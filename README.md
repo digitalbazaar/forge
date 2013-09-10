@@ -453,7 +453,7 @@ md.update('sign this', 'utf8');
 var signature = privateKey.sign(md);
 
 // verify data with a public key
-var verified = publicKey.verify(md, signature);
+var verified = publicKey.verify(md.digest().bytes(), signature);
 
 // encrypt data with a public key (defaults to RSAES PKCS#1 v1.5)
 var encrypted = publicKey.encrypt(bytes);
