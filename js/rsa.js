@@ -1417,9 +1417,9 @@ function _encodePkcs1_v1_5(m, key, bt) {
   }
   // public key op
   else {
+    var padBytes = forge.random.getBytes(padNum);
     for(var i = 0; i < padNum; ++i) {
-      padByte = Math.floor(Math.random() * 255) + 1;
-      eb.putByte(padByte);
+      eb.putByte(Math.max(1, padBytes.charCodeAt(i)));
     }
   }
 
