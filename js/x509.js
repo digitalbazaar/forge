@@ -783,7 +783,8 @@ var _parseExtensions = function(exts) {
               break;
             // IPAddress
             case 7:
-              // FIXME: convert to IPv4 dotted string/IPv6
+              // convert to IPv4/IPv6 string representation
+              altName.ip = forge.util.bytesToIP(gn.value);
               break;
             // registeredID
             case 8:
@@ -1320,9 +1321,26 @@ pki.createCertificate = function() {
           for(var n = 0; n < e.altNames.length; ++n) {
             altName = e.altNames[n];
             var value = altName.value;
+            // handle IP
+            if(altName.type === 7 && altName.ip) {
+              value = forge.util.bytesFromIP(altName.ip);
+              if(value === null) {
+                throw {
+                  message: 'Extension "ip" value is not a valid IPv4 ' +
+                    'or IPv6 address.',
+                  extension: e
+                };
+              }
+            }
             // handle OID
-            if(altName.type === 8) {
-              value = asn1.oidToDer(value);
+            else if(altName.type === 8) {
+              if(altName.oid) {
+                value = asn1.oidToDer(asn1.oidToDer(altName.oid));
+              }
+              // deprecated ... convert value to OID
+              else {
+                value = asn1.oidToDer(value);
+              }
             }
             e.value.value.push(asn1.create(
               asn1.Class.CONTEXT_SPECIFIC, altName.type, false,

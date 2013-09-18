@@ -63,6 +63,9 @@ cert.setExtensions([{
   altNames: [{
     type: 6, // URI
     value: 'http://example.org/webid#me'
+  }, {
+    type: 7, // IP
+    ip: '127.0.0.1'
   }]
 }, {
   name: 'subjectKeyIdentifier'
