@@ -42,6 +42,179 @@ function Tests(ASSERT, UTIL) {
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
       ASSERT.equal(UTIL.decode64(s2), s1);
     });
+
+    it('should convert IPv4 0.0.0.0 textual address to 4-byte address', function() {
+      var bytes = UTIL.bytesFromIP('0.0.0.0');
+      var b = UTIL.createBuffer().fillWithByte(0, 4);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv4 127.0.0.1 textual address to 4-byte address', function() {
+      var bytes = UTIL.bytesFromIP('127.0.0.1');
+      var b = UTIL.createBuffer();
+      b.putByte(127);
+      b.putByte(0);
+      b.putByte(0);
+      b.putByte(1);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 :: textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('::');
+      var b = UTIL.createBuffer().fillWithByte(0, 16);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 ::0 textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('::0');
+      var b = UTIL.createBuffer().fillWithByte(0, 16);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 0:: textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('0::');
+      var b = UTIL.createBuffer().fillWithByte(0, 16);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 ::1 textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('::1');
+      var b = UTIL.createBuffer().fillWithByte(0, 14);
+      b.putBytes(UTIL.hexToBytes('0001'));
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 1:: textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('1::');
+      var b = UTIL.createBuffer();
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.fillWithByte(0, 14);
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 1::1 textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('1::1');
+      var b = UTIL.createBuffer();
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.fillWithByte(0, 12);
+      b.putBytes(UTIL.hexToBytes('0001'));
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 1::1:0 textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('1::1:0');
+      var b = UTIL.createBuffer();
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.fillWithByte(0, 10);
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.putBytes(UTIL.hexToBytes('0000'));
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv6 2001:db8:0:1:1:1:1:1 textual address to 16-byte address', function() {
+      var bytes = UTIL.bytesFromIP('2001:db8:0:1:1:1:1:1');
+      var b = UTIL.createBuffer();
+      b.putBytes(UTIL.hexToBytes('2001'));
+      b.putBytes(UTIL.hexToBytes('0db8'));
+      b.putBytes(UTIL.hexToBytes('0000'));
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.putBytes(UTIL.hexToBytes('0001'));
+      b.putBytes(UTIL.hexToBytes('0001'));
+      ASSERT.equal(bytes, b.getBytes());
+    });
+
+    it('should convert IPv4 0.0.0.0 byte address to textual representation', function() {
+      var addr = '0.0.0.0';
+      var bytes = UTIL.createBuffer().fillWithByte(0, 4).getBytes();
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '0.0.0.0');
+    });
+
+    it('should convert IPv4 0.0.0.0 byte address to textual representation', function() {
+      var addr = '127.0.0.1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '127.0.0.1');
+    });
+
+    it('should convert IPv6 :: byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '::';
+      var bytes = UTIL.createBuffer().fillWithByte(0, 16).getBytes();
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '::');
+    });
+
+    it('should convert IPv6 ::1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '::1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '::1');
+    });
+
+    it('should convert IPv6 1:: byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1::';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::');
+    });
+
+    it('should convert IPv6 0:0:0:0:0:0:0:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '0:0:0:0:0:0:0:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '::1');
+    });
+
+    it('should convert IPv6 1:0:0:0:0:0:0:0 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1:0:0:0:0:0:0:0';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::');
+    });
+
+    it('should convert IPv6 1::1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1::1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::1');
+    });
+
+    it('should convert IPv6 1:0:0:0:0:0:0:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1:0:0:0:0:0:0:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::1');
+    });
+
+    it('should convert IPv6 1:0000:0000:0000:0000:0000:0000:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1:0000:0000:0000:0000:0000:0000:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::1');
+    });
+
+    it('should convert IPv6 1:0:0:1:1:1:0:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1:0:0:1:1:1:0:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1::1:1:1:0:1');
+    });
+
+    it('should convert IPv6 1:0:1:1:1:0:0:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '1:0:1:1:1:0:0:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '1:0:1:1:1::1');
+    });
+
+    it('should convert IPv6 2001:db8:0:1:1:1:1:1 byte address to canonical textual representation (RFC 5952)', function() {
+      var addr = '2001:db8:0:1:1:1:1:1';
+      var bytes = UTIL.bytesFromIP(addr);
+      var addr = UTIL.bytesToIP(bytes);
+      ASSERT.equal(addr, '2001:db8:0:1:1:1:1:1');
+    });
   });
 }
 

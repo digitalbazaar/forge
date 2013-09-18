@@ -1585,6 +1585,168 @@ util.formatSize = function(size) {
   return size;
 };
 
+/**
+ * Converts an IPv4 or IPv6 string representation into bytes (in network order).
+ *
+ * @param ip the IPv4 or IPv6 address to convert.
+ *
+ * @return the 4-byte IPv6 or 16-byte IPv6 address or null if the address can't
+ *         be parsed.
+ */
+util.bytesFromIP = function(ip) {
+  if(ip.indexOf('.') !== -1) {
+    return util.bytesFromIPv4(ip);
+  }
+  if(ip.indexOf(':') !== -1) {
+    return util.bytesFromIPv6(ip);
+  }
+  return null;
+};
+
+/**
+ * Converts an IPv4 string representation into bytes (in network order).
+ *
+ * @param ip the IPv4 address to convert.
+ *
+ * @return the 4-byte address or null if the address can't be parsed.
+ */
+util.bytesFromIPv4 = function(ip) {
+  ip = ip.split('.');
+  if(ip.length !== 4) {
+    return null;
+  }
+  var b = util.createBuffer();
+  for(var i = 0; i < ip.length; ++i) {
+    var num = parseInt(ip[i], 10);
+    if(isNaN(num)) {
+      return null;
+    }
+    b.putByte(num);
+  }
+  return b.getBytes();
+};
+
+/**
+ * Converts an IPv6 string representation into bytes (in network order).
+ *
+ * @param ip the IPv6 address to convert.
+ *
+ * @return the 16-byte address or null if the address can't be parsed.
+ */
+util.bytesFromIPv6 = function(ip) {
+  var blanks = 0;
+  ip = ip.split(':').filter(function(e) {
+    if(e.length === 0) ++blanks;
+    return true;
+  });
+  var zeros = (8 - ip.length + blanks) * 2;
+  var b = util.createBuffer();
+  for(var i = 0; i < 8; ++i) {
+    if(!ip[i] || ip[i].length === 0) {
+      b.fillWithByte(0, zeros);
+      zeros = 0;
+      continue;
+    }
+    var bytes = util.hexToBytes(ip[i]);
+    if(bytes.length < 2) {
+      b.putByte(0);
+    }
+    b.putBytes(bytes);
+  }
+  return b.getBytes();
+};
+
+/**
+ * Converts 4-bytes into an IPv4 string representation or 16-bytes into
+ * an IPv6 string representation. The bytes must be in network order.
+ *
+ * @param bytes the bytes to convert.
+ *
+ * @return the IPv4 or IPv6 string representation if 4 or 16 bytes,
+ *         respectively, are given, otherwise null.
+ */
+util.bytesToIP = function(bytes) {
+  if(bytes.length === 4) {
+    return util.bytesToIPv4(bytes);
+  }
+  if(bytes.length === 16) {
+    return util.bytesToIPv6(bytes);
+  }
+  return null;
+};
+
+/**
+ * Converts 4-bytes into an IPv4 string representation. The bytes must be
+ * in network order.
+ *
+ * @param bytes the bytes to convert.
+ *
+ * @return the IPv4 string representation or null for an invalid # of bytes.
+ */
+util.bytesToIPv4 = function(bytes) {
+  if(bytes.length !== 4) {
+    return null;
+  }
+  var ip = [];
+  for(var i = 0; i < bytes.length; ++i) {
+    ip.push(bytes.charCodeAt(i));
+  }
+  return ip.join('.');
+};
+
+/**
+ * Converts 16-bytes into an IPv16 string representation. The bytes must be
+ * in network order.
+ *
+ * @param bytes the bytes to convert.
+ *
+ * @return the IPv16 string representation or null for an invalid # of bytes.
+ */
+util.bytesToIPv6 = function(bytes) {
+  if(bytes.length !== 16) {
+    return null;
+  }
+  var ip = [];
+  var zeroGroups = [];
+  var zeroMaxGroup = 0;
+  for(var i = 0; i < bytes.length; i += 2) {
+    var hex = util.bytesToHex(bytes[i] + bytes[i + 1]);
+    // canonicalize zero representation
+    while(hex[0] === '0' && hex !== '0') {
+      hex = hex.substr(1);
+    }
+    if(hex === '0') {
+      var last = zeroGroups[zeroGroups.length - 1];
+      var idx = ip.length;
+      if(!last || idx !== last.end + 1) {
+        zeroGroups.push({start: idx, end: idx});
+      }
+      else {
+        last.end = idx;
+        if((last.end - last.start) >
+          (zeroGroups[zeroMaxGroup].end - zeroGroups[zeroMaxGroup].start)) {
+          zeroMaxGroup = zeroGroups.length - 1;
+        }
+      }
+    }
+    ip.push(hex);
+  }
+  if(zeroGroups.length > 0) {
+    var group = zeroGroups[zeroMaxGroup];
+    // only shorten group of length > 0
+    if(group.end - group.start > 0) {
+      ip.splice(group.start, group.end - group.start + 1, '');
+      if(group.start === 0) {
+        ip.unshift('');
+      }
+      if(group.end === 7) {
+        ip.push('');
+      }
+    }
+  }
+  return ip.join(':');
+};
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */
