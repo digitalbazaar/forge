@@ -1237,11 +1237,9 @@ pki.createCertificate = function() {
           }
           if(e.pathLenConstraint) {
             var num = e.pathLenConstraint;
-            var tmp = forge.util.createBuffer();
-            tmp.putInt(num, num.toString(2).length);
             e.value.value.push(asn1.create(
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              tmp.getBytes()));
+              asn1.integerToDer(num).getBytes()));
           }
         }
         // extKeyUsage is a SEQUENCE of OIDs

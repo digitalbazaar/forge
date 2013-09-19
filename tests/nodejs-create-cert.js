@@ -34,7 +34,8 @@ cert.setSubject(attrs);
 cert.setIssuer(attrs);
 cert.setExtensions([{
   name: 'basicConstraints',
-  cA: true
+  cA: true/*,
+  pathLenConstraint: 4*/
 }, {
   name: 'keyUsage',
   keyCertSign: true,
