@@ -72,8 +72,20 @@ var _ctx = forge.prng.create(prng_aes);
 // available -- otherwise this source will be automatically used by the prng
 var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
-if(forge.disableNativeCode || (!_nodejs && !(typeof window !== 'undefined' &&
-  window.crypto && window.crypto.getRandomValues))) {
+var getRandomValues = null;
+if(typeof window !== 'undefined') {
+  if(window.crypto && window.crypto.getRandomValues) {
+    getRandomValues = function(arr) {
+      return window.crypto.getRandomValues(arr);
+    };
+  }
+  else if(window.msCrypto && window.msCrypto.getRandomValues) {
+    getRandomValues = function(arr) {
+      return window.msCrypto.getRandomValues(arr);
+    };
+  }
+}
+if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
 
   // if this is a web worker, do not use weak entropy, instead register to
   // receive strong entropy asynchronously from the main thread
