@@ -74,19 +74,14 @@ var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
 var getRandomValues = null;
 if(typeof window !== 'undefined') {
-  if(window.crypto && window.crypto.getRandomValues) {
+  var crypto = window.crypto || window.msCrypto;
+  if(crypto.getRandomValues) {
     getRandomValues = function(arr) {
-      return window.crypto.getRandomValues(arr);
-    };
-  }
-  else if(window.msCrypto && window.msCrypto.getRandomValues) {
-    getRandomValues = function(arr) {
-      return window.msCrypto.getRandomValues(arr);
+      return crypto.getRandomValues(arr);
     };
   }
 }
 if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
-
   // if this is a web worker, do not use weak entropy, instead register to
   // receive strong entropy asynchronously from the main thread
   if(typeof window === 'undefined' || window.document === undefined) {

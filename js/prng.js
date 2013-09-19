@@ -248,14 +248,10 @@ prng.create = function(plugin) {
     // use window.crypto.getRandomValues strong source of entropy if available
     var getRandomValues = null;
     if(typeof window !== 'undefined') {
-      if(window.crypto && window.crypto.getRandomValues) {
+      var crypto = window.crypto || window.msCrypto;
+      if(crypto.getRandomValues) {
         getRandomValues = function(arr) {
-          return window.crypto.getRandomValues(arr);
-        };
-      }
-      else if(window.msCrypto && window.msCrypto.getRandomValues) {
-        getRandomValues = function(arr) {
-          return window.msCrypto.getRandomValues(arr);
+          return crypto.getRandomValues(arr);
         };
       }
     }
