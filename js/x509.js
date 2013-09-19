@@ -2281,7 +2281,7 @@ function _signatureParametersToAsn1(oid, params) {
     if(params.saltLength !== undefined) {
       parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-          String.fromCharCode(params.saltLength))
+          asn1.integerToDer(params.saltLength).getBytes())
       ]));
     }
 
@@ -2357,7 +2357,7 @@ pki.getTBSCertificate = function(cert) {
     asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
       // integer
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        String.fromCharCode(cert.version))
+        asn1.integerToDer(cert.version).getBytes())
     ]),
     // serialNumber
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
@@ -2432,7 +2432,7 @@ pki.getCertificationRequestInfo = function(csr) {
   var cri = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(csr.version)),
+      asn1.integerToDer(csr.version).getBytes()),
     // subject
     _dnToAsn1(csr.subject),
     // SubjectPublicKeyInfo

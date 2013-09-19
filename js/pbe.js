@@ -194,8 +194,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   // generate PBE params
   var salt = forge.random.getBytes(options.saltSize);
   var count = options.count;
-  var countBytes = forge.util.createBuffer();
-  countBytes.putInt16(count);
+  var countBytes = asn1.integerToDer(count);
   var dkLen;
   var encryptionAlgorithm;
   var encryptedData;

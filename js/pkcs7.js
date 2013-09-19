@@ -161,11 +161,11 @@ var _recipientInfoToAsn1 = function(obj) {
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // Version
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(obj.version)),
+      asn1.integerToDer(obj.version).getBytes()),
     // IssuerAndSerialNumber
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Name
-      forge.pki.distinguishedNameToAsn1({ attributes: obj.issuer }),
+      forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
       // Serial
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
         forge.util.hexToBytes(obj.serialNumber))
@@ -438,7 +438,7 @@ p7.createSignedData = function() {
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
               // Version
               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                String.fromCharCode(msg.version)),
+                asn1.integerToDer(msg.version).getBytes()),
               // DigestAlgorithmIdentifiers
               asn1.create(
                 asn1.Class.UNIVERSAL, asn1.Type.SET, true,
@@ -599,7 +599,7 @@ p7.createEnvelopedData = function() {
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // Version
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              String.fromCharCode(msg.version)),
+              asn1.integerToDer(msg.version).getBytes()),
             // RecipientInfos
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
               _recipientInfosToAsn1(msg.recipients)),

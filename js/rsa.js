@@ -1142,7 +1142,8 @@ pki.wrapRsaPrivateKey = function(rsaKey) {
   // PrivateKeyInfo
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, '\x00'),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      asn1.integerToDer(0).getBytes()),
     // privateKeyAlgorithm
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       asn1.create(
@@ -1167,7 +1168,8 @@ pki.wrapRsaPrivateKey = function(rsaKey) {
   // PrivateKeyInfo
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, '\x00'),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      asn1.integerToDer(0).getBytes()),
     // privateKeyAlgorithm
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       asn1.create(
@@ -1245,7 +1247,7 @@ pki.privateKeyToAsn1 = pki.privateKeyToRSAPrivateKey = function(key) {
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0 = only 2 primes, 1 multiple primes)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(0x00)),
+      asn1.integerToDer(0).getBytes()),
     // modulus (n)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
       _bnToBytes(key.n)),

@@ -1008,7 +1008,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, macSalt.getBytes()),
       // iterations INTEGER (XXX: Only support count < 65536)
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes(count.toString(16))
+        asn1.integerToDer(count).getBytes()
       )
     ]);
   }
@@ -1017,7 +1017,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (3)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      String.fromCharCode(0x03)),
+      asn1.integerToDer(3).getBytes()),
     // PKCS#7 ContentInfo
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // contentType
