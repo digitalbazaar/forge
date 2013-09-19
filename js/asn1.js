@@ -1051,6 +1051,14 @@ asn1.prettyPrint = function(obj, level, indentation) {
         }
       }
     }
+    if(obj.type === asn1.Type.INTEGER) {
+      try {
+        rval += asn1.derToInteger(obj.value);
+      }
+      catch(ex) {
+        rval += '0x' + forge.util.bytesToHex(obj.value);
+      }
+    }
     // FIXME: choose output (hex vs. printable) based on asn1.Type
     else if(_nonLatinRegex.test(obj.value)) {
       rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
