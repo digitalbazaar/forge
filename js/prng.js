@@ -245,24 +245,41 @@ prng.create = function(plugin) {
    * @return the random bytes.
    */
   function defaultSeedFile(needed) {
-    // use window.crypto.getRandomValues strong source of entropy if
-    // available
-    var b = forge.util.createBuffer();
-    if(typeof window !== 'undefined' &&
-      window.crypto && window.crypto.getRandomValues) {
-      var entropy = new Uint32Array(needed / 4);
-      try {
-        window.crypto.getRandomValues(entropy);
-        for(var i = 0; i < entropy.length; ++i) {
-          b.putInt32(entropy[i]);
-        }
+    // use window.crypto.getRandomValues strong source of entropy if available
+    var getRandomValues = null;
+    if(typeof window !== 'undefined') {
+      if(window.crypto && window.crypto.getRandomValues) {
+        getRandomValues = function(arr) {
+          return window.crypto.getRandomValues(arr);
+        };
       }
-      catch(e) {
-        /* Mozilla claims getRandomValues can throw QuotaExceededError, so
-         ignore errors. In this case, weak entropy will be added, but
-         hopefully this never happens.
-         https://developer.mozilla.org/en-US/docs/DOM/window.crypto.getRandomValues
-         However I've never observed this exception --@evanj */
+      else if(window.msCrypto && window.msCrypto.getRandomValues) {
+        getRandomValues = function(arr) {
+          return window.msCrypto.getRandomValues(arr);
+        };
+      }
+    }
+
+    var b = forge.util.createBuffer();
+    if(getRandomValues) {
+      while(b.length() < needed) {
+        // max byte length is 65536 before QuotaExceededError is thrown
+        // http://www.w3.org/TR/WebCryptoAPI/#RandomSource-method-getRandomValues
+        var count = Math.max(1, Math.min(needed - b.length(), 65536) / 4);
+        var entropy = new Uint32Array(Math.floor(count));
+        try {
+          getRandomValues(entropy);
+          for(var i = 0; i < entropy.length; ++i) {
+            b.putInt32(entropy[i]);
+          }
+        }
+        catch(e) {
+          /* only ignore QuotaExceededError */
+          if(!(typeof QuotaExceededError !== 'undefined' &&
+            e instanceof QuotaExceededError)) {
+            throw e;
+          }
+        }
       }
     }
 
@@ -291,7 +308,7 @@ prng.create = function(plugin) {
       }
     }
 
-    return b.getBytes();
+    return b.getBytes(needed);
   }
   // initialize seed file APIs
   if(crypto) {
