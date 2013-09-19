@@ -766,6 +766,55 @@ asn1.dateToUtcTime = function(date) {
 };
 
 /**
+ * Converts a javascript integer to a DER-encoded byte buffer to be used
+ * as the value for an INTEGER type.
+ *
+ * @param x the integer.
+ *
+ * @return the byte buffer.
+ */
+asn1.integerToDer = function(x) {
+  var rval = forge.util.createBuffer();
+  if(x >= -0x80 && x < 0x80) {
+    return rval.putSignedInt(x, 8);
+  }
+  if(x >= -0x8000 && x < 0x8000) {
+    return rval.putSignedInt(x, 16);
+  }
+  if(x >= -0x800000 && x < 0x800000) {
+    return rval.putSignedInt(x, 24);
+  }
+  if(x >= -0x80000000 && x < 0x80000000) {
+    return rval.putSignedInt(x, 32);
+  }
+  throw {
+    message: 'Integer too large; max is 32-bits.',
+    integer: x
+  };
+};
+
+/**
+ * Converts a DER-encoded byte buffer to a javascript integer. This is
+ * typically used to decode the value of an INTEGER type.
+ *
+ * @param bytes the byte buffer.
+ *
+ * @return the integer.
+ */
+asn1.derToInteger = function(bytes) {
+  // wrap in buffer if needed
+  if(typeof bytes === 'string') {
+    bytes = forge.util.createBuffer(bytes);
+  }
+
+  var n = bytes.length() * 8;
+  if(n > 32) {
+    throw {message: 'Integer too large; max is 32-bits.'};
+  }
+  return bytes.getSignedInt(n);
+};
+
+/**
  * Validates the that given ASN.1 object is at least a super set of the
  * given ASN.1 structure. Only tag classes and types are checked. An
  * optional map may also be provided to capture ASN.1 values while the

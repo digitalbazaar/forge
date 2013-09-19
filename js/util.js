@@ -240,6 +240,22 @@ util.ByteBuffer.prototype.putInt = function(i, n) {
 };
 
 /**
+ * Puts a signed n-bit integer in this buffer in big-endian order. Two's
+ * complement representation is used.
+ *
+ * @param i the n-bit integer.
+ * @param n the number of bits in the integer.
+ *
+ * @return this buffer.
+ */
+util.ByteBuffer.prototype.putSignedInt = function(i, n) {
+  if(i < 0) {
+    i += 2 << (n - 1);
+  }
+  return this.putInt(i, n);
+};
+
+/**
  * Puts the given buffer into this buffer.
  *
  * @param buffer the buffer to put into this one.
@@ -366,6 +382,23 @@ util.ByteBuffer.prototype.getInt = function(n) {
   }
   while(n > 0);
   return rval;
+};
+
+/**
+ * Gets a signed n-bit integer from this buffer in big-endian order, using
+ * two's complement, and advances the read pointer by n/8.
+ *
+ * @param n the number of bits in the integer.
+ *
+ * @return the integer.
+ */
+util.ByteBuffer.prototype.getSignedInt = function(n) {
+  var x = this.getInt(n);
+  var max = 2 << (n - 2);
+  if(x >= max) {
+    x -= max << 1;
+  }
+  return x;
 };
 
 /**

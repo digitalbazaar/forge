@@ -31,6 +31,102 @@ function Tests(ASSERT, UTIL) {
       ASSERT.equal(b.toHex(), hex);
     });
 
+    it('should put 0 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(0, 8);
+      ASSERT.equal(b.toHex(), '00');
+    });
+
+    it('should put 0 into a buffer using two\'s complement w/2 bytes', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(0, 16);
+      ASSERT.equal(b.toHex(), '0000');
+    });
+
+    it('should put 127 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(127, 8);
+      ASSERT.equal(b.toHex(), '7f');
+    });
+
+    it('should put 127 into a buffer using two\'s complement w/2 bytes', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(127, 16);
+      ASSERT.equal(b.toHex(), '007f');
+    });
+
+    it('should put 128 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(128, 16);
+      ASSERT.equal(b.toHex(), '0080');
+    });
+
+    it('should put 256 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(256, 16);
+      ASSERT.equal(b.toHex(), '0100');
+    });
+
+    it('should put -128 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(-128, 8);
+      ASSERT.equal(b.toHex(), '80');
+    });
+
+    it('should put -129 into a buffer using two\'s complement', function() {
+      var b = UTIL.createBuffer();
+      b.putSignedInt(-129, 16);
+      ASSERT.equal(b.toHex(), 'ff7f');
+    });
+
+    it('should get 0 from a buffer using two\'s complement', function() {
+      var x = 0;
+      var n = 8;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(x, n), x);
+    });
+
+    it('should get 127 from a buffer using two\'s complement', function() {
+      var x = 127;
+      var n = 8;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(n), x);
+    });
+
+    it('should get 128 from a buffer using two\'s complement', function() {
+      var x = 128;
+      var n = 16;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(n), x);
+    });
+
+    it('should get 256 from a buffer using two\'s complement', function() {
+      var x = 256;
+      var n = 16;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(n), x);
+    });
+
+    it('should get -128 from a buffer using two\'s complement', function() {
+      var x = -128;
+      var n = 8;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(n), x);
+    });
+
+    it('should get -129 from a buffer using two\'s complement', function() {
+      var x = -129;
+      var n = 16;
+      var b = UTIL.createBuffer();
+      b.putSignedInt(x, n);
+      ASSERT.equal(b.getSignedInt(n), x);
+    });
+
     it('should base64 encode some bytes', function() {
       var s1 = '00010203050607080A0B0C0D0F1011121415161719';
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
