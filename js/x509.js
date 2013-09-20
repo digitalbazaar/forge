@@ -706,16 +706,22 @@ var _parseExtensions = function(exts) {
           // get value as SEQUENCE
           var ev = asn1.fromDer(e.value);
           // get cA BOOLEAN flag (defaults to false)
-          if(ev.value.length > 0) {
+          if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
             e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
           }
           else {
             e.cA = false;
           }
           // get path length constraint
-          if(ev.value.length > 1) {
-            var tmp = forge.util.createBuffer(ev.value[1].value);
-            e.pathLenConstraint = tmp.getInt(tmp.length() << 3);
+          var value = null;
+          if(ev.value.length > 0 && ev.value[0].type === asn1.Type.INTEGER) {
+            value = ev.value[0].value;
+          }
+          else if(ev.value.length > 1) {
+            value = ev.value[1].value;
+          }
+          if(value !== null) {
+            e.pathLenConstraint = asn1.derToInteger(value);
           }
         }
         // handle extKeyUsage
@@ -1235,11 +1241,10 @@ pki.createCertificate = function() {
               asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
               String.fromCharCode(0xFF)));
           }
-          if(e.pathLenConstraint) {
-            var num = e.pathLenConstraint;
+          if('pathLenConstraint' in e) {
             e.value.value.push(asn1.create(
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              asn1.integerToDer(num).getBytes()));
+              asn1.integerToDer(e.pathLenConstraint).getBytes()));
           }
         }
         // extKeyUsage is a SEQUENCE of OIDs
