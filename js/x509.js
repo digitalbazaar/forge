@@ -2771,10 +2771,10 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
        chain and it has a critical key usage extension, verify that the
        keyCertSign bit is set. If the key usage extension exists, verify that
        the basic constraints extension exists. If the basic constraints
-       extension exists, verify that the cA flag is set.
-       TODO: handle pathLenConstraint by setting max path length to a lower
-       number if the parent certificate's pathLenConstraint is lower. Also
-       ensure that the path isn't already too long. */
+       extension exists, verify that the cA flag is set. If pathLenConstraint
+       is set, ensure that the number of certificates that follow in the chain,
+       minus any self-signed ones that aren't the last one, isn't greater than
+       the pathLenConstraint (plus 1). */
 
   // copy cert chain references to another array to protect against changes
   // in verify callback
@@ -2921,6 +2921,30 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
             'is not a CA.',
           error: pki.certificateError.bad_certificate
         };
+      }
+      // if error is not null and keyUsage is available, then we know it
+      // has keyCertSign and there is a basic constraints extension too,
+      // which means we can check pathLenConstraint (if it exists)
+      if(error === null && keyUsageExt !== null &&
+        'pathLenConstraint' in bcExt) {
+        // pathLen is the maximum # of non-self-signed certs (the last one in
+        // the chain is not included in that limitation) that can follow
+        // this one, where a value of 0 means only one may follow
+        var selfSigned = 0;
+        for(var i = 1; i < chain.length - 1; ++i) {
+          if(chain[i].isIssuer(chain[i])) {
+            ++selfSigned;
+          }
+        }
+        var maxFollow = bcExt.pathLenConstraint + 1;
+        if((chain.length - selfSigned) > maxFollow) {
+          // pathLenConstraint violated, bad certificate
+          error = {
+            message:
+              'Certificate basicConstraints pathLenConstraint violated.',
+            error: pki.certificateError.bad_certificate
+          };
+        }
       }
     }
 
