@@ -249,7 +249,7 @@ prng.create = function(plugin) {
     var getRandomValues = null;
     if(typeof window !== 'undefined') {
       var crypto = window.crypto || window.msCrypto;
-      if(crypto.getRandomValues) {
+      if(crypto && crypto.getRandomValues) {
         getRandomValues = function(arr) {
           return crypto.getRandomValues(arr);
         };
