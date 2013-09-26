@@ -752,7 +752,7 @@ function _decodeBagAttributes(attributes) {
  * @param key the private key.
  * @param cert the certificate (may be an array of certificates in order
  *          to specify a certificate chain).
- * @param password the password to use.
+ * @param password the password to use, null for none.
  * @param options:
  *          algorithm the encryption algorithm to use
  *            ('aes128', 'aes192', 'aes256', '3des'), defaults to 'aes128'.
