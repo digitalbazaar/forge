@@ -799,11 +799,11 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
  * available, or by breaking up the work on the main thread), pass a
  * callback function.
  *
- * @param [bits] the size for the private key in bits, defaults to 1024.
+ * @param [bits] the size for the private key in bits, defaults to 2048.
  * @param [e] the public exponent to use, defaults to 65537.
  * @param [options] options for key-pair generation, if given then 'bits'
  *          and 'e' must *not* be given:
- *          bits the size for the private key in bits, (default: 1024).
+ *          bits the size for the private key in bits, (default: 2048).
  *          e the public exponent to use, (default: 65537 (0x10001)).
  *          workerScript the worker script URL.
  *          workers the number of web workers (if supported) to use,
@@ -861,7 +861,7 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
   }
   options = options || {};
   if(bits === undefined) {
-    bits = options.bits || 1024;
+    bits = options.bits || 2048;
   }
   if(e === undefined) {
     e = options.e || 0x10001;
