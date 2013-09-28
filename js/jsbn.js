@@ -1187,11 +1187,14 @@ var n1 = this.subtract(BigInteger.ONE);
 var k = n1.getLowestSetBit();
 if(k <= 0) return false;
 var r = n1.shiftRight(k);
-t = (t+1)>>1;
-if(t > lowprimes.length) t = lowprimes.length;
-var a = nbi();
+var prng = bnGetPrng();
+var a;
 for(var i = 0; i < t; ++i) {
- a.fromInt(lowprimes[i]);
+ // select witness 'a' at random from between 1 and n1
+ do {
+   a = new BigInteger(this.bitLength(), prng);
+ }
+ while(a.compareTo(BigInteger.ONE) <= 0 || a.compareTo(n1) >= 0);
  var y = a.modPow(r,this);
  if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
    var j = 1;
@@ -1203,6 +1206,19 @@ for(var i = 0; i < t; ++i) {
  }
 }
 return true;
+}
+
+// get pseudo random number generator
+function bnGetPrng() {
+  // create prng with api that matches BigInteger secure random
+  return {
+    // x is an array to fill with bytes
+    nextBytes: function(x) {
+      for(var i = 0; i < x.length; ++i) {
+        x[i] = Math.floor(Math.random() * 0xFF);
+      }
+    }
+  };
 }
 
 //protected

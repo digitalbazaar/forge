@@ -690,7 +690,8 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
           state.pqState = 0;
         }
         // do primality test
-        else if(state.num.isProbablePrime(1)) {
+        else if(state.num.isProbablePrime(
+          _getMillerRabinIterations(state.num.bitLength()))) {
           ++state.pqState;
         }
         else {
@@ -707,18 +708,16 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
       // ensure number is a probable prime
       else if(state.pqState === 3) {
         state.pqState = 0;
-        if(state.num.isProbablePrime(10)) {
-          if(state.p === null) {
-            state.p = state.num;
-          }
-          else {
-            state.q = state.num;
-          }
+        if(state.p === null) {
+          state.p = state.num;
+        }
+        else {
+          state.q = state.num;
+        }
 
-          // advance state if both p and q are ready
-          if(state.p !== null && state.q !== null) {
-            ++state.state;
-          }
+        // advance state if both p and q are ready
+        if(state.p !== null && state.q !== null) {
+          ++state.state;
         }
         state.num = null;
       }
@@ -1727,6 +1726,31 @@ function _bnToBytes(b) {
     hex = '00' + hex;
   }
   return forge.util.hexToBytes(hex);
+}
+
+/**
+ * Returns the required number of Miller-Rabin iterations to generate a
+ * prime with an error probability of (1/2)^80.
+ *
+ * See Handbook of Applied Cryptography Chapter 4, Table 4.4.
+ *
+ * @param bits the bit size.
+ *
+ * @return the required number of iterations.
+ */
+function _getMillerRabinIterations(bits) {
+  if(bits <= 100) return 27;
+  if(bits <= 150) return 18;
+  if(bits <= 200) return 15;
+  if(bits <= 250) return 12;
+  if(bits <= 300) return 9;
+  if(bits <= 350) return 8;
+  if(bits <= 400) return 7;
+  if(bits <= 500) return 6;
+  if(bits <= 600) return 5;
+  if(bits <= 800) return 4;
+  if(bits <= 1250) return 3;
+  return 2;
 }
 
 } // end module implementation
