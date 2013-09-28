@@ -570,7 +570,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
  * key-generation to be performed in steps. It also allows for a UI to
  * display progress updates.
  *
- * @param bits the size for the private key in bits, defaults to 1024.
+ * @param bits the size for the private key in bits, defaults to 2048.
  * @param e the public exponent to use, defaults to 65537 (0x10001).
  *
  * @return the state object to use to generate the key-pair.
@@ -580,7 +580,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
   if(typeof(bits) === 'string') {
     bits = parseInt(bits, 10);
   }
-  bits = bits || 1024;
+  bits = bits || 2048;
 
   // create prng with api that matches BigInteger secure random
   var rng = {
