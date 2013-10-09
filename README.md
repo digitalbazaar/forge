@@ -1057,6 +1057,16 @@ bytes.bytes(/* count */);
 // empty this buffer and get its contents
 bytes.getBytes(/* count */);
 
+// convert a forge buffer into a node.js Buffer
+// make sure you specify the encoding as 'binary'
+var forgeBuffer = forge.util.createBuffer();
+var nodeBuffer = new Buffer(forgeBuffer.getBytes(), 'binary');
+
+// convert a node.js Buffer into a forge buffer
+// make sure you specify the encoding as 'binary'
+var nodeBuffer = new Buffer();
+var forgeBuffer = forge.util.createBuffer(nodeBuffer.toString('binary'));
+
 // parse a URL
 var parsed = forge.util.parseUrl('http://example.com/foo?bar=baz');
 // parsed.scheme, parsed.host, parsed.port, parsed.path, parsed.fullHost
