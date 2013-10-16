@@ -173,7 +173,7 @@ function bnpFromInt(x) {
   this.t = 1;
   this.s = (x<0)?-1:0;
   if(x > 0) this.data[0] = x;
-  else if(x < -1) this.data[0] = x+DV;
+  else if(x < -1) this.data[0] = x+this.DV;
   else this.t = 0;
 }
 
