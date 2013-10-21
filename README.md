@@ -630,7 +630,7 @@ var recipient = p7.findRecipient(cert);
 p7.decrypt(p7.recipients[0], privateKey);
 
 // create a p7 enveloped message
-var p7 = forge.pkcs7.createEvelopedData();
+var p7 = forge.pkcs7.createEnvelopedData();
 
 // add a recipient
 var cert = forge.pki.certificateFromPem(certPem);
