@@ -96,8 +96,8 @@ pem.encode = function(msg, options) {
 pem.decode = function(str) {
   var rval = [];
 
-  // split string into PEM messages
-  var rMessage = /\s*-----BEGIN ([A-Z0-9- ]+)-----\r?\n([\x21-\x7e\s]+?(?:\r?\n\r?\n))?([:A-Za-z0-9+\/=\s]+?)-----END \1-----/g;
+  // split string into PEM messages (be lenient w/EOF on BEGIN line)
+  var rMessage = /\s*-----BEGIN ([A-Z0-9- ]+)-----\r?\n?([\x21-\x7e\s]+?(?:\r?\n\r?\n))?([:A-Za-z0-9+\/=\s]+?)-----END \1-----/g;
   var rHeader = /([\x21-\x7e]+):\s*([\x21-\x7e\s^:]+)/;
   var rCRLF = /\r?\n/;
   var match;
