@@ -285,7 +285,7 @@ prng.create = function(plugin) {
       implemented with David G. Carta's optimization: with 32 bit math
       and without division (Public Domain). */
       var hi, lo, next;
-      var seed = Math.floor(Math.random() * 0xFFFF);
+      var seed = Math.floor(Math.random() * 0x010000);
       while(b.length() < needed) {
         lo = 16807 * (seed & 0xFFFF);
         hi = 16807 * (seed >> 16);
@@ -298,7 +298,7 @@ prng.create = function(plugin) {
         for(var i = 0; i < 3; ++i) {
           // throw in more pseudo random
           next = seed >>> (i << 3);
-          next ^= Math.floor(Math.random() * 0xFF);
+          next ^= Math.floor(Math.random() * 0x0100);
           b.putByte(String.fromCharCode(next & 0xFF));
         }
       }
