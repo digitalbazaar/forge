@@ -966,8 +966,9 @@ tls.handleServerHello = function(c, record, length) {
     // get the session ID from the message
     var sessionId = msg.session_id.bytes();
 
-    // if the session ID matches the cached one, resume the session
-    if(sessionId === c.session.id) {
+    // if the session ID is not blank and matches the cached one, resume
+    // the session
+    if(sessionId.length > 0 && sessionId === c.session.id) {
       // resuming session, expect a ChangeCipherSpec next
       c.expect = SCC;
       c.session.resuming = true;
