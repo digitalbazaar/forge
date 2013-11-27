@@ -3767,8 +3767,9 @@ tls.createConnection = function(options) {
     }
     // there is enough data to parse the pending record
     else {
-      // fill record fragment
+      // fill record fragment and compact input buffer
       c.record.fragment.putBytes(b.getBytes(c.record.length));
+      b.compact();
 
       // update record using current read state
       var s = c.state.current.read;
