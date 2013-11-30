@@ -24,6 +24,23 @@ function Tests(ASSERT, UTIL) {
         bytes, [1, 2, 3, 4, 0, 0, 0, 4, 1, 2, 3, 255, 255, 255, 255]);
     });
 
+    it('should put bytes from an Uint8Array into a buffer', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var data = [1, 2, 3, 4, 0, 0, 0, 4, 1, 2, 3, 255, 255, 255, 255];
+      var ab = new Uint8Array(data);
+      var b = UTIL.createBuffer(ab);
+      var hex = b.toHex();
+      ASSERT.equal(hex, '0102030400000004010203ffffffff');
+
+      var bytes = [];
+      while(b.length() > 0) {
+        bytes.push(b.getByte());
+      }
+      ASSERT.deepEqual(bytes, data);
+    });
+
     it('should convert bytes from hex', function() {
       var hex = '0102030400000004010203ffffffff';
       var b = UTIL.createBuffer();

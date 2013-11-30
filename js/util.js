@@ -42,16 +42,77 @@ util.isArray = Array.isArray || function(x) {
   return Object.prototype.toString.call(x) === '[object Array]';
 };
 
+// define isArrayBuffer
+util.isArrayBuffer = function(x) {
+  return typeof ArrayBuffer !== 'undefined' && x instanceof ArrayBuffer;
+};
+
+// define isArrayBufferView
+var _arrayBufferViews = [];
+if(typeof Int8Array !== 'undefined') {
+  _arrayBufferViews.push(Int8Array);
+}
+if(typeof Uint8Array !== 'undefined') {
+  _arrayBufferViews.push(Uint8Array);
+}
+if(typeof Uint8ClampedArray !== 'undefined') {
+  _arrayBufferViews.push(Uint8ClampedArray);
+}
+if(typeof Int16Array !== 'undefined') {
+  _arrayBufferViews.push(Int16Array);
+}
+if(typeof Uint16Array !== 'undefined') {
+  _arrayBufferViews.push(Uint16Array);
+}
+if(typeof Int32Array !== 'undefined') {
+  _arrayBufferViews.push(Int32Array);
+}
+if(typeof Uint32Array !== 'undefined') {
+  _arrayBufferViews.push(Uint32Array);
+}
+if(typeof Float32Array !== 'undefined') {
+  _arrayBufferViews.push(Float32Array);
+}
+if(typeof Float64Array !== 'undefined') {
+  _arrayBufferViews.push(Float64Array);
+}
+util.isArrayBufferView = function(x) {
+  for(var i = 0; i < _arrayBufferViews.length; ++i) {
+    if(x instanceof _arrayBufferViews[i]) {
+      return true;
+    }
+  }
+  return false;
+};
+
 /**
  * Constructor for a byte buffer.
  *
- * @param b the bytes to wrap (as a UTF-8 string) (optional).
+ * @param [b] the bytes to wrap (either encoded as string, one byte per
+ *          character, or as an ArrayBuffer or Typed Array).
  */
 util.ByteBuffer = function(b) {
   // the data in this buffer
-  this.data = b || '';
+  this.data = '';
   // the pointer for reading from this buffer
   this.read = 0;
+
+  if(typeof b === 'string') {
+    this.data = b;
+  }
+  else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
+    // convert native buffer to forge buffer
+    // FIXME: support native buffers internally instead
+    var arr = new Uint8Array(b);
+    try {
+      this.data = String.fromCharCode.apply(null, arr);
+    }
+    catch(e) {
+      for(var i = 0; i < arr.length; ++i) {
+        this.putByte(arr[i]);
+      }
+    }
+  }
 };
 
 /**
