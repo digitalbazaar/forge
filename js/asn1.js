@@ -290,7 +290,7 @@ asn1.fromDer = function(bytes, strict) {
       throw {
         message: 'Too few bytes to read ASN.1 value.',
         detail: bytes.length() + ' < ' + length
-      };
+      }
     }
     // Note: be lenient with truncated values
     length = bytes.length();
@@ -366,9 +366,15 @@ asn1.fromDer = function(bytes, strict) {
     // TODO: do DER to OID conversion and vice-versa in .toDer?
 
     if(length === undefined) {
-      throw {
-        message: 'Non-constructed ASN.1 object of indefinite length.'
-      };
+      if(strict) {
+        throw {
+          message: 'Non-constructed ASN.1 object of indefinite length.'
+        };
+      }
+      // be lenient and use remaining bytes
+      else {
+        length = bytes.length();
+      }
     }
 
     if(type === asn1.Type.BMPSTRING) {
