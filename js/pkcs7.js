@@ -355,6 +355,7 @@ var _decryptContent = function (msg) {
         ciph = forge.aes.createDecryptionCipher(msg.encryptedContent.key);
         break;
 
+      case forge.pki.oids['desCBC']:
       case forge.pki.oids['des-EDE3-CBC']:
         ciph = forge.des.createDecryptionCipher(msg.encryptedContent.key);
         break;
@@ -661,6 +662,7 @@ p7.createEnvelopedData = function() {
         && privKey !== undefined) {
         switch(recipient.encryptedContent.algorithm) {
           case forge.pki.oids.rsaEncryption:
+          case forge.pki.oids.desCBC:  
             var key = privKey.decrypt(recipient.encryptedContent.content);
             msg.encryptedContent.key = forge.util.createBuffer(key);
             break;
