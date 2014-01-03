@@ -114,7 +114,7 @@ var client = forge.tls.createConnection({
   connected: function(connection) {
     console.log('connected');
     // send message to server
-    connection.prepare(util.encodeUtf8('Hi server!'));
+    connection.prepare(forge.util.encodeUtf8('Hi server!'));
   },
   /* provide a client-side cert if you want
   getCertificate: function(connection, hint) {
@@ -176,7 +176,7 @@ var server = forge.tls.createConnection({
   connected: function(connection) {
     console.log('connected');
     // send message to client
-    connection.prepare(util.encodeUtf8('Hi client!'));
+    connection.prepare(forge.util.encodeUtf8('Hi client!'));
   },
   getCertificate: function(connection, hint) {
     return myServerCertificate;
@@ -224,7 +224,7 @@ var client = forge.tls.createConnection({
     console.log('[tls] connected');
     // prepare some data to send (note that the string is interpreted as
     // 'binary' encoded, which works for HTTP which only uses ASCII, use
-    // util.encodeUtf8(str) otherwise
+    // forge.util.encodeUtf8(str) otherwise
     client.prepare('GET / HTTP/1.0\r\n\r\n');
   },
   tlsDataReady: function(connection) {
