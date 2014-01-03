@@ -132,7 +132,8 @@ var client = forge.tls.createConnection({
   },
   dataReady: function(connection) {
     // clear data from the server is ready
-    console.log('the server sent: ' + connection.data.getBytes());
+    console.log('the server sent: ' +
+      forge.util.decodeUtf8(connection.data.getBytes()));
     // close connection
     connection.close();
   },
@@ -192,7 +193,8 @@ var server = forge.tls.createConnection({
   },
   dataReady: function(connection) {
     // clear data from the client is ready
-    console.log('the client sent: ' + connection.data.getBytes());
+    console.log('the client sent: ' +
+      forge.util.decodeUtf8(connection.data.getBytes()));
     // close connection
     connection.close();
   },
