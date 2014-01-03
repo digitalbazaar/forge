@@ -3941,7 +3941,9 @@ tls.createConnection = function(options) {
    * tlsDataReady handler will be called when the TLS record(s) have been
    * prepared.
    *
-   * @param data the application data, as a string, to be sent.
+   * @param data the application data, as a raw 'binary' encoded string, to
+   *          be sent; to send utf-16/utf-8 string data, use the return value
+   *          of util.encodeUtf8(str).
    *
    * @return true on success, false on failure.
    */
