@@ -1155,6 +1155,14 @@ the browser:
 
 js/forge.min.js
 
+Include the file via:
+
+```html
+<script src="js/forge.min.js"></script>
+```
+
+It will create a global 'forge' object.
+
 To create a single non-minimized file that can be included in
 the browser:
 
@@ -1165,9 +1173,17 @@ This will create:
 
 js/forge.bundle.js
 
-Keep in mind that this bundle will not include any WebWorker
-scripts (eg: prime.worker.js) and these will need to be accessible
-from the browser if any WebWorkers are used.
+Include the file via:
+
+```html
+<script src="js/forge.min.js"></script>
+```
+
+It will create a global 'forge' object.
+
+Keep in mind that these bundles will not include any WebWorker
+scripts (eg: prime.worker.js) or their dependencies, so these will
+need to be accessible from the browser if any WebWorkers are used.
 
 ### Testing with NodeJS & RequireJS ###
 
