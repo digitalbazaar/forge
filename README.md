@@ -58,13 +58,17 @@ You can then use forge as a regular module:
 
 To create a minimized JavaScript bundle, run the following:
 
+```
 npm install
 npm run minify
+```
 
 This will create a single minimized file that can be included in
 the browser:
 
+```
 js/forge.min.js
+```
 
 Include the file via:
 
@@ -75,12 +79,16 @@ Include the file via:
 To create a single non-minimized file that can be included in
 the browser:
 
+```
 npm install
 npm run bundle
+```
 
 This will create:
 
+```
 js/forge.bundle.js
+```
 
 Include the file via:
 
