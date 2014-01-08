@@ -13,13 +13,8 @@ The Forge software is a fully native implementation of the [TLS][] protocol in
 JavaScript as well as a set of tools for developing Web Apps that utilize many
 network resources.
 
-## Documentation
-
----------------------------------------
-
-
-Getting Started
----------------
+## Getting Started
+------------------
 
 ### Node.js ###
 
@@ -140,6 +135,9 @@ Some of the simplier tests should be run with just the non-TLS server::
 More advanced tests need TLS enabled::
 
     $ ./tests/server.py --tls
+
+## Documentation
+----------------
 
 ### Transports
 
