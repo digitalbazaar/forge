@@ -1129,46 +1129,47 @@ You can then use forge as a regular module:
 ### Requirements ###
 
 * General
-  * GNU autotools for the build infrastructure.
+  * Optional: Only needed if building flash.
+  * GNU autotools for the build infrastructure if using Flash.
 * Flash
   * Optional: A pre-built SocketPool.swf is included.
   * Adobe Flex 3 SDK to build the Flash socket code.
   * http://opensource.adobe.com/wiki/display/flexsdk/
 * Testing
-  * Optional: Only needed for fast session cache during testing.
-  * Python and OpenSSL development environment to build a special SSL module
-    with session cache support.
+  * NodeJS
+  * Optional: Python and OpenSSL development environment to build
+  * a special SSL module with session cache support for testing with flash.
   * http://www.python.org/dev/
   * http://www.openssl.org/
   * Debian users should install python-dev and libssl-dev.
 
-### Building ###
+### Creating a bundle for the browser ###
 
-To build the whole project, run the following::
+To create a minimized JavaScript bundle, run the following:
 
-    $ ./build-setup
-    $ make
+npm install
+npm run minify
 
-This will create the SWF, symlink all the JavaScript files, and build a Python
-SSL module for testing. To see configure options, run `./configure --help`.
+This will create a single minimized file that can be included in
+the browser:
 
-### Testing ###
+js/forge.min.js
 
-A test server is provided which can be run in TLS mode and non-TLS mode. Use
-the --help option to get help for configuring ports. The server will print out
-the local URL you can vist to run tests.
+To create a single non-minimized file that can be included in
+the browser:
 
-Some of the simplier tests should be run with just the non-TLS server::
+npm install
+npm run bundle
 
-    $ ./tests/server.py
+This will create:
 
-More advanced tests need TLS enabled::
+js/forge.bundle.js
 
-    $ ./tests/server.py --tls
+Keep in mind that this bundle will not include any WebWorker
+scripts (eg: prime.worker.js) and these will need to be accessible
+from the browser if any WebWorkers are used.
 
-
-NodeJS & RequireJS
-------------------
+### Testing with NodeJS & RequireJS ###
 
 A test server for [node.js][] can be found at `./nodejs`. The following are included:
 
@@ -1181,6 +1182,31 @@ To run:
     npm install
     npm test
     npm start
+
+
+### Old build system that includes flash support ###
+
+To build the whole project, including Flash, run the following:
+
+    $ ./build-setup
+    $ make
+
+This will create the SWF, symlink all the JavaScript files, and build a Python
+SSL module for testing. To see configure options, run `./configure --help`.
+
+### Old test system including flash support ###
+
+A test server is provided which can be run in TLS mode and non-TLS mode. Use
+the --help option to get help for configuring ports. The server will print out
+the local URL you can vist to run tests.
+
+Some of the simplier tests should be run with just the non-TLS server::
+
+    $ ./tests/server.py
+
+More advanced tests need TLS enabled::
+
+    $ ./tests/server.py --tls
 
 
 Library Details

@@ -18,6 +18,10 @@
     "name": "Christoph Dorn",
     "email": "christoph@christophdorn.com"
   }],
+  "devDependencies": {
+    "almond": "~0.2.6",
+    "requirejs": "~2.1.8"
+  },
   "repository": {
     "type" : "git",
     "url" : "http://github.com/digitalbazaar/forge"
@@ -53,5 +57,9 @@
     "tls",
     "x.509",
     "x509"
-  ]
+  ],
+  "scripts": {
+    "bundle": "nodejs ./node_modules/requirejs/bin/r.js -o minify.js optimize=none out=js/forge.bundle.js",
+    "minify": "nodejs ./node_modules/requirejs/bin/r.js -o minify.js"
+  }
 }
