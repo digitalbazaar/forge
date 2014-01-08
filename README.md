@@ -15,6 +15,124 @@ network resources.
 
 ## Documentation
 
+---------------------------------------
+
+
+Getting Started
+---------------
+
+### Node.js ###
+
+If you want to use forge with [node.js][], it is available through `npm`:
+
+https://npmjs.org/package/node-forge
+
+Installation:
+
+    npm install node-forge
+
+You can then use forge as a regular module:
+
+    var forge = require('node-forge');
+
+### Requirements ###
+
+* General
+  * Optional: GNU autotools for the build infrastructure if using Flash.
+* Building a Browser Bundle:
+  * nodejs
+  * npm
+* Testing
+  * nodejs
+  * Optional: Python and OpenSSL development environment to build
+  * a special SSL module with session cache support for testing with flash.
+  * http://www.python.org/dev/
+  * http://www.openssl.org/
+  * Debian users should install python-dev and libssl-dev.
+* Optional: Flash
+  * A pre-built SocketPool.swf is included.
+  * Adobe Flex 3 SDK to build the Flash socket code.
+  * http://opensource.adobe.com/wiki/display/flexsdk/
+
+### Building a browser bundle ###
+
+To create a minimized JavaScript bundle, run the following:
+
+npm install
+npm run minify
+
+This will create a single minimized file that can be included in
+the browser:
+
+js/forge.min.js
+
+Include the file via:
+
+```html
+<script src="js/forge.min.js"></script>
+```
+
+To create a single non-minimized file that can be included in
+the browser:
+
+npm install
+npm run bundle
+
+This will create:
+
+js/forge.bundle.js
+
+Include the file via:
+
+```html
+<script src="js/forge.bundle.js"></script>
+```
+
+The above bundles will synchronously create a global 'forge' object.
+
+Keep in mind that these bundles will not include any WebWorker
+scripts (eg: prime.worker.js) or their dependencies, so these will
+need to be accessible from the browser if any WebWorkers are used.
+
+### Testing with NodeJS & RequireJS ###
+
+A test server for [node.js][] can be found at `./nodejs`. The following are included:
+
+  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://visionmedia.github.io/mocha/) test.
+  * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
+
+To run:
+
+    cd nodejs
+    npm install
+    npm test
+    npm start
+
+
+### Old build system that includes flash support ###
+
+To build the whole project, including Flash, run the following:
+
+    $ ./build-setup
+    $ make
+
+This will create the SWF, symlink all the JavaScript files, and build a Python
+SSL module for testing. To see configure options, run `./configure --help`.
+
+### Old test system including flash support ###
+
+A test server is provided which can be run in TLS mode and non-TLS mode. Use
+the --help option to get help for configuring ports. The server will print out
+the local URL you can vist to run tests.
+
+Some of the simplier tests should be run with just the non-TLS server::
+
+    $ ./tests/server.py
+
+More advanced tests need TLS enabled::
+
+    $ ./tests/server.py --tls
+
 ### Transports
 
 * [TLS](#tls)
@@ -1104,125 +1222,6 @@ __Examples__
 Provides an [Apache][] module "mod_fsp" that can serve up a Flash Socket
 Policy. See `mod_fsp/README` for more details. This module makes it easy to
 modify an [Apache][] server to allow cross domain requests to be made to it.
-
-
----------------------------------------
-
-
-Getting Started
----------------
-
-### Node.js ###
-
-If you want to use forge with [node.js][], it is available through `npm`:
-
-https://npmjs.org/package/node-forge
-
-Installation:
-
-    npm install node-forge
-
-You can then use forge as a regular module:
-
-    var forge = require('node-forge');
-
-### Requirements ###
-
-* General
-  * Optional: Only needed if building flash.
-  * GNU autotools for the build infrastructure if using Flash.
-* Flash
-  * Optional: A pre-built SocketPool.swf is included.
-  * Adobe Flex 3 SDK to build the Flash socket code.
-  * http://opensource.adobe.com/wiki/display/flexsdk/
-* Testing
-  * NodeJS
-  * Optional: Python and OpenSSL development environment to build
-  * a special SSL module with session cache support for testing with flash.
-  * http://www.python.org/dev/
-  * http://www.openssl.org/
-  * Debian users should install python-dev and libssl-dev.
-
-### Creating a bundle for the browser ###
-
-To create a minimized JavaScript bundle, run the following:
-
-npm install
-npm run minify
-
-This will create a single minimized file that can be included in
-the browser:
-
-js/forge.min.js
-
-Include the file via:
-
-```html
-<script src="js/forge.min.js"></script>
-```
-
-It will create a global 'forge' object.
-
-To create a single non-minimized file that can be included in
-the browser:
-
-npm install
-npm run bundle
-
-This will create:
-
-js/forge.bundle.js
-
-Include the file via:
-
-```html
-<script src="js/forge.min.js"></script>
-```
-
-It will create a global 'forge' object.
-
-Keep in mind that these bundles will not include any WebWorker
-scripts (eg: prime.worker.js) or their dependencies, so these will
-need to be accessible from the browser if any WebWorkers are used.
-
-### Testing with NodeJS & RequireJS ###
-
-A test server for [node.js][] can be found at `./nodejs`. The following are included:
-
-  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://visionmedia.github.io/mocha/) test.
-  * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
-
-To run:
-
-    cd nodejs
-    npm install
-    npm test
-    npm start
-
-
-### Old build system that includes flash support ###
-
-To build the whole project, including Flash, run the following:
-
-    $ ./build-setup
-    $ make
-
-This will create the SWF, symlink all the JavaScript files, and build a Python
-SSL module for testing. To see configure options, run `./configure --help`.
-
-### Old test system including flash support ###
-
-A test server is provided which can be run in TLS mode and non-TLS mode. Use
-the --help option to get help for configuring ports. The server will print out
-the local URL you can vist to run tests.
-
-Some of the simplier tests should be run with just the non-TLS server::
-
-    $ ./tests/server.py
-
-More advanced tests need TLS enabled::
-
-    $ ./tests/server.py --tls
 
 
 Library Details
