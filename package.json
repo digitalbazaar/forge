@@ -8,9 +8,6 @@
     "email": "support@digitalbazaar.com",
     "url": "http://digitalbazaar.com/"
   },
-  "bin": {
-    "r.js": "./node_modules/.bin/r.js"
-  },
   "contributors": [{
     "name": "Dave Longley",
     "email": "dlongley@digitalbazaar.com"
