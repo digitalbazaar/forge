@@ -8,6 +8,9 @@
     "email": "support@digitalbazaar.com",
     "url": "http://digitalbazaar.com/"
   },
+  "bin": {
+    "r.js": "./node_modules/.bin/r.js"
+  },
   "contributors": [{
     "name": "Dave Longley",
     "email": "dlongley@digitalbazaar.com"
@@ -59,7 +62,7 @@
     "x509"
   ],
   "scripts": {
-    "bundle": "./node_modules/requirejs/bin/r.js -o minify.js optimize=none out=js/forge.bundle.js",
-    "minify": "./node_modules/requirejs/bin/r.js -o minify.js"
+    "bundle": "r.js -o minify.js optimize=none out=js/forge.bundle.js",
+    "minify": "r.js -o minify.js"
   }
 }
