@@ -59,7 +59,7 @@
     "x509"
   ],
   "scripts": {
-    "bundle": "nodejs ./node_modules/requirejs/bin/r.js -o minify.js optimize=none out=js/forge.bundle.js",
-    "minify": "nodejs ./node_modules/requirejs/bin/r.js -o minify.js"
+    "bundle": "./node_modules/requirejs/bin/r.js -o minify.js optimize=none out=js/forge.bundle.js",
+    "minify": "./node_modules/requirejs/bin/r.js -o minify.js"
   }
 }
