@@ -1443,10 +1443,11 @@ pki.createCertificate = function() {
       var issuer = child.issuer;
       var subject = cert.subject;
       throw {
-        message: 'The given certificate was not issued by this certificate; ' +
-          'the issuer does not match.',
-        issuer: issuer.attributes,
-        subject: subject.attributes
+        message: 'The parent certificate did not issue the given child ' +
+          'certificate; the child certificate\'s issuer does not match the ' +
+          'parent\'s subject.',
+        expectedIssuer: issuer.attributes,
+        actualIssuer: subject.attributes
       };
     }
 
