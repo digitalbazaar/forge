@@ -1439,6 +1439,17 @@ pki.createCertificate = function() {
   cert.verify = function(child) {
     var rval = false;
 
+    if(!cert.issued(child)) {
+      var issuer = child.issuer;
+      var subject = cert.subject;
+      throw {
+        message: 'The given certificate was not issued by this certificate; ' +
+          'the issuer does not match.',
+        issuer: issuer.attributes,
+        subject: subject.attributes
+      };
+    }
+
     var md = child.md;
     if(md === null) {
       // check signature OID for supported signature types
@@ -1528,13 +1539,13 @@ pki.createCertificate = function() {
   };
 
   /**
-   * Returns true if the passed certificate's subject is the issuer of
-   * this certificate.
+   * Returns true if this certificate's issuer matches the passed
+   * certificate's subject. Note that no signature check is performed.
    *
    * @param parent the certificate to check.
    *
-   * @return true if the passed certificate's subject is the issuer of
-   *         this certificate.
+   * @return true if this certificate's issuer matches the passed certificate's
+   *         subject.
    */
   cert.isIssuer = function(parent) {
     var rval = false;
@@ -1561,6 +1572,19 @@ pki.createCertificate = function() {
     }
 
     return rval;
+  };
+
+  /**
+   * Returns true if this certificate's subject matches the issuer of the
+   * given certificate). Note that not signature check is performed.
+   *
+   * @param child the certificate to check.
+   *
+   * @return true if this certificate's subject matches the passed
+   *         certificate's issuer.
+   */
+  cert.issued = function(child) {
+    return child.isIssuer(cert);
   };
 
   /**
@@ -1600,7 +1624,6 @@ pki.createCertificate = function() {
    * @return true if verified, false if not.
    */
   cert.verifySubjectKeyIdentifier = function() {
-    var rval = false;
     var oid = oids['subjectKeyIdentifier'];
     for(var i = 0; i < cert.extensions.length; ++i) {
       var ext = cert.extensions[i];
@@ -2195,6 +2218,41 @@ function _extensionsToAsn1(exts) {
       asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
   }
 
+  return rval;
+}
+
+/**
+ * Gets all printable attributes (typically of an issuer or subject) in a
+ * simplified JSON format for display.
+ *
+ * @param attrs the attributes.
+ *
+ * @return the JSON for display.
+ */
+function _getAttributesAsJson(attrs) {
+  var rval = {};
+  for(var i = 0; i < attrs.length; ++i) {
+    var attr = attrs[i];
+    console.log('attr', attr);
+    if(attr.shortName && (
+      attr.valueTagClass === asn1.Type.UTF8 ||
+      attr.valueTagClass === asn1.Type.PRINTABLESTRING ||
+      attr.valueTagClass === asn1.Type.IA5String)) {
+      var value = attr.value;
+      if(attr.valueTagClass === asn1.Type.UTF8) {
+        value = forge.util.encodeUtf8(attr.value);
+      }
+      if(!(attr.shortName in rval)) {
+        rval[attr.shortName] = value;
+      }
+      else if(forge.util.isArray(rval[attr.shortName])) {
+        rval[attr.shortName].push(value);
+      }
+      else {
+        rval[attr.shortName] = [rval[attr.shortName], value];
+      }
+    }
+  }
   return rval;
 }
 
