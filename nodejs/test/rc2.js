@@ -61,6 +61,27 @@ function Tests(ASSERT, RC2, UTIL) {
       cipher.finish();
       ASSERT.equal(cipher.output, 'revolution');
     });
+
+    it('should rc2-cbc encrypt w/binary string iv: revolution', function() {
+      var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
+      var iv = UTIL.hexToBytes('0123456789abcdef');
+      var input = new UTIL.createBuffer('revolution');
+      var cipher = RC2.startEncrypting(key, iv, null);
+      cipher.update(input);
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex(), '50cfd16e0fd7f20b17a622eb2a469b7e');
+    });
+
+    it('should rc2-cbc decrypt w/binary string iv: 50cfd16e0fd7f20b17a622eb2a469b7e', function() {
+      var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
+      var iv = UTIL.hexToBytes('0123456789abcdef');
+      var input = new UTIL.createBuffer(
+        UTIL.hexToBytes('50cfd16e0fd7f20b17a622eb2a469b7e'));
+      var cipher = RC2.startDecrypting(key, iv, null);
+      cipher.update(input);
+      cipher.finish();
+      ASSERT.equal(cipher.output, 'revolution');
+    });
   });
 }
 

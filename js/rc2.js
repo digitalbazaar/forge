@@ -110,8 +110,7 @@ forge.rc2.expandKey = function(key, effKeyBits) {
  *
  * @return the cipher.
  */
-var createCipher = function(key, bits, encrypt)
-{
+var createCipher = function(key, bits, encrypt) {
   var _finish = false, _input = null, _output = null, _iv = null;
   var mixRound, mashRound;
   var i, j, K = [];
@@ -250,7 +249,7 @@ var createCipher = function(key, bits, encrypt)
     start: function(iv, output) {
       if(iv) {
         /* CBC mode */
-        if(typeof key === 'string' && iv.length === 8) {
+        if(typeof iv === 'string') {
           iv = forge.util.createBuffer(iv);
         }
       }
