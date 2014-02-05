@@ -410,11 +410,15 @@ pki.encryptedPrivateKeyFromPem = function(pem) {
  * private key encryption), set the 'legacy' option to true. Note: Using this
  * option will cause the iteration count to be forced to 1.
  *
+ * Note: The 'des' algorithm is supported, but it is not considered to be
+ * secure because it only uses a single 56-bit key. If possible, it is highly
+ * recommended that a different algorithm be used.
+ *
  * @param rsaKey the RSA key to encrypt.
  * @param password the password to use.
  * @param options:
  *          algorithm: the encryption algorithm to use
- *            ('aes128', 'aes192', 'aes256', '3des').
+ *            ('aes128', 'aes192', 'aes256', '3des', 'des').
  *          count: the iteration count to use.
  *          saltSize: the salt size to use.
  *          legacy: output an old non-PKCS#8 PEM-encrypted+encapsulated
