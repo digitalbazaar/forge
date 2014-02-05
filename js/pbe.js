@@ -192,14 +192,13 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   options.algorithm = options.algorithm || 'aes128';
 
   // generate PBE params
-  var salt = forge.random.getBytes(options.saltSize);
+  var salt = forge.random.getBytesSync(options.saltSize);
   var count = options.count;
   var countBytes = asn1.integerToDer(count);
   var dkLen;
   var encryptionAlgorithm;
   var encryptedData;
-  if(options.algorithm.indexOf('aes') === 0 ||
-    options.algorithm === 'des') {
+  if(options.algorithm.indexOf('aes') === 0 || options.algorithm === 'des') {
     // Do PBES2
     var ivLen, encOid, cipherFn;
     switch(options.algorithm) {
@@ -234,9 +233,9 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
       };
     }
 
-    // encrypt private key using pbe SHA-1 and AES
+    // encrypt private key using pbe SHA-1 and AES/DES
     var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
-    var iv = forge.random.getBytes(ivLen);
+    var iv = forge.random.getBytesSync(ivLen);
     var cipher = cipherFn(dk);
     cipher.start(iv);
     cipher.update(asn1.toDer(obj));
@@ -442,31 +441,31 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
   case 'aes128':
     algorithm = 'AES-128-CBC';
     dkLen = 16;
-    iv = forge.random.getBytes(16);
+    iv = forge.random.getBytesSync(16);
     cipherFn = forge.aes.createEncryptionCipher;
     break;
   case 'aes192':
     algorithm = 'AES-192-CBC';
     dkLen = 24;
-    iv = forge.random.getBytes(16);
+    iv = forge.random.getBytesSync(16);
     cipherFn = forge.aes.createEncryptionCipher;
     break;
   case 'aes256':
     algorithm = 'AES-256-CBC';
     dkLen = 32;
-    iv = forge.random.getBytes(16);
+    iv = forge.random.getBytesSync(16);
     cipherFn = forge.aes.createEncryptionCipher;
     break;
   case '3des':
     algorithm = 'DES-EDE3-CBC';
     dkLen = 24;
-    iv = forge.random.getBytes(8);
+    iv = forge.random.getBytesSync(8);
     cipherFn = forge.des.createEncryptionCipher;
     break;
   case 'des':
     algorithm = 'DES-CBC';
     dkLen = 8;
-    iv = forge.random.getBytes(8);
+    iv = forge.random.getBytesSync(8);
     cipherFn = forge.des.createEncryptionCipher;
     break;
   default:
@@ -781,16 +780,17 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
     };
   }
   oid = asn1.derToOid(capture.encOid);
-  if(oid !== pki.oids['desCBC'] &&
-    oid !== pki.oids['des-EDE3-CBC'] &&
-    oid !== pki.oids['aes128-CBC'] &&
+  if(oid !== pki.oids['aes128-CBC'] &&
     oid !== pki.oids['aes192-CBC'] &&
-    oid !== pki.oids['aes256-CBC']) {
+    oid !== pki.oids['aes256-CBC'] &&
+    oid !== pki.oids['des-EDE3-CBC'] &&
+    oid !== pki.oids['desCBC']) {
     throw {
       message: 'Cannot read encrypted private key. ' +
         'Unsupported encryption scheme OID.',
       oid: oid,
-      supportedOids: ['desCBC', 'des-EDE3-CBC', 'aes128-CBC', 'aes192-CBC', 'aes256-CBC']
+      supportedOids: [
+        'aes128-CBC', 'aes192-CBC', 'aes256-CBC', 'des-EDE3-CBC', 'desCBC']
     };
   }
 
@@ -801,14 +801,6 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
   var dkLen;
   var cipherFn;
   switch(pki.oids[oid]) {
-  case 'desCBC':
-    dkLen = 8;
-    cipherFn = forge.des.createDecryptionCipher;
-    break;
-  case 'des-EDE3-CBC':
-    dkLen = 24;
-    cipherFn = forge.des.createDecryptionCipher;
-    break;
   case 'aes128-CBC':
     dkLen = 16;
     cipherFn = forge.aes.createDecryptionCipher;
@@ -821,9 +813,17 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
     dkLen = 32;
     cipherFn = forge.aes.createDecryptionCipher;
     break;
+  case 'des-EDE3-CBC':
+    dkLen = 24;
+    cipherFn = forge.des.createDecryptionCipher;
+    break;
+  case 'desCBC':
+    dkLen = 8;
+    cipherFn = forge.des.createDecryptionCipher;
+    break;
   }
 
-  // decrypt private key using pbe SHA-1 and DES/AES
+  // decrypt private key using pbe SHA-1 and AES/DES
   var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
   var iv = capture.encIv;
   var cipher = cipherFn(dk);
