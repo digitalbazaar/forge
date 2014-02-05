@@ -198,22 +198,36 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   var dkLen;
   var encryptionAlgorithm;
   var encryptedData;
-  if(options.algorithm.indexOf('aes') === 0) {
+  if(options.algorithm.indexOf('aes') === 0 ||
+    options.algorithm === 'des') {
     // Do PBES2
-    var encOid;
-    if(options.algorithm === 'aes128') {
+    var ivLen, encOid, cipherFn;
+    switch(options.algorithm) {
+    case 'aes128':
       dkLen = 16;
+      ivLen = 16;
       encOid = oids['aes128-CBC'];
-    }
-    else if(options.algorithm === 'aes192') {
+      cipherFn = forge.aes.createEncryptionCipher;
+      break;
+    case 'aes192':
       dkLen = 24;
+      ivLen = 16;
       encOid = oids['aes192-CBC'];
-    }
-    else if(options.algorithm === 'aes256') {
+      cipherFn = forge.aes.createEncryptionCipher;
+      break;
+    case 'aes256':
       dkLen = 32;
+      ivLen = 16;
       encOid = oids['aes256-CBC'];
-    }
-    else {
+      cipherFn = forge.aes.createEncryptionCipher;
+      break;
+    case 'des':
+      dkLen = 8;
+      ivLen = 8;
+      encOid = oids['desCBC'];
+      cipherFn = forge.des.createEncryptionCipher;
+      break;
+    default:
       throw {
         message: 'Cannot encrypt private key. Unknown encryption algorithm.',
         algorithm: options.algorithm
@@ -222,8 +236,8 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
 
     // encrypt private key using pbe SHA-1 and AES
     var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
-    var iv = forge.random.getBytes(16);
-    var cipher = forge.aes.createEncryptionCipher(dk);
+    var iv = forge.random.getBytes(ivLen);
+    var cipher = cipherFn(dk);
     cipher.start(iv);
     cipher.update(asn1.toDer(obj));
     cipher.finish();
@@ -449,6 +463,12 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
     iv = forge.random.getBytes(8);
     cipherFn = forge.des.createEncryptionCipher;
     break;
+  case 'des':
+    algorithm = 'DES-CBC';
+    dkLen = 8;
+    iv = forge.random.getBytes(8);
+    cipherFn = forge.des.createEncryptionCipher;
+    break;
   default:
     throw {
       message: 'Could not encrypt RSA private key; unsupported encryption ' +
@@ -506,6 +526,10 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     var dkLen;
     var cipherFn;
     switch(msg.dekInfo.algorithm) {
+    case 'DES-CBC':
+      dkLen = 8;
+      cipherFn = forge.des.createDecryptionCipher;
+      break;
     case 'DES-EDE3-CBC':
       dkLen = 24;
       cipherFn = forge.des.createDecryptionCipher;
@@ -757,14 +781,16 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
     };
   }
   oid = asn1.derToOid(capture.encOid);
-  if(oid !== pki.oids['aes128-CBC'] &&
+  if(oid !== pki.oids['desCBC'] &&
+    oid !== pki.oids['des-EDE3-CBC'] &&
+    oid !== pki.oids['aes128-CBC'] &&
     oid !== pki.oids['aes192-CBC'] &&
     oid !== pki.oids['aes256-CBC']) {
     throw {
       message: 'Cannot read encrypted private key. ' +
         'Unsupported encryption scheme OID.',
       oid: oid,
-      supportedOids: ['aes128-CBC', 'aes192-CBC', 'aes256-CBC']
+      supportedOids: ['desCBC', 'des-EDE3-CBC', 'aes128-CBC', 'aes192-CBC', 'aes256-CBC']
     };
   }
 
@@ -773,20 +799,34 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
   var count = forge.util.createBuffer(capture.kdfIterationCount);
   count = count.getInt(count.length() << 3);
   var dkLen;
-  if(oid === pki.oids['aes128-CBC']) {
-    dkLen = 16;
-  }
-  else if(oid === pki.oids['aes192-CBC']) {
+  var cipherFn;
+  switch(pki.oids[oid]) {
+  case 'desCBC':
+    dkLen = 8;
+    cipherFn = forge.des.createDecryptionCipher;
+    break;
+  case 'des-EDE3-CBC':
     dkLen = 24;
-  }
-  else if(oid === pki.oids['aes256-CBC']) {
+    cipherFn = forge.des.createDecryptionCipher;
+    break;
+  case 'aes128-CBC':
+    dkLen = 16;
+    cipherFn = forge.aes.createDecryptionCipher;
+    break;
+  case 'aes192-CBC':
+    dkLen = 24;
+    cipherFn = forge.aes.createDecryptionCipher;
+    break;
+  case 'aes256-CBC':
     dkLen = 32;
+    cipherFn = forge.aes.createDecryptionCipher;
+    break;
   }
 
-  // decrypt private key using pbe SHA-1 and AES
+  // decrypt private key using pbe SHA-1 and DES/AES
   var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
   var iv = capture.encIv;
-  var cipher = forge.aes.createDecryptionCipher(dk);
+  var cipher = cipherFn(dk);
   cipher.start(iv);
 
   return cipher;
