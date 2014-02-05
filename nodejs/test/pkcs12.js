@@ -37,8 +37,8 @@ function Tests(ASSERT, FORGE) {
     it('should create encrypted-key-only p12', function() {
       /* Note we need to mock the PRNG, since the PKCS#12 file uses encryption
         which otherwise would differ each time due to the randomized IV. */
-      var oldRandomGetBytes = forge.random.getBytes;
-      forge.random.getBytes = function(num) {
+      var oldRandomGenerate = forge.random.generate;
+      forge.random.generate = function(num) {
         return UTIL.createBuffer().fillWithByte(0, num).getBytes();
       };
 
@@ -50,7 +50,7 @@ function Tests(ASSERT, FORGE) {
       var p12Der = ASN1.toDer(p12Asn).getBytes();
 
       // restore old random function
-      forge.random.getBytes = oldRandomGetBytes;
+      forge.random.generate = oldRandomGenerate;
 
       /* The generated PKCS#12 file lacks a MAC, therefore pass -nomacver to
         OpenSSL: openssl pkcs12 -nomacver -in pkcs12_enckeyonly.p12 */
