@@ -20,6 +20,8 @@ libraries can be found here:
 
 http://dominictarr.github.io/crypto-bench/
 
+http://cryptojs.altervista.org/test/simulate-threading-speed_test.html
+
 ## Getting Started
 ------------------
 
