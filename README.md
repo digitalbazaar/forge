@@ -13,6 +13,13 @@ The Forge software is a fully native implementation of the [TLS][] protocol in
 JavaScript as well as a set of tools for developing Web Apps that utilize many
 network resources.
 
+## Performance
+
+Forge is fast. Benchmarks against other popular JavaScript cryptography
+libraries can be found here:
+
+http://dominictarr.github.io/crypto-bench/
+
 ## Getting Started
 ------------------
 
