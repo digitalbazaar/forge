@@ -179,6 +179,124 @@ function Tests(ASSERT, AES, UTIL) {
       }
     })();
 
+    // AES-192-CBC
+    (function() {
+      var keys = [
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b'
+      ];
+
+      var ivs = [
+        '000102030405060708090A0B0C0D0E0F',
+        '4F021DB243BC633D7178183A9FA071E8',
+        'B4D9ADA9AD7DEDF4E5E738763F69145A',
+        '571B242012FB7AE07FA9BAAC3DF102E0'
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a',
+        'ae2d8a571e03ac9c9eb76fac45af8e51',
+        '30c81c46a35ce411e5fbc1191a0a52ef',
+        'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        '4f021db243bc633d7178183a9fa071e8',
+        'b4d9ada9ad7dedf4e5e738763f69145a',
+        '571b242012fb7ae07fa9baac3df102e0',
+        '08b0e27988598881d920a9e64f5615cd'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-192-cbc encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'CBC');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish(function(){return true;});
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-192-cbc decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'CBC');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish(function(){return true;});
+            var out = cipher.output.toHex();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
+    // AES-256-CBC
+    (function() {
+      var keys = [
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4'
+      ];
+
+      var ivs = [
+        '000102030405060708090A0B0C0D0E0F',
+        'F58C4C04D6E5F1BA779EABFB5F7BFBD6',
+        '9CFC4E967EDB808D679F777BC6702C7D',
+        '39F23369A9D9BACFA530E26304231461'
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a',
+        'ae2d8a571e03ac9c9eb76fac45af8e51',
+        '30c81c46a35ce411e5fbc1191a0a52ef',
+        'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        'f58c4c04d6e5f1ba779eabfb5f7bfbd6',
+        '9cfc4e967edb808d679f777bc6702c7d',
+        '39f23369a9d9bacfa530e26304231461',
+        'b2eb05e2c39be9fcda6c19078c6a9d1b'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-256-cbc encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'CBC');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish(function(){return true;});
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-256-cbc decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'CBC');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish(function(){return true;});
+            var out = cipher.output.toHex();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
     // AES-128-CFB
     (function() {
       var keys = [
@@ -249,6 +367,112 @@ function Tests(ASSERT, AES, UTIL) {
       }
     })();
 
+    // AES-192-CFB
+    (function() {
+      var keys = [
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b'
+      ];
+
+      var ivs = [
+        '000102030405060708090A0B0C0D0E0F',
+        'CDC80D6FDDF18CAB34C25909C99A4174',
+        '67CE7F7F81173621961A2B70171D3D7A',
+        '2E1E8A1DD59B88B1C8E60FED1EFAC4C9',
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a',
+        'ae2d8a571e03ac9c9eb76fac45af8e51',
+        '30c81c46a35ce411e5fbc1191a0a52ef',
+        'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        'cdc80d6fddf18cab34c25909c99a4174',
+        '67ce7f7f81173621961a2b70171d3d7a',
+        '2e1e8a1dd59b88b1c8e60fed1efac4c9',
+        'c05f9f9ca9834fa042ae8fba584b09ff'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-192-cfb encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'CFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish();
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-192-cfb decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'CFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish();
+            var out = cipher.output.toHex();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
+    // AES-256-CFB
+    (function() {
+      var keys = [
+        '861009ec4d599fab1f40abc76e6f89880cff5833c79c548c99f9045f191cd90b'
+      ];
+
+      var ivs = [
+        'd927ad81199aa7dcadfdb4e47b6dc694'
+      ];
+
+      var inputs = [
+        'MY-DATA-AND-HERE-IS-MORE-DATA'
+      ];
+
+      var outputs = [
+        '80eb666a9fc9e263faf71e87ffc94451d7d8df7cfcf2606470351dd5ac'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = inputs[i];
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-256-cfb encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'CFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish();
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-256-cfb decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'CFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish();
+            var out = cipher.output.getBytes();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
     // AES-128-OFB
     (function() {
       var keys = [
@@ -297,6 +521,124 @@ function Tests(ASSERT, AES, UTIL) {
             cipher.finish();
             var out = (i !== 1) ?
               cipher.output.toHex() : cipher.output.getBytes();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
+    // AES-192-OFB
+    (function() {
+      var keys = [
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b',
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b'
+      ];
+
+      var ivs = [
+        '000102030405060708090A0B0C0D0E0F',
+        'A609B38DF3B1133DDDFF2718BA09565E',
+        '52EF01DA52602FE0975F78AC84BF8A50',
+        'BD5286AC63AABD7EB067AC54B553F71D'
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a',
+        'ae2d8a571e03ac9c9eb76fac45af8e51',
+        '30c81c46a35ce411e5fbc1191a0a52ef',
+        'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        'cdc80d6fddf18cab34c25909c99a4174',
+        'fcc28b8d4c63837c09e81700c1100401',
+        '8d9a9aeac0f6596f559c6d4daf59a5f2',
+        '6d9f200857ca6c3e9cac524bd9acc92a'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-192-ofb encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'OFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish(function(){return true;});
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-192-ofb decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'OFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish(function(){return true;});
+            var out = cipher.output.toHex();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
+    // AES-256-OFB
+    (function() {
+      var keys = [
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4',
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4'
+      ];
+
+      var ivs = [
+        '000102030405060708090A0B0C0D0E0F',
+        'B7BF3A5DF43989DD97F0FA97EBCE2F4A',
+        'E1C656305ED1A7A6563805746FE03EDC',
+        '41635BE625B48AFC1666DD42A09D96E7'
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a',
+        'ae2d8a571e03ac9c9eb76fac45af8e51',
+        '30c81c46a35ce411e5fbc1191a0a52ef',
+        'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        'dc7e84bfda79164b7ecd8486985d3860',
+        '4febdc6740d20b3ac88f6ad82a4fb08d',
+        '71ab47a086e86eedf39d1c5bba97c408',
+        '0126141d67f37be8538f5a8be740e484'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-256-ofb encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'OFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish(function(){return true;});
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-256-ofb decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'OFB');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish(function(){return true;});
+            var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
           });
         })(i);
@@ -357,47 +699,106 @@ function Tests(ASSERT, AES, UTIL) {
       }
     })();
 
-    // AES-256-CFB
+    // AES-192-CTR
     (function() {
       var keys = [
-        '861009ec4d599fab1f40abc76e6f89880cff5833c79c548c99f9045f191cd90b'
+        '8e73b0f7da0e6452c810f32b809079e562f8ead2522c6b7b'
       ];
 
       var ivs = [
-        'd927ad81199aa7dcadfdb4e47b6dc694'
+        'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'
       ];
 
       var inputs = [
-        'MY-DATA-AND-HERE-IS-MORE-DATA'
+        '6bc1bee22e409f96e93d7e117393172a' +
+          'ae2d8a571e03ac9c9eb76fac45af8e51' +
+          '30c81c46a35ce411e5fbc1191a0a52ef' +
+          'f69f2445df4f9b17ad2b417be66c3710'
       ];
 
       var outputs = [
-        '80eb666a9fc9e263faf71e87ffc94451d7d8df7cfcf2606470351dd5ac'
+        '1abc932417521ca24f2b0459fe7e6e0b' +
+          '090339ec0aa6faefd5ccc2c6f4ce8e94' +
+          '1e36b26bd1ebc670d1bd1d665620abf7' +
+          '4f78a7f6d29809585a97daec58c6b050'
       ];
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
           var key = UTIL.hexToBytes(keys[i]);
           var iv = UTIL.hexToBytes(ivs[i]);
-          var input = inputs[i];
+          var input = UTIL.hexToBytes(inputs[i]);
           var output = UTIL.hexToBytes(outputs[i]);
 
-          it('should aes-256-cfb encrypt: ' + inputs[i], function() {
+          it('should aes-192-ctr encrypt: ' + inputs[i], function() {
             // encrypt w/no padding
-            var cipher = AES.createEncryptionCipher(key, 'CFB');
+            var cipher = AES.createEncryptionCipher(key, 'CTR');
             cipher.start(iv);
             cipher.update(UTIL.createBuffer(input));
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
 
-          it('should aes-256-cfb decrypt: ' + outputs[i], function() {
+          it('should aes-192-ctr decrypt: ' + outputs[i], function() {
             // decrypt w/no padding
-            var cipher = AES.createDecryptionCipher(key, 'CFB');
+            var cipher = AES.createDecryptionCipher(key, 'CTR');
             cipher.start(iv);
             cipher.update(UTIL.createBuffer(output));
             cipher.finish();
-            var out = cipher.output.getBytes();
+            var out = cipher.output.toHex();
+            ASSERT.equal(out, inputs[i]);
+          });
+        })(i);
+      }
+    })();
+
+    // AES-256-CTR
+    (function() {
+      var keys = [
+        '603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4'
+      ];
+
+      var ivs = [
+        'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'
+      ];
+
+      var inputs = [
+        '6bc1bee22e409f96e93d7e117393172a' +
+          'ae2d8a571e03ac9c9eb76fac45af8e51' +
+          '30c81c46a35ce411e5fbc1191a0a52ef' +
+          'f69f2445df4f9b17ad2b417be66c3710'
+      ];
+
+      var outputs = [
+        '601ec313775789a5b7a7f504bbf3d228' +
+          'f443e3ca4d62b59aca84e990cacaf5c5' +
+          '2b0930daa23de94ce87017ba2d84988d' +
+          'dfc9c58db67aada613c2dd08457941a6'
+      ];
+
+      for(var i = 0; i < keys.length; ++i) {
+        (function(i) {
+          var key = UTIL.hexToBytes(keys[i]);
+          var iv = UTIL.hexToBytes(ivs[i]);
+          var input = UTIL.hexToBytes(inputs[i]);
+          var output = UTIL.hexToBytes(outputs[i]);
+
+          it('should aes-256-ctr encrypt: ' + inputs[i], function() {
+            // encrypt w/no padding
+            var cipher = AES.createEncryptionCipher(key, 'CTR');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(input));
+            cipher.finish();
+            ASSERT.equal(cipher.output.toHex(), outputs[i]);
+          });
+
+          it('should aes-256-ctr decrypt: ' + outputs[i], function() {
+            // decrypt w/no padding
+            var cipher = AES.createDecryptionCipher(key, 'CTR');
+            cipher.start(iv);
+            cipher.update(UTIL.createBuffer(output));
+            cipher.finish();
+            var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
           });
         })(i);

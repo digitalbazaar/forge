@@ -798,7 +798,7 @@ var _updateBlock = function(w, input, output, decrypt) {
 
 /**
  * Creates an AES cipher object. CBC (cipher-block-chaining) mode will be
- * used by default, the other supported modes are: CFB.
+ * used by default, the other supported modes are: CFB, OFB, and CTR.
  *
  * The key and iv may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words. If an iv is provided, then
