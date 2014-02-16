@@ -1841,6 +1841,115 @@ util.bytesToIPv6 = function(bytes) {
   return ip.join(':');
 };
 
+/**
+ * Estimates the number of processes that can be run concurrently. If
+ * creating Web Workers, keep in mind that the main JavaScript process needs
+ * its own core.
+ *
+ * @param options the options to use:
+ *          update true to force an update (not use the cached value).
+ * @param callback(err, max) called once the operation completes.
+ */
+util.estimateCores = function(options, callback) {
+  if(typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  options = options || {};
+  if('cores' in util && !options.update) {
+    return callback(null, util.cores);
+  }
+  if(typeof Worker === undefined) {
+    // workers not available
+    util.cores = 1;
+    return callback(null, util.cores);
+  }
+  if(typeof Blob === undefined) {
+    // can't estimate, default to 2
+    util.cores = 2;
+    return callback(null, util.cores);
+  }
+
+  // create worker concurrency estimation code as blob
+  var blobUrl = URL.createObjectURL(new Blob(['(',
+    function() {
+      self.addEventListener('message', function(e) {
+        var st = Date.now();
+        var et = st + 4;
+        while(Date.now() < et);
+        self.postMessage({st: st, et: et});
+      });
+    }.toString(),
+  ')()'], {type: 'application/javascript'}));
+
+  // take 5 samples using 16 cores
+  sample([], 5, 16);
+
+  function sample(max, samples, numWorkers) {
+    if(samples === 0) {
+      var avg = 0;
+      for(var i = 0; i < max.length; ++i) {
+        avg += max[i];
+      }
+      // get overlap average
+      avg = Math.floor(avg / max.length);
+      util.cores = Math.max(1, avg);
+      URL.revokeObjectURL(blobUrl);
+      return callback(null, util.cores);
+    }
+    map(numWorkers, function(err, results) {
+      max.push(reduce(numWorkers, results));
+      sample(max, samples - 1, numWorkers);
+    });
+  }
+
+  function reduce(numWorkers, results) {
+    // find overlapping time windows
+    var overlaps = [];
+    for(var n = 0; n < numWorkers; ++n) {
+      var r1 = results[n];
+      var overlap = overlaps[n] = [];
+      for(var i = 0; i < numWorkers; ++i) {
+        if(n === i) {
+          continue;
+        }
+        var r2 = results[i];
+        if((r1.st > r2.st && r1.st < r2.et) ||
+          (r2.st > r1.st && r2.st < r1.et)) {
+          overlap.push(i);
+        }
+      }
+    }
+    // get maximum overlaps ... don't include overlapping worker itself
+    // as the main JS process was also being scheduled during the work and
+    // would have to be subtracted from the estimate anyway
+    return overlaps.reduce(function(max, overlap) {
+      return Math.max(max, overlap.length);
+    }, 0);
+  }
+
+  function map(numWorkers, callback) {
+    var workers = [];
+    var results = [];
+    for(var i = 0; i < numWorkers; ++i) {
+      var worker = new Worker(blobUrl);
+      worker.addEventListener('message', function(e) {
+        results.push(e.data);
+        if(results.length === numWorkers) {
+          for(var i = 0; i < numWorkers; ++i) {
+            workers[i].terminate();
+          }
+          callback(null, results);
+        }
+      });
+      workers.push(worker);
+    }
+    for(var i = 0; i < numWorkers; ++i) {
+      workers[i].postMessage(i);
+    }
+  }
+};
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */

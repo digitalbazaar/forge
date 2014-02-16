@@ -1533,7 +1533,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
  * @param [options] options for key-pair generation:
  *          workerScript the worker script URL.
  *          workers the number of web workers (if supported) to use,
- *            (default: 2).
+ *            (default: 2, -1 to use estimated cores minus one).
  *          workLoad the size of the work load, ie: number of possible prime
  *            numbers for each web worker to check per work assignment,
  *            (default: 100).
@@ -1567,9 +1567,22 @@ function _generateKeyPair(state, options, callback) {
   var THIRTY = new BigInteger(null);
   THIRTY.fromInt(30);
   var op_or = function(x,y) { return x|y; };
+  if(numWorkers === -1) {
+    return forge.util.estimateCores(function(err, cores) {
+      if(err) {
+        // default to 2
+        cores = 2;
+      }
+      numWorkers = cores - 1;
+      generate();
+    });
+  }
   generate();
 
   function generate() {
+    // require at least 1 worker
+    numWorkers = Math.max(1, numWorkers);
+
     // find p and then q (done in series to simplify setting worker number)
     getPrime(state.pBits, function(err, num) {
       if(err) {

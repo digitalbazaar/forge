@@ -23,7 +23,7 @@ function async() {
   var st = +new Date();
   forge.pki.rsa.generateKeyPair({
     bits: bits,
-    workers: 2,
+    workers: -1,
     /*workLoad: 100,*/
     workerScript: 'forge/prime.worker.js'
   }, function(err, keypair) {
