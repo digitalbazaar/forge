@@ -1888,12 +1888,10 @@ util.estimateCores = function(options, callback) {
 
   function sample(max, samples, numWorkers) {
     if(samples === 0) {
-      var avg = 0;
-      for(var i = 0; i < max.length; ++i) {
-        avg += max[i];
-      }
       // get overlap average
-      avg = Math.floor(avg / max.length);
+      var avg = Math.floor(max.reduce(function(avg, x) {
+        return avg + x;
+      }, 0) / max.length);
       util.cores = Math.max(1, avg);
       URL.revokeObjectURL(blobUrl);
       return callback(null, util.cores);
@@ -1902,6 +1900,27 @@ util.estimateCores = function(options, callback) {
       max.push(reduce(numWorkers, results));
       sample(max, samples - 1, numWorkers);
     });
+  }
+
+  function map(numWorkers, callback) {
+    var workers = [];
+    var results = [];
+    for(var i = 0; i < numWorkers; ++i) {
+      var worker = new Worker(blobUrl);
+      worker.addEventListener('message', function(e) {
+        results.push(e.data);
+        if(results.length === numWorkers) {
+          for(var i = 0; i < numWorkers; ++i) {
+            workers[i].terminate();
+          }
+          callback(null, results);
+        }
+      });
+      workers.push(worker);
+    }
+    for(var i = 0; i < numWorkers; ++i) {
+      workers[i].postMessage(i);
+    }
   }
 
   function reduce(numWorkers, results) {
@@ -1927,27 +1946,6 @@ util.estimateCores = function(options, callback) {
     return overlaps.reduce(function(max, overlap) {
       return Math.max(max, overlap.length);
     }, 0);
-  }
-
-  function map(numWorkers, callback) {
-    var workers = [];
-    var results = [];
-    for(var i = 0; i < numWorkers; ++i) {
-      var worker = new Worker(blobUrl);
-      worker.addEventListener('message', function(e) {
-        results.push(e.data);
-        if(results.length === numWorkers) {
-          for(var i = 0; i < numWorkers; ++i) {
-            workers[i].terminate();
-          }
-          callback(null, results);
-        }
-      });
-      workers.push(worker);
-    }
-    for(var i = 0; i < numWorkers; ++i) {
-      workers[i].postMessage(i);
-    }
   }
 };
 
