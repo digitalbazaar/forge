@@ -1874,6 +1874,7 @@ util.estimateCores = function(options, callback) {
   var blobUrl = URL.createObjectURL(new Blob(['(',
     function() {
       self.addEventListener('message', function(e) {
+        // run worker for 4 ms
         var st = Date.now();
         var et = st + 4;
         while(Date.now() < et);
@@ -1882,7 +1883,7 @@ util.estimateCores = function(options, callback) {
     }.toString(),
   ')()'], {type: 'application/javascript'}));
 
-  // take 5 samples using 16 cores
+  // take 5 samples using 16 workers
   sample([], 5, 16);
 
   function sample(max, samples, numWorkers) {
