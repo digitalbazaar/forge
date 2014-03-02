@@ -80,6 +80,12 @@ Include the file via:
 <script src="js/forge.min.js"></script>
 ```
 
+Note that the minify script depends on the requirejs package,
+and that the requirejs binary 'r.js' assumes that the name of
+the node binary is 'node' not 'nodejs', as it is on some
+systems. You may need to change the hashbang line to use
+'nodejs' or run the command manually.
+
 To create a single non-minimized file that can be included in
 the browser:
 
