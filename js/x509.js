@@ -1925,7 +1925,7 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
     csr.attributes.push(attr);
   };
   csr.attributes = pki.CRIAttributesAsArray(
-    capture.certificationRequestInfoAttributes);
+    capture.certificationRequestInfoAttributes || []);
 
   return csr;
 };
