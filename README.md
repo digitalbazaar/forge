@@ -814,7 +814,7 @@ var pem = pki.privateKeyToPem(privateKey);
 var privateKey = pki.privateKeyFromAsn1(rsaPrivateKey);
 
 // convert a Forge private key to an ASN.1 RSAPrivateKey
-var rsaPrivateKey = pki.publicKeyToAsn1(privateKey);
+var rsaPrivateKey = pki.privateKeyToAsn1(privateKey);
 
 // wrap an RSAPrivateKey ASN.1 object in a PKCS#8 ASN.1 PrivateKeyInfo
 var privateKeyInfo = pki.wrapRsaPrivateKey(rsaPrivateKey);
