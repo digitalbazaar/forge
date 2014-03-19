@@ -81,6 +81,23 @@ pki.privateKeyToPem = function(key, maxline) {
   return forge.pem.encode(msg, {maxline: maxline});
 };
 
+/**
+ * Converts a PrivateKeyInfo to PEM format.
+ *
+ * @param pki the PrivateKeyInfo.
+ * @param maxline the maximum characters per line, defaults to 64.
+ *
+ * @return the PEM-formatted private key.
+ */
+pki.privateKeyInfoToPem = function(pki, maxline) {
+  // convert to DER, then PEM-encode
+  var msg = {
+    type: 'PRIVATE KEY',
+    body: asn1.toDer(pki).getBytes()
+  };
+  return forge.pem.encode(msg, {maxline: maxline});
+};
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */

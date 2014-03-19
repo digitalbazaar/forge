@@ -17,6 +17,22 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
       'KLuGFyPlWv3fVWHf99KpAkBQFKk3MRMl6IGJZUEFQe4l5whm8LkGU4acSqv9B3xt\r\n' +
       'qROkCrsFrMPqjuuzEmyHoQZ64r2PLJg7FOuyhBnQUOt4\r\n' +
       '-----END RSA PRIVATE KEY-----\r\n',
+    privateKeyInfo: '-----BEGIN PRIVATE KEY-----\r\n' +
+      'MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAMvQS6BSI0Yxaxws\r\n' +
+      'BUzRWgx2ENkQk6p2xQynH1TRhkjuzOiQmpA0jCiSJDoSic2dZIyUi/LjoCGeVFif\r\n' +
+      '57N5N5Tt4wZOQ/dUXb29cGj50url77xXIDJDcXMzXAji2ziFEAIXzDqarKBdDuL9\r\n' +
+      'IO7z+tepEa2+cz7PQxgN0qjzR5/PAgMBAAECgYAjOQY42Lkb4mJ+ZeUsl2mWibjz\r\n' +
+      'qne6l/gJ7b/uap9ob0yeTI9JqKsoP8le9+E01aSQ3wMooMoFxVUSU+A5FhPSrCtZ\r\n' +
+      'zu54sExQJtFdvVnJ8S6WKYbRHeSNSHs1hq4NoiRWB/KRcZJAxnHwWhpPovTzTN37\r\n' +
+      'R6YoMNhGtv7+SAk0kQJBAOhRmiILYr8NY1iHf+mlnRqd7bLhIGYlQclUw9DYISDG\r\n' +
+      'yslPF63rrxyQ0Ipo4//dUU+hYLjV/XsO8qqehgg02e0CQQDgltkFkFVStAWEeWul\r\n' +
+      'dPiPOq07ZGUpnMSryqYVl8QSvE5PVYzLIKKUBDmBQpqt2jUp/SiYLxer+471lh0Q\r\n' +
+      'PnkrAkEAuzpwnrlQVqrigsmJA/Mt3vKiS4R1yPyDvU8sFNbqM/EiIwU0Dz2fPcVT\r\n' +
+      '3AhWn7Fsw2FKgwwqog9U8L6bRGfbrQJBAMAjzd9Yr+ZlZSMEzfdrrwq6ZGIfbfy/\r\n' +
+      'xfJDGPv4LyLoPwbYZe+SKAUB6ECRvstll34ou4YXI+Va/d9VYd/30qkCQFAUqTcx\r\n' +
+      'EyXogYllQQVB7iXnCGbwuQZThpxKq/0HfG2pE6QKuwWsw+qO67MSbIehBnrivY8s\r\n' +
+      'mDsU67KEGdBQ63g=\r\n' +
+      '-----END PRIVATE KEY-----\r\n',
     publicKey: '-----BEGIN PUBLIC KEY-----\r\n' +
       'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDL0EugUiNGMWscLAVM0VoMdhDZ\r\n' +
       'EJOqdsUMpx9U0YZI7szokJqQNIwokiQ6EonNnWSMlIvy46AhnlRYn+ezeTeU7eMG\r\n' +
@@ -51,6 +67,13 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
     it('should convert public key to/from PEM', function() {
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       ASSERT.equal(PKI.publicKeyToPem(publicKey), _pem.publicKey);
+    });
+
+    it('should convert a PKCS#8 PrivateKeyInfo to/from PEM', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKeyInfo);
+      var rsaPrivateKey = PKI.privateKeyToAsn1(privateKey);
+      var pki = PKI.wrapRsaPrivateKey(rsaPrivateKey);
+      ASSERT.equal(PKI.privateKeyInfoToPem(pki), _pem.privateKeyInfo);
     });
 
     (function() {
@@ -100,12 +123,12 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
 
     it('should generate missing CRT parameters, sign, and verify', function() {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
-      
+
       // remove dQ, dP, and qInv
       delete privateKey.dQ;
       delete privateKey.dP;
       delete privateKey.qInv;
-      
+
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
       md.update('0123456789abcdef');
