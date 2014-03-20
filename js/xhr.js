@@ -445,6 +445,7 @@ xhrApi.create = function(options) {
     case 'GET':
     case 'HEAD':
     case 'OPTIONS':
+    case 'PATCH':
     case 'POST':
     case 'PUT':
       // valid method
