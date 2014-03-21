@@ -1,7 +1,12 @@
 /**
- * 
- * Functions to output keys in SSH-friendly formats
+ * Functions to output keys in SSH-friendly formats.
  *
+ * This is part of the Forge project which may be used under the terms of
+ * either the BSD License or the GNU General Public License (GPL) Version 2.
+ *
+ * See: https://github.com/digitalbazaar/forge/blob/cbebca3780658703d925b61b2caffb1d263a6c1d/LICENSE
+ *
+ * @author https://github.com/shellac
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -10,58 +15,14 @@ function initModule(forge) {
 var ssh = forge.ssh = forge.ssh || {};
 
 /**
-* Adds len(val) then val to a buffer
-*
-* @param buffer the buffer to add to
-* @param val a big integer
-*
-*/
-function _addToBuffer(buffer, val) {
-  var hexVal = val.toString(16);
-  // Ensure 2s complement +ve
-  if(hexVal[0] >= '8') {
-    hexVal = '00' + hexVal;
-  }
-  var bytes = forge.util.hexToBytes(hexVal);
-  buffer.putInt32(bytes.length);
-  buffer.putBytes(bytes);
-}
-
-/**
-* Adds len(val) then val to a buffer
-*
-* @param buffer the buffer to add to
-* @param val a string
-*
-*/
-function _addStringToBuffer(buffer, val) {
-  buffer.putInt32(val.length);
-  buffer.putString(val);
-}
-
-/**
-* sha1 hash the arguments into one value
-* 
-* @return sha1 hash of the provided arguments
-*/
-function _sha1(val) {
-  var sha = forge.md.sha1.create();
-  var num = arguments.length;
-  for (var i = 0; i < num; i++) {
-    sha.update(arguments[i]);
-  }
-  return sha.digest();
-}
-
-/**
-* Encodes (and optionally encrypt) a private RSA key as a Putty PPK file
-*
-* @param privateKey the key
-* @param passphrase a passphrase to protect the key
-* @param comment a comment to include in the key file
-*
-* @return the PPK file as a string
-*/
+ * Encodes (and optionally encrypts) a private RSA key as a Putty PPK file.
+ *
+ * @param privateKey the key.
+ * @param passphrase a passphrase to protect the key (falsy for no encryption).
+ * @param comment a comment to include in the key file.
+ *
+ * @return the PPK file as a string.
+ */
 ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
   comment = comment || '';
   passphrase = passphrase || '';
@@ -72,46 +33,50 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
   ppk += 'Encryption: ' + encryptionAlgorithm + '\r\n';
   ppk += 'Comment: ' + comment + '\r\n';
 
-  // Public key into buffer for ppk
+  // public key into buffer for ppk
   var pubbuffer = forge.util.createBuffer();
   _addStringToBuffer(pubbuffer, algorithm);
-  _addToBuffer(pubbuffer, privateKey.e);
-  _addToBuffer(pubbuffer, privateKey.n);
-  
-  // Write public key
+  _addBigIntegerToBuffer(pubbuffer, privateKey.e);
+  _addBigIntegerToBuffer(pubbuffer, privateKey.n);
+
+  // write public key
   var pub = forge.util.encode64(pubbuffer.bytes(), 64);
   var length = Math.floor(pub.length / 66) + 1; // 66 = 64 + \r\n
-  ppk += "Public-Lines: " + length + "\r\n";
-  ppk += pub
-  
-  // Private key into a buffer
+  ppk += 'Public-Lines: ' + length + '\r\n';
+  ppk += pub;
+
+  // private key into a buffer
   var privbuffer = forge.util.createBuffer();
-  _addToBuffer(privbuffer, privateKey.d);
-  _addToBuffer(privbuffer, privateKey.p);
-  _addToBuffer(privbuffer, privateKey.q);
-  _addToBuffer(privbuffer, privateKey.qInv);
-  
-  // Encrypting the private key
+  _addBigIntegerToBuffer(privbuffer, privateKey.d);
+  _addBigIntegerToBuffer(privbuffer, privateKey.p);
+  _addBigIntegerToBuffer(privbuffer, privateKey.q);
+  _addBigIntegerToBuffer(privbuffer, privateKey.qInv);
+
+  // optionally encrypt the private key
   var priv;
-  if (passphrase !== '') {
-    // Encrypt RSA key using passphrase
+  if(!passphrase) {
+    // use the unencrypted buffer
+    priv = forge.util.encode64(privbuffer.bytes(), 64);
+  }
+  else {
+    // encrypt RSA key using passphrase
     var encLen = privbuffer.length() + 16 - 1;
     encLen -= encLen % 16;
 
-    // Pad private key with sha1-d data -- needs to be a multiple of 16
+    // pad private key with sha1-d data -- needs to be a multiple of 16
     var padding = _sha1(privbuffer.bytes());
 
     padding.truncate(padding.length() - encLen + privbuffer.length());
     privbuffer.putBuffer(padding);
 
     var aeskey = forge.util.createBuffer();
-    aeskey.putBuffer(_sha1('\0\0\0\0', passphrase));
-    aeskey.putBuffer(_sha1('\0\0\0\1', passphrase));
-            
+    aeskey.putBuffer(_sha1('\x00\x00\x00\x00', passphrase));
+    aeskey.putBuffer(_sha1('\x00\x00\x00\x01', passphrase));
+
     // encrypt some bytes using CBC mode
     // key is 40 bytes, so truncate *by* 8 bytes
     var cipher = forge.aes.createEncryptionCipher(aeskey.truncate(8), 'CBC');
-    cipher.start('\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0');
+    cipher.start(forge.util.createBuffer().fillWithByte(0, 16));
     cipher.update(privbuffer.copy());
     cipher.finish();
     var encrypted = cipher.output;
@@ -121,20 +86,15 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
     encrypted.truncate(16); // all padding
 
     priv = forge.util.encode64(encrypted.bytes(), 64);
-  } else {
-    // use the enencrypted buffer
-    priv = forge.util.encode64(privbuffer.bytes(), 64);
   }
 
-  // Output private key
+  // output private key
   length = Math.floor(priv.length / 66) + 1; // 64 + \r\n
-  ppk += "\r\nPrivate-Lines: " + length + "\r\n";
+  ppk += '\r\nPrivate-Lines: ' + length + '\r\n';
   ppk += priv;
-  
+
   // MAC
   var mackey = _sha1('putty-private-key-file-mac-key', passphrase);
-  
-  //console.log('Mac key: ' + mackey.toHex());
 
   var macbuffer = forge.util.createBuffer();
   _addStringToBuffer(macbuffer, algorithm);
@@ -144,55 +104,93 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
   macbuffer.putBuffer(pubbuffer);
   macbuffer.putInt32(privbuffer.length());
   macbuffer.putBuffer(privbuffer);
-  
+
   var hmac = forge.hmac.create();
-  
   hmac.start('sha1', mackey);
   hmac.update(macbuffer.bytes());
-  
-  ppk += "\r\nPrivate-MAC: " + hmac.digest().toHex() + "\r\n";
+
+  ppk += '\r\nPrivate-MAC: ' + hmac.digest().toHex() + '\r\n';
 
   return ppk;
 };
 
 /**
-* Encodes a public RSA key as an OpenSSH file
-*
-* @param key the key
-* @param comment a comment
-*
-* @return the public key in OpenSSH format
-*/
+ * Encodes a public RSA key as an OpenSSH file.
+ *
+ * @param key the key.
+ * @param comment a comment.
+ *
+ * @return the public key in OpenSSH format.
+ */
 ssh.publicKeyToOpenSSH = function(key, comment) {
   var type = 'ssh-rsa';
   comment = comment || '';
 
   var buffer = forge.util.createBuffer();
-
   _addStringToBuffer(buffer, type);
-  _addToBuffer(buffer, key.e);
-  _addToBuffer(buffer, key.n);
+  _addBigIntegerToBuffer(buffer, key.e);
+  _addBigIntegerToBuffer(buffer, key.n);
 
   return type + ' ' + forge.util.encode64(buffer.bytes()) + ' ' + comment;
+};
+
+/**
+ * Encodes a private RSA key as an OpenSSH file.
+ *
+ * @param key the key.
+ * @param passphrase a passphrase to protect the key (falsy for no encryption).
+ *
+ * @return the public key in OpenSSH format.
+ */
+ssh.privateKeyToOpenSSH = function(privateKey, passphrase) {
+  if(!passphrase) {
+    return forge.pki.privateKeyToPem(privateKey);
+  }
+  // OpenSSH private key is just a legacy format, it seems
+  return forge.pki.encryptRsaPrivateKey(privateKey, passphrase,
+    {legacy: true, algorithm: 'aes128'});
+};
+
+/**
+ * Adds len(val) then val to a buffer.
+ *
+ * @param buffer the buffer to add to.
+ * @param val a big integer.
+ */
+function _addBigIntegerToBuffer(buffer, val) {
+  var hexVal = val.toString(16);
+  // ensure 2s complement +ve
+  if(hexVal[0] >= '8') {
+    hexVal = '00' + hexVal;
+  }
+  var bytes = forge.util.hexToBytes(hexVal);
+  buffer.putInt32(bytes.length);
+  buffer.putBytes(bytes);
 }
 
 /**
-* Encodes a private RSA key as an OpenSSH file
-*
-* @param key the key
-* @param passphrase a passphrase to protect the key
-*
-* @return the public key in OpenSSH format
-*/
-ssh.privateKeyToOpenSSH = function(privateKey, passphrase) {
-  passphrase = passphrase || '';
-  if (passphrase === '') {
-    return forge.pki.privateKeyToPem(privateKey);
-  } else {
-    // OpenSSH private key is just a legacy format, it seems
-    return forge.pki.encryptRsaPrivateKey(privateKey, passphrase, 
-      {legacy: true, algorithm: 'aes128'})
+ * Adds len(val) then val to a buffer.
+ *
+ * @param buffer the buffer to add to.
+ * @param val a string.
+ */
+function _addStringToBuffer(buffer, val) {
+  buffer.putInt32(val.length);
+  buffer.putString(val);
+}
+
+/**
+ * Hashes the arguments into one value using SHA-1.
+ *
+ * @return the sha1 hash of the provided arguments.
+ */
+function _sha1() {
+  var sha = forge.md.sha1.create();
+  var num = arguments.length;
+  for (var i = 0; i < num; ++i) {
+    sha.update(arguments[i]);
   }
+  return sha.digest();
 }
 
 } // end module implementation
