@@ -151,6 +151,19 @@ More advanced tests need TLS enabled::
 
     $ ./tests/server.py --tls
 
+## Contributing
+---------------
+
+Any contributions (eg: PRs) that are accepted will be brought under the same
+license used by the rest of the Forge project. This license allows Forge to
+be used under the terms of either the BSD License or the GNU General Public
+License (GPL) Version 2.
+
+See: [LICENSE](https://github.com/digitalbazaar/forge/blob/cbebca3780658703d925b61b2caffb1d263a6c1d/LICENSE)
+
+If a contribution contains 3rd party source code with its own license, it
+may retain it, so long as that license is compatible with the Forge license.
+
 ## Documentation
 ----------------
 
