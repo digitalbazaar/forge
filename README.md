@@ -171,6 +171,7 @@ may retain it, so long as that license is compatible with the Forge license.
 
 * [TLS](#tls)
 * [HTTP](#http)
+* [SSH](#ssh)
 * [XHR](#xhr)
 * [Sockets](#socket)
 
@@ -450,6 +451,24 @@ var someAsyncDataHandler = function(bytes) {
     }
   }
 };
+```
+
+<a name="ssh" />
+### SSH
+
+Provides some SSH utility functions.
+
+__Examples__
+
+```js
+// encodes (and optionally encrypts) a private RSA key as a Putty PPK file
+forge.ssh.privateKeyToPutty(privateKey, passphrase, comment);
+
+// encodes a public RSA key as an OpenSSH file
+forge.ssh.publicKeyToOpenSSH(key, comment);
+
+// encodes a private RSA key as an OpenSSH file
+forge.ssh.privateKeyToOpenSSH(privateKey, passphrase);
 ```
 
 <a name="xhr" />
