@@ -618,7 +618,7 @@ var step = function() {
   else {
     // done, turn off progress indicator, use state.keys
   }
-});
+};
 // turn on progress indicator, schedule generation to run
 setTimeout(step);
 
