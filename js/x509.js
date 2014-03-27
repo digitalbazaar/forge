@@ -2234,11 +2234,10 @@ function _getAttributesAsJson(attrs) {
   var rval = {};
   for(var i = 0; i < attrs.length; ++i) {
     var attr = attrs[i];
-    console.log('attr', attr);
     if(attr.shortName && (
       attr.valueTagClass === asn1.Type.UTF8 ||
       attr.valueTagClass === asn1.Type.PRINTABLESTRING ||
-      attr.valueTagClass === asn1.Type.IA5String)) {
+      attr.valueTagClass === asn1.Type.IA5STRING)) {
       var value = attr.value;
       if(attr.valueTagClass === asn1.Type.UTF8) {
         value = forge.util.encodeUtf8(attr.value);
