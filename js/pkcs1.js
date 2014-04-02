@@ -147,8 +147,9 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
  *
  * @param key the RSA key to use.
  * @param em the encoded message to decode.
- * @param label an optional label to use.
- * @param md the message digest object to use, undefined for SHA-1.
+ * @param options the options to use:
+ *          label an optional label to use.
+ *          md the message digest object to use, undefined for SHA-1.
  *
  * @return the decoded message bytes.
  */
