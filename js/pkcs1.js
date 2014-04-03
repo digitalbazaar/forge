@@ -63,6 +63,8 @@ var pkcs1 = forge.pkcs1 = forge.pkcs1 || {};
  *          label an optional label to use.
  *          seed the seed to use.
  *          md the message digest object to use, undefined for SHA-1.
+ *          mgf1 optional mgf1 parameters:
+ *            md the message digest object to use for MGF1.
  *
  * @return the encoded message bytes.
  */
@@ -71,6 +73,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var label = undefined;
   var seed = undefined;
   var md = undefined;
+  var mgf1Md = undefined;
   // legacy args (label, seed, md)
   if(typeof options === 'string') {
     label = options;
@@ -81,14 +84,22 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
     label = options.label || undefined;
     seed = options.seed || undefined;
     md = options.md || undefined;
+    if(options.mgf1 && options.mgf1.md) {
+      mgf1Md = options.mgf1.md;
+    }
   }
 
-  // default to SHA-1 message digest
+  // default OAEP to SHA-1 message digest
   if(!md) {
     md = forge.md.sha1.create();
   }
   else {
     md.start();
+  }
+
+  // default MGF-1 to same as OAEP
+  if(!mgf1Md) {
+    mgf1Md = md;
   }
 
   // compute length in bytes and check output
@@ -128,10 +139,10 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
     };
   }
 
-  var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, md);
+  var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
   var maskedDB = forge.util.xorBytes(DB, dbMask, DB.length);
 
-  var seedMask = rsa_mgf1(maskedDB, md.digestLength, md);
+  var seedMask = rsa_mgf1(maskedDB, md.digestLength, mgf1Md);
   var maskedSeed = forge.util.xorBytes(seed, seedMask, seed.length);
 
   // return encoded message
@@ -149,7 +160,9 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
  * @param em the encoded message to decode.
  * @param options the options to use:
  *          label an optional label to use.
- *          md the message digest object to use, undefined for SHA-1.
+ *          md the message digest object to use for OAEP, undefined for SHA-1.
+ *          mgf1 optional mgf1 parameters:
+ *            md the message digest object to use for MGF1.
  *
  * @return the decoded message bytes.
  */
@@ -157,6 +170,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   // parse args
   var label = undefined;
   var md = undefined;
+  var mgf1Md = undefined;
   // legacy args
   if(typeof options === 'string') {
     label = options;
@@ -165,6 +179,9 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   else if(options) {
     label = options.label || undefined;
     md = options.md || undefined;
+    if(options.mgf1 && options.mgf1.md) {
+      mgf1Md = options.mgf1.md;
+    }
   }
 
   // compute length in bytes
@@ -178,12 +195,17 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
     };
   }
 
-  // default to SHA-1 message digest
+  // default OAEP to SHA-1 message digest
   if(md === undefined) {
     md = forge.md.sha1.create();
   }
   else {
     md.start();
+  }
+
+  // default MGF-1 to same as OAEP
+  if(!mgf1Md) {
+    mgf1Md = md;
   }
 
   if(keyLength < 2 * md.digestLength + 2) {
@@ -203,10 +225,10 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   var maskedSeed = em.substring(1, md.digestLength + 1);
   var maskedDB = em.substring(1 + md.digestLength);
 
-  var seedMask = rsa_mgf1(maskedDB, md.digestLength, md);
+  var seedMask = rsa_mgf1(maskedDB, md.digestLength, mgf1Md);
   var seed = forge.util.xorBytes(maskedSeed, seedMask, maskedSeed.length);
 
-  var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, md);
+  var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
   var db = forge.util.xorBytes(maskedDB, dbMask, maskedDB.length);
 
   var lHashPrime = db.substring(0, md.digestLength);
@@ -248,6 +270,10 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
 };
 
 function rsa_mgf1(seed, maskLength, hash) {
+  // default to SHA-1 message digest
+  if(!hash) {
+    hash = forge.md.sha1.create();
+  }
   var t = '';
   var count = Math.ceil(maskLength / hash.digestLength);
   for(var i = 0; i < count; ++i) {

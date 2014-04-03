@@ -647,6 +647,35 @@ var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP');
 
 // decrypt data with a private key using RSAES-OAEP
 var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP');
+
+// encrypt data with a public key using RSAES-OAEP/SHA-256
+var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP', {
+  md: forge.util.sha256.create()
+});
+
+// decrypt data with a private key using RSAES-OAEP/SHA-256
+var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
+  md: forge.util.sha256.create()
+});
+
+// encrypt data with a public key using RSAES-OAEP/SHA-256/MGF1-SHA-1
+// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding
+var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP', {
+  md: forge.util.sha256.create(),
+  mgf1: {
+    md: forge.util.sha1.create()
+  }
+});
+
+// decrypt data with a private key using RSAES-OAEP/SHA-256/MGF1-SHA-1
+// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding
+var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
+  md: forge.util.sha256.create(),
+  mgf1: {
+    md: forge.util.sha1.create()
+  }
+});
+
 ```
 
 <a name="x509" />
