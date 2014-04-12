@@ -281,7 +281,11 @@ function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
       if(bagType !== undefined && bag.type !== bagType) {
         continue;
       }
-
+      // only filter by bag type, no attribute specified
+      if(attrName === null) {
+        result.push(bag);
+        continue;
+      }
       if(bag.attributes[attrName] !== undefined &&
         bag.attributes[attrName].indexOf(attrValue) >= 0) {
         result.push(bag);
@@ -335,7 +339,9 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
      *          [friendlyName] the friendly name to search for.
      *          [bagType] bag type to narrow each attribute search by.
      *
-     * @return a map of attribute type to an array of matching bags.
+     * @return a map of attribute type to an array of matching bags or, if no
+     *           attribute was given but a bag type, the map key will be the
+     *           bag type.
      */
     getBags: function(filter) {
       var rval = {};
@@ -346,6 +352,13 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       }
       else if('localKeyIdHex' in filter) {
         localKeyId = forge.util.hexToBytes(filter.localKeyIdHex);
+      }
+
+      // filter on bagType only
+      if(localKeyId === undefined && !('friendlyName' in filter) &&
+        'bagType' in filter) {
+        rval[filter.bagType] = _getBagsByAttribute(
+          pfx.safeContents, null, null, filter.bagType);
       }
 
       if(localKeyId !== undefined) {

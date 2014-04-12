@@ -213,11 +213,26 @@ function Tests(ASSERT, FORGE) {
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
-        friendlyName: 'signaturekey',
+        friendlyName: 'CN=1002753325,2.5.4.5=#130b3130303237353333323543',
         bagType: PKI.oids.certBag
       });
 
-      ASSERT.equal(bags.friendlyName.length, 0);
+      ASSERT.equal(bags.friendlyName.length, 1);
+      ASSERT.equal(bags.friendlyName[0].attributes.friendlyName[0], 'CN=1002753325,2.5.4.5=#130b3130303237353333323543');
+    });
+
+    it('should get all cert bags', function() {
+      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Asn1 = ASN1.fromDer(p12Der);
+      var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
+      var bags = p12.getBags({
+        bagType: PKI.oids.certBag
+      });
+
+      ASSERT.equal(bags[PKI.oids.certBag].length, 6);
+      for(var i = 0; i < bags[PKI.oids.certBag].length; ++i) {
+        ASSERT.equal(bags[PKI.oids.certBag][i].type, PKI.oids.certBag);
+      }
     });
 
     it('should get bags by local key ID', function() {

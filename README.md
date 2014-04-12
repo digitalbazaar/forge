@@ -983,7 +983,8 @@ var p12Der = forge.util.decode64(p12b64);
 var p12Asn1 = forge.asn1.fromDer(p12Der);
 // decrypt p12
 var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, 'password');
-// look at pkcs12.safeContents
+// p12.safeContents is an array of safe contents, each of
+// which contains an array of safeBags
 
 // get bags by friendlyName
 var bags = pkcs12.getBags({friendlyName: 'test'});
@@ -993,6 +994,17 @@ var bags = pkcs12.getBags({localKeyId: buffer});
 
 // get bags by localKeyId (input in hex)
 var bags = pkcs12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879'});
+
+// get bags by type
+var bags = pkcs12.getBags({bagType: forge.pki.oids.certBag});
+// each bag as a 'cert' property with the certificate object
+var cert = bags[0].cert;
+
+// get bags by friendlyName and filter on bag type
+var bags = pkcs12.getBags({
+  friendlyName: 'test',
+  bagType: forge.pki.oids.certBag
+});
 
 // generate p12, base64 encode
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
