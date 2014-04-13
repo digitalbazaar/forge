@@ -585,7 +585,8 @@ tls.ContentType = {
   change_cipher_spec: 20,
   alert: 21,
   handshake: 22,
-  application_data: 23
+  application_data: 23,
+  heartbeat: 24
 };
 
 /**
@@ -2064,6 +2065,24 @@ tls.handleApplicationData = function(c, record) {
 };
 
 /**
+ * Called when a client receives an Heartbeat record.
+ *
+ * @param c the connection.
+ * @param record the record.
+ */
+tls.handleHeartbeat = function (c, record) {
+  // buffer data, notify that its ready
+  c.data.putBuffer(record.fragment);
+  if (c.heartbeatReady) {
+    c.heartbeatReady(c);
+  }
+
+  // continue
+  c.process();
+
+};
+
+/**
  * The transistional state tables for receiving TLS records. It maps the
  * current TLS engine state and a received record to a function to handle the
  * record and update the state.
@@ -2144,18 +2163,19 @@ var F0 = tls.handleChangeCipherSpec;
 var F1 = tls.handleAlert;
 var F2 = tls.handleHandshake;
 var F3 = tls.handleApplicationData;
+var F4 = tls.handleHeartbeat;
 var ctTable = [];
 ctTable[tls.ConnectionEnd.client] = [
 //      CC,AL,HS,AD
-/*SHE*/[__,F1,F2,__],
-/*SCE*/[__,F1,F2,__],
-/*SKE*/[__,F1,F2,__],
-/*SCR*/[__,F1,F2,__],
-/*SHD*/[__,F1,F2,__],
-/*SCC*/[F0,F1,__,__],
-/*SFI*/[__,F1,F2,__],
-/*SAD*/[__,F1,F2,F3],
-/*SER*/[__,F1,F2,__]
+/*SHE*/[__,F1,F2,__,__],
+/*SCE*/[__,F1,F2,__,__],
+/*SKE*/[__,F1,F2,__,__],
+/*SCR*/[__,F1,F2,__,__],
+/*SHD*/[__,F1,F2,__,__],
+/*SCC*/[F0,F1,__,__,__],
+/*SFI*/[__,F1,F2,__,__],
+/*SAD*/[__,F1,F2,F3,F4],
+/*SER*/[__,F1,F2,__,__]
 ];
 
 // map server current expect state and content type to function
@@ -3615,6 +3635,7 @@ tls.createConnection = function(options) {
     data: forge.util.createBuffer(),
     tlsDataReady: options.tlsDataReady,
     dataReady: options.dataReady,
+    heartbeatReady: options.heartbeatReady,
     closed: options.closed,
     error: function(c, ex) {
       // set origin if not set
@@ -3956,6 +3977,21 @@ tls.createConnection = function(options) {
   };
 
   /**
+   * Requests that a heartbeat data be packaged into a TLS record. The
+   * tlsHeartbeatReady handles will be called when TLS record(s) have been
+   * prepared.
+   *
+   * @param data the application data to send as payload.
+   *
+   * @return true on success, false on failure
+   */
+  c.prepareHeartbeat = function(data) {
+    tls.queue(c, tls.createRecord({
+      type: tls.ContentType.heartbeat,
+      data: forge.util.createBuffer(data)
+    }));
+    return tls.flush(c);
+  };
    * Closes the connection (sends a close_notify alert).
    *
    * @param clearFail true to clear the fail flag (default: true).
