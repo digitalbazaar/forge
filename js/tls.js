@@ -3992,6 +3992,7 @@ tls.createConnection = function(options) {
     }));
     return tls.flush(c);
   };
+  /**
    * Closes the connection (sends a close_notify alert).
    *
    * @param clearFail true to clear the fail flag (default: true).
