@@ -2091,8 +2091,8 @@ tls.handleHeartbeat = function(c, record) {
   var payload = b.getBytes(length);
 
   if(type === tls.HeartbeatMessageType.heartbeat_request) {
-    // discard request during handshake
-    if(c.handshaking) {
+    // discard request during handshake or if length is too large
+    if(c.handshaking || length > payload.length) {
       // continue
       return c.process();
     }
