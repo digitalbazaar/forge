@@ -681,6 +681,19 @@ tls.Alert.Description = {
 };
 
 /**
+ * TLS Heartbeat Message types.
+ * enum {
+ *   heartbeat_request(1),
+ *   heartbeat_response(2),
+ *   (255)
+ * } HeartbeatMessageType;
+ */
+tls.HeartbeatMessageType = {
+  heartbeat_request: 1,
+  heartbeat_response: 2
+};
+
+/**
  * Supported cipher suites.
  */
 tls.CipherSuites = {};
@@ -2050,7 +2063,7 @@ tls.handleHandshake = function(c, record) {
 };
 
 /**
- * Called when a client receives an ApplicationData record.
+ * Called when an ApplicationData record is received.
  *
  * @param c the connection.
  * @param record the record.
@@ -2065,21 +2078,47 @@ tls.handleApplicationData = function(c, record) {
 };
 
 /**
- * Called when a client receives an Heartbeat record.
+ * Called when a Heartbeat record is received.
  *
  * @param c the connection.
  * @param record the record.
  */
-tls.handleHeartbeat = function (c, record) {
-  // buffer data, notify that its ready
-  c.data.putBuffer(record.fragment);
-  if (c.heartbeatReady) {
-    c.heartbeatReady(c);
+tls.handleHeartbeat = function(c, record) {
+  // get the heartbeat type and payload
+  var b = record.fragment;
+  var type = b.getByte();
+  var length = b.getInt16();
+  var payload = b.getBytes(length);
+
+  if(type === tls.HeartbeatMessageType.heartbeat_request) {
+    // discard request during handshake
+    if(c.handshaking) {
+      // continue
+      return c.process();
+    }
+    // retransmit payload
+    tls.queue(c, tls.createRecord({
+      type: tls.ContentType.heartbeat,
+      data: tls.createHeartbeat(
+        c, tls.HeartbeatMessageType.heartbeat_response, payload)
+    }));
+    tls.flush(c);
+  }
+  else if(type === tls.HeartbeatMessageType.heartbeat_response) {
+    // check payload against expected payload, discard heartbeat if no match
+    if(payload !== c.expectedPayload) {
+      // continue
+      return c.process();
+    }
+
+    // notify that a valid heartbeat was received
+    if(c.heartbeatReceived) {
+      c.heartbeatReceived(c, forge.util.createBuffer(payload));
+    }
   }
 
   // continue
   c.process();
-
 };
 
 /**
@@ -2159,73 +2198,73 @@ var CER = 7; // not expecting any messages at this point
 
 // map client current expect state and content type to function
 var __ = tls.handleUnexpected;
-var F0 = tls.handleChangeCipherSpec;
-var F1 = tls.handleAlert;
-var F2 = tls.handleHandshake;
-var F3 = tls.handleApplicationData;
-var F4 = tls.handleHeartbeat;
+var R0 = tls.handleChangeCipherSpec;
+var R1 = tls.handleAlert;
+var R2 = tls.handleHandshake;
+var R3 = tls.handleApplicationData;
+var R4 = tls.handleHeartbeat;
 var ctTable = [];
 ctTable[tls.ConnectionEnd.client] = [
-//      CC,AL,HS,AD
-/*SHE*/[__,F1,F2,__,__],
-/*SCE*/[__,F1,F2,__,__],
-/*SKE*/[__,F1,F2,__,__],
-/*SCR*/[__,F1,F2,__,__],
-/*SHD*/[__,F1,F2,__,__],
-/*SCC*/[F0,F1,__,__,__],
-/*SFI*/[__,F1,F2,__,__],
-/*SAD*/[__,F1,F2,F3,F4],
-/*SER*/[__,F1,F2,__,__]
+//      CC,AL,HS,AD,HB
+/*SHE*/[__,R1,R2,__,R4],
+/*SCE*/[__,R1,R2,__,R4],
+/*SKE*/[__,R1,R2,__,R4],
+/*SCR*/[__,R1,R2,__,R4],
+/*SHD*/[__,R1,R2,__,R4],
+/*SCC*/[R0,R1,__,__,R4],
+/*SFI*/[__,R1,R2,__,R4],
+/*SAD*/[__,R1,R2,R3,R4],
+/*SER*/[__,R1,R2,__,R4]
 ];
 
 // map server current expect state and content type to function
 ctTable[tls.ConnectionEnd.server] = [
 //      CC,AL,HS,AD
-/*CHE*/[__,F1,F2,__],
-/*CCE*/[__,F1,F2,__],
-/*CKE*/[__,F1,F2,__],
-/*CCV*/[__,F1,F2,__],
-/*CCC*/[F0,F1,__,__],
-/*CFI*/[__,F1,F2,__],
-/*CAD*/[__,F1,F2,F3],
-/*CER*/[__,F1,F2,__]
+/*CHE*/[__,R1,R2,__,R4],
+/*CCE*/[__,R1,R2,__,R4],
+/*CKE*/[__,R1,R2,__,R4],
+/*CCV*/[__,R1,R2,__,R4],
+/*CCC*/[R0,R1,__,__,R4],
+/*CFI*/[__,R1,R2,__,R4],
+/*CAD*/[__,R1,R2,R3,R4],
+/*CER*/[__,R1,R2,__,R4]
 ];
 
 // map client current expect state and handshake type to function
-var F4 = tls.handleHelloRequest;
-var F5 = tls.handleServerHello;
-var F6 = tls.handleCertificate;
-var F7 = tls.handleServerKeyExchange;
-var F8 = tls.handleCertificateRequest;
-var F9 = tls.handleServerHelloDone;
-var FA = tls.handleFinished;
+var H0 = tls.handleHelloRequest;
+var H1 = tls.handleServerHello;
+var H2 = tls.handleCertificate;
+var H3 = tls.handleServerKeyExchange;
+var H4 = tls.handleCertificateRequest;
+var H5 = tls.handleServerHelloDone;
+var H6 = tls.handleFinished;
 var hsTable = [];
 hsTable[tls.ConnectionEnd.client] = [
 //      HR,01,SH,03,04,05,06,07,08,09,10,SC,SK,CR,HD,15,CK,17,18,19,FI
-/*SHE*/[__,__,F5,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-/*SCE*/[F4,__,__,__,__,__,__,__,__,__,__,F6,F7,F8,F9,__,__,__,__,__,__],
-/*SKE*/[F4,__,__,__,__,__,__,__,__,__,__,__,F7,F8,F9,__,__,__,__,__,__],
-/*SCR*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,F8,F9,__,__,__,__,__,__],
-/*SHD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,F9,__,__,__,__,__,__],
-/*SCC*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-/*SFI*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FA],
-/*SAD*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-/*SER*/[F4,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
+/*SHE*/[__,__,H1,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+/*SCE*/[H0,__,__,__,__,__,__,__,__,__,__,H2,H3,H4,H5,__,__,__,__,__,__],
+/*SKE*/[H0,__,__,__,__,__,__,__,__,__,__,__,H3,H4,H5,__,__,__,__,__,__],
+/*SCR*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,H4,H5,__,__,__,__,__,__],
+/*SHD*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,__,H5,__,__,__,__,__,__],
+/*SCC*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+/*SFI*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,H6],
+/*SAD*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+/*SER*/[H0,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
 ];
 
 // map server current expect state and handshake type to function
 // Note: CAD[CH] does not map to FB because renegotation is prohibited
-var FB = tls.handleClientHello;
-var FC = tls.handleClientKeyExchange;
-var FD = tls.handleCertificateVerify;
+var H7 = tls.handleClientHello;
+var H8 = tls.handleClientKeyExchange;
+var H9 = tls.handleCertificateVerify;
 hsTable[tls.ConnectionEnd.server] = [
 //      01,CH,02,03,04,05,06,07,08,09,10,CC,12,13,14,CV,CK,17,18,19,FI
-/*CHE*/[__,FB,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-/*CCE*/[__,__,__,__,__,__,__,__,__,__,__,F6,__,__,__,__,__,__,__,__,__],
-/*CKE*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FC,__,__,__,__],
-/*CCV*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FD,__,__,__,__,__],
+/*CHE*/[__,H7,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
+/*CCE*/[__,__,__,__,__,__,__,__,__,__,__,H2,__,__,__,__,__,__,__,__,__],
+/*CKE*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,H8,__,__,__,__],
+/*CCV*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,H9,__,__,__,__,__],
 /*CCC*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
-/*CFI*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,FA],
+/*CFI*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,H6],
 /*CAD*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
 /*CER*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
 ];
@@ -3284,6 +3323,60 @@ tls.createFinished = function(c) {
 };
 
 /**
+ * Creates a HeartbeatMessage (See RFC 6520).
+ *
+ * struct {
+ *   HeartbeatMessageType type;
+ *   uint16 payload_length;
+ *   opaque payload[HeartbeatMessage.payload_length];
+ *   opaque padding[padding_length];
+ * } HeartbeatMessage;
+ *
+ * The total length of a HeartbeatMessage MUST NOT exceed 2^14 or
+ * max_fragment_length when negotiated as defined in [RFC6066].
+ *
+ * type: The message type, either heartbeat_request or heartbeat_response.
+ *
+ * payload_length: The length of the payload.
+ *
+ * payload: The payload consists of arbitrary content.
+ *
+ * padding: The padding is random content that MUST be ignored by the
+ *   receiver. The length of a HeartbeatMessage is TLSPlaintext.length
+ *   for TLS and DTLSPlaintext.length for DTLS. Furthermore, the
+ *   length of the type field is 1 byte, and the length of the
+ *   payload_length is 2. Therefore, the padding_length is
+ *   TLSPlaintext.length - payload_length - 3 for TLS and
+ *   DTLSPlaintext.length - payload_length - 3 for DTLS. The
+ *   padding_length MUST be at least 16.
+ *
+ * The sender of a HeartbeatMessage MUST use a random padding of at
+ * least 16 bytes. The padding of a received HeartbeatMessage message
+ * MUST be ignored.
+ *
+ * If the payload_length of a received HeartbeatMessage is too large,
+ * the received HeartbeatMessage MUST be discarded silently.
+ *
+ * @param c the connection.
+ * @param type the tls.HeartbeatMessageType.
+ * @param payload the heartbeat data to send as the payload.
+ *
+ * @return the HeartbeatRequest byte buffer.
+ */
+tls.createHeartbeat = function(c, type, payload) {
+  // build record fragment
+  var rval = forge.util.createBuffer();
+  rval.putByte(type);               // heartbeat message type
+  rval.putInt16(payload.length);    // payload length
+  rval.putBytes(payload);           // payload
+  // padding
+  var plaintextLength = rval.length();
+  var paddingLength = Math.max(16, plaintextLength - payload.length - 3);
+  rval.putBytes(forge.random.getBytes(paddingLength));
+  return rval;
+};
+
+/**
  * Fragments, compresses, encrypts, and queues a record for delivery.
  *
  * @param c the connection.
@@ -3635,7 +3728,7 @@ tls.createConnection = function(options) {
     data: forge.util.createBuffer(),
     tlsDataReady: options.tlsDataReady,
     dataReady: options.dataReady,
-    heartbeatReady: options.heartbeatReady,
+    heartbeatReceived: options.heartbeatReceived,
     closed: options.closed,
     error: function(c, ex) {
       // set origin if not set
@@ -3977,21 +4070,23 @@ tls.createConnection = function(options) {
   };
 
   /**
-   * Requests that a heartbeat data be packaged into a TLS record. The
-   * tlsHeartbeatReady handles will be called when TLS record(s) have been
-   * prepared.
+   * Requests that a heartbeat request be packaged into a TLS record for
+   * transmission. The tlsDataReady handler will be called when TLS record(s)
+   * have been prepared.
    *
-   * @param data the application data to send as payload.
+   * @param payload the heartbeat data to send as the payload in the message.
    *
-   * @return true on success, false on failure
+   * @return true on success, false on failure.
    */
-  c.prepareHeartbeat = function(data) {
+  c.prepareHeartbeatRequest = function(payload) {
     tls.queue(c, tls.createRecord({
       type: tls.ContentType.heartbeat,
-      data: forge.util.createBuffer(data)
+      data: tls.createHeartbeat(
+        c, tls.HeartbeatMessageType.heartbeat_request, payload)
     }));
     return tls.flush(c);
   };
+
   /**
    * Closes the connection (sends a close_notify alert).
    *
