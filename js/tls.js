@@ -2100,7 +2100,7 @@ tls.handleHeartbeat = function(c, record) {
     tls.queue(c, tls.createRecord({
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(
-        c, tls.HeartbeatMessageType.heartbeat_response, payload)
+        tls.HeartbeatMessageType.heartbeat_response, payload)
     }));
     tls.flush(c);
   }
@@ -3360,18 +3360,23 @@ tls.createFinished = function(c) {
  * @param c the connection.
  * @param type the tls.HeartbeatMessageType.
  * @param payload the heartbeat data to send as the payload.
+ * @param [payloadLength] the payload length to use, defaults to the
+ *          actual payload length.
  *
  * @return the HeartbeatRequest byte buffer.
  */
-tls.createHeartbeat = function(c, type, payload) {
+tls.createHeartbeat = function(type, payload, payloadLength) {
+  if(typeof payloadLength === 'undefined') {
+    payloadLength = payload.length;
+  }
   // build record fragment
   var rval = forge.util.createBuffer();
   rval.putByte(type);               // heartbeat message type
-  rval.putInt16(payload.length);    // payload length
+  rval.putInt16(payloadLength);     // payload length
   rval.putBytes(payload);           // payload
   // padding
   var plaintextLength = rval.length();
-  var paddingLength = Math.max(16, plaintextLength - payload.length - 3);
+  var paddingLength = Math.max(16, plaintextLength - payloadLength - 3);
   rval.putBytes(forge.random.getBytes(paddingLength));
   return rval;
 };
@@ -4079,20 +4084,23 @@ tls.createConnection = function(options) {
    * be used to clear a retransmission timer, etc.
    *
    * @param payload the heartbeat data to send as the payload in the message.
+   * @param [payloadLength] the payload length to use, defaults to the
+   *          actual payload length.
    *
    * @return true on success, false on failure.
    */
-  c.prepareHeartbeatRequest = function(payload) {
+  c.prepareHeartbeatRequest = function(payload, payloadLength) {
     if(payload instanceof forge.util.ByteBuffer) {
-      c.expectedHeartbeatPayload = payload.bytes();
+      payload = payload.bytes();
     }
-    else {
-      c.expectedHeartbeatPayload = payload;
+    if(typeof payloadLength === 'undefined') {
+      payloadLength = payload.length;
     }
+    c.expectedHeartbeatPayload = payload;
     tls.queue(c, tls.createRecord({
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(
-        c, tls.HeartbeatMessageType.heartbeat_request, payload)
+        tls.HeartbeatMessageType.heartbeat_request, payload, payloadLength)
     }));
     return tls.flush(c);
   };
