@@ -113,6 +113,11 @@ util.ByteBuffer = function(b) {
       }
     }
   }
+  // copy existing buffer
+  else if(b instanceof util.ByteBuffer) {
+    this.data = b.data;
+    this.read = b.read;
+  }
 };
 
 /**
