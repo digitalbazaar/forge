@@ -268,6 +268,10 @@ var client = forge.tls.createConnection({
     console.log('connected');
     // send message to server
     connection.prepare(forge.util.encodeUtf8('Hi server!'));
+    /* NOTE: experimental, start heartbeat retransmission timer
+    myHeartbeatTimer = setInterval(function() {
+      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+    }, 5*60*1000);*/
   },
   /* provide a client-side cert if you want
   getCertificate: function(connection, hint) {
@@ -290,6 +294,15 @@ var client = forge.tls.createConnection({
     // close connection
     connection.close();
   },
+  /* NOTE: experimental
+  heartbeatReceived: function(connection, payload) {
+    // restart retransmission timer, look at payload
+    clearInterval(myHeartbeatTimer);
+    myHeartbeatTimer = setInterval(function() {
+      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+    }, 5*60*1000);
+    payload.getBytes();
+  },*/
   closed: function(connection) {
     console.log('disconnected');
   },
@@ -331,6 +344,10 @@ var server = forge.tls.createConnection({
     console.log('connected');
     // send message to client
     connection.prepare(forge.util.encodeUtf8('Hi client!'));
+    /* NOTE: experimental, start heartbeat retransmission timer
+    myHeartbeatTimer = setInterval(function() {
+      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+    }, 5*60*1000);*/
   },
   getCertificate: function(connection, hint) {
     return myServerCertificate;
@@ -351,6 +368,15 @@ var server = forge.tls.createConnection({
     // close connection
     connection.close();
   },
+  /* NOTE: experimental
+  heartbeatReceived: function(connection, payload) {
+    // restart retransmission timer, look at payload
+    clearInterval(myHeartbeatTimer);
+    myHeartbeatTimer = setInterval(function() {
+      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+    }, 5*60*1000);
+    payload.getBytes();
+  },*/
   closed: function(connection) {
     console.log('disconnected');
   },
