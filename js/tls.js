@@ -2106,7 +2106,7 @@ tls.handleHeartbeat = function(c, record) {
   }
   else if(type === tls.HeartbeatMessageType.heartbeat_response) {
     // check payload against expected payload, discard heartbeat if no match
-    if(payload !== c.expectedPayload) {
+    if(payload !== c.expectedHeartbeatPayload) {
       // continue
       return c.process();
     }
@@ -4083,6 +4083,12 @@ tls.createConnection = function(options) {
    * @return true on success, false on failure.
    */
   c.prepareHeartbeatRequest = function(payload) {
+    if(payload instanceof forge.util.ByteBuffer) {
+      c.expectedHeartbeatPayload = payload.bytes();
+    }
+    else {
+      c.expectedHeartbeatPayload = payload;
+    }
     tls.queue(c, tls.createRecord({
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(
