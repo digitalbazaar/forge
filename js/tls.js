@@ -4074,6 +4074,10 @@ tls.createConnection = function(options) {
    * transmission. The tlsDataReady handler will be called when TLS record(s)
    * have been prepared.
    *
+   * When a heartbeat response has been received, the heartbeatReceived
+   * handler will be called with the matching payload. This handler can
+   * be used to clear a retransmission timer, etc.
+   *
    * @param payload the heartbeat data to send as the payload in the message.
    *
    * @return true on success, false on failure.
