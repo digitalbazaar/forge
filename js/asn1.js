@@ -357,9 +357,8 @@ asn1.fromDer = function(bytes, strict) {
         start = bytes.length();
       }
     }
-  }
-  // asn1 not composed, get raw value
-  else {
+  } else {
+    // asn1 not composed, get raw value
     // TODO: do DER to OID conversion and vice-versa in .toDer?
 
     if(length === undefined) {
@@ -369,9 +368,7 @@ asn1.fromDer = function(bytes, strict) {
         };
       }
       // be lenient and use remaining bytes
-      else {
-        length = bytes.length();
-      }
+      length = bytes.length();
     }
 
     if(type === asn1.Type.BMPSTRING) {
@@ -410,9 +407,8 @@ asn1.toDer = function(obj) {
     // from other asn1 objects
     if(obj.constructed) {
       b1 |= 0x20;
-    }
-    // if type is a bit string, add unused bits of 0x00
-    else {
+    } else {
+      // type is a bit string, add unused bits of 0x00
       value.putByte(0x00);
     }
 
@@ -422,9 +418,8 @@ asn1.toDer = function(obj) {
         value.putBuffer(asn1.toDer(obj.value[i]));
       }
     }
-  }
-  // use asn1.value directly
-  else {
+  } else {
+    // use asn1.value directly
     if(obj.type === asn1.Type.BMPSTRING) {
       for(var i = 0; i < obj.value.length; ++i) {
         value.putInt16(obj.value.charCodeAt(i));
@@ -442,9 +437,8 @@ asn1.toDer = function(obj) {
     // one byte describes the length
     // bit 8 = 0 and bits 7-1 = length
     bytes.putByte(value.length() & 0x7F);
-  }
-  // use "long form" encoding
-  else {
+  } else {
+    // use "long form" encoding
     // 2 to 127 bytes describe the length
     // first byte: bit 8 = 1 and bits 7-1 = # of additional bytes
     // other bytes: length in base 256, big-endian
@@ -547,9 +541,8 @@ asn1.derToOid = function(bytes) {
     // not the last byte for the value
     if(b & 0x80) {
       value += b & 0x7F;
-    }
-    // last byte
-    else {
+    } else {
+      // last byte
       oid += '.' + (value + b);
       value = 0;
     }
@@ -1051,9 +1044,8 @@ asn1.prettyPrint = function(obj, level, indentation) {
       } catch(ex) {
         rval += '0x' + forge.util.bytesToHex(obj.value);
       }
-    }
-    // FIXME: choose output (hex vs. printable) based on asn1.Type
-    else if(_nonLatinRegex.test(obj.value)) {
+    } else if(_nonLatinRegex.test(obj.value)) {
+      // FIXME: choose output (hex vs. printable) based on asn1.Type
       rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
     } else if(obj.value.length === 0) {
       rval += '[null]';

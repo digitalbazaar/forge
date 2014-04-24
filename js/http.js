@@ -157,10 +157,8 @@ var _handleNextRequest = function(client, socket) {
       socket.options = null;
     }
     client.idle.push(socket);
-  }
-  // handle pending request
-  else {
-    // allow 1 retry
+  } else {
+    // handle pending request, allow 1 retry
     socket.retries = 1;
     socket.options = pending;
     _doRequest(client, socket);
@@ -183,9 +181,8 @@ var _initSocket = function(client, socket, tlsOptions) {
     // socket primed by caching TLS session, handle next request
     if(socket.options === null) {
       _handleNextRequest(client, socket);
-    }
-    // socket in use
-    else {
+    } else {
+      // socket in use
       var request = socket.options.request;
       request.connectTime = +new Date() - request.connectTime;
       e.socket = socket;
@@ -374,9 +371,8 @@ var _writeCookies = function(client, request) {
       if(_hasCookieExpired(cookie)) {
         // store for clean up
         expired.push(cookie);
-      }
-      // path or path's ancestor must match cookie.path
-      else if(request.path.indexOf(cookie.path) === 0) {
+      } else if(request.path.indexOf(cookie.path) === 0) {
+        // path or path's ancestor must match cookie.path
         request.addCookie(cookie);
       }
     }
@@ -606,10 +602,8 @@ http.createClient = function(options) {
     // queue request options if there are no idle sockets
     if(client.idle.length === 0) {
       client.requests.push(opts);
-    }
-    // use an idle socket
-    else {
-      // prefer an idle *connected* socket first
+    } else {
+      // use an idle socket, prefer an idle *connected* socket first
       var socket = null;
       var len = client.idle.length;
       for(var i = 0; socket === null && i < len; ++i) {
@@ -667,6 +661,7 @@ http.createClient = function(options) {
    *   created: creation time, in UTC seconds, of the cookie.
    */
   client.setCookie = function(cookie) {
+    var rval;
     if(typeof(cookie.name) !== 'undefined') {
       if(cookie.value === null || typeof(cookie.value) === 'undefined' ||
         cookie.value === '') {
@@ -737,9 +732,8 @@ http.createClient = function(options) {
         if(path in paths) {
           rval = paths[path];
         }
-      }
-      // get first cookie
-      else {
+      } else {
+        // get first cookie
         for(var p in paths) {
           rval = paths[p];
           break;
@@ -777,9 +771,8 @@ http.createClient = function(options) {
             delete client.cookies[name];
           }
         }
-      }
-      // delete all cookies with the given name
-      else {
+      } else {
+        // delete all cookies with the given name
         rval = true;
         delete client.cookies[name];
       }
@@ -1064,14 +1057,10 @@ http.createResponse = function() {
               details: {'line': line}
             };
           }
-        }
-        // handle final line
-        else if(line.length === 0) {
-          // end of header
+        } else if(line.length === 0) {
+          // handle final line, end of header
           response.headerReceived = true;
-        }
-        // parse header
-        else {
+        } else {
           _parseHeader(line);
         }
       }
@@ -1139,20 +1128,16 @@ http.createResponse = function() {
         response.body += b.getBytes(_chunkSize);
         b.getBytes(2);
         _chunkSize = 0;
-      }
-      // if chunks not finished, read the next chunk size
-      else if(!_chunksFinished) {
-        // read chunk-size line
+      } else if(!_chunksFinished) {
+        // more chunks, read next chunk-size line
         line = _readCrlf(b);
         if(line !== null) {
           // parse chunk-size (ignore any chunk extension)
           _chunkSize = parseInt(line.split(';', 1)[0], 16);
           _chunksFinished = (_chunkSize === 0);
         }
-      }
-      // chunks finished, read trailers
-      else {
-        // read next trailer
+      } else {
+        // chunks finished, read next trailer
         line = _readCrlf(b);
         while(line !== null) {
           if(line.length > 0) {
@@ -1191,9 +1176,8 @@ http.createResponse = function() {
       response.body = response.body || '';
       response.body += b.getBytes(contentLength);
       response.bodyReceived = (response.body.length === contentLength);
-    }
-    // read chunked encoding
-    else if(transferEncoding !== null) {
+    } else if(transferEncoding !== null) {
+      // read chunked encoding
       if(transferEncoding.indexOf('chunked') != -1) {
         response.body = response.body || '';
         _readChunkedBody(b);
@@ -1203,11 +1187,10 @@ http.createResponse = function() {
           details: {'transferEncoding' : transferEncoding}
         };
       }
-    }
-    // read all data in the buffer
-    else if((contentLength !== null && contentLength < 0) ||
+    } else if((contentLength !== null && contentLength < 0) ||
       (contentLength === null &&
       response.getField('Content-Type') !== null)) {
+      // read all data in the buffer
       response.body = response.body || '';
       response.body += b.getBytes();
       response.readBodyUntilClose = true;
@@ -1270,9 +1253,8 @@ http.createResponse = function() {
                cookie.name = name;
                cookie.value = value;
                first = false;
-             }
-             // property_name=value
-             else {
+             } else {
+               // property_name=value
                name = name.toLowerCase();
                switch(name) {
                case 'expires':
@@ -1364,9 +1346,8 @@ http.withinCookieDomain = function(url, cookie) {
   // any domain will do
   if(domain === null) {
     rval = true;
-  }
-  // ensure domain starts with a '.'
-  else if(domain.charAt(0) === '.') {
+  } else if(domain.charAt(0) === '.') {
+    // ensure domain starts with a '.'
     // parse URL as necessary
     if(typeof url === 'string') {
       url = http.parseUrl(url);

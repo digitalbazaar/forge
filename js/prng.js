@@ -381,9 +381,8 @@ prng.create = function(plugin) {
         self.addEventListener('message', listener);
         self.postMessage({forge: {prng: {needed: needed}}});
       };
-    }
-    // main thread sends random bytes upon request
-    else {
+    } else {
+      // main thread sends random bytes upon request
       function listener(e) {
         var data = e.data;
         if(data.forge && data.forge.prng) {

@@ -807,11 +807,10 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       var sha1 = forge.md.sha1.create();
       sha1.update(asn1.toDer(pki.certificateToAsn1(pairedCert)).getBytes());
       localKeyId = sha1.digest().getBytes();
-    }
-    // FIXME: consider using SHA-1 of public key (which can be generated
-    // from private key components), see: cert.generateSubjectKeyIdentifier
-    // generate random bytes
-    else {
+    } else {
+      // FIXME: consider using SHA-1 of public key (which can be generated
+      // from private key components), see: cert.generateSubjectKeyIdentifier
+      // generate random bytes
       localKeyId = forge.random.getBytes(20);
     }
   }

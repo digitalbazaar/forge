@@ -570,15 +570,13 @@ var finish = function(task, suppressCallbacks) {
       forge.log.error(cat,
         '[%s][%s] task queue missing [%s]',
         task.id, task.name, task.type);
-    }
-    // report error if queue is empty
-    else if(sTaskQueues[task.type].length === 0) {
+    } else if(sTaskQueues[task.type].length === 0) {
+      // report error if queue is empty
       forge.log.error(cat,
         '[%s][%s] task queue empty [%s]',
         task.id, task.name, task.type);
-    }
-    // report error if this task isn't the first in the queue
-    else if(sTaskQueues[task.type][0] !== task) {
+    } else if(sTaskQueues[task.type][0] !== task) {
+      // report error if this task isn't the first in the queue
       forge.log.error(cat,
         '[%s][%s] task not first in queue [%s]',
         task.id, task.name, task.type);
@@ -596,9 +594,8 @@ var finish = function(task, suppressCallbacks) {
          task type exists, then a task of that type is running.
          */
         delete sTaskQueues[task.type];
-      }
-      // dequeue the next task and start it
-      else {
+      } else {
+        // dequeue the next task and start it
         if(sVL >= 1) {
           forge.log.verbose(cat,
             '[%s][%s] queue start next [%s] remain:%s',

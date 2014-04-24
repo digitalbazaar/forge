@@ -824,14 +824,13 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     it must be 16, 24, or 32 bytes in length. If it is in 32-bit
     integers, it must be 4, 6, or 8 integers long. */
 
-  // convert key string into byte buffer
   if(typeof key === 'string' &&
     (key.length === 16 || key.length === 24 || key.length === 32)) {
+    // convert key string into byte buffer
     key = forge.util.createBuffer(key);
-  }
-  // convert key integer array into byte buffer
-  else if(forge.util.isArray(key) &&
+  } else if(forge.util.isArray(key) &&
     (key.length === 16 || key.length === 24 || key.length === 32)) {
+    // convert key integer array into byte buffer
     var tmp = key;
     var key = forge.util.createBuffer();
     for(var i = 0; i < tmp.length; ++i) {
@@ -996,12 +995,11 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
       bytes, then it must be Nb (16) bytes in length. If it is in
       32-bit integers, then it must be 4 integers long. */
 
-    // convert iv string into byte buffer
     if(typeof iv === 'string' && iv.length === 16) {
+      // convert iv string into byte buffer
       iv = forge.util.createBuffer(iv);
-    }
-    // convert iv byte array into byte buffer
-    else if(forge.util.isArray(iv) && iv.length === 16) {
+    } else if(forge.util.isArray(iv) && iv.length === 16) {
+      // convert iv byte array into byte buffer
       var tmp = iv;
       var iv = forge.util.createBuffer();
       for(var i = 0; i < 16; ++i) {

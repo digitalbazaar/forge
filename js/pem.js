@@ -162,13 +162,11 @@ pem.decode = function(str) {
             };
           }
           msg.procType = {version: values[0], type: values[1]};
-        }
-        // special-case Content-Domain
-        else if(!msg.contentDomain && header.name === 'Content-Domain') {
+        } else if(!msg.contentDomain && header.name === 'Content-Domain') {
+          // special-case Content-Domain
           msg.contentDomain = values[0] || '';
-        }
-        // special-case DEK-Info
-        else if(!msg.dekInfo && header.name === 'DEK-Info') {
+        } else if(!msg.dekInfo && header.name === 'DEK-Info') {
+          // special-case DEK-Info
           if(header.values.length === 0) {
             throw {
               message: 'Invalid PEM formatted message. The "DEK-Info" ' +

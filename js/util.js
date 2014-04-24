@@ -107,9 +107,8 @@ util.ByteBuffer = function(b) {
         this.putByte(arr[i]);
       }
     }
-  }
-  // copy existing buffer
-  else if(b instanceof util.ByteBuffer) {
+  } else if(b instanceof util.ByteBuffer) {
+    // copy existing buffer
     this.data = b.data;
     this.read = b.read;
   }

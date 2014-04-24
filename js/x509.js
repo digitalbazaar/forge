@@ -697,9 +697,8 @@ var _parseExtensions = function(exts) {
           e.cRLSign = (b2 & 0x02) === 0x02;
           e.encipherOnly = (b2 & 0x01) === 0x01;
           e.decipherOnly = (b3 & 0x80) === 0x80;
-        }
-        // handle basic constraints
-        else if(e.name === 'basicConstraints') {
+        } else if(e.name === 'basicConstraints') {
+          // handle basic constraints
           // get value as SEQUENCE
           var ev = asn1.fromDer(e.value);
           // get cA BOOLEAN flag (defaults to false)
@@ -718,9 +717,8 @@ var _parseExtensions = function(exts) {
           if(value !== null) {
             e.pathLenConstraint = asn1.derToInteger(value);
           }
-        }
-        // handle extKeyUsage
-        else if(e.name === 'extKeyUsage') {
+        } else if(e.name === 'extKeyUsage') {
+          // handle extKeyUsage
           // value is a SEQUENCE of OIDs
           var ev = asn1.fromDer(e.value);
           for(var vi = 0; vi < ev.value.length; ++vi) {
@@ -731,9 +729,8 @@ var _parseExtensions = function(exts) {
               e[oid] = true;
             }
           }
-        }
-        // handle nsCertType
-        else if(e.name === 'nsCertType') {
+        } else if(e.name === 'nsCertType') {
+          // handle nsCertType
           // get value as BIT STRING
           var ev = asn1.fromDer(e.value);
           var b2 = 0x00;
@@ -752,11 +749,10 @@ var _parseExtensions = function(exts) {
           e.sslCA = (b2 & 0x04) === 0x04;
           e.emailCA = (b2 & 0x02) === 0x02;
           e.objCA = (b2 & 0x01) === 0x01;
-        }
-        // handle subjectAltName/issuerAltName
-        else if(
+        } else if(
           e.name === 'subjectAltName' ||
           e.name === 'issuerAltName') {
+          // handle subjectAltName/issuerAltName
           e.altNames = [];
 
           // ev is a SYNTAX SEQUENCE
@@ -1221,9 +1217,8 @@ pki.createCertificate = function() {
           }
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
-        }
-        // basicConstraints is a SEQUENCE
-        else if(e.name === 'basicConstraints') {
+        } else if(e.name === 'basicConstraints') {
+          // basicConstraints is a SEQUENCE
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
           // cA BOOLEAN flag defaults to false
@@ -1237,9 +1232,8 @@ pki.createCertificate = function() {
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
               asn1.integerToDer(e.pathLenConstraint).getBytes()));
           }
-        }
-        // extKeyUsage is a SEQUENCE of OIDs
-        else if(e.name === 'extKeyUsage') {
+        } else if(e.name === 'extKeyUsage') {
+          // extKeyUsage is a SEQUENCE of OIDs
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
           var seq = e.value.value;
@@ -1251,16 +1245,14 @@ pki.createCertificate = function() {
             if(key in oids) {
               seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
                 false, asn1.oidToDer(oids[key]).getBytes()));
-            }
-            // assume key is an OID
-            else if(key.indexOf('.') !== -1) {
+            } else if(key.indexOf('.') !== -1) {
+              // assume key is an OID
               seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
                 false, asn1.oidToDer(key).getBytes()));
             }
           }
-        }
-        // nsCertType is a BIT STRING
-        else if(e.name === 'nsCertType') {
+        } else if(e.name === 'nsCertType') {
+          // nsCertType is a BIT STRING
           // build flags
           var unused = 0;
           var b2 = 0x00;
@@ -1324,14 +1316,12 @@ pki.createCertificate = function() {
                   extension: e
                 };
               }
-            }
-            // handle OID
-            else if(altName.type === 8) {
+            } else if(altName.type === 8) {
+              // handle OID
               if(altName.oid) {
                 value = asn1.oidToDer(asn1.oidToDer(altName.oid));
-              }
-              // deprecated ... convert value to OID
-              else {
+              } else {
+                // deprecated ... convert value to OID
                 value = asn1.oidToDer(value);
               }
             }
@@ -1545,9 +1535,8 @@ pki.createCertificate = function() {
     // compare hashes if present
     if(i.hash && s.hash) {
       rval = (i.hash === s.hash);
-    }
-    // if all attributes are the same then issuer matches subject
-    else if(i.attributes.length === s.attributes.length) {
+    } else if(i.attributes.length === s.attributes.length) {
+      // all attributes are the same so issuer matches subject
       rval = true;
       var iattr, sattr;
       for(var n = 0; rval && n < i.attributes.length; ++n) {
@@ -2842,9 +2831,8 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         notAfter: cert.validity.notAfter,
         now: now
       };
-    }
-    // 2. verify with parent
-    else {
+    } else {
+      // 2. verify with parent
       // get parent from chain
       var verified = false;
       if(chain.length > 0) {
@@ -2855,9 +2843,8 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         } catch(ex) {
           // failure to verify, don't care why, just fail
         }
-      }
-      // get parent(s) from CA store
-      else {
+      } else {
+        // get parent(s) from CA store
         var parents = caStore.getIssuer(cert);
         if(parents === null) {
           // no parent issuer, so certificate not trusted

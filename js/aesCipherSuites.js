@@ -237,9 +237,8 @@ function decrypt_aes_cbc_sha1(record, s) {
   if(len >= macLen) {
     record.fragment = cipher.output.getBytes(len - macLen);
     mac = cipher.output.getBytes(macLen);
-  }
-  // bad data, but get bytes anyway to try to keep timing consistent
-  else {
+  } else {
+    // bad data, but get bytes anyway to try to keep timing consistent
     record.fragment = cipher.output.getBytes();
   }
   record.fragment = forge.util.createBuffer(record.fragment);

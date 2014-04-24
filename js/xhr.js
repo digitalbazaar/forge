@@ -202,11 +202,10 @@ xhrApi.setCookie = function(cookie) {
         client.setCookie(cookie);
       }
     }
-  }
-  // use the default domain
-  // FIXME: should a null domain cookie be added to all clients? should
-  // this be an option?
-  else {
+  } else {
+    // use the default domain
+    // FIXME: should a null domain cookie be added to all clients? should
+    // this be an option?
     _client.setCookie(cookie);
   }
 };
@@ -531,11 +530,10 @@ xhrApi.create = function(options) {
         } else {
           _state.request.body = data;
         }
-      }
-      // poorly implemented IE case
-      else {
+      } else {
+        // poorly implemented IE case
         if(typeof(data.xml) !== 'undefined') {
-          _state.request.body = xml;
+          _state.request.body = data.xml;
         } else {
           _state.request.body = data;
         }

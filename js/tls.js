@@ -862,9 +862,8 @@ tls.parseHelloMessage = function(c, record, length) {
     if(client) {
       // FIXME: should be checking configured acceptable cipher suites
       c.session.cipherSuite = tls.getCipherSuite(msg.cipher_suite);
-    }
-    // get a supported preferred (ClientHello) cipher suite
-    else {
+    } else {
+      // get a supported preferred (ClientHello) cipher suite
       // choose the first supported cipher suite
       var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
       while(tmp.length() > 0) {
@@ -1208,9 +1207,8 @@ tls.handleCertificate = function(c, record, length) {
             description: tls.Alert.Description.illegal_parameter
           }
         });
-      }
-      // no certs to verify
-      else if(certs.length === 0) {
+      } else if(certs.length === 0) {
+        // no certs to verify
         // expect a ServerKeyExchange or ClientKeyExchange message next
         c.expect = client ? SKE : CKE;
       } else {
@@ -1564,9 +1562,8 @@ tls.handleServerHelloDone = function(c, record, length) {
         description: tls.Alert.Description.record_overflow
       }
     });
-  }
-  // see if no server certificate was provided
-  else if(c.serverCertificate === null) {
+  } else if(c.serverCertificate === null) {
+    // no server certificate was provided
     var error = {
       message: 'No server certificate provided. Not enough security.',
       send: true,
@@ -1667,9 +1664,8 @@ tls.handleServerHelloDone = function(c, record, length) {
     if(c.session.certificateRequest === null ||
       c.session.clientCertificate === null) {
       callback(c, null);
-    }
-    // otherwise get the client signature
-    else {
+    } else {
+      // otherwise get the client signature
       tls.getClientSignature(c, callback);
     }
   }
@@ -3594,9 +3590,8 @@ tls.createSessionCache = function(cache, capacity) {
       // if session ID provided, use it
       if(sessionId) {
         key = forge.util.bytesToHex(sessionId);
-      }
-      // get first session from cache
-      else if(rval.order.length > 0) {
+      } else if(rval.order.length > 0) {
+        // get first session from cache
         key = rval.order[0];
       }
 
@@ -3790,9 +3785,8 @@ tls.createConnection = function(options) {
     // need at least 5 bytes to initialize a record
     if(len < 5) {
       rval = 5 - len;
-    }
-    // enough bytes for header
-    else {
+    } else {
+      // enough bytes for header
       // initialize record
       c.record = {
         type: b.getByte(),
@@ -3840,9 +3834,8 @@ tls.createConnection = function(options) {
     if(len < c.record.length) {
       // not enough data yet, return how much is required
       rval = c.record.length - len;
-    }
-    // there is enough data to parse the pending record
-    else {
+    } else {
+      // there is enough data to parse the pending record
       // fill record fragment and compact input buffer
       c.record.fragment.putBytes(b.getBytes(c.record.length));
       b.compact();
@@ -3896,10 +3889,8 @@ tls.createConnection = function(options) {
         message: 'Cannot initiate handshake as a server.',
         fatal: false
       });
-    }
-    // if a handshake is already in progress, fail
-    else if(c.handshaking) {
-      // not fatal error
+    } else if(c.handshaking) {
+      // handshake is already in progress, fail but not fatal error
       c.error(c, {
         message: 'Handshake already in progress.',
         fatal: false

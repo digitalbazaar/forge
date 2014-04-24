@@ -622,9 +622,8 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
  *   // step key-generation, run algorithm for 100 ms, repeat
  *   if(!forge.pki.rsa.stepKeyPairGenerationState(state, 100)) {
  *     setTimeout(step, 1);
- *   }
- *   // key-generation complete
- *   else {
+ *   } else {
+ *     // key-generation complete
  *     // TODO: turn off progress indicator here
  *     // TODO: use the generated key-pair in "state.keys"
  *   }
@@ -678,30 +677,26 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         deltaIdx = 0;
 
         ++state.pqState;
-      }
-      // try to make the number a prime
-      else if(state.pqState === 1) {
-        // overflow, try again
+      } else if(state.pqState === 1) {
+        // try to make the number a prime
         if(state.num.bitLength() > bits) {
+          // overflow, try again
           state.pqState = 0;
-        }
-        // do primality test
-        else if(state.num.isProbablePrime(
+        } else if(state.num.isProbablePrime(
+          // do primality test
           _getMillerRabinIterations(state.num.bitLength()))) {
           ++state.pqState;
         } else {
           // get next potential prime
           state.num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
         }
-      }
-      // ensure number is coprime with e
-      else if(state.pqState === 2) {
+      } else if(state.pqState === 2) {
+        // ensure number is coprime with e
         state.pqState =
           (state.num.subtract(BigInteger.ONE).gcd(state.e)
           .compareTo(BigInteger.ONE) === 0) ? 3 : 0;
-      }
-      // ensure number is a probable prime
-      else if(state.pqState === 3) {
+      } else if(state.pqState === 3) {
+        // store p or q
         state.pqState = 0;
         if(state.p === null) {
           state.p = state.num;
@@ -715,25 +710,22 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         }
         state.num = null;
       }
-    }
-    // ensure p is larger than q (swap them if not)
-    else if(state.state === 1) {
+    } else if(state.state === 1) {
+      // ensure p is larger than q (swap them if not)
       if(state.p.compareTo(state.q) < 0) {
         state.num = state.p;
         state.p = state.q;
         state.q = state.num;
       }
       ++state.state;
-    }
-    // compute phi: (p - 1)(q - 1) (Euler's totient function)
-    else if(state.state === 2) {
+    } else if(state.state === 2) {
+      // compute phi: (p - 1)(q - 1) (Euler's totient function)
       state.p1 = state.p.subtract(BigInteger.ONE);
       state.q1 = state.q.subtract(BigInteger.ONE);
       state.phi = state.p1.multiply(state.q1);
       ++state.state;
-    }
-    // ensure e and phi are coprime
-    else if(state.state === 3) {
+    } else if(state.state === 3) {
+      // ensure e and phi are coprime
       if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) === 0) {
         // phi and e are coprime, advance
         ++state.state;
@@ -743,9 +735,8 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         state.q = null;
         state.state = 0;
       }
-    }
-    // create n, ensure n is has the right number of bits
-    else if(state.state === 4) {
+    } else if(state.state === 4) {
+      // create n, ensure n is has the right number of bits
       state.n = state.p.multiply(state.q);
 
       // ensure n is right number of bits
@@ -757,9 +748,8 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         state.q = null;
         state.state = 0;
       }
-    }
-    // set keys
-    else if(state.state === 5) {
+    } else if(state.state === 5) {
+      // set keys
       var d = state.e.modInverse(state.phi);
       state.keys = {
         privateKey: pki.rsa.setPrivateKey(
@@ -817,9 +807,8 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
       callback = bits;
       bits = undefined;
     }
-  }
-  // (bits, options), (bits, callback), (options, callback)
-  else if(arguments.length === 2) {
+  } else if(arguments.length === 2) {
+    // (bits, options), (bits, callback), (options, callback)
     if(typeof bits === 'number') {
       if(typeof e === 'function') {
         callback = e;
@@ -832,9 +821,8 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
       bits = undefined;
     }
     e = undefined;
-  }
-  // (bits, e, options), (bits, e, callback), (bits, options, callback)
-  else if(arguments.length === 3) {
+  } else if(arguments.length === 3) {
+    // (bits, e, options), (bits, e, callback), (bits, options, callback)
     if(typeof e === 'number') {
       if(typeof options === 'function') {
         callback = options;
@@ -1365,9 +1353,8 @@ function _encodePkcs1_v1_5(m, key, bt) {
     for(var i = 0; i < padNum; ++i) {
       eb.putByte(padByte);
     }
-  }
-  // public key op
-  else {
+  } else {
+    // public key op
     // pad with random non-zero values
     while(padNum > 0) {
       var numZeros = 0;

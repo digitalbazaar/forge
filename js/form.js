@@ -100,27 +100,23 @@ var _addField = function(obj, names, value, dict) {
           obj[name] = [obj[name]];
         }
         obj[name].push(value);
-      }
-      // not last name, go deeper into object
-      else {
+      } else {
+        // not last name, go deeper into object
         obj = obj[name];
       }
-    }
-    // new value, last name in the field, set value
-    else if(n == names.length - 1) {
+    } else if(n == names.length - 1) {
+      // new value, last name in the field, set value
       obj[name] = value;
-    }
-    // new value, not last name, go deeper
-    else {
+    } else {
+      // new value, not last name, go deeper
       // get next name
       var next = names[n + 1];
 
       // blank next value indicates array-appending, so create array
       if(next.length === 0) {
          obj[name] = [];
-      }
-      // if next name is a number create an array, otherwise a map
-      else {
+      } else {
+        // if next name is a number create an array, otherwise a map
         var isNum = ((next - 0) == next && next.length > 0);
         obj[name] = isNum ? [] : {};
       }

@@ -63,12 +63,11 @@ hmac.create = function() {
       // reuse previous key
       key = _key;
     } else {
-      // convert string into byte buffer
       if(typeof key === 'string') {
+        // convert string into byte buffer
         key = forge.util.createBuffer(key);
-      }
-      // convert byte array into byte buffer
-      else if(forge.util.isArray(key)) {
+      } else if(forge.util.isArray(key)) {
+        // convert byte array into byte buffer
         var tmp = key;
         key = forge.util.createBuffer();
         for(var i = 0; i < tmp.length; ++i) {
