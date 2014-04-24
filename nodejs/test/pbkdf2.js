@@ -56,9 +56,8 @@ if(typeof define === 'function') {
       UTIL()
     );
   });
-}
-// assume NodeJS
-else if(typeof module === 'object' && module.exports) {
+} else if(typeof module === 'object' && module.exports) {
+  // assume NodeJS
   Tests(
     require('assert'),
     require('../../js/pbkdf2')(),

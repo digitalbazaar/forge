@@ -104,8 +104,7 @@ try {
       }
       return true;
   });
-}
-catch(ex) {
+} catch(ex) {
   console.log('Certificate verification failure: ' +
     JSON.stringify(ex, null, 2));
 }

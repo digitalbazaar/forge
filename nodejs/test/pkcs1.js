@@ -1003,8 +1003,7 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
     function checkOAEPEncryptExamples(publicKey, privateKey, md, examples) {
       if(md === 'sha1') {
         md = MD.sha1.create();
-      }
-      else if(md === 'sha256') {
+      } else if(md === 'sha256') {
         md = MD.sha256.create();
       }
 
@@ -1093,9 +1092,8 @@ if(typeof define === 'function') {
       UTIL()
     );
   });
-}
-// assume NodeJS
-else if(typeof module === 'object' && module.exports) {
+} else if(typeof module === 'object' && module.exports) {
+  // assume NodeJS
   Tests(
     require('assert'),
     require('../../js/pki')(),

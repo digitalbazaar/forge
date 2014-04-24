@@ -640,9 +640,8 @@ if(typeof define === 'function') {
       FORGE
     );
   });
-}
-// assume NodeJS
-else if(typeof module === 'object' && module.exports) {
+} else if(typeof module === 'object' && module.exports) {
+  // assume NodeJS
   Tests(
     require('assert'),
     require('../../js/forge'));

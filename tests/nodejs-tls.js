@@ -126,8 +126,7 @@ end.client = forge.tls.createConnection({
     console.log('Client disconnected.');
     if(success) {
       console.log('PASS');
-    }
-    else {
+    } else {
       console.log('FAIL');
     }
   },

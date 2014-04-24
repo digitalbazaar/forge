@@ -57,12 +57,10 @@ console.log(pem.csr);
 try {
   if(csr.verify()) {
     console.log('Certification request (CSR) verified.');
-  }
-  else {
+  } else {
     throw new Error('Signature not verified.');
   }
-}
-catch(err) {
+} catch(err) {
   console.log('Certification request (CSR) verification failure: ' +
     JSON.stringify(err, null, 2));
 }

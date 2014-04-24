@@ -73,12 +73,10 @@ try {
 
   console.log('\nLoading new PKCS#12 to confirm...');
   loadPkcs12(newPkcs12Der, password, caStore);
-}
-catch(ex) {
+} catch(ex) {
   if(ex.stack) {
     console.log(ex.stack);
-  }
-  else {
+  } else {
     console.log('Error', ex);
   }
 }
@@ -108,8 +106,7 @@ function loadPkcs12(pkcs12Der, password, caStore) {
             certChain: []
           };
         }
-      }
-      else {
+      } else {
         // no local key ID, skip bag
         continue;
       }
@@ -118,9 +115,8 @@ function loadPkcs12(pkcs12Der, password, caStore) {
       if(safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag) {
         console.log('found private key');
         map[localKeyId].privateKey = safeBag.key;
-      }
-      // this bag has a certificate
-      else if(safeBag.type === forge.pki.oids.certBag) {
+      } else if(safeBag.type === forge.pki.oids.certBag) {
+        // this bag has a certificate
         console.log('found certificate');
         map[localKeyId].certChain.push(safeBag.cert);
       }
@@ -141,8 +137,7 @@ function loadPkcs12(pkcs12Der, password, caStore) {
       console.log(privateKeyP12Pem);
       console.log('Encrypted Private Key (password: "' + password + '"):');
       console.log(encryptedPrivateKeyP12Pem);
-    }
-    else {
+    } else {
       console.log('');
     }
     if(entry.certChain.length > 0) {
@@ -156,8 +151,7 @@ function loadPkcs12(pkcs12Der, password, caStore) {
       var chainVerified = false;
       try {
         chainVerified = forge.pki.verifyCertificateChain(caStore, certChain);
-      }
-      catch(ex) {
+      } catch(ex) {
         chainVerified = ex;
       }
       console.log('Certificate chain verified: ', chainVerified);

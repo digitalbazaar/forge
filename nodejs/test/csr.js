@@ -109,9 +109,8 @@ if(typeof define === 'function') {
       PKI()
     );
   });
-}
-// assume NodeJS
-else if(typeof module === 'object' && module.exports) {
+} else if(typeof module === 'object' && module.exports) {
+  // assume NodeJS
   Tests(
     require('assert'),
     require('../../js/pki')());
