@@ -81,8 +81,7 @@ forge.log.logMessage = function(message) {
     var logger = sLoggers[i];
     if(logger.flags & forge.log.NO_LEVEL_CHECK) {
       logger.f(message);
-    }
-    else {
+    } else {
       // get logger level
       var loggerLevelIndex = sLevelInfo[logger.level].index;
       // check level
@@ -231,8 +230,7 @@ forge.log.setLevel = function(logger, level) {
 forge.log.lock = function(logger, lock) {
   if(typeof lock === 'undefined' || lock) {
     logger.flags |= forge.log.LEVEL_LOCKED;
-  }
-  else {
+  } else {
     logger.flags &= ~forge.log.LEVEL_LOCKED;
   }
 };
@@ -269,8 +267,7 @@ if(typeof(console) !== 'undefined' && 'log' in console) {
       handler.apply(console, args);
     };
     logger = forge.log.makeLogger(f);
-  }
-  else {
+  } else {
     // only appear to have basic console.log
     var f = function(logger, message) {
       forge.log.prepareStandardFull(message);
@@ -281,8 +278,7 @@ if(typeof(console) !== 'undefined' && 'log' in console) {
   forge.log.setLevel(logger, 'debug');
   forge.log.addLogger(logger);
   sConsoleLogger = logger;
-}
-else {
+} else {
   // define fake console.log to avoid potential script errors on
   // browsers that do not have console logging
   console = {

@@ -143,8 +143,7 @@ forge.tls.wrapSocket = function(options) {
     // drop data if connection not open
     if(!c.open) {
       socket.receive(e.bytesAvailable);
-    }
-    else {
+    } else {
       // only receive if there are enough bytes available to
       // process a record
       if(e.bytesAvailable >= _requiredBytes) {

@@ -121,16 +121,13 @@ if(typeof(navigator) === 'undefined')
 {
    BigInteger.prototype.am = am3;
    dbits = 28;
-}
-else if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
+} else if(j_lm && (navigator.appName == "Microsoft Internet Explorer")) {
   BigInteger.prototype.am = am2;
   dbits = 30;
-}
-else if(j_lm && (navigator.appName != "Netscape")) {
+} else if(j_lm && (navigator.appName != "Netscape")) {
   BigInteger.prototype.am = am1;
   dbits = 26;
-}
-else { // Mozilla/Netscape seems to prefer am3
+} else { // Mozilla/Netscape seems to prefer am3
   BigInteger.prototype.am = am3;
   dbits = 28;
 }
@@ -205,8 +202,7 @@ function bnpFromString(s,b) {
     else if(sh+k > this.DB) {
       this.data[this.t-1] |= (x&((1<<(this.DB-sh))-1))<<sh;
       this.data[this.t++] = (x>>(this.DB-sh));
-    }
-    else
+    } else
       this.data[this.t-1] |= x<<sh;
     sh += k;
     if(sh >= this.DB) sh -= this.DB;
@@ -243,8 +239,7 @@ function bnToString(b) {
       if(p < k) {
         d = (this.data[i]&((1<<p)-1))<<(k-p);
         d |= this.data[--i]>>(p+=this.DB-k);
-      }
-      else {
+      } else {
         d = (this.data[i]>>(p-=k))&km;
         if(p <= 0) { p += this.DB; --i; }
       }
@@ -356,8 +351,7 @@ function bnpSubTo(a,r) {
       c >>= this.DB;
     }
     c += this.s;
-  }
-  else {
+  } else {
     c += this.s;
     while(i < a.t) {
       c -= a.data[i];
@@ -417,8 +411,7 @@ function bnpDivRemTo(m,q,r) {
   if(r == null) r = nbi();
   var y = nbi(), ts = this.s, ms = m.s;
   var nsh = this.DB-nbits(pm.data[pm.t-1]);	// normalize modulus
-  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); }
-  else { pm.copyTo(y); pt.copyTo(r); }
+  if(nsh > 0) { pm.lShiftTo(nsh,y); pt.lShiftTo(nsh,r); } else { pm.copyTo(y); pt.copyTo(r); }
   var ys = y.t;
   var y0 = y.data[ys-1];
   if(y0 == 0) return;
@@ -631,8 +624,7 @@ function bnIntValue() {
 if(this.s < 0) {
  if(this.t == 1) return this.data[0]-this.DV;
  else if(this.t == 0) return -1;
-}
-else if(this.t == 1) return this.data[0];
+} else if(this.t == 1) return this.data[0];
 else if(this.t == 0) return 0;
 // assumes 16 < DB < 32
 return ((this.data[1]&((1<<(32-this.DB))-1))<<this.DB)|this.data[0];
@@ -711,8 +703,7 @@ if("number" == typeof b) {
      if(this.bitLength() > a) this.subTo(BigInteger.ONE.shiftLeft(a-1),this);
    }
  }
-}
-else {
+} else {
  // new BigInteger(int,RNG)
  var x = new Array(), t = a&7;
  x.length = (a>>3)+1;
@@ -734,8 +725,7 @@ if(i-- > 0) {
    if(p < 8) {
      d = (this.data[i]&((1<<p)-1))<<(8-p);
      d |= this.data[--i]>>(p+=this.DB-8);
-   }
-   else {
+   } else {
      d = (this.data[i]>>(p-=8))&0xff;
      if(p <= 0) { p += this.DB; --i; }
    }
@@ -759,8 +749,7 @@ if(a.t < this.t) {
  f = a.s&this.DM;
  for(i = m; i < this.t; ++i) r.data[i] = op(this.data[i],f);
  r.t = this.t;
-}
-else {
+} else {
  f = this.s&this.DM;
  for(i = m; i < a.t; ++i) r.data[i] = op(f,a.data[i]);
  r.t = a.t;
@@ -881,8 +870,7 @@ if(a.t < this.t) {
    c >>= this.DB;
  }
  c += this.s;
-}
-else {
+} else {
  c += this.s;
  while(i < a.t) {
    c += a.data[i];
@@ -1064,8 +1052,7 @@ while(j >= 0) {
  if(is1) {  // ret == 1, don't bother squaring or multiplying it
    g[w].copyTo(r);
    is1 = false;
- }
- else {
+ } else {
    while(n > 1) { z.sqrTo(r,r2); z.sqrTo(r2,r); n -= 2; }
    if(n > 0) z.sqrTo(r,r2); else { t = r; r = r2; r2 = t; }
    z.mulTo(r2,g[w],r);
@@ -1097,8 +1084,7 @@ while(x.signum() > 0) {
  if(x.compareTo(y) >= 0) {
    x.subTo(y,x);
    x.rShiftTo(1,x);
- }
- else {
+ } else {
    y.subTo(x,y);
    y.rShiftTo(1,y);
  }
@@ -1129,8 +1115,7 @@ while(u.signum() != 0) {
    if(ac) {
      if(!a.isEven() || !b.isEven()) { a.addTo(this,a); b.subTo(m,b); }
      a.rShiftTo(1,a);
-   }
-   else if(!b.isEven()) b.subTo(m,b);
+   } else if(!b.isEven()) b.subTo(m,b);
    b.rShiftTo(1,b);
  }
  while(v.isEven()) {
@@ -1138,16 +1123,14 @@ while(u.signum() != 0) {
    if(ac) {
      if(!c.isEven() || !d.isEven()) { c.addTo(this,c); d.subTo(m,d); }
      c.rShiftTo(1,c);
-   }
-   else if(!d.isEven()) d.subTo(m,d);
+   } else if(!d.isEven()) d.subTo(m,d);
    d.rShiftTo(1,d);
  }
  if(u.compareTo(v) >= 0) {
    u.subTo(v,u);
    if(ac) a.subTo(c,a);
    b.subTo(d,b);
- }
- else {
+ } else {
    v.subTo(u,v);
    if(ac) c.subTo(a,c);
    d.subTo(b,d);

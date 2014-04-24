@@ -99,8 +99,7 @@ if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
         if(typeof(navigator[key]) == 'string') {
           _navBytes += navigator[key];
         }
-      }
-      catch(e) {
+      } catch(e) {
         /* Some navigator keys might not be accessible, e.g. the geolocation
           attribute throws an exception if touched in Mozilla chrome://
           context.
@@ -132,8 +131,7 @@ if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
 /* Random API */
 if(!forge.random) {
   forge.random = _ctx;
-}
-else {
+} else {
   // extend forge.random with _ctx
   for(var key in _ctx) {
     forge.random[key] = _ctx[key];

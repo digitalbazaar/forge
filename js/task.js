@@ -448,8 +448,7 @@ Task.prototype.fail = function(next) {
 
     // do next task as specified
     runNext(next, 0);
-  }
-  else {
+  } else {
     if(this.parent !== null) {
       // finish root task (ensures it is removed from task queue)
       var parent = this.parent;
@@ -520,8 +519,7 @@ var runNext = function(task, recurse) {
         {
            runNext(subtask, recurse);
         }
-      }
-      else {
+      } else {
         finish(task);
 
         if(!task.error) {
@@ -543,8 +541,7 @@ var runNext = function(task, recurse) {
   if(swap) {
     // we're swapping, so run asynchronously
     setTimeout(doNext, 0);
-  }
-  else {
+  } else {
     // not swapping, so run synchronously
     doNext(recurse);
   }
@@ -585,8 +582,7 @@ var finish = function(task, suppressCallbacks) {
       forge.log.error(cat,
         '[%s][%s] task not first in queue [%s]',
         task.id, task.name, task.type);
-    }
-    else {
+    } else {
       // remove ourselves from the queue
       sTaskQueues[task.type].shift();
       // clean up queue if it is empty
@@ -617,8 +613,7 @@ var finish = function(task, suppressCallbacks) {
       // call final callback if one exists
       if(task.error && task.failureCallback) {
         task.failureCallback(task);
-      }
-      else if(!task.error && task.successCallback) {
+      } else if(!task.error && task.successCallback) {
         task.successCallback(task);
       }
     }
@@ -669,8 +664,7 @@ forge.task.start = function(options) {
     // create the queue with the new task
     sTaskQueues[task.type] = [task];
     start(task);
-  }
-  else {
+  } else {
     // push the task onto the queue, it will be run after a task
     // with the same type completes
     sTaskQueues[options.type].push(task);

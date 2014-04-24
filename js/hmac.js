@@ -50,12 +50,10 @@ hmac.create = function() {
         md = md.toLowerCase();
         if(md in forge.md.algorithms) {
           _md = forge.md.algorithms[md].create();
-        }
-        else {
+        } else {
           throw 'Unknown hash algorithm "' + md + '"';
         }
-      }
-      else {
+      } else {
         // store message digest
         _md = md;
       }
@@ -64,8 +62,7 @@ hmac.create = function() {
     if(key === null) {
       // reuse previous key
       key = _key;
-    }
-    else {
+    } else {
       // convert string into byte buffer
       if(typeof key === 'string') {
         key = forge.util.createBuffer(key);

@@ -405,8 +405,7 @@ var deflate = function(c, record, s) {
     record.fragment = forge.util.createBuffer(bytes);
     record.length = bytes.length;
     rval = true;
-  }
-  catch(ex) {
+  } catch(ex) {
     // deflate error, fail out
   }
 
@@ -431,8 +430,7 @@ var inflate = function(c, record, s) {
     record.fragment = forge.util.createBuffer(bytes);
     record.length = bytes.length;
     rval = true;
-  }
-  catch(ex) {
+  } catch(ex) {
     // inflate error, fail out
   }
 
@@ -786,8 +784,7 @@ tls.parseHelloMessage = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  }
-  else {
+  } else {
     // use 'remaining' to calculate # of remaining bytes in the message
     var b = record.fragment;
     var remaining = b.length();
@@ -803,8 +800,7 @@ tls.parseHelloMessage = function(c, record, length) {
     if(client) {
       msg.cipher_suite = b.getBytes(2);
       msg.compression_method = b.getByte();
-    }
-    else {
+    } else {
       msg.cipher_suites = readVector(b, 2);
       msg.compression_methods = readVector(b, 1);
     }
@@ -897,8 +893,7 @@ tls.parseHelloMessage = function(c, record, length) {
     // TODO: handle compression methods
     if(client) {
       c.session.compressionMethod = msg.compression_method;
-    }
-    else {
+    } else {
       // no compression
       c.session.compressionMethod = tls.CompressionMethod.none;
     }
@@ -989,8 +984,7 @@ tls.handleServerHello = function(c, record, length) {
 
       // get new server random
       c.session.sp.server_random = msg.random.bytes();
-    }
-    else {
+    } else {
       // not resuming, expect a server Certificate message next
       c.expect = SCE;
       c.session.resuming = false;
@@ -1054,8 +1048,7 @@ tls.handleClientHello = function(c, record, length) {
 
       // get new client random
       c.session.sp.client_random = msg.random.bytes();
-    }
-    else {
+    } else {
       // not resuming, expect a Certificate or ClientKeyExchange
       c.expect = (c.verifyClient !== false) ? CCE : CKE;
       c.session.resuming = false;
@@ -1091,8 +1084,7 @@ tls.handleClientHello = function(c, record, length) {
         type: tls.ContentType.handshake,
         data: tls.createFinished(c)
       }));
-    }
-    else {
+    } else {
       // queue server certificate
       tls.queue(c, tls.createRecord({
         type: tls.ContentType.handshake,
@@ -1167,8 +1159,7 @@ tls.handleCertificate = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  }
-  else {
+  } else {
     var b = record.fragment;
     var msg = {
       certificate_list: readVector(b, 3)
@@ -1188,8 +1179,7 @@ tls.handleCertificate = function(c, record, length) {
         cert = forge.pki.certificateFromAsn1(asn1, true);
         certs.push(cert);
       }
-    }
-    catch(ex) {
+    } catch(ex) {
       c.error(c, {
         message: 'Could not parse certificate list.',
         cause: ex,
@@ -1223,13 +1213,11 @@ tls.handleCertificate = function(c, record, length) {
       else if(certs.length === 0) {
         // expect a ServerKeyExchange or ClientKeyExchange message next
         c.expect = client ? SKE : CKE;
-      }
-      else {
+      } else {
         // save certificate in session
         if(client) {
           c.session.serverCertificate = certs[0];
-        }
-        else {
+        } else {
           c.session.clientCertificate = certs[0];
         }
 
@@ -1309,8 +1297,7 @@ tls.handleServerKeyExchange = function(c, record, length) {
         description: tls.Alert.Description.unsupported_certificate
       }
     });
-  }
-  else {
+  } else {
     // expect an optional CertificateRequest message next
     c.expect = SCR;
 
@@ -1338,8 +1325,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
         description: tls.Alert.Description.unsupported_certificate
       }
     });
-  }
-  else {
+  } else {
     var b = record.fragment;
     var msg = {
       enc_pre_master_secret: readVector(b, 2).getBytes()
@@ -1351,8 +1337,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
       try {
         privateKey = c.getPrivateKey(c, c.session.serverCertificate);
         privateKey = forge.pki.privateKeyFromPem(privateKey);
-      }
-      catch(ex) {
+      } catch(ex) {
         c.error(c, {
           message: 'Could not get private key.',
           cause: ex,
@@ -1374,8 +1359,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
           description: tls.Alert.Description.internal_error
         }
       });
-    }
-    else {
+    } else {
       try {
         // decrypt 48-byte pre-master secret
         var sp = c.session.sp;
@@ -1390,8 +1374,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
             message: 'TLS version rollback attack detected.'
           };
         }
-      }
-      catch(ex) {
+      } catch(ex) {
         /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
           TLS server which is using PKCS#1 encoded RSA, so instead of
           failing here, we generate 48 random bytes and use that as
@@ -1455,8 +1438,7 @@ tls.handleCertificateRequest = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  }
-  else {
+  } else {
     // TODO: TLS 1.1 and 1.2 have different formats
     var b = record.fragment;
     var msg = {
@@ -1492,8 +1474,7 @@ tls.handleCertificateVerify = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  }
-  else {
+  } else {
     // rewind to get full bytes for message so it can be manually
     // digested below (special case for CertificateVerify messages because
     // they must be digested *after* handling as opposed to all others)
@@ -1528,8 +1509,7 @@ tls.handleCertificateVerify = function(c, record, length) {
       // digest message now that it has been handled
       c.session.md5.update(msgBytes);
       c.session.sha1.update(msgBytes);
-    }
-    catch(ex) {
+    } catch(ex) {
       c.error(c, {
         message: 'Bad signature in CertificateVerify.',
         send: true,
@@ -1601,8 +1581,7 @@ tls.handleServerHelloDone = function(c, record, length) {
     if(ret === true) {
       // clear any set error
       error = null;
-    }
-    else {
+    } else {
       // check for custom alert info
       if(ret || ret === 0) {
         // set custom message and alert description
@@ -1613,8 +1592,7 @@ tls.handleServerHelloDone = function(c, record, length) {
           if(ret.alert) {
             error.alert.description = ret.alert;
           }
-        }
-        else if(typeof ret === 'number') {
+        } else if(typeof ret === 'number') {
           // set custom alert description
           error.alert.description = ret;
         }
@@ -1713,8 +1691,7 @@ tls.handleChangeCipherSpec = function(c, record) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  }
-  else {
+  } else {
     // create pending state if:
     // 1. Resuming session in client mode OR
     // 2. NOT resuming session in server mode
@@ -1815,8 +1792,7 @@ tls.handleFinished = function(c, record, length) {
         description: tls.Alert.Description.decrypt_error
       }
     });
-  }
-  else {
+  } else {
     // digest finished message now that it has been handled
     c.session.md5.update(msgBytes);
     c.session.sha1.update(msgBytes);
@@ -1860,8 +1836,7 @@ tls.handleFinished = function(c, record, length) {
         sp: c.session.sp
       };
       c.session.sp.keys = null;
-    }
-    else {
+    } else {
       c.session = null;
     }
 
@@ -1972,8 +1947,7 @@ tls.handleAlert = function(c, record) {
   // close connection on close_notify, not an error
   if(alert.description === tls.Alert.Description.close_notify) {
     c.close();
-  }
-  else {
+  } else {
     // call error handler
     c.error(c, {
       message: msg,
@@ -2010,8 +1984,7 @@ tls.handleHandshake = function(c, record) {
 
     // continue
     c.process();
-  }
-  else {
+  } else {
     // full message now available, clear cache, reset read pointer to
     // before type and length
     c.fragmented = null;
@@ -2054,8 +2027,7 @@ tls.handleHandshake = function(c, record) {
 
       // handle specific handshake type record
       hsTable[c.entity][c.expect][type](c, record, length);
-    }
-    else {
+    } else {
       // unexpected record
       tls.handleUnexpected(c, record);
     }
@@ -2103,8 +2075,7 @@ tls.handleHeartbeat = function(c, record) {
         tls.HeartbeatMessageType.heartbeat_response, payload)
     }));
     tls.flush(c);
-  }
-  else if(type === tls.HeartbeatMessageType.heartbeat_response) {
+  } else if(type === tls.HeartbeatMessageType.heartbeat_response) {
     // check payload against expected payload, discard heartbeat if no match
     if(payload !== c.expectedHeartbeatPayload) {
       // continue
@@ -2474,8 +2445,7 @@ tls.createConnectionState = function(c) {
         if(mode.sequenceNumber[1] === 0xFFFFFFFF) {
           mode.sequenceNumber[1] = 0;
           ++mode.sequenceNumber[0];
-        }
-        else {
+        } else {
           ++mode.sequenceNumber[1];
         }
       }
@@ -2501,8 +2471,7 @@ tls.createConnectionState = function(c) {
           description: tls.Alert.Description.bad_record_mac
         }
       });
-    }
-    else if(!state.read.compressFunction(c, record, state.read)) {
+    } else if(!state.read.compressFunction(c, record, state.read)) {
       c.error(c, {
         message: 'Could not decompress record.',
         send: true,
@@ -2528,8 +2497,7 @@ tls.createConnectionState = function(c) {
           description: tls.Alert.Description.internal_error
         }
       });
-    }
-    else if(!state.write.cipherFunction(record, state.write)) {
+    } else if(!state.write.cipherFunction(record, state.write)) {
       // error, but do not send alert since it would require
       // encryption as well
       c.error(c, {
@@ -2924,12 +2892,10 @@ tls.createCertificate = function(c) {
       cert = forge.pki.certificateFromAsn1(asn1);
       if(client) {
         c.session.clientCertificate = cert;
-      }
-      else {
+      } else {
         c.session.serverCertificate = cert;
       }
-    }
-    catch(ex) {
+    } catch(ex) {
       return c.error(c, {
         message: 'Could not send certificate list.',
         cause: ex,
@@ -3085,8 +3051,7 @@ tls.getClientSignature = function(c, callback) {
       try {
         privateKey = c.getPrivateKey(c, c.session.clientCertificate);
         privateKey = forge.pki.privateKeyFromPem(privateKey);
-      }
-      catch(ex) {
+      } catch(ex) {
         c.error(c, {
           message: 'Could not get private key.',
           cause: ex,
@@ -3107,8 +3072,7 @@ tls.getClientSignature = function(c, callback) {
           description: tls.Alert.Description.internal_error
         }
       });
-    }
-    else {
+    } else {
       b = privateKey.sign(b, null);
     }
     callback(c, b);
@@ -3405,8 +3369,7 @@ tls.queue = function(c, record) {
   var records;
   if(record.fragment.length() <= tls.MaxFragment) {
     records = [record];
-  }
-  else {
+  } else {
     // fragment data as long as it is too long
     records = [];
     var data = record.fragment.bytes();
@@ -3565,8 +3528,7 @@ tls.verifyCertificateChain = function(c, chain) {
 
         return ret;
       });
-  }
-  catch(ex) {
+  } catch(ex) {
     // build tls error if not already customized
     if(typeof ex !== 'object' || forge.util.isArray(ex)) {
       ex = {
@@ -3608,8 +3570,7 @@ tls.createSessionCache = function(cache, capacity) {
   // assume input is already a session cache object
   if(cache && cache.getSession && cache.setSession && cache.order) {
     rval = cache;
-  }
-  else {
+  } else {
     // create cache
     rval = {};
     rval.cache = cache || {};
@@ -3620,8 +3581,7 @@ tls.createSessionCache = function(cache, capacity) {
     for(var key in cache) {
       if(rval.order.length <= capacity) {
         rval.order.push(key);
-      }
-      else {
+      } else {
         delete cache[key];
       }
     }
@@ -3687,12 +3647,10 @@ tls.createConnection = function(options) {
     // if CA store is an array, convert it to a CA store object
     if(forge.util.isArray(options.caStore)) {
       caStore = forge.pki.createCaStore(options.caStore);
-    }
-    else {
+    } else {
       caStore = options.caStore;
     }
-  }
-  else {
+  } else {
     // create empty CA store
     caStore = forge.pki.createCaStore();
   }
@@ -3807,8 +3765,7 @@ tls.createConnection = function(options) {
     var handlers = ctTable[c.entity][c.expect];
     if(aligned in handlers) {
       handlers[aligned](c, record);
-    }
-    else {
+    } else {
       // unexpected record
       tls.handleUnexpected(c, record);
     }
@@ -3902,8 +3859,7 @@ tls.createConnection = function(options) {
             // concatenate record fragments
             c.fragmented.fragment.putBuffer(c.record.fragment);
             c.record = c.fragmented;
-          }
-          else {
+          } else {
             // error, invalid fragmented record
             c.error(c, {
               message: 'Invalid fragmented record.',
@@ -3948,8 +3904,7 @@ tls.createConnection = function(options) {
         message: 'Handshake already in progress.',
         fatal: false
       });
-    }
-    else {
+    } else {
       // clear fail flag on reuse
       if(c.fail && !c.open && c.handshakes === 0) {
         c.fail = false;

@@ -234,18 +234,15 @@ xhrApi.getCookie = function(name, path, domain) {
         if(cookie !== null) {
           if(rval === null) {
             rval = cookie;
-          }
-          else if(!forge.util.isArray(rval)) {
+          } else if(!forge.util.isArray(rval)) {
             rval = [rval, cookie];
-          }
-          else {
+          } else {
             rval.push(cookie);
           }
         }
       }
     }
-  }
-  else {
+  } else {
     // get cookie from default domain
     rval = _client.getCookie(name, path);
   }
@@ -277,8 +274,7 @@ xhrApi.removeCookie = function(name, path, domain) {
         }
       }
     }
-  }
-  else {
+  } else {
     // remove cookie from default domain
     rval = _client.removeCookie(name, path);
   }
@@ -384,8 +380,7 @@ xhrApi.create = function(options) {
   if(options.url === null) {
     // use default
     _state.client = _client;
-  }
-  else {
+  } else {
     var url = http.parseUrl(options.url);
     if(!url) {
       throw {
@@ -400,8 +395,7 @@ xhrApi.create = function(options) {
     if(url.full in _clients) {
       // client found
       _state.client = _clients[url.full];
-    }
-    else {
+    } else {
       // create client
       _state.client = http.createClient({
         url: options.url,
@@ -534,8 +528,7 @@ xhrApi.create = function(options) {
         if(data instanceof Document) {
           var xs = new XMLSerializer();
           _state.request.body = xs.serializeToString(data);
-        }
-        else {
+        } else {
           _state.request.body = data;
         }
       }
@@ -543,8 +536,7 @@ xhrApi.create = function(options) {
       else {
         if(typeof(data.xml) !== 'undefined') {
           _state.request.body = xml;
-        }
-        else {
+        } else {
           _state.request.body = data;
         }
       }
@@ -605,8 +597,7 @@ xhrApi.create = function(options) {
             doc.async = false;
             doc.loadXML(e.response.body);
             xhr.responseXML = doc;
-          }
-          catch(ex) {
+          } catch(ex) {
             var parser = new DOMParser();
             xhr.responseXML = parser.parseFromString(ex.body, 'text/xml');
           }
@@ -632,8 +623,7 @@ xhrApi.create = function(options) {
           _log.warning : _log.verbose;
         lFunc(cat, output,
           e, e.response.body ? '\n' + e.response.body : '\nNo content');
-      }
-      else {
+      } else {
         lFunc = (xhr.status >= 400 && options.logWarningOnError) ?
           _log.warning : _log.debug;
         lFunc(cat, output);
@@ -694,8 +684,7 @@ xhrApi.create = function(options) {
      (xhr.readyState === OPENED && !_state.sendFlag)) {
       // 7. set ready state to unsent
       xhr.readyState = UNSENT;
-    }
-    else {
+    } else {
       // 6.1 set state to DONE
       xhr.readyState = DONE;
 

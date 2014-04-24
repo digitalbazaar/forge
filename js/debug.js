@@ -36,12 +36,10 @@ forge.debug.get = function(cat, name) {
   var rval;
   if(typeof(cat) === 'undefined') {
     rval = forge.debug.storage;
-  }
-  else if(cat in forge.debug.storage) {
+  } else if(cat in forge.debug.storage) {
     if(typeof(name) === 'undefined') {
       rval = forge.debug.storage[cat];
-    }
-    else {
+    } else {
       rval = forge.debug.storage[cat][name];
     }
   }
@@ -72,12 +70,10 @@ forge.debug.set = function(cat, name, data) {
 forge.debug.clear = function(cat, name) {
   if(typeof(cat) === 'undefined') {
     forge.debug.storage = {};
-  }
-  else if(cat in forge.debug.storage) {
+  } else if(cat in forge.debug.storage) {
     if(typeof(name) === 'undefined') {
       delete forge.debug.storage[cat];
-    }
-    else {
+    } else {
       delete forge.debug.storage[cat][name];
     }
   }

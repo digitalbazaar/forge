@@ -310,8 +310,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
   if(typeof strict === 'string') {
     password = strict;
     strict = true;
-  }
-  else if(strict === undefined) {
+  } else if(strict === undefined) {
     strict = true;
   }
 
@@ -349,8 +348,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       var localKeyId;
       if('localKeyId' in filter) {
         localKeyId = filter.localKeyId;
-      }
-      else if('localKeyIdHex' in filter) {
+      } else if('localKeyIdHex' in filter) {
         localKeyId = forge.util.hexToBytes(filter.localKeyIdHex);
       }
 
@@ -799,8 +797,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   var bagAttrs;
   if(localKeyId !== null) {
     localKeyId = forge.util.hexToBytes(localKeyId);
-  }
-  else if(options.generateLocalKeyId) {
+  } else if(options.generateLocalKeyId) {
     // use SHA-1 of paired cert, if available
     if(cert) {
       var pairedCert = forge.util.isArray(cert) ? cert[0] : cert;
@@ -861,8 +858,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   if(cert !== null) {
     if(forge.util.isArray(cert)) {
       chain = cert;
-    }
-    else {
+    } else {
       chain = [cert];
     }
   }
@@ -944,8 +940,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // bagAttributes (OPTIONAL)
         bagAttrs
       ]);
-    }
-    else {
+    } else {
       // encrypted PrivateKeyInfo
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId

@@ -53,8 +53,7 @@ var _loadCookies = function(client) {
         client.socketPool.flashApi,
         _getStorageId(client), 'cookies');
       client.cookies = cookies || {};
-    }
-    catch(ex) {
+    } catch(ex) {
       // no flash storage available, just silently fail
       // TODO: i assume we want this logged somewhere or
       // should it actually generate an error
@@ -74,8 +73,7 @@ var _saveCookies = function(client) {
       forge.util.setItem(
         client.socketPool.flashApi,
         _getStorageId(client), 'cookies', client.cookies);
-    }
-    catch(ex) {
+    } catch(ex) {
       // no flash storage available, just silently fail
       // TODO: i assume we want this logged somewhere or
       // should it actually generate an error
@@ -99,8 +97,7 @@ var _clearCookies = function(client) {
       forge.util.clearItems(
         client.socketPool.flashApi,
         _getStorageId(client));
-    }
-    catch(ex) {
+    } catch(ex) {
       // no flash storage available, just silently fail
       // TODO: i assume we want this logged somewhere or
       // should it actually generate an error
@@ -123,8 +120,7 @@ var _doRequest = function(client, socket) {
       type: 'connect',
       id: socket.id
     });
-  }
-  else {
+  } else {
     // connect
     socket.options.request.connectTime = +new Date();
     socket.connect({
@@ -196,8 +192,7 @@ var _initSocket = function(client, socket, tlsOptions) {
       socket.options.connected(e);
       if(request.aborted) {
         socket.close();
-      }
-      else {
+      } else {
         var out = request.toString();
         if(request.body) {
           out += request.body;
@@ -216,8 +211,7 @@ var _initSocket = function(client, socket, tlsOptions) {
       if(socket.retries > 0) {
         --socket.retries;
         _doRequest(client, socket);
-      }
-      else {
+      } else {
         // error, closed during send
         socket.error({
           id: socket.id,
@@ -226,8 +220,7 @@ var _initSocket = function(client, socket, tlsOptions) {
           bytesAvailable: 0
         });
       }
-    }
-    else {
+    } else {
       // handle unspecified content-length transfer
       var response = socket.options.response;
       if(response.readBodyUntilClose) {
@@ -248,8 +241,7 @@ var _initSocket = function(client, socket, tlsOptions) {
     var request = socket.options.request;
     if(request.aborted) {
       socket.close();
-    }
-    else {
+    } else {
       // receive all bytes available
       var response = socket.options.response;
       var bytes = socket.receive(e.bytesAvailable);
@@ -281,8 +273,7 @@ var _initSocket = function(client, socket, tlsOptions) {
             (response.version === 'HTTP/1.0' &&
             response.getField('Keep-Alive') === null)) {
             socket.close();
-          }
-          else {
+          } else {
             _handleNextRequest(client, socket);
           }
         }
@@ -330,13 +321,11 @@ var _initSocket = function(client, socket, tlsOptions) {
         policyPort: client.policyPort,
         policyUrl: client.policyUrl
       });
-    }
-    else {
+    } else {
       // do not prime socket, just add as idle
       client.idle.push(socket);
     }
-  }
-  else {
+  } else {
     // no need to prime non-TLS sockets
     socket.buffer = forge.util.createBuffer();
     client.sockets.push(socket);
@@ -411,8 +400,7 @@ var _readCookies = function(client, response) {
   for(var i = 0; i < cookies.length; ++i) {
     try {
       client.setCookie(cookies[i]);
-    }
-    catch(ex) {
+    } catch(ex) {
       // ignore failure to add other-domain, etc. cookies
     }
   }
@@ -628,8 +616,7 @@ http.createClient = function(options) {
         socket = client.idle[i];
         if(socket.isConnected()) {
           client.idle.splice(i, 1);
-        }
-        else {
+        } else {
           socket = null;
         }
       }
@@ -685,8 +672,7 @@ http.createClient = function(options) {
         cookie.value === '') {
         // remove cookie
         rval = client.removeCookie(cookie.name, cookie.path);
-      }
-      else {
+      } else {
         // set cookie defaults
         cookie.comment = cookie.comment || '';
         cookie.maxAge = cookie.maxAge || 0;
@@ -973,8 +959,7 @@ http.createRequest = function(options) {
       request.bodyDeflated = true;
       request.setField('Content-Encoding', 'deflate');
       request.setField('Content-Length', request.body.length);
-    }
-    else if(request.body !== null) {
+    } else if(request.body !== null) {
       // set content length for body
       request.setField('Content-Length', request.body.length);
     }
@@ -1072,8 +1057,7 @@ http.createResponse = function() {
             response.version = tmp[0];
             response.code = parseInt(tmp[1], 10);
             response.message = tmp.slice(2).join(' ');
-          }
-          else {
+          } else {
             // invalid header
             throw {
               message: 'Invalid http response header.',
@@ -1176,8 +1160,7 @@ http.createResponse = function() {
             _parseHeader(line);
             // read next trailer
             line = _readCrlf(b);
-          }
-          else {
+          } else {
             // body received
             response.bodyReceived = true;
             line = null;
@@ -1214,8 +1197,7 @@ http.createResponse = function() {
       if(transferEncoding.indexOf('chunked') != -1) {
         response.body = response.body || '';
         _readChunkedBody(b);
-      }
-      else {
+      } else {
         throw {
           message: 'Unknown Transfer-Encoding.',
           details: {'transferEncoding' : transferEncoding}
@@ -1229,8 +1211,7 @@ http.createResponse = function() {
       response.body = response.body || '';
       response.body += b.getBytes();
       response.readBodyUntilClose = true;
-    }
-    else {
+    } else {
       // no body
       response.body = null;
       response.bodyReceived = true;

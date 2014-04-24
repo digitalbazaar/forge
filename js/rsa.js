@@ -276,8 +276,7 @@ var emsaPkcs1v15encode = function(md) {
   var oid;
   if(md.algorithm in pki.oids) {
     oid = pki.oids[md.algorithm];
-  }
-  else {
+  } else {
     throw {
       message: 'Unknown message digest algorithm.',
       algorithm: md.algorithm
@@ -318,12 +317,10 @@ var _modPow = function(x, key, pub) {
 
   if(pub) {
     y = x.modPow(key.e, key.n);
-  }
-  else if(!key.p || !key.q) {
+  } else if(!key.p || !key.q) {
     // allow calculation without CRT params (slow)
     y = x.modPow(key.d, key.n);
-  }
-  else {
+  } else {
     // pre-compute dP, dQ, and qInv if necessary
     if(!key.dP) {
       key.dP = key.d.mod(key.p.subtract(BigInteger.ONE));
@@ -471,8 +468,7 @@ pki.rsa.encrypt = function(m, key, bt) {
     // legacy, default to PKCS#1 v1.5 padding
     pub = (bt === 0x02);
     eb = _encodePkcs1_v1_5(m, key, bt);
-  }
-  else {
+  } else {
     eb = forge.util.createBuffer();
     eb.putBytes(m);
   }
@@ -693,8 +689,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         else if(state.num.isProbablePrime(
           _getMillerRabinIterations(state.num.bitLength()))) {
           ++state.pqState;
-        }
-        else {
+        } else {
           // get next potential prime
           state.num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
         }
@@ -710,8 +705,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         state.pqState = 0;
         if(state.p === null) {
           state.p = state.num;
-        }
-        else {
+        } else {
           state.q = state.num;
         }
 
@@ -743,8 +737,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
       if(state.phi.gcd(state.e).compareTo(BigInteger.ONE) === 0) {
         // phi and e are coprime, advance
         ++state.state;
-      }
-      else {
+      } else {
         // phi and e aren't coprime, so generate a new p and q
         state.p = null;
         state.q = null;
@@ -759,8 +752,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
       if(state.n.bitLength() === state.bits) {
         // success, advance
         ++state.state;
-      }
-      else {
+      } else {
         // failed, get new q
         state.q = null;
         state.state = 0;
@@ -821,8 +813,7 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
     if(typeof bits === 'object') {
       options = bits;
       bits = undefined;
-    }
-    else if(typeof bits === 'function') {
+    } else if(typeof bits === 'function') {
       callback = bits;
       bits = undefined;
     }
@@ -832,12 +823,10 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
     if(typeof bits === 'number') {
       if(typeof e === 'function') {
         callback = e;
-      }
-      else {
+      } else {
         options = e;
       }
-    }
-    else {
+    } else {
       options = bits;
       callback = e;
       bits = undefined;
@@ -851,8 +840,7 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
         callback = options;
         options = undefined;
       }
-    }
-    else {
+    } else {
       callback = options;
       options = e;
       e = undefined;
@@ -904,8 +892,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
   key.encrypt = function(data, scheme, schemeOptions) {
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
-    }
-    else if(scheme === undefined) {
+    } else if(scheme === undefined) {
       scheme = 'RSAES-PKCS1-V1_5';
     }
 
@@ -915,18 +902,15 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
           return _encodePkcs1_v1_5(m, key, 0x02).getBytes();
         }
       };
-    }
-    else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
+    } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
         encode: function(m, key) {
           return forge.pkcs1.encode_rsa_oaep(key, m, schemeOptions);
         }
       };
-    }
-    else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+    } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
       scheme = { encode: function(e) { return e; } };
-    }
-    else {
+    } else {
       throw {
         message: 'Unsupported encryption scheme: "' + scheme + '".'
       };
@@ -970,8 +954,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    key.verify = function(digest, signature, scheme) {
      if(typeof scheme === 'string') {
        scheme = scheme.toUpperCase();
-     }
-     else if(scheme === undefined) {
+     } else if(scheme === undefined) {
        scheme = 'RSASSA-PKCS1-V1_5';
      }
 
@@ -986,8 +969,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
            return digest === obj.value[1].value;
          }
        };
-     }
-     else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+     } else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
        scheme = {
          verify: function(digest, d) {
            // remove padding
@@ -1049,8 +1031,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
   key.decrypt = function(data, scheme, schemeOptions) {
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
-    }
-    else if(scheme === undefined) {
+    } else if(scheme === undefined) {
       scheme = 'RSAES-PKCS1-V1_5';
     }
 
@@ -1059,18 +1040,15 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
 
     if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = { decode: _decodePkcs1_v1_5 };
-    }
-    else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
+    } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
         decode: function(d, key) {
           return forge.pkcs1.decode_rsa_oaep(key, d, schemeOptions);
         }
       };
-    }
-    else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+    } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
       scheme = { decode: function(d) { return d; } };
-    }
-    else {
+    } else {
       throw {
         message: 'Unsupported encryption scheme: "' + scheme + '".'
       };
@@ -1115,8 +1093,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     if(scheme === undefined || scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = { encode: emsaPkcs1v15encode };
       bt = 0x01;
-    }
-    else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+    } else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
       scheme = { encode: function() { return md; } };
       bt = 0x01;
     }
@@ -1399,8 +1376,7 @@ function _encodePkcs1_v1_5(m, key, bt) {
         padByte = padBytes.charCodeAt(i);
         if(padByte === 0) {
           ++numZeros;
-        }
-        else {
+        } else {
           eb.putByte(padByte);
         }
       }
@@ -1463,8 +1439,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
         };
       }
     }
-  }
-  else if(bt === 0x01) {
+  } else if(bt === 0x01) {
     // find the first byte that isn't 0xFF, should be after all padding
     padNum = 0;
     while(eb.length() > 1) {
@@ -1474,8 +1449,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
       }
       ++padNum;
     }
-  }
-  else if(bt === 0x02) {
+  } else if(bt === 0x02) {
     // look for 0x00 byte
     padNum = 0;
     while(eb.length() > 1) {

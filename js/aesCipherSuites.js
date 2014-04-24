@@ -94,8 +94,7 @@ function encrypt_aes_cbc_sha1(record, s) {
   var iv;
   if(record.version.minor > 1) {
     iv = forge.random.getBytes(16);
-  }
-  else {
+  } else {
     // use the pre-generated IV when initializing for TLS 1.0, otherwise use
     // the residue from the previous encryption
     iv = s.cipherState.init ? null : s.cipherState.iv;

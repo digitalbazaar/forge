@@ -155,8 +155,7 @@ pem.decode = function(str) {
               message: 'Invalid PEM formatted message. The first ' +
                 'encapsulated header must be "Proc-Type".'
             };
-          }
-          else if(header.values.length !== 2) {
+          } else if(header.values.length !== 2) {
             throw {
               message: 'Invalid PEM formatted message. The "Proc-Type" ' +
                 'header must have two subfields.'
@@ -177,8 +176,7 @@ pem.decode = function(str) {
             };
           }
           msg.dekInfo = {algorithm: values[0], parameters: values[1] || null};
-        }
-        else {
+        } else {
           msg.headers.push(header);
         }
       }
@@ -224,16 +222,14 @@ function foldHeader(header) {
       if(insert === ',') {
         ++candidate;
         rval = rval.substr(0, candidate) + '\r\n ' + rval.substr(candidate);
-      }
-      else {
+      } else {
         rval = rval.substr(0, candidate) +
           '\r\n' + insert + rval.substr(candidate + 1);
       }
       length = (i - candidate - 1);
       candidate = -1;
       ++i;
-    }
-    else if(rval[i] === ' ' || rval[i] === '\t' || rval[i] === ',') {
+    } else if(rval[i] === ' ' || rval[i] === '\t' || rval[i] === ',') {
       candidate = i;
     }
   }

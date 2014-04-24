@@ -236,8 +236,7 @@ var _getValueLength = function(b) {
   if(!longForm) {
     // length is just the first byte
     length = b2;
-  }
-  else {
+  } else {
     // the number of bytes the length is specified in bits 7 through 1
     // and each length byte is in big-endian base-256
     length = b.getInt((b2 & 0x7F) << 3);
@@ -330,8 +329,7 @@ asn1.fromDer = function(bytes, strict) {
             ++read;
             --length;
           }
-        }
-        catch(ex) {}
+        } catch(ex) {}
       }
     }
     // restore read pointer
@@ -350,8 +348,7 @@ asn1.fromDer = function(bytes, strict) {
         }
         value.push(asn1.fromDer(bytes, strict));
       }
-    }
-    else {
+    } else {
       // parsing asn1 object of definite length
       var start = bytes.length();
       while(length > 0) {
@@ -382,8 +379,7 @@ asn1.fromDer = function(bytes, strict) {
       for(var i = 0; i < length; i += 2) {
         value += String.fromCharCode(bytes.getInt16());
       }
-    }
-    else {
+    } else {
       value = bytes.getBytes(length);
     }
   }
@@ -433,8 +429,7 @@ asn1.toDer = function(obj) {
       for(var i = 0; i < obj.value.length; ++i) {
         value.putInt16(obj.value.charCodeAt(i));
       }
-    }
-    else {
+    } else {
       value.putBytes(obj.value);
     }
   }
@@ -639,8 +634,7 @@ asn1.utcTimeToDate = function(utc) {
       // apply offset
       if(c === '+') {
         date.setTime(+date - offset);
-      }
-      else {
+      } else {
         date.setTime(+date + offset);
       }
     }
@@ -726,8 +720,7 @@ asn1.generalizedTimeToDate = function(gentime) {
 
     // apply offset
     date.setTime(+date + offset);
-  }
-  else {
+  } else {
     date.setFullYear(YYYY, MM, DD);
     date.setHours(hh, mm, ss, fff);
   }
@@ -860,8 +853,7 @@ asn1.validate = function(obj, v, capture, errors) {
             rval = asn1.validate(obj.value[j], v.value[i], capture, errors);
             if(rval) {
               ++j;
-            }
-            else if(v.value[i].optional) {
+            } else if(v.value[i].optional) {
               rval = true;
             }
           }
@@ -884,15 +876,13 @@ asn1.validate = function(obj, v, capture, errors) {
           capture[v.captureAsn1] = obj;
         }
       }
-    }
-    else if(errors) {
+    } else if(errors) {
       errors.push(
         '[' + v.name + '] ' +
         'Expected constructed "' + v.constructed + '", got "' +
         obj.constructed + '"');
     }
-  }
-  else if(errors) {
+  } else if(errors) {
     if(obj.tagClass !== v.tagClass) {
       errors.push(
         '[' + v.name + '] ' +
@@ -1024,8 +1014,7 @@ asn1.prettyPrint = function(obj, level, indentation) {
       rval += ' (BMP String)';
       break;
     }
-  }
-  else {
+  } else {
     rval += obj.type;
   }
 
@@ -1045,8 +1034,7 @@ asn1.prettyPrint = function(obj, level, indentation) {
       }
     }
     rval += indent + 'Sub values: ' + subvalues + sub;
-  }
-  else {
+  } else {
     rval += indent + 'Value: ';
     if(obj.type === asn1.Type.OID) {
       var oid = asn1.derToOid(obj.value);
@@ -1060,19 +1048,16 @@ asn1.prettyPrint = function(obj, level, indentation) {
     if(obj.type === asn1.Type.INTEGER) {
       try {
         rval += asn1.derToInteger(obj.value);
-      }
-      catch(ex) {
+      } catch(ex) {
         rval += '0x' + forge.util.bytesToHex(obj.value);
       }
     }
     // FIXME: choose output (hex vs. printable) based on asn1.Type
     else if(_nonLatinRegex.test(obj.value)) {
       rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
-    }
-    else if(obj.value.length === 0) {
+    } else if(obj.value.length === 0) {
       rval += '[null]';
-    }
-    else {
+    } else {
       rval += obj.value;
     }
   }

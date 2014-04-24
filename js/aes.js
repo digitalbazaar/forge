@@ -383,8 +383,7 @@ var initialize = function() {
     if(e === 0) {
       // 1 is the inverse of 1
       e = ei = 1;
-    }
-    else {
+    } else {
       // e = 2e + 2*2*2*(10e)) = multiply e by 82 (chosen generator)
       // ei = ei + 2*2*ei = multiply ei by 5 (inverse generator)
       e = e2 ^ xtime[xtime[xtime[e2 ^ e8]]];
@@ -446,8 +445,7 @@ var expandKey = function(key, decrypt) {
         sbox[temp & 255] << 8 ^
         sbox[temp >>> 24] ^ (rcon[iNk] << 24);
       iNk++;
-    }
-    else if(Nk > 6 && (i % Nk === 4)) {
+    } else if(Nk > 6 && (i % Nk === 4)) {
       // temp = SubWord(temp)
       temp =
         sbox[temp >>> 24] << 24 ^
@@ -522,8 +520,7 @@ var expandKey = function(key, decrypt) {
         wnew[i + 1] = w[wi + 3];
         wnew[i + 2] = w[wi + 2];
         wnew[i + 3] = w[wi + 1];
-      }
-      else {
+      } else {
         // substitute each round key byte because the inverse-mix
         // table will inverse-substitute it (effectively cancel the
         // substitution because round key bytes aren't sub'd in
@@ -600,8 +597,7 @@ var _updateBlock = function(w, input, output, decrypt) {
     m2 = imix[2];
     m3 = imix[3];
     sub = isbox;
-  }
-  else {
+  } else {
     m0 = mix[0];
     m1 = mix[1];
     m2 = mix[2];
@@ -887,17 +883,13 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
 
   if(mode === 'CBC') {
     _op = cbcOp;
-  }
-  else if(mode === 'CFB') {
+  } else if(mode === 'CFB') {
     _op = cfbOp;
-  }
-  else if(mode === 'OFB') {
+  } else if(mode === 'OFB') {
     _op = ofbOp;
-  }
-  else if(mode === 'CTR') {
+  } else if(mode === 'CTR') {
     _op = ctrOp;
-  }
-  else {
+  } else {
     throw {
       message: 'Unsupported block cipher mode of operation: "' + mode + '"'
     }
@@ -937,8 +929,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     if(!decrypt) {
       if(pad) {
         rval = pad(_blockSize, _input, decrypt);
-      }
-      else if(requirePadding) {
+      } else if(requirePadding) {
         // add PKCS#7 padding to block (each pad byte is the
         // value of the number of pad bytes)
         var padding = (_input.length() === _blockSize) ?
@@ -961,15 +952,13 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
       if(rval) {
         if(pad) {
           rval = pad(_blockSize, _output, decrypt);
-        }
-        else if(requirePadding) {
+        } else if(requirePadding) {
           // ensure padding byte count is valid
           var len = _output.length();
           var count = _output.at(len - 1);
           if(count > (Nb << 2)) {
             rval = false;
-          }
-          else {
+          } else {
             // trim off padding bytes
             _output.truncate(count);
           }
@@ -1060,8 +1049,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
       for(var i = 0; i < Nb; ++i) {
         _inBlock[i] = _input.getInt32();
       }
-    }
-    else {
+    } else {
       // CBC XOR's IV (or previous block) with plaintext
       for(var i = 0; i < Nb; ++i) {
         _inBlock[i] = _prev[i] ^ _input.getInt32();
@@ -1078,8 +1066,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
         _output.putInt32(_prev[i] ^ _outBlock[i]);
       }
       _prev = _inBlock.slice(0);
-    }
-    else {
+    } else {
       for(var i = 0; i < Nb; ++i) {
         _output.putInt32(_outBlock[i]);
       }
@@ -1131,8 +1118,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     for(var i = Nb - 1; i >= 0; --i) {
       if(_inBlock[i] === 0xFFFFFFFF) {
         _inBlock[i] = 0;
-      }
-      else {
+      } else {
         ++_inBlock[i];
         break;
       }

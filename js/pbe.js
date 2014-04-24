@@ -271,8 +271,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
         ])
       ])
     ]);
-  }
-  else if(options.algorithm === '3des') {
+  } else if(options.algorithm === '3des') {
     // Do PKCS12 PBE
     dkLen = 24;
 
@@ -298,8 +297,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
           countBytes.getBytes())
       ])
     ]);
-  }
-  else {
+  } else {
     throw {
       message: 'Cannot encrypt private key. Unknown encryption algorithm.',
       algorithm: options.algorithm
@@ -583,19 +581,16 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     cipher.update(forge.util.createBuffer(msg.body));
     if(cipher.finish()) {
       rval = cipher.output.getBytes();
-    }
-    else {
+    } else {
       return rval;
     }
-  }
-  else {
+  } else {
     rval = msg.body;
   }
 
   if(msg.type === 'ENCRYPTED PRIVATE KEY') {
     rval = pki.decryptPrivateKeyInfo(asn1.fromDer(rval), password);
-  }
-  else {
+  } else {
     // decryption already performed above
     rval = asn1.fromDer(rval);
   }

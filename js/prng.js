@@ -268,8 +268,7 @@ prng.create = function(plugin) {
           for(var i = 0; i < entropy.length; ++i) {
             b.putInt32(entropy[i]);
           }
-        }
-        catch(e) {
+        } catch(e) {
           /* only ignore QuotaExceededError */
           if(!(typeof QuotaExceededError !== 'undefined' &&
             e instanceof QuotaExceededError)) {
@@ -321,13 +320,11 @@ prng.create = function(plugin) {
     ctx.seedFileSync = function(needed) {
       return crypto.randomBytes(needed).toString();
     };
-  }
-  else {
+  } else {
     ctx.seedFile = function(needed, callback) {
       try {
         callback(null, defaultSeedFile(needed));
-      }
-      catch(e) {
+      } catch(e) {
         callback(e);
       }
     };

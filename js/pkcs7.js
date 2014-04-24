@@ -292,8 +292,7 @@ var _fromAsn1 = function(msg, obj, validator) {
         }
         content += capture.encryptedContent[i].value;
       }
-    }
-    else {
+    } else {
       content = capture.encryptedContent;
     }
     msg.encryptedContent = {
@@ -315,8 +314,7 @@ var _fromAsn1 = function(msg, obj, validator) {
         }
         content += capture.content[i].value;
       }
-    }
-    else {
+    } else {
       content = capture.content;
     }
     msg.content = forge.util.createBuffer(content);

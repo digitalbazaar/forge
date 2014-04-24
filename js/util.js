@@ -19,20 +19,17 @@ if(typeof process === 'undefined' || !process.nextTick) {
     util.nextTick = function(callback) {
       return setImmediate(callback);
     };
-  }
-  else {
+  } else {
     util.setImmediate = function(callback) {
       setTimeout(callback, 0);
     };
     util.nextTick = util.setImmediate;
   }
-}
-else {
+} else {
   util.nextTick = process.nextTick;
   if(typeof setImmediate === 'function') {
     util.setImmediate = setImmediate;
-  }
-  else {
+  } else {
     util.setImmediate = util.nextTick;
   }
 }
@@ -99,15 +96,13 @@ util.ByteBuffer = function(b) {
 
   if(typeof b === 'string') {
     this.data = b;
-  }
-  else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
+  } else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
     // convert native buffer to forge buffer
     // FIXME: support native buffers internally instead
     var arr = new Uint8Array(b);
     try {
       this.data = String.fromCharCode.apply(null, arr);
-    }
-    catch(e) {
+    } catch(e) {
       for(var i = 0; i < arr.length; ++i) {
         this.putByte(arr[i]);
       }
@@ -481,11 +476,9 @@ util.ByteBuffer.prototype.getBytes = function(count) {
     count = Math.min(this.length(), count);
     rval = this.data.slice(this.read, this.read + count);
     this.read += count;
-  }
-  else if(count === 0) {
+  } else if(count === 0) {
     rval = '';
-  }
-  else {
+  } else {
     // read all bytes, optimize to only copy when needed
     rval = (this.read === 0) ? this.data : this.data.slice(this.read);
     this.clear();
@@ -793,8 +786,7 @@ util.encode64 = function(input, maxline) {
     line += _base64.charAt(((chr1 & 3) << 4) | (chr2 >> 4));
     if(isNaN(chr2)) {
       line += '==';
-    }
-    else {
+    } else {
       line += _base64.charAt(((chr2 & 15) << 2) | (chr3 >> 6));
       line += isNaN(chr3) ? '=' : _base64.charAt(chr3 & 63);
     }
@@ -931,8 +923,7 @@ var _setStorageObject = function(api, id, obj) {
   var rval;
   if(obj === null) {
     rval = api.removeItem(id);
-  }
-  else {
+  } else {
     // json-encode and base64-encode object
     obj = util.encode64(JSON.stringify(obj));
     rval = api.setItem(id, obj);
@@ -975,8 +966,7 @@ var _getStorageObject = function(api, id) {
       }
       // no error, but also no item
       rval = null;
-    }
-    else {
+    } else {
       rval = rval.rval;
     }
   }
@@ -1101,8 +1091,7 @@ var _callStorageFunction = function(func, args, location) {
           throw {
             message: 'Flash local storage not available.'
           };
-        }
-        else {
+        } else {
           rval = func.apply(this, args);
           done = (type === 'flash');
         }
@@ -1112,8 +1101,7 @@ var _callStorageFunction = function(func, args, location) {
         rval = func.apply(this, args);
         done = true;
       }
-    }
-    catch(ex) {
+    } catch(ex) {
       exception = ex;
     }
     if(done) {
@@ -1227,15 +1215,12 @@ util.parseUrl = function(str) {
     if(url.port) {
       if(url.port !== 80 && url.scheme === 'http') {
         url.fullHost += ':' + url.port;
-      }
-      else if(url.port !== 443 && url.scheme === 'https') {
+      } else if(url.port !== 443 && url.scheme === 'https') {
         url.fullHost += ':' + url.port;
       }
-    }
-    else if(url.scheme === 'http') {
+    } else if(url.scheme === 'http') {
       url.port = 80;
-    }
-    else if(url.scheme === 'https') {
+    } else if(url.scheme === 'https') {
       url.port = 443;
     }
     url.full = url.scheme + '://' + url.fullHost;
@@ -1296,8 +1281,7 @@ util.getQueryVariables = function(query) {
       if(pos > 0) {
         key = kvpairs[i].substring(0,pos);
         val = kvpairs[i].substring(pos+1);
-      }
-      else {
+      } else {
         key = kvpairs[i];
         val = null;
       }
@@ -1319,15 +1303,13 @@ util.getQueryVariables = function(query) {
        if(typeof(window) === 'undefined') {
           // no query variables available
           _queryVariables = {};
-       }
-       else {
+       } else {
           // parse window search query
           _queryVariables = parse(window.location.search.substring(1));
        }
      }
      rval = _queryVariables;
-   }
-   else {
+   } else {
      // parse given query
      rval = parse(query);
    }
@@ -1420,8 +1402,7 @@ util.makeRequest = function(reqString) {
       var rval;
       if(typeof(k) === 'undefined') {
         rval = frag.query;
-      }
-      else {
+      } else {
         rval = frag.query[k];
         if(rval && typeof(i) !== 'undefined')
         {
@@ -1435,8 +1416,7 @@ util.makeRequest = function(reqString) {
       var vals = req.getQuery(k);
       if(vals) {
         rval = vals[vals.length - 1];
-      }
-      else {
+      } else {
         rval = _default;
       }
       return rval;
@@ -1488,8 +1468,7 @@ util.setPath = function(object, keys, value) {
       if(i == len) {
         // last
         object[next] = value;
-      }
-      else {
+      } else {
         // more
         var hasNext = (next in object);
         if(!hasNext ||
@@ -1548,8 +1527,7 @@ util.deletePath = function(object, keys) {
       if(i == len) {
         // last
         delete object[next];
-      }
-      else {
+      } else {
         // more
         if(!(next in object) ||
           (typeof(object[next]) !== 'object') ||
@@ -1616,8 +1594,7 @@ util.format = function(format) {
       // check if enough arguments were given
       if(argi < arguments.length) {
         parts.push(arguments[argi++ + 1]);
-      }
-      else {
+      } else {
         parts.push('<?>');
       }
       break;
@@ -1671,14 +1648,11 @@ util.formatNumber = function(number, decimals, dec_point, thousands_sep) {
 util.formatSize = function(size) {
   if(size >= 1073741824) {
     size = util.formatNumber(size / 1073741824, 2, '.', '') + ' GiB';
-  }
-  else if(size >= 1048576) {
+  } else if(size >= 1048576) {
     size = util.formatNumber(size / 1048576, 2, '.', '') + ' MiB';
-  }
-  else if(size >= 1024) {
+  } else if(size >= 1024) {
     size = util.formatNumber(size / 1024, 0) + ' KiB';
-  }
-  else {
+  } else {
     size = util.formatNumber(size, 0) + ' bytes';
   }
   return size;
@@ -1819,8 +1793,7 @@ util.bytesToIPv6 = function(bytes) {
       var idx = ip.length;
       if(!last || idx !== last.end + 1) {
         zeroGroups.push({start: idx, end: idx});
-      }
-      else {
+      } else {
         last.end = idx;
         if((last.end - last.start) >
           (zeroGroups[zeroMaxGroup].end - zeroGroups[zeroMaxGroup].start)) {

@@ -79,8 +79,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
     label = options;
     seed = arguments[3] || undefined;
     md = arguments[4] || undefined;
-  }
-  else if(options) {
+  } else if(options) {
     label = options.label || undefined;
     seed = options.seed || undefined;
     md = options.md || undefined;
@@ -92,8 +91,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   // default OAEP to SHA-1 message digest
   if(!md) {
     md = forge.md.sha1.create();
-  }
-  else {
+  } else {
     md.start();
   }
 
@@ -129,8 +127,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
 
   if(!seed) {
     seed = forge.random.getBytes(md.digestLength);
-  }
-  else if(seed.length !== md.digestLength) {
+  } else if(seed.length !== md.digestLength) {
     throw {
       message: 'Invalid RSAES-OAEP seed. The seed length must match the ' +
         'digest length.',
@@ -175,8 +172,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   if(typeof options === 'string') {
     label = options;
     md = arguments[3] || undefined;
-  }
-  else if(options) {
+  } else if(options) {
     label = options.label || undefined;
     md = options.md || undefined;
     if(options.mgf1 && options.mgf1.md) {
@@ -198,8 +194,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   // default OAEP to SHA-1 message digest
   if(md === undefined) {
     md = forge.md.sha1.create();
-  }
-  else {
+  } else {
     md.start();
   }
 

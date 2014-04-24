@@ -584,11 +584,9 @@ function _getAttribute(obj, options) {
     attr = obj.attributes[i];
     if(options.type && options.type === attr.type) {
       rval = attr;
-    }
-    else if(options.name && options.name === attr.name) {
+    } else if(options.name && options.name === attr.name) {
       rval = attr;
-    }
-    else if(options.shortName && options.shortName === attr.shortName) {
+    } else if(options.shortName && options.shortName === attr.shortName) {
       rval = attr;
     }
   }
@@ -669,8 +667,7 @@ var _parseExtensions = function(exts) {
       if(ext.value[1].type === asn1.Type.BOOLEAN) {
         e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
         e.value = ext.value[2].value;
-      }
-      else {
+      } else {
         e.value = ext.value[1].value;
       }
       // if the oid is known, get its name
@@ -708,16 +705,14 @@ var _parseExtensions = function(exts) {
           // get cA BOOLEAN flag (defaults to false)
           if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
             e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
-          }
-          else {
+          } else {
             e.cA = false;
           }
           // get path length constraint
           var value = null;
           if(ev.value.length > 0 && ev.value[0].type === asn1.Type.INTEGER) {
             value = ev.value[0].value;
-          }
-          else if(ev.value.length > 1) {
+          } else if(ev.value.length > 1) {
             value = ev.value[1].value;
           }
           if(value !== null) {
@@ -732,8 +727,7 @@ var _parseExtensions = function(exts) {
             var oid = asn1.derToOid(ev.value[vi].value);
             if(oid in oids) {
               e[oids[oid]] = true;
-            }
-            else {
+            } else {
               e[oid] = true;
             }
           }
@@ -800,8 +794,7 @@ var _parseExtensions = function(exts) {
               // unsupported
             }
           }
-        }
-        else if(e.name === 'subjectKeyIdentifier') {
+        } else if(e.name === 'subjectKeyIdentifier') {
           // value is an OCTETSTRING w/the hash of the key-type specific
           // public key structure (eg: RSAPublicKey)
           var ev = asn1.fromDer(e.value);
@@ -1166,8 +1159,7 @@ pki.createCertificate = function() {
       if(typeof(e.id) === 'undefined') {
         if(e.name && e.name in pki.oids) {
           e.id = pki.oids[e.name];
-        }
-        else {
+        } else {
           throw {
             message: 'Extension ID not specified.',
             extension: e
@@ -1224,8 +1216,7 @@ pki.createCertificate = function() {
           var value = String.fromCharCode(unused);
           if(b3 !== 0) {
             value += String.fromCharCode(b2) + String.fromCharCode(b3);
-          }
-          else if(b2 !== 0) {
+          } else if(b2 !== 0) {
             value += String.fromCharCode(b2);
           }
           e.value = asn1.create(
@@ -1314,8 +1305,7 @@ pki.createCertificate = function() {
           }
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
-        }
-        else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {
+        } else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {
           // SYNTAX SEQUENCE
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
@@ -1349,8 +1339,7 @@ pki.createCertificate = function() {
               asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
               value));
           }
-        }
-        else if(e.name === 'subjectKeyIdentifier') {
+        } else if(e.name === 'subjectKeyIdentifier') {
           var ski = cert.generateSubjectKeyIdentifier();
           e.subjectKeyIdentifier = ski.toHex();
           // OCTETSTRING w/digest
@@ -1392,8 +1381,7 @@ pki.createCertificate = function() {
       ext = cert.extensions[i];
       if(options.id && ext.id === options.id) {
         rval = ext;
-      }
-      else if(options.name && ext.name === options.name) {
+      } else if(options.name && ext.name === options.name) {
         rval = ext;
       }
     }
@@ -1797,8 +1785,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   // handle extensions
   if(capture.certExtensions) {
     cert.extensions = _parseExtensions(capture.certExtensions);
-  }
-  else {
+  } else {
     cert.extensions = [];
   }
 
@@ -2244,11 +2231,9 @@ function _getAttributesAsJson(attrs) {
       }
       if(!(attr.shortName in rval)) {
         rval[attr.shortName] = value;
-      }
-      else if(forge.util.isArray(rval[attr.shortName])) {
+      } else if(forge.util.isArray(rval[attr.shortName])) {
         rval[attr.shortName].push(value);
-      }
-      else {
+      } else {
         rval[attr.shortName] = [rval[attr.shortName], value];
       }
     }
@@ -2270,8 +2255,7 @@ function _fillMissingFields(attrs) {
     if(typeof(attr.name) === 'undefined') {
       if(attr.type && attr.type in pki.oids) {
         attr.name = pki.oids[attr.type];
-      }
-      else if(attr.shortName && attr.shortName in _shortNames) {
+      } else if(attr.shortName && attr.shortName in _shortNames) {
         attr.name = pki.oids[_shortNames[attr.shortName]];
       }
     }
@@ -2280,8 +2264,7 @@ function _fillMissingFields(attrs) {
     if(typeof(attr.type) === 'undefined') {
       if(attr.name && attr.name in pki.oids) {
         attr.type = pki.oids[attr.name];
-      }
-      else {
+      } else {
         throw {
           message: 'Attribute type not specified.',
           attribute: attr
@@ -2657,8 +2640,7 @@ pki.createCaStore = function(certs) {
         tmp = [tmp];
       }
       tmp.push(cert);
-    }
-    else {
+    } else {
       caStore.certs[cert.subject.hash] = cert;
     }
   };
@@ -2870,8 +2852,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         parent = chain[0];
         try {
           verified = parent.verify(cert);
-        }
-        catch(ex) {
+        } catch(ex) {
           // failure to verify, don't care why, just fail
         }
       }
@@ -2884,8 +2865,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
             message: 'Certificate is not trusted.',
             error: pki.certificateError.unknown_ca
           };
-        }
-        else {
+        } else {
           // CA store might have multiple certificates where the issuer
           // can't be determined from the certificate (unlikely case for
           // old certificates) so normalize by always putting parents into
@@ -2899,8 +2879,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
             parent = parents.shift();
             try {
               verified = parent.verify(cert);
-            }
-            catch(ex) {
+            } catch(ex) {
               // failure to verify, try next one
             }
           }
@@ -3012,8 +2991,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     if(ret === true) {
       // clear any set error
       error = null;
-    }
-    else {
+    } else {
       // if passed basic tests, set default message and alert
       if(vfd === true) {
         error = {
@@ -3032,8 +3010,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
           if(ret.error) {
             error.error = ret.error;
           }
-        }
-        else if(typeof ret === 'string') {
+        } else if(typeof ret === 'string') {
           // set custom error
           error.error = ret;
         }

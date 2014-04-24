@@ -57,8 +57,7 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
   if(!passphrase) {
     // use the unencrypted buffer
     priv = forge.util.encode64(privbuffer.bytes(), 64);
-  }
-  else {
+  } else {
     // encrypt RSA key using passphrase
     var encLen = privbuffer.length() + 16 - 1;
     encLen -= encLen % 16;
