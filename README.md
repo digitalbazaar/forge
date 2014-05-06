@@ -649,12 +649,29 @@ var step = function() {
 setTimeout(step);
 
 // sign data with a private key and output DigestInfo DER-encoded bytes
+// (defaults to RSASSA PKCS#1 v1.5)
 var md = forge.md.sha1.create();
 md.update('sign this', 'utf8');
 var signature = privateKey.sign(md);
 
 // verify data with a public key
+// (defaults to RSASSA PKCS#1 v1.5)
 var verified = publicKey.verify(md.digest().bytes(), signature);
+
+// sign data using RSASSA-PSS where PSS uses a SHA-1 hash, a SHA-1 based
+// masking function MGF1, and a 20 byte salt
+var md = forge.md.sha1.create();
+md.update('sign this', 'utf8');
+var pss = forge.pss.create(
+  forge.md.sha1.create(), forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+var signature = privateKey.sign(md, pss);
+
+// verify RSASSA-PSS signature
+var pss = forge.pss.create(
+  forge.md.sha1.create(), forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+var md = forge.md.sha1.create();
+md.update('sign this', 'utf8');
+publicKey.verify(md.digest().getBytes(), signature, pss);
 
 // encrypt data with a public key (defaults to RSAES PKCS#1 v1.5)
 var encrypted = publicKey.encrypt(bytes);
