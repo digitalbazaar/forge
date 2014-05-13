@@ -629,6 +629,7 @@ var rsa = forge.pki.rsa;
 var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
 
 // generate an RSA key pair asynchronously (uses web workers if available)
+// use workers: -1 to run a fast core estimator to optimize # of workers
 rsa.generateKeyPair({bits: 2048, workers: 2}, function(err, keypair) {
   // keypair.privateKey, keypair.publicKey
 });
