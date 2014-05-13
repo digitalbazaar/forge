@@ -1,7 +1,8 @@
 /**
  * A javascript implementation of a cryptographically-secure
  * Pseudo Random Number Generator (PRNG). The Fortuna algorithm is mostly
- * followed here. SHA-1 is used instead of SHA-256.
+ * followed here; reseeding is done when more than 1 MiB of data has been
+ * consumed so long as 100ms haven't yet passed.
  *
  * @author Dave Longley
  *
@@ -203,8 +204,8 @@ prng.create = function(plugin) {
    * Private function that seeds a generator once enough bytes are available.
    */
   function _seed() {
-    // create a SHA-1 message digest
-    var md = forge.md.sha1.create();
+    // create a SHA-256 message digest
+    var md = forge.md.sha256.create();
 
     // digest pool 0's entropy and restart it
     md.update(ctx.pools[0].digest().getBytes());
