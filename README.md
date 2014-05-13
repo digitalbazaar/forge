@@ -1267,6 +1267,9 @@ forge.random.seedFile = function(needed, callback) {
 // register the main thread to send entropy or a Web Worker to receive
 // entropy on demand from the main thread
 forge.random.registerWorker(self);
+
+// generate a new instance of a PRNG with no collected entropy
+var myPrng = forge.random.createInstance();
 ```
 
 <a name="task" />
