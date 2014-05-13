@@ -848,7 +848,7 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
   if(e === undefined) {
     e = options.e || 0x10001;
   }
-  var state = pki.rsa.createKeyPairGenerationState(bits, e);
+  var state = pki.rsa.createKeyPairGenerationState(bits, e, options);
   if(!callback) {
     pki.rsa.stepKeyPairGenerationState(state, 0);
     return state.keys;
