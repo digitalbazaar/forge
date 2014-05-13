@@ -568,10 +568,13 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
  *
  * @param bits the size for the private key in bits, defaults to 2048.
  * @param e the public exponent to use, defaults to 65537 (0x10001).
+ * @param [options] the options to use.
+ *          prng a custom crypto-secure pseudo-random number generator to use,
+ *            that must define "getBytesSync".
  *
  * @return the state object to use to generate the key-pair.
  */
-pki.rsa.createKeyPairGenerationState = function(bits, e) {
+pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
   // set default bits
   if(typeof(bits) === 'string') {
     bits = parseInt(bits, 10);
@@ -579,10 +582,12 @@ pki.rsa.createKeyPairGenerationState = function(bits, e) {
   bits = bits || 2048;
 
   // create prng with api that matches BigInteger secure random
+  options = options || {};
+  options.prng = options.prng || forge.random;
   var rng = {
     // x is an array to fill with bytes
     nextBytes: function(x) {
-      var b = forge.random.getBytes(x.length);
+      var b = options.prng.getBytesSync(x.length);
       for(var i = 0; i < x.length; ++i) {
         x[i] = b.charCodeAt(i);
       }
@@ -793,6 +798,8 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
  *            numbers for each web worker to check per work assignment,
  *            (default: 100).
  *          e the public exponent to use, defaults to 65537.
+ *          prng a custom crypto-secure pseudo-random number generator to use,
+ *            that must define "getBytesSync".
  * @param [callback(err, keypair)] called once the operation completes.
  *
  * @return an object with privateKey and publicKey properties.
