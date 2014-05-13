@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
+function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -57,6 +57,39 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, UTIL) {
       md.update('0123456789abcdef');
       var signature = pair.privateKey.sign(md);
       ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
+    });
+
+    it('should generate the same 512 bit key pair', function() {
+      var prng = RANDOM.createInstance();
+      prng.seedFileSync = function(needed) {
+        return UTIL.fillString('a', needed);
+      };
+      var pair = RSA.generateKeyPair(512, {prng: prng});
+      var pem = {
+        privateKey: PKI.privateKeyToPem(pair.privateKey),
+        publicKey: PKI.publicKeyToPem(pair.publicKey)
+      };
+      ASSERT.equal(pem.privateKey.indexOf('-----BEGIN RSA PRIVATE KEY-----'), 0);
+      ASSERT.equal(pem.publicKey.indexOf('-----BEGIN PUBLIC KEY-----'), 0);
+
+      // sign and verify
+      var md = MD.sha1.create();
+      md.update('0123456789abcdef');
+      var signature = pair.privateKey.sign(md);
+      ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
+
+      // create same key pair by using same PRNG
+      prng = RANDOM.createInstance();
+      prng.seedFileSync = function(needed) {
+        return UTIL.fillString('a', needed);
+      };
+      var pair2 = RSA.generateKeyPair(512, {prng: prng});
+      var pem2 = {
+        privateKey: PKI.privateKeyToPem(pair2.privateKey),
+        publicKey: PKI.publicKeyToPem(pair2.publicKey)
+      };
+      ASSERT.equal(pem.privateKey, pem2.privateKey);
+      ASSERT.equal(pem.publicKey, pem2.publicKey);
     });
 
     it('should convert private key to/from PEM', function() {
@@ -413,8 +446,9 @@ if(typeof define === 'function') {
     'forge/md',
     'forge/mgf',
     'forge/pss',
+    'forge/random',
     'forge/util'
-  ], function(PKI, RSA, MD, MGF, PSS, UTIL) {
+  ], function(PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
@@ -423,6 +457,7 @@ if(typeof define === 'function') {
       MD(),
       MGF(),
       PSS(),
+      RANDOM(),
       UTIL()
     );
   });
@@ -435,6 +470,7 @@ if(typeof define === 'function') {
     require('../../js/md')(),
     require('../../js/mgf')(),
     require('../../js/pss')(),
+    require('../../js/random')(),
     require('../../js/util')());
 }
 
