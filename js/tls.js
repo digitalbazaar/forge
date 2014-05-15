@@ -4103,7 +4103,7 @@ for(var key in tls) {
 // expose prf_tls1 for testing
 forge.tls.prf_tls1 = prf_TLS1;
 
-// expost sha1 hmac method
+// expose sha1 hmac method
 forge.tls.hmac_sha1 = hmac_sha1;
 
 // expose session cache creation
