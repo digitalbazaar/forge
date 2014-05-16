@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2009-2014 Digital Bazaar, Inc.
  *
  * The TLS Handshake Protocol involves the following steps:
  *
@@ -499,10 +499,15 @@ var tls = {};
  * TLS 1.2 were still too new (ie: openSSL didn't implement them) at the time
  * of this implementation so TLS 1.0 was implemented instead.
  */
-tls.Version = {
-  major: 3,
-  minor: 1
+tls.Versions = {
+  TLS_1_0: {major: 3, minor: 1},
+  TLS_1_1: {major: 3, minor: 2},
+  TLS_1_2: {major: 3, minor: 3}
 };
+tls.SupportedVersions = [
+  tls.Versions.TLS_1_0
+];
+tls.Version = tls.SupportedVersions[0];
 
 /**
  * Maximum fragment size. True maximum is 16384, but we fragment before that
@@ -749,7 +754,7 @@ tls.handleHelloRequest = function(c, record, length) {
   // if handshaking, send a warning alert that renegotation is denied
   if(!c.handshaking && c.handshakes > 0) {
     // send alert warning
-    tls.queue(c, tls.createAlert({
+    tls.queue(c, tls.createAlert(c, {
        level: tls.Alert.Level.warning,
        description: tls.Alert.Description.no_renegotiation
     }));
@@ -846,8 +851,8 @@ tls.parseHelloMessage = function(c, record, length) {
     }
 
     // TODO: support other versions
-    if(msg.version.major !== tls.Version.major ||
-      msg.version.minor !== tls.Version.minor) {
+    if(msg.version.major !== c.version.major ||
+      msg.version.minor !== c.version.minor) {
       c.error(c, {
         message: 'Incompatible TLS version.',
         send: true,
@@ -910,7 +915,8 @@ tls.parseHelloMessage = function(c, record, length) {
  */
 tls.createSecurityParameters = function(c, msg) {
   /* Note: security params are from TLS 1.2, some values like prf_algorithm
-  are ignored for TLS 1.0 and the builtin as specified in the spec is used. */
+  are ignored for TLS 1.0/1.1 and the builtin as specified in the spec is
+  used. */
 
   // TODO: handle other options from server when more supported
 
@@ -1060,14 +1066,14 @@ tls.handleClientHello = function(c, record, length) {
     c.open = true;
 
     // queue server hello
-    tls.queue(c, tls.createRecord({
+    tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.handshake,
       data: tls.createServerHello(c)
     }));
 
     if(c.session.resuming) {
       // queue change cipher spec message
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.change_cipher_spec,
         data: tls.createChangeCipherSpec()
       }));
@@ -1079,20 +1085,20 @@ tls.handleClientHello = function(c, record, length) {
       c.state.current.write = c.state.pending.write;
 
       // queue finished
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
         data: tls.createFinished(c)
       }));
     } else {
       // queue server certificate
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
         data: tls.createCertificate(c)
       }));
 
       if(!c.fail) {
         // queue server key exchange
-        tls.queue(c, tls.createRecord({
+        tls.queue(c, tls.createRecord(c, {
           type: tls.ContentType.handshake,
           data: tls.createServerKeyExchange(c)
         }));
@@ -1100,14 +1106,14 @@ tls.handleClientHello = function(c, record, length) {
         // request client certificate if set
         if(c.verifyClient !== false) {
           // queue certificate request
-          tls.queue(c, tls.createRecord({
+          tls.queue(c, tls.createRecord(c, {
             type: tls.ContentType.handshake,
             data: tls.createCertificateRequest(c)
           }));
         }
 
         // queue server hello done
-        tls.queue(c, tls.createRecord({
+        tls.queue(c, tls.createRecord(c, {
           type: tls.ContentType.handshake,
           data: tls.createServerHelloDone(c)
         }));
@@ -1389,7 +1395,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
     c.expect = CCC;
     if(c.session.clientCertificate !== null) {
       // only RSA support, so expect CertificateVerify
-      // TODO: support Diffie-Helman?
+      // TODO: support Diffie-Hellman
       c.expect = CCV;
     }
 
@@ -1437,7 +1443,8 @@ tls.handleCertificateRequest = function(c, record, length) {
       }
     });
   } else {
-    // TODO: TLS 1.1 and 1.2 have different formats
+    // TODO: TLS 1.2+ has different format including
+    // SignatureAndHashAlgorithm after cert types
     var b = record.fragment;
     var msg = {
       certificate_types: readVector(b, 1),
@@ -1602,7 +1609,7 @@ tls.handleServerHelloDone = function(c, record, length) {
 
   // create client certificate message if requested
   if(!c.fail && c.session.certificateRequest !== null) {
-    record = tls.createRecord({
+    record = tls.createRecord(c, {
       type: tls.ContentType.handshake,
       data: tls.createCertificate(c)
     });
@@ -1611,7 +1618,7 @@ tls.handleServerHelloDone = function(c, record, length) {
 
   if(!c.fail) {
     // create client key exchange message
-    record = tls.createRecord({
+    record = tls.createRecord(c, {
        type: tls.ContentType.handshake,
        data: tls.createClientKeyExchange(c)
     });
@@ -1625,14 +1632,14 @@ tls.handleServerHelloDone = function(c, record, length) {
       if(c.session.certificateRequest !== null &&
         c.session.clientCertificate !== null) {
         // create certificate verify message
-        tls.queue(c, tls.createRecord({
+        tls.queue(c, tls.createRecord(c, {
           type: tls.ContentType.handshake,
           data: tls.createCertificateVerify(c, signature)
         }));
       }
 
       // create change cipher spec message
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.change_cipher_spec,
         data: tls.createChangeCipherSpec()
       }));
@@ -1644,7 +1651,7 @@ tls.handleServerHelloDone = function(c, record, length) {
       c.state.current.write = c.state.pending.write;
 
       // create finished message
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
         data: tls.createFinished(c)
       }));
@@ -1796,7 +1803,7 @@ tls.handleFinished = function(c, record, length) {
     // resuming session as client or NOT resuming session as server
     if((c.session.resuming && client) || (!c.session.resuming && !client)) {
       // create change cipher spec message
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.change_cipher_spec,
         data: tls.createChangeCipherSpec()
       }));
@@ -1806,7 +1813,7 @@ tls.handleFinished = function(c, record, length) {
       c.state.pending = null;
 
       // create finished message
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
         data: tls.createFinished(c)
       }));
@@ -2065,7 +2072,7 @@ tls.handleHeartbeat = function(c, record) {
       return c.process();
     }
     // retransmit payload
-    tls.queue(c, tls.createRecord({
+    tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(
         tls.HeartbeatMessageType.heartbeat_response, payload)
@@ -2334,33 +2341,9 @@ tls.generateKeys = function(c, sp) {
       message: 'Invalid PRF'
     };
   }
-
-  // concatenate client and server random
-  var random = sp.client_random + sp.server_random;
-
-  // only create master secret if session is new
-  if(!c.session.resuming) {
-    // create master secret, clean up pre-master secret
-    sp.master_secret =
-      prf(sp.pre_master_secret, 'master secret', random, 48).bytes();
-    sp.pre_master_secret = null;
-  }
-
-  // generate the amount of key material needed
-  random = sp.server_random + sp.client_random;
-  var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
-  var km = prf(sp.master_secret.bytes(), 'key expansion', random, length);
-
-  // split the key material into the MAC and encryption keys
-  return {
-    client_write_MAC_key: km.getBytes(sp.mac_key_length),
-    server_write_MAC_key: km.getBytes(sp.mac_key_length),
-    client_write_key: km.getBytes(sp.enc_key_length),
-    server_write_key: km.getBytes(sp.enc_key_length)
-  };
   */
 
-  // TLS 1.0 implementation
+  // TLS 1.0/1.1 implementation
   var prf = prf_TLS1;
 
   // concatenate server and client random
@@ -2369,28 +2352,38 @@ tls.generateKeys = function(c, sp) {
   // only create master secret if session is new
   if(!c.session.resuming) {
     // create master secret, clean up pre-master secret
-    sp.master_secret =
-      prf(sp.pre_master_secret, 'master secret', random, 48).bytes();
+    sp.master_secret = prf(
+      sp.pre_master_secret, 'master secret', random, 48).bytes();
     sp.pre_master_secret = null;
   }
 
   // generate the amount of key material needed
   random = sp.server_random + sp.client_random;
-  var length =
-    2 * sp.mac_key_length +
-    2 * sp.enc_key_length +
-    2 * sp.fixed_iv_length;
+  var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
+
+  // include IV for TLS/1.0
+  var tls10 = (c.version.major === tls.Versions.TLS_1_0.major &&
+    c.version.minor === tls.Versions.TLS_1_0.minor);
+  if(tls10) {
+    length += 2 * sp.fixed_iv_length;
+  }
   var km = prf(sp.master_secret, 'key expansion', random, length);
 
   // split the key material into the MAC and encryption keys
-  return {
+  var rval = {
     client_write_MAC_key: km.getBytes(sp.mac_key_length),
     server_write_MAC_key: km.getBytes(sp.mac_key_length),
     client_write_key: km.getBytes(sp.enc_key_length),
-    server_write_key: km.getBytes(sp.enc_key_length),
-    client_write_IV: km.getBytes(sp.fixed_iv_length),
-    server_write_IV: km.getBytes(sp.fixed_iv_length)
+    server_write_key: km.getBytes(sp.enc_key_length)
   };
+
+  // include TLS 1.0 IVs
+  if(tls10) {
+    rval.client_write_IV = km.getBytes(sp.fixed_iv_length);
+    rval.server_write_IV = km.getBytes(sp.fixed_iv_length);
+  }
+
+  return rval;
 };
 
 /**
@@ -2434,9 +2427,9 @@ tls.createConnectionState = function(c) {
       macLength: 0,
       macFunction: null,
       cipherState: null,
-      cipherFunction: function(record){return true;},
+      cipherFunction: function(record) {return true;},
       compressionState: null,
-      compressFunction: function(record){return true;},
+      compressFunction: function(record) {return true;},
       updateSequenceNumber: function() {
         if(mode.sequenceNumber[1] === 0xFFFFFFFF) {
           mode.sequenceNumber[1] = 0;
@@ -2575,21 +2568,22 @@ tls.createRandom = function() {
 /**
  * Creates a TLS record with the given type and data.
  *
+ * @param c the connection.
  * @param options:
  *   type: the record type.
  *   data: the plain text data in a byte buffer.
  *
  * @return the created record.
  */
-tls.createRecord = function(options) {
+tls.createRecord = function(c, options) {
   if(!options.data) {
     return null;
   }
   var record = {
     type: options.type,
     version: {
-      major: tls.Version.major,
-      minor: tls.Version.minor
+      major: c.version.major,
+      minor: c.version.minor
     },
     length: options.data.length(),
     fragment: options.data
@@ -2600,17 +2594,18 @@ tls.createRecord = function(options) {
 /**
  * Creates a TLS alert record.
  *
+ * @param c the connection.
  * @param alert:
  *   level: the TLS alert level.
  *   description: the TLS alert description.
  *
  * @return the created alert record.
  */
-tls.createAlert = function(alert) {
+tls.createAlert = function(c, alert) {
   var b = forge.util.createBuffer();
   b.putByte(alert.level);
   b.putByte(alert.description);
-  return tls.createRecord({
+  return tls.createRecord(c, {
     type: tls.ContentType.alert,
     data: b
   });
@@ -3182,7 +3177,7 @@ tls.createCertificateRequest = function(c) {
     cAs.putBuffer(forge.asn1.toDer(dn));
   }
 
-  // TODO: TLS 1.1 and 1.2 have different formats
+  // TODO: TLS 1.2+ has a different format
 
   // determine length of the handshake message
   var length =
@@ -3370,7 +3365,7 @@ tls.queue = function(c, record) {
     records = [];
     var data = record.fragment.bytes();
     while(data.length > tls.MaxFragment) {
-      records.push(tls.createRecord({
+      records.push(tls.createRecord(c, {
         type: record.type,
         data: forge.util.createBuffer(data.slice(0, tls.MaxFragment))
       }));
@@ -3378,7 +3373,7 @@ tls.queue = function(c, record) {
     }
     // add last record
     if(data.length > 0) {
-      records.push(tls.createRecord({
+      records.push(tls.createRecord(c, {
         type: record.type,
         data: forge.util.createBuffer(data)
       }));
@@ -3669,6 +3664,10 @@ tls.createConnection = function(options) {
 
   // create TLS connection
   var c = {
+    version: {
+      major: tls.Version.major,
+      minor: tls.Version.minor
+    },
     entity: entity,
     sessionId: options.sessionId,
     caStore: caStore,
@@ -3677,7 +3676,7 @@ tls.createConnection = function(options) {
     connected: options.connected,
     virtualHost: options.virtualHost || null,
     verifyClient: options.verifyClient || false,
-    verify: options.verify || function(cn,vfd,dpth,cts){return vfd;},
+    verify: options.verify || function(cn, vfd, dpth, cts) {return vfd;},
     getCertificate: options.getCertificate || null,
     getPrivateKey: options.getPrivateKey || null,
     getSignature: options.getSignature || null,
@@ -3695,7 +3694,7 @@ tls.createConnection = function(options) {
 
       // send TLS alert
       if(ex.send) {
-        tls.queue(c, tls.createAlert(ex.alert));
+        tls.queue(c, tls.createAlert(c, ex.alert));
         tls.flush(c);
       }
 
@@ -3800,8 +3799,8 @@ tls.createConnection = function(options) {
       };
 
       // check record version
-      if(c.record.version.major !== tls.Version.major ||
-        c.record.version.minor !== tls.Version.minor) {
+      if(c.record.version.major !== c.version.major ||
+        c.record.version.minor !== c.version.minor) {
         c.error(c, {
           message: 'Incompatible TLS version.',
           send: true,
@@ -3948,7 +3947,7 @@ tls.createConnection = function(options) {
       c.open = true;
 
       // send hello
-      tls.queue(c, tls.createRecord({
+      tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
         data: tls.createClientHello(c)
       }));
@@ -4013,7 +4012,7 @@ tls.createConnection = function(options) {
    * @return true on success, false on failure.
    */
   c.prepare = function(data) {
-    tls.queue(c, tls.createRecord({
+    tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.application_data,
       data: forge.util.createBuffer(data)
     }));
@@ -4043,7 +4042,7 @@ tls.createConnection = function(options) {
       payloadLength = payload.length;
     }
     c.expectedHeartbeatPayload = payload;
-    tls.queue(c, tls.createRecord({
+    tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(
         tls.HeartbeatMessageType.heartbeat_request, payload, payloadLength)
@@ -4072,7 +4071,7 @@ tls.createConnection = function(options) {
         c.isConnected = c.handshaking = false;
 
         // send close_notify alert
-        tls.queue(c, tls.createAlert({
+        tls.queue(c, tls.createAlert(c, {
           level: tls.Alert.Level.warning,
           description: tls.Alert.Description.close_notify
         }));
