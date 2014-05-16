@@ -850,17 +850,19 @@ tls.parseHelloMessage = function(c, record, length) {
       }
     }
 
-    // TODO: support other versions
-    if(msg.version.major !== c.version.major ||
-      msg.version.minor !== c.version.minor) {
-      c.error(c, {
-        message: 'Incompatible TLS version.',
-        send: true,
-        alert: {
-          level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.protocol_version
-        }
-      });
+    // version already set, do not allow version change
+    if(c.session.version) {
+      if(msg.version.major !== c.session.version.major ||
+        msg.version.minor !== c.session.version.minor) {
+        return c.error(c, {
+          message: 'TLS version change is disallowed during renegotiation.',
+          send: true,
+          alert: {
+            level: tls.Alert.Level.fatal,
+            description: tls.Alert.Description.protocol_version
+          }
+        });
+      }
     }
 
     // get the chosen (ServerHello) cipher suite
@@ -976,34 +978,53 @@ tls.createSecurityParameters = function(c, msg) {
  */
 tls.handleServerHello = function(c, record, length) {
   var msg = tls.parseHelloMessage(c, record, length);
-  if(!c.fail) {
-    // get the session ID from the message
-    var sessionId = msg.session_id.bytes();
-
-    // if the session ID is not blank and matches the cached one, resume
-    // the session
-    if(sessionId.length > 0 && sessionId === c.session.id) {
-      // resuming session, expect a ChangeCipherSpec next
-      c.expect = SCC;
-      c.session.resuming = true;
-
-      // get new server random
-      c.session.sp.server_random = msg.random.bytes();
-    } else {
-      // not resuming, expect a server Certificate message next
-      c.expect = SCE;
-      c.session.resuming = false;
-
-      // create new security parameters
-      tls.createSecurityParameters(c, msg);
-    }
-
-    // set new session ID
-    c.session.id = sessionId;
-
-    // continue
-    c.process();
+  if(c.fail) {
+    return;
   }
+
+  // ensure server version is compatible
+  if(msg.version.minor <= c.version.minor) {
+    c.version.minor = msg.version.minor;
+  } else {
+    return c.error(c, {
+      message: 'Incompatible TLS version.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.protocol_version
+      }
+    });
+  }
+
+  // indicate session version has been set
+  c.session.version = c.version;
+
+  // get the session ID from the message
+  var sessionId = msg.session_id.bytes();
+
+  // if the session ID is not blank and matches the cached one, resume
+  // the session
+  if(sessionId.length > 0 && sessionId === c.session.id) {
+    // resuming session, expect a ChangeCipherSpec next
+    c.expect = SCC;
+    c.session.resuming = true;
+
+    // get new server random
+    c.session.sp.server_random = msg.random.bytes();
+  } else {
+    // not resuming, expect a server Certificate message next
+    c.expect = SCE;
+    c.session.resuming = false;
+
+    // create new security parameters
+    tls.createSecurityParameters(c, msg);
+  }
+
+  // set new session ID
+  c.session.id = sessionId;
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1021,111 +1042,133 @@ tls.handleServerHello = function(c, record, length) {
  */
 tls.handleClientHello = function(c, record, length) {
   var msg = tls.parseHelloMessage(c, record, length);
-  if(!c.fail) {
-    // get the session ID from the message
-    var sessionId = msg.session_id.bytes();
+  if(c.fail) {
+    return;
+  }
 
-    // see if the given session ID is in the cache
-    var session = null;
-    if(c.sessionCache) {
-      session = c.sessionCache.getSession(sessionId);
-      if(session === null) {
-        // session ID not found
-        sessionId = '';
+  // get the session ID from the message
+  var sessionId = msg.session_id.bytes();
+
+  // see if the given session ID is in the cache
+  var session = null;
+  if(c.sessionCache) {
+    session = c.sessionCache.getSession(sessionId);
+    if(session === null) {
+      // session ID not found
+      sessionId = '';
+    } else if(session.version.major !== msg.version.major ||
+      session.version.minor > msg.version.minor) {
+      // if session version is incompatible with client version, do not resume
+      session = null;
+      sessionId = '';
+    }
+  }
+
+  // no session found to resume, generate a new session ID
+  if(sessionId.length === 0) {
+    sessionId = forge.random.getBytes(32);
+  }
+
+  // update session
+  c.session.id = sessionId;
+  c.session.clientHelloVersion = msg.version;
+  c.session.sp = {};
+  if(session) {
+    // use version and security parameters from resumed session
+    c.version = c.session.version = session.version;
+    c.session.sp = session.sp;
+  } else {
+    // use highest compatible minor version
+    for(var i = 0; i < tls.SupportedVersions; ++i) {
+      var version = tls.SupportedVersions[i];
+      if(version.minor <= msg.version.minor) {
+        c.version = {major: version.major, minor: version.minor};
+        break;
       }
     }
+    c.session.version = c.version;
+  }
 
-    // no session found to resume, generate a new session ID
-    if(sessionId.length === 0) {
-      sessionId = forge.random.getBytes(32);
-    }
+  // if a session is set, resume it
+  if(session !== null) {
+    // resuming session, expect a ChangeCipherSpec next
+    c.expect = CCC;
+    c.session.resuming = true;
 
-    // update session
-    c.session.id = sessionId;
-    c.session.clientHelloVersion = msg.version;
-    c.session.sp = session ? session.sp : {};
+    // get new client random
+    c.session.sp.client_random = msg.random.bytes();
+  } else {
+    // not resuming, expect a Certificate or ClientKeyExchange
+    c.expect = (c.verifyClient !== false) ? CCE : CKE;
+    c.session.resuming = false;
 
-    // if a session is set, resume it
-    if(session !== null) {
-      // resuming session, expect a ChangeCipherSpec next
-      c.expect = CCC;
-      c.session.resuming = true;
+    // create new security parameters
+    tls.createSecurityParameters(c, msg);
+  }
 
-      // get new client random
-      c.session.sp.client_random = msg.random.bytes();
-    } else {
-      // not resuming, expect a Certificate or ClientKeyExchange
-      c.expect = (c.verifyClient !== false) ? CCE : CKE;
-      c.session.resuming = false;
+  // connection now open
+  c.open = true;
 
-      // create new security parameters
-      tls.createSecurityParameters(c, msg);
-    }
+  // queue server hello
+  tls.queue(c, tls.createRecord(c, {
+    type: tls.ContentType.handshake,
+    data: tls.createServerHello(c)
+  }));
 
-    // connection now open
-    c.open = true;
-
-    // queue server hello
+  if(c.session.resuming) {
+    // queue change cipher spec message
     tls.queue(c, tls.createRecord(c, {
-      type: tls.ContentType.handshake,
-      data: tls.createServerHello(c)
+      type: tls.ContentType.change_cipher_spec,
+      data: tls.createChangeCipherSpec()
     }));
 
-    if(c.session.resuming) {
-      // queue change cipher spec message
-      tls.queue(c, tls.createRecord(c, {
-        type: tls.ContentType.change_cipher_spec,
-        data: tls.createChangeCipherSpec()
-      }));
+    // create pending state
+    c.state.pending = tls.createConnectionState(c);
 
-      // create pending state
-      c.state.pending = tls.createConnectionState(c);
+    // change current write state to pending write state
+    c.state.current.write = c.state.pending.write;
 
-      // change current write state to pending write state
-      c.state.current.write = c.state.pending.write;
+    // queue finished
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.handshake,
+      data: tls.createFinished(c)
+    }));
+  } else {
+    // queue server certificate
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.handshake,
+      data: tls.createCertificate(c)
+    }));
 
-      // queue finished
+    if(!c.fail) {
+      // queue server key exchange
       tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
-        data: tls.createFinished(c)
-      }));
-    } else {
-      // queue server certificate
-      tls.queue(c, tls.createRecord(c, {
-        type: tls.ContentType.handshake,
-        data: tls.createCertificate(c)
+        data: tls.createServerKeyExchange(c)
       }));
 
-      if(!c.fail) {
-        // queue server key exchange
+      // request client certificate if set
+      if(c.verifyClient !== false) {
+        // queue certificate request
         tls.queue(c, tls.createRecord(c, {
           type: tls.ContentType.handshake,
-          data: tls.createServerKeyExchange(c)
-        }));
-
-        // request client certificate if set
-        if(c.verifyClient !== false) {
-          // queue certificate request
-          tls.queue(c, tls.createRecord(c, {
-            type: tls.ContentType.handshake,
-            data: tls.createCertificateRequest(c)
-          }));
-        }
-
-        // queue server hello done
-        tls.queue(c, tls.createRecord(c, {
-          type: tls.ContentType.handshake,
-          data: tls.createServerHelloDone(c)
+          data: tls.createCertificateRequest(c)
         }));
       }
+
+      // queue server hello done
+      tls.queue(c, tls.createRecord(c, {
+        type: tls.ContentType.handshake,
+        data: tls.createServerHelloDone(c)
+      }));
     }
-
-    // send records
-    tls.flush(c);
-
-    // continue
-    c.process();
   }
+
+  // send records
+  tls.flush(c);
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1830,19 +1873,6 @@ tls.handleFinished = function(c, record, length) {
     c.peerCertificate = client ?
       c.session.serverCertificate : c.session.clientCertificate;
 
-    // preserve session if using session cache (it will be cached
-    // if the connection is successfully shutdown later)
-    if(c.sessionCache) {
-      // only need to preserve session ID and security params
-      c.session = {
-        id: c.session.id,
-        sp: c.session.sp
-      };
-      c.session.sp.keys = null;
-    } else {
-      c.session = null;
-    }
-
     // send records
     tls.flush(c);
 
@@ -2006,6 +2036,7 @@ tls.handleHandshake = function(c, record) {
       if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
         c.handshaking = true;
         c.session = {
+          version: null,
           serverNameList: [],
           cipherSuite: null,
           compressionMethod: null,
@@ -2763,8 +2794,8 @@ tls.createClientHello = function(c) {
   var rval = forge.util.createBuffer();
   rval.putByte(tls.HandshakeType.client_hello);
   rval.putInt24(length);                     // handshake length
-  rval.putByte(tls.Version.major);           // major version
-  rval.putByte(tls.Version.minor);           // minor version
+  rval.putByte(c.version.major);             // major version
+  rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.client_random); // random time + bytes
   writeVector(rval, 1, forge.util.createBuffer(sessionId));
   writeVector(rval, 2, cipherSuites);
@@ -3664,10 +3695,7 @@ tls.createConnection = function(options) {
 
   // create TLS connection
   var c = {
-    version: {
-      major: tls.Version.major,
-      minor: tls.Version.minor
-    },
+    version: {major: tls.Version.major, minor: tls.Version.minor},
     entity: entity,
     sessionId: options.sessionId,
     caStore: caStore,
@@ -3723,6 +3751,7 @@ tls.createConnection = function(options) {
    * @param clearFail true to clear the fail flag (default: true).
    */
   c.reset = function(clearFail) {
+    c.version = {major: tls.Version.major, minor: tls.Version.minor};
     c.record = null;
     c.session = null;
     c.peerCertificate = null;
@@ -3799,8 +3828,12 @@ tls.createConnection = function(options) {
       };
 
       // check record version
-      if(c.record.version.major !== c.version.major ||
-        c.record.version.minor !== c.version.minor) {
+      var compatibleVersion = (c.record.version.major === c.version.major);
+      if(compatibleVersion && c.session && c.session.version) {
+        // session version already set, require same minor version
+        compatibleVersion = (c.record.version.minor === c.version.minor);
+      }
+      if(!compatibleVersion) {
         c.error(c, {
           message: 'Incompatible TLS version.',
           send: true,
@@ -3910,12 +3943,12 @@ tls.createConnection = function(options) {
       var session = null;
       if(sessionId.length > 0) {
         if(c.sessionCache) {
-           session = c.sessionCache.getSession(sessionId);
+          session = c.sessionCache.getSession(sessionId);
         }
 
         // matching session not found in cache, clear session ID
         if(session === null) {
-           sessionId = '';
+          sessionId = '';
         }
       }
 
@@ -3930,15 +3963,23 @@ tls.createConnection = function(options) {
       // set up session
       c.session = {
         id: sessionId,
+        version: null,
         cipherSuite: null,
         compressionMethod: null,
         serverCertificate: null,
         certificateRequest: null,
         clientCertificate: null,
-        sp: session ? session.sp : {},
+        sp: {},
         md5: forge.md.md5.create(),
         sha1: forge.md.sha1.create()
       };
+
+      // use existing session information
+      if(session) {
+        // only update version on connection, session version not yet set
+        c.version = session.version;
+        c.session.sp = session.sp;
+      }
 
       // generate new client random
       c.session.sp.client_random = tls.createRandom().getBytes();
@@ -4058,7 +4099,14 @@ tls.createConnection = function(options) {
   c.close = function(clearFail) {
     // save session if connection didn't fail
     if(!c.fail && c.sessionCache && c.session) {
-      c.sessionCache.setSession(c.session.id, c.session);
+      // only need to preserve session ID, version, and security params
+      var session = {
+        id: c.session.id,
+        version: c.session.version,
+        sp: c.session.sp
+      };
+      session.sp.keys = null;
+      c.sessionCache.setSession(session.id, session);
     }
 
     if(c.open) {
