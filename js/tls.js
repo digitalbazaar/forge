@@ -505,6 +505,7 @@ tls.Versions = {
   TLS_1_2: {major: 3, minor: 3}
 };
 tls.SupportedVersions = [
+  tls.Versions.TLS_1_1,
   tls.Versions.TLS_1_0
 ];
 tls.Version = tls.SupportedVersions[0];

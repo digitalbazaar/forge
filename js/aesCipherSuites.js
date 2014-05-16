@@ -89,24 +89,24 @@ function encrypt_aes_cbc_sha1(record, s) {
   record.fragment.putBytes(mac);
   s.updateSequenceNumber();
 
-  // TLS 1.1 & 1.2 use an explicit IV every time to protect against
-  // CBC attacks
+  // TLS 1.1+ use an explicit IV every time to protect against CBC attacks
   var iv;
-  if(record.version.minor > 1) {
-    iv = forge.random.getBytes(16);
-  } else {
+  if(record.version.minor === tls.Versions.TLS_1_0.minor) {
     // use the pre-generated IV when initializing for TLS 1.0, otherwise use
     // the residue from the previous encryption
     iv = s.cipherState.init ? null : s.cipherState.iv;
+  } else {
+    iv = forge.random.getBytesSync(16);
   }
+
   s.cipherState.init = true;
 
   // start cipher
   var cipher = s.cipherState.cipher;
   cipher.start(iv);
 
-  // TLS 1.1 & 1.2 write IV into output
-  if(record.version.minor > 1) {
+  // TLS 1.1+ write IV into output
+  if(record.version.minor >= tls.Versions.TLS_1_1.minor) {
     cipher.output.putBytes(iv);
   }
 
@@ -202,13 +202,17 @@ function decrypt_aes_cbc_sha1_padding(blockSize, output, decrypt) {
 function decrypt_aes_cbc_sha1(record, s) {
   var rval = false;
 
-  // TODO: TLS 1.1 & 1.2 use an explicit IV every time to protect against
-  // CBC attacks
-  //var iv = record.fragment.getBytes(16);
+  var iv;
+  if(record.version.minor === tls.Versions.TLS_1_0.minor) {
+    // use pre-generated IV when initializing for TLS 1.0, otherwise use the
+    // residue from the previous decryption
+    iv = s.cipherState.init ? null : s.cipherState.iv;
+  } else {
+    // TLS 1.1+ use an explicit IV every time to protect against CBC attacks
+    // that is appended to the record fragment
+    iv = record.fragment.getBytes(16);
+  }
 
-  // use pre-generated IV when initializing for TLS 1.0, otherwise use the
-  // residue from the previous decryption
-  var iv = s.cipherState.init ? null : s.cipherState.iv;
   s.cipherState.init = true;
 
   // start cipher
