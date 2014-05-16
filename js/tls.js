@@ -1081,7 +1081,7 @@ tls.handleClientHello = function(c, record, length) {
   } else {
     // use highest compatible minor version
     var version;
-    for(var i = 0; i < tls.SupportedVersions.length; ++i) {
+    for(var i = 1; i < tls.SupportedVersions.length; ++i) {
       version = tls.SupportedVersions[i];
       if(version.minor <= msg.version.minor) {
         break;
@@ -2703,6 +2703,12 @@ tls.createAlert = function(c, alert) {
  * @return the ClientHello byte buffer.
  */
 tls.createClientHello = function(c) {
+  // save hello version
+  c.session.clientHelloVersion = {
+    major: c.version.major,
+    minor: c.version.minor
+  };
+
   // create supported cipher suites
   var cipherSuites = forge.util.createBuffer();
   for(var i = 0; i < c.cipherSuites.length; ++i) {
@@ -2990,8 +2996,8 @@ tls.createClientKeyExchange = function(c) {
 
   // add highest client-supported protocol to help server avoid version
   // rollback attacks
-  b.putByte(c.version.major);
-  b.putByte(c.version.minor);
+  b.putByte(c.session.clientHelloVersion.major);
+  b.putByte(c.session.clientHelloVersion.minor);
 
   // generate and add 46 random bytes
   b.putBytes(forge.random.getBytes(46));
