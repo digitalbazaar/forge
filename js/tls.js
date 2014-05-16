@@ -1080,13 +1080,14 @@ tls.handleClientHello = function(c, record, length) {
     c.session.sp = session.sp;
   } else {
     // use highest compatible minor version
+    var version;
     for(var i = 0; i < tls.SupportedVersions.length; ++i) {
-      var version = tls.SupportedVersions[i];
+      version = tls.SupportedVersions[i];
       if(version.minor <= msg.version.minor) {
-        c.version = {major: version.major, minor: version.minor};
         break;
       }
     }
+    c.version = {major: version.major, minor: version.minor};
     c.session.version = c.version;
   }
 
