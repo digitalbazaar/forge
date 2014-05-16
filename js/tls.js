@@ -1231,7 +1231,7 @@ tls.handleCertificate = function(c, record, length) {
       certs.push(cert);
     }
   } catch(ex) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Could not parse certificate list.',
       cause: ex,
       send: true,
@@ -1242,44 +1242,42 @@ tls.handleCertificate = function(c, record, length) {
     });
   }
 
-  if(!c.fail) {
-    // ensure at least 1 certificate was provided if in client-mode
-    // or if verifyClient was set to true to require a certificate
-    // (as opposed to 'optional')
-    var client = (c.entity === tls.ConnectionEnd.client);
-    if((client || c.verifyClient === true) && certs.length === 0) {
-      // error, no certificate
-      c.error(c, {
-        message: client ?
-          'No server certificate provided.' :
-          'No client certificate provided.',
-        send: true,
-        alert: {
-          level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.illegal_parameter
-        }
-      });
-    } else if(certs.length === 0) {
-      // no certs to verify
-      // expect a ServerKeyExchange or ClientKeyExchange message next
-      c.expect = client ? SKE : CKE;
+  // ensure at least 1 certificate was provided if in client-mode
+  // or if verifyClient was set to true to require a certificate
+  // (as opposed to 'optional')
+  var client = (c.entity === tls.ConnectionEnd.client);
+  if((client || c.verifyClient === true) && certs.length === 0) {
+    // error, no certificate
+    c.error(c, {
+      message: client ?
+        'No server certificate provided.' :
+        'No client certificate provided.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.illegal_parameter
+      }
+    });
+  } else if(certs.length === 0) {
+    // no certs to verify
+    // expect a ServerKeyExchange or ClientKeyExchange message next
+    c.expect = client ? SKE : CKE;
+  } else {
+    // save certificate in session
+    if(client) {
+      c.session.serverCertificate = certs[0];
     } else {
-      // save certificate in session
-      if(client) {
-        c.session.serverCertificate = certs[0];
-      } else {
-        c.session.clientCertificate = certs[0];
-      }
-
-      if(tls.verifyCertificateChain(c, certs)) {
-        // expect a ServerKeyExchange or ClientKeyExchange message next
-        c.expect = client ? SKE : CKE;
-      }
+      c.session.clientCertificate = certs[0];
     }
 
-    // continue
-    c.process();
+    if(tls.verifyCertificateChain(c, certs)) {
+      // expect a ServerKeyExchange or ClientKeyExchange message next
+      c.expect = client ? SKE : CKE;
+    }
   }
+
+  // continue
+  c.process();
 };
 
 /**
