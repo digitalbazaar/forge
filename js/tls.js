@@ -508,7 +508,7 @@ tls.Version = {
  * Maximum fragment size. True maximum is 16384, but we fragment before that
  * to allow for unusual small increases during compression.
  */
-tls.MaxFragment = (1 << 14) - 1024;
+tls.MaxFragment = 16384 - 1024;
 
 /**
  * Whether this entity is considered the "client" or "server".
