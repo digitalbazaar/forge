@@ -1080,7 +1080,7 @@ tls.handleClientHello = function(c, record, length) {
     c.session.sp = session.sp;
   } else {
     // use highest compatible minor version
-    for(var i = 0; i < tls.SupportedVersions; ++i) {
+    for(var i = 0; i < tls.SupportedVersions.length; ++i) {
       var version = tls.SupportedVersions[i];
       if(version.minor <= msg.version.minor) {
         c.version = {major: version.major, minor: version.minor};
@@ -2828,8 +2828,8 @@ tls.createServerHello = function(c) {
   var rval = forge.util.createBuffer();
   rval.putByte(tls.HandshakeType.server_hello);
   rval.putInt24(length);                     // handshake length
-  rval.putByte(tls.Version.major);           // major version
-  rval.putByte(tls.Version.minor);           // minor version
+  rval.putByte(c.version.major);             // major version
+  rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.server_random); // random time + bytes
   writeVector(rval, 1, forge.util.createBuffer(sessionId));
   rval.putByte(c.session.cipherSuite.id[0]);
@@ -2997,8 +2997,8 @@ tls.createClientKeyExchange = function(c) {
 
   // add highest client-supported protocol to help server avoid version
   // rollback attacks
-  b.putByte(tls.Version.major);
-  b.putByte(tls.Version.minor);
+  b.putByte(c.version.major);
+  b.putByte(c.version.minor);
 
   // generate and add 46 random bytes
   b.putBytes(forge.random.getBytes(46));
