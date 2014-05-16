@@ -1201,7 +1201,7 @@ tls.handleClientHello = function(c, record, length) {
 tls.handleCertificate = function(c, record, length) {
   // minimum of 3 bytes in message
   if(length < 3) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid Certificate message. Message too short.',
       send: true,
       alert: {
@@ -1209,76 +1209,76 @@ tls.handleCertificate = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  } else {
-    var b = record.fragment;
-    var msg = {
-      certificate_list: readVector(b, 3)
-    };
+  }
 
-    /* The sender's certificate will be first in the list (chain), each
-      subsequent one that follows will certify the previous one, but root
-      certificates (self-signed) that specify the certificate authority may
-      be omitted under the assumption that clients must already possess it. */
-    var cert, asn1;
-    var certs = [];
-    try {
-      while(msg.certificate_list.length() > 0) {
-        // each entry in msg.certificate_list is a vector with 3 len bytes
-        cert = readVector(msg.certificate_list, 3);
-        asn1 = forge.asn1.fromDer(cert);
-        cert = forge.pki.certificateFromAsn1(asn1, true);
-        certs.push(cert);
+  var b = record.fragment;
+  var msg = {
+    certificate_list: readVector(b, 3)
+  };
+
+  /* The sender's certificate will be first in the list (chain), each
+    subsequent one that follows will certify the previous one, but root
+    certificates (self-signed) that specify the certificate authority may
+    be omitted under the assumption that clients must already possess it. */
+  var cert, asn1;
+  var certs = [];
+  try {
+    while(msg.certificate_list.length() > 0) {
+      // each entry in msg.certificate_list is a vector with 3 len bytes
+      cert = readVector(msg.certificate_list, 3);
+      asn1 = forge.asn1.fromDer(cert);
+      cert = forge.pki.certificateFromAsn1(asn1, true);
+      certs.push(cert);
+    }
+  } catch(ex) {
+    c.error(c, {
+      message: 'Could not parse certificate list.',
+      cause: ex,
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.bad_certificate
       }
-    } catch(ex) {
+    });
+  }
+
+  if(!c.fail) {
+    // ensure at least 1 certificate was provided if in client-mode
+    // or if verifyClient was set to true to require a certificate
+    // (as opposed to 'optional')
+    var client = (c.entity === tls.ConnectionEnd.client);
+    if((client || c.verifyClient === true) && certs.length === 0) {
+      // error, no certificate
       c.error(c, {
-        message: 'Could not parse certificate list.',
-        cause: ex,
+        message: client ?
+          'No server certificate provided.' :
+          'No client certificate provided.',
         send: true,
         alert: {
           level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.bad_certificate
+          description: tls.Alert.Description.illegal_parameter
         }
       });
-    }
-
-    if(!c.fail) {
-      // ensure at least 1 certificate was provided if in client-mode
-      // or if verifyClient was set to true to require a certificate
-      // (as opposed to 'optional')
-      var client = (c.entity === tls.ConnectionEnd.client);
-      if((client || c.verifyClient === true) && certs.length === 0) {
-        // error, no certificate
-        c.error(c, {
-          message: client ?
-            'No server certificate provided.' :
-            'No client certificate provided.',
-          send: true,
-          alert: {
-            level: tls.Alert.Level.fatal,
-            description: tls.Alert.Description.illegal_parameter
-          }
-        });
-      } else if(certs.length === 0) {
-        // no certs to verify
-        // expect a ServerKeyExchange or ClientKeyExchange message next
-        c.expect = client ? SKE : CKE;
+    } else if(certs.length === 0) {
+      // no certs to verify
+      // expect a ServerKeyExchange or ClientKeyExchange message next
+      c.expect = client ? SKE : CKE;
+    } else {
+      // save certificate in session
+      if(client) {
+        c.session.serverCertificate = certs[0];
       } else {
-        // save certificate in session
-        if(client) {
-          c.session.serverCertificate = certs[0];
-        } else {
-          c.session.clientCertificate = certs[0];
-        }
-
-        if(tls.verifyCertificateChain(c, certs)) {
-          // expect a ServerKeyExchange or ClientKeyExchange message next
-          c.expect = client ? SKE : CKE;
-        }
+        c.session.clientCertificate = certs[0];
       }
 
-      // continue
-      c.process();
+      if(tls.verifyCertificateChain(c, certs)) {
+        // expect a ServerKeyExchange or ClientKeyExchange message next
+        c.expect = client ? SKE : CKE;
+      }
     }
+
+    // continue
+    c.process();
   }
 };
 
@@ -1338,7 +1338,7 @@ tls.handleServerKeyExchange = function(c, record, length) {
   // this implementation only supports RSA, no Diffie-Hellman support
   // so any length > 0 is invalid
   if(length > 0) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid key parameters. Only RSA is supported.',
       send: true,
       alert: {
@@ -1346,13 +1346,13 @@ tls.handleServerKeyExchange = function(c, record, length) {
         description: tls.Alert.Description.unsupported_certificate
       }
     });
-  } else {
-    // expect an optional CertificateRequest message next
-    c.expect = SCR;
-
-    // continue
-    c.process();
   }
+
+  // expect an optional CertificateRequest message next
+  c.expect = SCR;
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1366,7 +1366,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
   // this implementation only supports RSA, no Diffie-Hellman support
   // so any length < 48 is invalid
   if(length < 48) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid key parameters. Only RSA is supported.',
       send: true,
       alert: {
@@ -1374,79 +1374,77 @@ tls.handleClientKeyExchange = function(c, record, length) {
         description: tls.Alert.Description.unsupported_certificate
       }
     });
-  } else {
-    var b = record.fragment;
-    var msg = {
-      enc_pre_master_secret: readVector(b, 2).getBytes()
-    };
+  }
 
-    // do rsa decryption
-    var privateKey = null;
-    if(c.getPrivateKey) {
-      try {
-        privateKey = c.getPrivateKey(c, c.session.serverCertificate);
-        privateKey = forge.pki.privateKeyFromPem(privateKey);
-      } catch(ex) {
-        c.error(c, {
-          message: 'Could not get private key.',
-          cause: ex,
-          send: true,
-          alert: {
-            level: tls.Alert.Level.fatal,
-            description: tls.Alert.Description.internal_error
-          }
-        });
-      }
-    }
+  var b = record.fragment;
+  var msg = {
+    enc_pre_master_secret: readVector(b, 2).getBytes()
+  };
 
-    if(privateKey === null) {
+  // do rsa decryption
+  var privateKey = null;
+  if(c.getPrivateKey) {
+    try {
+      privateKey = c.getPrivateKey(c, c.session.serverCertificate);
+      privateKey = forge.pki.privateKeyFromPem(privateKey);
+    } catch(ex) {
       c.error(c, {
-        message: 'No private key set.',
+        message: 'Could not get private key.',
+        cause: ex,
         send: true,
         alert: {
           level: tls.Alert.Level.fatal,
           description: tls.Alert.Description.internal_error
         }
       });
-    } else {
-      try {
-        // decrypt 48-byte pre-master secret
-        var sp = c.session.sp;
-        sp.pre_master_secret = privateKey.decrypt(msg.enc_pre_master_secret);
+    }
+  }
 
-        // ensure client hello version matches first 2 bytes
-        var version = c.session.clientHelloVersion;
-        if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
-          version.minor !== sp.pre_master_secret.charCodeAt(1)) {
-          // error, do not send alert (see BLEI attack below)
-          throw {
-            message: 'TLS version rollback attack detected.'
-          };
-        }
-      } catch(ex) {
-        /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
-          TLS server which is using PKCS#1 encoded RSA, so instead of
-          failing here, we generate 48 random bytes and use that as
-          the pre-master secret. */
-        sp.pre_master_secret = forge.random.getBytes(48);
+  if(privateKey === null) {
+    return c.error(c, {
+      message: 'No private key set.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.internal_error
       }
-    }
+    });
   }
 
-  if(!c.fail) {
-    // expect a CertificateVerify message if a Certificate was received that
-    // does not have fixed Diffie-Hellman params, otherwise expect
-    // ChangeCipherSpec
-    c.expect = CCC;
-    if(c.session.clientCertificate !== null) {
-      // only RSA support, so expect CertificateVerify
-      // TODO: support Diffie-Hellman
-      c.expect = CCV;
-    }
+  try {
+    // decrypt 48-byte pre-master secret
+    var sp = c.session.sp;
+    sp.pre_master_secret = privateKey.decrypt(msg.enc_pre_master_secret);
 
-    // continue
-    c.process();
+    // ensure client hello version matches first 2 bytes
+    var version = c.session.clientHelloVersion;
+    if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
+      version.minor !== sp.pre_master_secret.charCodeAt(1)) {
+      // error, do not send alert (see BLEI attack below)
+      throw {
+        message: 'TLS version rollback attack detected.'
+      };
+    }
+  } catch(ex) {
+    /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
+      TLS server which is using PKCS#1 encoded RSA, so instead of
+      failing here, we generate 48 random bytes and use that as
+      the pre-master secret. */
+    sp.pre_master_secret = forge.random.getBytes(48);
   }
+
+  // expect a CertificateVerify message if a Certificate was received that
+  // does not have fixed Diffie-Hellman params, otherwise expect
+  // ChangeCipherSpec
+  c.expect = CCC;
+  if(c.session.clientCertificate !== null) {
+    // only RSA support, so expect CertificateVerify
+    // TODO: support Diffie-Hellman
+    c.expect = CCV;
+  }
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1479,7 +1477,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
 tls.handleCertificateRequest = function(c, record, length) {
   // minimum of 3 bytes in message
   if(length < 3) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid CertificateRequest. Message too short.',
       send: true,
       alert: {
@@ -1487,24 +1485,24 @@ tls.handleCertificateRequest = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  } else {
-    // TODO: TLS 1.2+ has different format including
-    // SignatureAndHashAlgorithm after cert types
-    var b = record.fragment;
-    var msg = {
-      certificate_types: readVector(b, 1),
-      certificate_authorities: readVector(b, 2)
-    };
-
-    // save certificate request in session
-    c.session.certificateRequest = msg;
-
-    // expect a ServerHelloDone message next
-    c.expect = SHD;
-
-    // continue
-    c.process();
   }
+
+  // TODO: TLS 1.2+ has different format including
+  // SignatureAndHashAlgorithm after cert types
+  var b = record.fragment;
+  var msg = {
+    certificate_types: readVector(b, 1),
+    certificate_authorities: readVector(b, 2)
+  };
+
+  // save certificate request in session
+  c.session.certificateRequest = msg;
+
+  // expect a ServerHelloDone message next
+  c.expect = SHD;
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1516,7 +1514,7 @@ tls.handleCertificateRequest = function(c, record, length) {
  */
 tls.handleCertificateVerify = function(c, record, length) {
   if(length < 2) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid CertificateVerify. Message too short.',
       send: true,
       alert: {
@@ -1524,60 +1522,58 @@ tls.handleCertificateVerify = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  } else {
-    // rewind to get full bytes for message so it can be manually
-    // digested below (special case for CertificateVerify messages because
-    // they must be digested *after* handling as opposed to all others)
-    var b = record.fragment;
-    b.read -= 4;
-    var msgBytes = b.bytes();
-    b.read += 4;
-
-    var msg = {
-      signature: readVector(b, 2).getBytes()
-    };
-
-    // TODO: add support for DSA
-
-    // generate data to verify
-    var verify = forge.util.createBuffer();
-    verify.putBuffer(c.session.md5.digest());
-    verify.putBuffer(c.session.sha1.digest());
-    verify = verify.getBytes();
-
-    try {
-      var cert = c.session.clientCertificate;
-      /*b = forge.pki.rsa.decrypt(
-        msg.signature, cert.publicKey, true, verify.length);
-      if(b !== verify) {*/
-      if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
-        throw {
-          message: 'CertificateVerify signature does not match.'
-        };
-      }
-
-      // digest message now that it has been handled
-      c.session.md5.update(msgBytes);
-      c.session.sha1.update(msgBytes);
-    } catch(ex) {
-      c.error(c, {
-        message: 'Bad signature in CertificateVerify.',
-        send: true,
-        alert: {
-          level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.handshake_failure
-        }
-      });
-    }
-
-    if(!c.fail) {
-      // expect ChangeCipherSpec
-      c.expect = CCC;
-
-      // continue
-      c.process();
-    }
   }
+
+  // rewind to get full bytes for message so it can be manually
+  // digested below (special case for CertificateVerify messages because
+  // they must be digested *after* handling as opposed to all others)
+  var b = record.fragment;
+  b.read -= 4;
+  var msgBytes = b.bytes();
+  b.read += 4;
+
+  var msg = {
+    signature: readVector(b, 2).getBytes()
+  };
+
+  // TODO: add support for DSA
+
+  // generate data to verify
+  var verify = forge.util.createBuffer();
+  verify.putBuffer(c.session.md5.digest());
+  verify.putBuffer(c.session.sha1.digest());
+  verify = verify.getBytes();
+
+  try {
+    var cert = c.session.clientCertificate;
+    /*b = forge.pki.rsa.decrypt(
+      msg.signature, cert.publicKey, true, verify.length);
+    if(b !== verify) {*/
+    if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
+      throw {
+        message: 'CertificateVerify signature does not match.'
+      };
+    }
+
+    // digest message now that it has been handled
+    c.session.md5.update(msgBytes);
+    c.session.sha1.update(msgBytes);
+  } catch(ex) {
+    return c.error(c, {
+      message: 'Bad signature in CertificateVerify.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.handshake_failure
+      }
+    });
+  }
+
+  // expect ChangeCipherSpec
+  c.expect = CCC;
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1606,7 +1602,7 @@ tls.handleCertificateVerify = function(c, record, length) {
 tls.handleServerHelloDone = function(c, record, length) {
   // len must be 0 bytes
   if(length > 0) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid ServerHelloDone message. Invalid length.',
       send: true,
       alert: {
@@ -1614,7 +1610,9 @@ tls.handleServerHelloDone = function(c, record, length) {
         description: tls.Alert.Description.record_overflow
       }
     });
-  } else if(c.serverCertificate === null) {
+  }
+
+  if(c.serverCertificate === null) {
     // no server certificate was provided
     var error = {
       message: 'No server certificate provided. Not enough security.',
@@ -1626,11 +1624,9 @@ tls.handleServerHelloDone = function(c, record, length) {
     };
 
     // call application callback
+    var depth = 0;
     var ret = c.verify(c, error.alert.description, depth, []);
-    if(ret === true) {
-      // clear any set error
-      error = null;
-    } else {
+    if(ret !== true) {
       // check for custom alert info
       if(ret || ret === 0) {
         // set custom message and alert description
@@ -1648,12 +1644,12 @@ tls.handleServerHelloDone = function(c, record, length) {
       }
 
       // send error
-      c.error(c, error);
+      return c.error(c, error);
     }
   }
 
   // create client certificate message if requested
-  if(!c.fail && c.session.certificateRequest !== null) {
+  if(c.session.certificateRequest !== null) {
     record = tls.createRecord(c, {
       type: tls.ContentType.handshake,
       data: tls.createCertificate(c)
@@ -1661,66 +1657,64 @@ tls.handleServerHelloDone = function(c, record, length) {
     tls.queue(c, record);
   }
 
-  if(!c.fail) {
-    // create client key exchange message
-    record = tls.createRecord(c, {
-       type: tls.ContentType.handshake,
-       data: tls.createClientKeyExchange(c)
-    });
-    tls.queue(c, record);
+  // create client key exchange message
+  record = tls.createRecord(c, {
+     type: tls.ContentType.handshake,
+     data: tls.createClientKeyExchange(c)
+  });
+  tls.queue(c, record);
 
-    // expect no messages until the following callback has been called
-    c.expect = SER;
+  // expect no messages until the following callback has been called
+  c.expect = SER;
 
-    // create callback to handle client signature (for client-certs)
-    var callback = function(c, signature) {
-      if(c.session.certificateRequest !== null &&
-        c.session.clientCertificate !== null) {
-        // create certificate verify message
-        tls.queue(c, tls.createRecord(c, {
-          type: tls.ContentType.handshake,
-          data: tls.createCertificateVerify(c, signature)
-        }));
-      }
-
-      // create change cipher spec message
-      tls.queue(c, tls.createRecord(c, {
-        type: tls.ContentType.change_cipher_spec,
-        data: tls.createChangeCipherSpec()
-      }));
-
-      // create pending state
-      c.state.pending = tls.createConnectionState(c);
-
-      // change current write state to pending write state
-      c.state.current.write = c.state.pending.write;
-
-      // create finished message
+  // create callback to handle client signature (for client-certs)
+  var callback = function(c, signature) {
+    if(c.session.certificateRequest !== null &&
+      c.session.clientCertificate !== null) {
+      // create certificate verify message
       tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
-        data: tls.createFinished(c)
+        data: tls.createCertificateVerify(c, signature)
       }));
-
-      // expect a server ChangeCipherSpec message next
-      c.expect = SCC;
-
-      // send records
-      tls.flush(c);
-
-      // continue
-      c.process();
-    };
-
-    // if there is no certificate request or no client certificate, do
-    // callback immediately
-    if(c.session.certificateRequest === null ||
-      c.session.clientCertificate === null) {
-      callback(c, null);
-    } else {
-      // otherwise get the client signature
-      tls.getClientSignature(c, callback);
     }
+
+    // create change cipher spec message
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.change_cipher_spec,
+      data: tls.createChangeCipherSpec()
+    }));
+
+    // create pending state
+    c.state.pending = tls.createConnectionState(c);
+
+    // change current write state to pending write state
+    c.state.current.write = c.state.pending.write;
+
+    // create finished message
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.handshake,
+      data: tls.createFinished(c)
+    }));
+
+    // expect a server ChangeCipherSpec message next
+    c.expect = SCC;
+
+    // send records
+    tls.flush(c);
+
+    // continue
+    c.process();
+  };
+
+  // if there is no certificate request or no client certificate, do
+  // callback immediately
+  if(c.session.certificateRequest === null ||
+    c.session.clientCertificate === null) {
+    return callback(c, null);
   }
+
+  // otherwise get the client signature
+  tls.getClientSignature(c, callback);
 };
 
 /**
@@ -1731,7 +1725,7 @@ tls.handleServerHelloDone = function(c, record, length) {
  */
 tls.handleChangeCipherSpec = function(c, record) {
   if(record.fragment.getByte() !== 0x01) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid ChangeCipherSpec message received.',
       send: true,
       alert: {
@@ -1739,31 +1733,31 @@ tls.handleChangeCipherSpec = function(c, record) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
-  } else {
-    // create pending state if:
-    // 1. Resuming session in client mode OR
-    // 2. NOT resuming session in server mode
-    var client = (c.entity === tls.ConnectionEnd.client);
-    if((c.session.resuming && client) || (!c.session.resuming && !client)) {
-      c.state.pending = tls.createConnectionState(c);
-    }
-
-    // change current read state to pending read state
-    c.state.current.read = c.state.pending.read;
-
-    // clear pending state if:
-    // 1. NOT resuming session in client mode OR
-    // 2. resuming a session in server mode
-    if((!c.session.resuming && client) || (c.session.resuming && !client)) {
-      c.state.pending = null;
-    }
-
-    // expect a Finished record next
-    c.expect = client ? SFI : CFI;
-
-    // continue
-    c.process();
   }
+
+  // create pending state if:
+  // 1. Resuming session in client mode OR
+  // 2. NOT resuming session in server mode
+  var client = (c.entity === tls.ConnectionEnd.client);
+  if((c.session.resuming && client) || (!c.session.resuming && !client)) {
+    c.state.pending = tls.createConnectionState(c);
+  }
+
+  // change current read state to pending read state
+  c.state.current.read = c.state.pending.read;
+
+  // clear pending state if:
+  // 1. NOT resuming session in client mode OR
+  // 2. resuming a session in server mode
+  if((!c.session.resuming && client) || (c.session.resuming && !client)) {
+    c.state.pending = null;
+  }
+
+  // expect a Finished record next
+  c.expect = client ? SFI : CFI;
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1832,7 +1826,7 @@ tls.handleFinished = function(c, record, length) {
   var prf = prf_TLS1;
   b = prf(sp.master_secret, label, b.getBytes(), vdl);
   if(b.getBytes() !== vd) {
-    c.error(c, {
+    return c.error(c, {
       message: 'Invalid verify_data in Finished message.',
       send: true,
       alert: {
@@ -1840,51 +1834,51 @@ tls.handleFinished = function(c, record, length) {
         description: tls.Alert.Description.decrypt_error
       }
     });
-  } else {
-    // digest finished message now that it has been handled
-    c.session.md5.update(msgBytes);
-    c.session.sha1.update(msgBytes);
-
-    // resuming session as client or NOT resuming session as server
-    if((c.session.resuming && client) || (!c.session.resuming && !client)) {
-      // create change cipher spec message
-      tls.queue(c, tls.createRecord(c, {
-        type: tls.ContentType.change_cipher_spec,
-        data: tls.createChangeCipherSpec()
-      }));
-
-      // change current write state to pending write state, clear pending
-      c.state.current.write = c.state.pending.write;
-      c.state.pending = null;
-
-      // create finished message
-      tls.queue(c, tls.createRecord(c, {
-        type: tls.ContentType.handshake,
-        data: tls.createFinished(c)
-      }));
-    }
-
-    // expect application data next
-    c.expect = client ? SAD : CAD;
-
-    // handshake complete
-    c.handshaking = false;
-    ++c.handshakes;
-
-    // save access to peer certificate
-    c.peerCertificate = client ?
-      c.session.serverCertificate : c.session.clientCertificate;
-
-    // send records
-    tls.flush(c);
-
-    // now connected
-    c.isConnected = true;
-    c.connected(c);
-
-    // continue
-    c.process();
   }
+
+  // digest finished message now that it has been handled
+  c.session.md5.update(msgBytes);
+  c.session.sha1.update(msgBytes);
+
+  // resuming session as client or NOT resuming session as server
+  if((c.session.resuming && client) || (!c.session.resuming && !client)) {
+    // create change cipher spec message
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.change_cipher_spec,
+      data: tls.createChangeCipherSpec()
+    }));
+
+    // change current write state to pending write state, clear pending
+    c.state.current.write = c.state.pending.write;
+    c.state.pending = null;
+
+    // create finished message
+    tls.queue(c, tls.createRecord(c, {
+      type: tls.ContentType.handshake,
+      data: tls.createFinished(c)
+    }));
+  }
+
+  // expect application data next
+  c.expect = client ? SAD : CAD;
+
+  // handshake complete
+  c.handshaking = false;
+  ++c.handshakes;
+
+  // save access to peer certificate
+  c.peerCertificate = client ?
+    c.session.serverCertificate : c.session.clientCertificate;
+
+  // send records
+  tls.flush(c);
+
+  // now connected
+  c.isConnected = true;
+  c.connected(c);
+
+  // continue
+  c.process();
 };
 
 /**
@@ -1981,20 +1975,20 @@ tls.handleAlert = function(c, record) {
 
   // close connection on close_notify, not an error
   if(alert.description === tls.Alert.Description.close_notify) {
-    c.close();
-  } else {
-    // call error handler
-    c.error(c, {
-      message: msg,
-      send: false,
-      // origin is the opposite end
-      origin: (c.entity === tls.ConnectionEnd.client) ? 'server' : 'client',
-      alert: alert
-    });
-
-    // continue
-    c.process();
+    return c.close();
   }
+
+  // call error handler
+  c.error(c, {
+    message: msg,
+    send: false,
+    // origin is the opposite end
+    origin: (c.entity === tls.ConnectionEnd.client) ? 'server' : 'client',
+    alert: alert
+  });
+
+  // continue
+  c.process();
 };
 
 /**
@@ -2018,55 +2012,55 @@ tls.handleHandshake = function(c, record) {
     b.read -= 4;
 
     // continue
-    c.process();
-  } else {
-    // full message now available, clear cache, reset read pointer to
-    // before type and length
-    c.fragmented = null;
-    b.read -= 4;
+    return c.process();
+  }
 
-    // save the handshake bytes for digestion after handler is found
-    // (include type and length of handshake msg)
-    var bytes = b.bytes(length + 4);
+  // full message now available, clear cache, reset read pointer to
+  // before type and length
+  c.fragmented = null;
+  b.read -= 4;
 
-    // restore read pointer
-    b.read += 4;
+  // save the handshake bytes for digestion after handler is found
+  // (include type and length of handshake msg)
+  var bytes = b.bytes(length + 4);
 
-    // handle expected message
-    if(type in hsTable[c.entity][c.expect]) {
-      // initialize server session
-      if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
-        c.handshaking = true;
-        c.session = {
-          version: null,
-          serverNameList: [],
-          cipherSuite: null,
-          compressionMethod: null,
-          serverCertificate: null,
-          clientCertificate: null,
-          md5: forge.md.md5.create(),
-          sha1: forge.md.sha1.create()
-        };
-      }
+  // restore read pointer
+  b.read += 4;
 
-      /* Update handshake messages digest. Finished and CertificateVerify
-        messages are not digested here. They can't be digested as part of
-        the verify_data that they contain. These messages are manually
-        digested in their handlers. HelloRequest messages are simply never
-        included in the handshake message digest according to spec. */
-      if(type !== tls.HandshakeType.hello_request &&
-        type !== tls.HandshakeType.certificate_verify &&
-        type !== tls.HandshakeType.finished) {
-        c.session.md5.update(bytes);
-        c.session.sha1.update(bytes);
-      }
-
-      // handle specific handshake type record
-      hsTable[c.entity][c.expect][type](c, record, length);
-    } else {
-      // unexpected record
-      tls.handleUnexpected(c, record);
+  // handle expected message
+  if(type in hsTable[c.entity][c.expect]) {
+    // initialize server session
+    if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
+      c.handshaking = true;
+      c.session = {
+        version: null,
+        serverNameList: [],
+        cipherSuite: null,
+        compressionMethod: null,
+        serverCertificate: null,
+        clientCertificate: null,
+        md5: forge.md.md5.create(),
+        sha1: forge.md.sha1.create()
+      };
     }
+
+    /* Update handshake messages digest. Finished and CertificateVerify
+      messages are not digested here. They can't be digested as part of
+      the verify_data that they contain. These messages are manually
+      digested in their handlers. HelloRequest messages are simply never
+      included in the handshake message digest according to spec. */
+    if(type !== tls.HandshakeType.hello_request &&
+      type !== tls.HandshakeType.certificate_verify &&
+      type !== tls.HandshakeType.finished) {
+      c.session.md5.update(bytes);
+      c.session.sha1.update(bytes);
+    }
+
+    // handle specific handshake type record
+    hsTable[c.entity][c.expect][type](c, record, length);
+  } else {
+    // unexpected record
+    tls.handleUnexpected(c, record);
   }
 };
 
