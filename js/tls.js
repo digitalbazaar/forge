@@ -843,7 +843,7 @@ tls.parseHelloMessage = function(c, record, length) {
               }
 
               // add host name to server name list
-              c.session.serverNameList.push(
+              c.session.extensions.server_name.serverNameList.push(
                 readVector(snl, 2).getBytes());
             }
           }
@@ -2032,7 +2032,11 @@ tls.handleHandshake = function(c, record) {
       c.handshaking = true;
       c.session = {
         version: null,
-        serverNameList: [],
+        extensions: {
+          server_name: {
+            serverNameList: []
+          }
+        },
         cipherSuite: null,
         compressionMethod: null,
         serverCertificate: null,
@@ -2866,8 +2870,13 @@ tls.createCertificate = function(c) {
   var client = (c.entity === tls.ConnectionEnd.client);
   var cert = null;
   if(c.getCertificate) {
-    cert = c.getCertificate(
-      c, client ? c.session.certificateRequest : c.session.serverNameList);
+    var hint;
+    if(client) {
+      hint = c.session.certificateRequest;
+    } else {
+      hint = c.session.extensions.server_name.serverNameList;
+    }
+    cert = c.getCertificate(c, hint);
   }
 
   // buffer to hold certificate list
