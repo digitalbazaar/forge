@@ -510,7 +510,7 @@ var expandKey = function(key, decrypt) {
     var m2 = imix[2];
     var m3 = imix[3];
     var wnew = w.slice(0);
-    var end = w.length;
+    end = w.length;
     for(var i = 0, wi = end - Nb; i < end; i += Nb, wi -= Nb) {
       // do not sub the first or last round key (round keys are Nb
       // words) as no column mixing is performed before they are added,
@@ -832,7 +832,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     (key.length === 16 || key.length === 24 || key.length === 32)) {
     // convert key integer array into byte buffer
     var tmp = key;
-    var key = forge.util.createBuffer();
+    key = forge.util.createBuffer();
     for(var i = 0; i < tmp.length; ++i) {
       key.putByte(tmp[i]);
     }
@@ -891,7 +891,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
   } else {
     throw {
       message: 'Unsupported block cipher mode of operation: "' + mode + '"'
-    }
+    };
   }
 
   /**
@@ -1001,7 +1001,7 @@ var _createCipher = function(key, iv, output, decrypt, mode) {
     } else if(forge.util.isArray(iv) && iv.length === 16) {
       // convert iv byte array into byte buffer
       var tmp = iv;
-      var iv = forge.util.createBuffer();
+      iv = forge.util.createBuffer();
       for(var i = 0; i < 16; ++i) {
         iv.putByte(tmp[i]);
       }
