@@ -801,20 +801,27 @@ var _updateBlock = function(w, input, output, decrypt) {
  * encryption/decryption will be started, otherwise start() must be called
  * with an iv.
  *
- * @param key the symmetric key to use.
- * @param iv the initialization vector to start with, null not to start.
- * @param output the buffer to write to.
- * @param decrypt true for decryption, false for encryption.
- * @param mode the cipher mode to use (default: 'CBC').
+ * @param options the options to use.
+ *          key the symmetric key to use.
+ *          iv the initialization vector to start with, null not to start.
+ *          output the buffer to write to.
+ *          decrypt true for decryption, false for encryption.
+ *          mode the cipher mode to use (default: 'CBC').
  *
  * @return the cipher.
  */
-var _createCipher = function(key, iv, output, decrypt, mode) {
+var _createCipher = function(options) {
   var cipher = null;
 
   if(!init) {
     initialize();
   }
+
+  var key = options.key;
+  var iv = options.iv;
+  var output = options.output;
+  var decrypt = options.decrypt;
+  var mode = options.mode;
 
   // default to CBC mode
   mode = (mode || 'CBC').toUpperCase();
@@ -1147,7 +1154,13 @@ forge.aes = forge.aes || {};
  * @return the cipher.
  */
 forge.aes.startEncrypting = function(key, iv, output, mode) {
-  return _createCipher(key, iv, output, false, mode);
+  return _createCipher({
+    key: key,
+    iv: iv,
+    output: output,
+    decrypt: false,
+    mode: mode
+  });
 };
 
 /**
@@ -1165,7 +1178,13 @@ forge.aes.startEncrypting = function(key, iv, output, mode) {
  * @return the cipher.
  */
 forge.aes.createEncryptionCipher = function(key, mode) {
-  return _createCipher(key, null, null, false, mode);
+  return _createCipher({
+    key: key,
+    iv: null,
+    output: null,
+    decrypt: false,
+    mode: mode
+  });
 };
 
 /**
@@ -1183,7 +1202,13 @@ forge.aes.createEncryptionCipher = function(key, mode) {
  * @return the cipher.
  */
 forge.aes.startDecrypting = function(key, iv, output, mode) {
-  return _createCipher(key, iv, output, true, mode);
+  return _createCipher({
+    key: key,
+    iv: iv,
+    output: output,
+    decrypt: true,
+    mode: mode
+  });
 };
 
 /**
@@ -1201,7 +1226,13 @@ forge.aes.startDecrypting = function(key, iv, output, mode) {
  * @return the cipher.
  */
 forge.aes.createDecryptionCipher = function(key, mode) {
-  return _createCipher(key, null, null, true, mode);
+  return _createCipher({
+    key: key,
+    iv: null,
+    output: null,
+    decrypt: true,
+    mode: mode
+  });
 };
 
 /**
