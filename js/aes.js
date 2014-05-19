@@ -811,6 +811,10 @@ var _updateBlock = function(w, input, output, decrypt) {
  * @return the cipher.
  */
 var _createCipher = function(options) {
+  // TODO: abstract block cipher into its own file, reuse for aes, 3des, etc.
+  // called "blockCipher.js"
+  // TODO: abstract modes into their own file(s) (or just one for all modes)
+  // called "blockCipherModes.js" (currently far too many detail-leaks)
   var cipher = null;
 
   if(!init) {
@@ -866,8 +870,8 @@ var _createCipher = function(options) {
     return cipher;
   }
 
-  // (CFB/OFB/CTR always uses encryption)
-  var alwaysEncrypt = (['CFB', 'OFB', 'CTR'].indexOf(mode) !== -1);
+  // (CFB/OFB/CTR/GCM always uses encryption)
+  var alwaysEncrypt = (['CFB', 'OFB', 'CTR', 'GCM'].indexOf(mode) !== -1);
 
   // CBC mode requires padding
   var requirePadding = (mode === 'CBC');
@@ -879,22 +883,35 @@ var _createCipher = function(options) {
   var _output;
   var _inBlock;
   var _outBlock;
+  var _tmpBlock;
   var _prev;
   var _finish;
   var _op;
+  var _hashSubkey;
+  var _m0;
+  var _j0;
+  var _s;
+  var _tag;
+  var _aDataLength;
+  var _cLength;
+  var _tagLength;
   cipher = {
     // output from AES (either encrypted or decrypted bytes)
     output: null
   };
 
   if(mode === 'CBC') {
-    _op = cbcOp;
+    _op = decrypt ? cbcDecryptOp : cbcEncryptOp;
   } else if(mode === 'CFB') {
     _op = cfbOp;
   } else if(mode === 'OFB') {
     _op = ofbOp;
   } else if(mode === 'CTR') {
     _op = ctrOp;
+  } else if(mode === 'GCM') {
+    _op = decrypt ? gcmDecryptOp : gcmEncryptOp;
+    // authentication tag output
+    cipher.tag = null;
   } else {
     throw {
       message: 'Unsupported block cipher mode of operation: "' + mode + '"'
@@ -977,6 +994,30 @@ var _createCipher = function(options) {
       _output.truncate(_blockSize - overflow);
     }
 
+    // if using GCM mode, handle authentication tag
+    if(mode === 'GCM') {
+      // concatenate additional data length with cipher length
+      var lengths = _aDataLength.concat(from64To32(_cLength * 8));
+
+      // include lengths in hash
+      _s = ghash(_hashSubkey, _s, lengths);
+
+      // do GCTR(J_0, S)
+      var tag = [];
+      _updateBlock(_w, _j0, tag, false);
+      for(var i = 0; i < Nb; ++i) {
+        cipher.tag.putInt32(_s[i] ^ tag[i]);
+      }
+
+      // trim tag to length
+      cipher.tag.truncate(cipher.tag.length() % (_tagLength / 8));
+
+      // check authentication tag
+      if(decrypt && cipher.tag.bytes() !== _tag) {
+        rval = false;
+      }
+    }
+
     return rval;
   };
 
@@ -984,61 +1025,153 @@ var _createCipher = function(options) {
    * Starts or restarts the encryption or decryption process, whichever
    * was previously configured.
    *
-   * The iv may be given as a string of bytes, an array of bytes, a
-   * byte buffer, or an array of 32-bit words.
+   * For non-GCM mode, the IV may be a binary-encoded string of bytes, an array
+   * of bytes, a byte buffer, or an array of 32-bit integers. If the IV is in
+   * bytes, then it must be Nb (16) bytes in length. If the IV is given in as
+   * 32-bit integers, then it must be 4 integers long.
    *
-   * @param iv the initialization vector to use, null to reuse the
-   *          last ciphered block from a previous update().
-   * @param output the output the buffer to write to, null to create one.
+   * For GCM-mode, the IV must be given as a binary-encoded string of bytes or
+   * a byte buffer. The number of bytes should be 12 (96 bits) as recommended
+   * by NIST SP-800-38D but another length may be given.
+   *
+   * @param iv the initialization vector to use as a binary-encoded string of
+   *          bytes, null to reuse the last ciphered block from a previous
+   *          update().
+   * @param options the options to use:
+   *          additionalData additional authentication data as a binary-encoded
+   *            string of bytes, for 'GCM' mode, (default: none).
+   *          tagLength desired length of authentication tag, in bits, for
+   *            'GCM' mode (0-128, default: 128).
+   *          tag the authentication tag to check if decrypting, as a
+   *             binary-encoded string of bytes.
+   *          output the output the buffer to write to, null to create one.
    */
-  cipher.start = function(iv, output) {
+  cipher.start = function(iv, options) {
     // if IV is null, reuse block from previous encryption/decryption
     if(iv === null) {
       iv = _prev.slice(0);
     }
 
-    /* Note: The IV may be a string of bytes, an array of bytes, a
-      byte buffer, or an array of 32-bit integers. If the IV is in
-      bytes, then it must be Nb (16) bytes in length. If it is in
-      32-bit integers, then it must be 4 integers long. */
+    // backwards compatibility: support second arg as output buffer
+    var output = null;
+    if(options instanceof forge.util.ByteBuffer) {
+      output = options;
+      options = {};
+    }
+    options = options || {};
 
-    if(typeof iv === 'string' && iv.length === 16) {
+    // TODO: abstract IV handling to cipher mode
+    var ivLength;
+    if(typeof iv === 'string') {
       // convert iv string into byte buffer
       iv = forge.util.createBuffer(iv);
-    } else if(forge.util.isArray(iv) && iv.length === 16) {
-      // convert iv byte array into byte buffer
-      var tmp = iv;
-      iv = forge.util.createBuffer();
-      for(var i = 0; i < 16; ++i) {
-        iv.putByte(tmp[i]);
-      }
     }
 
-    // convert iv byte buffer into 32-bit integer array
-    if(!forge.util.isArray(iv)) {
-      var tmp = iv;
-      iv = new Array(4);
-      iv[0] = tmp.getInt32();
-      iv[1] = tmp.getInt32();
-      iv[2] = tmp.getInt32();
-      iv[3] = tmp.getInt32();
+    if(mode !== 'GCM') {
+      ivLength = _blockSize;
+      if(forge.util.isArray(iv) && iv.length > 4) {
+        // convert iv byte array into byte buffer
+        var tmp = iv;
+        iv = forge.util.createBuffer();
+        for(var i = 0; i < iv.length; ++i) {
+          iv.putByte(tmp[i]);
+        }
+      }
+      if(!forge.util.isArray(iv)) {
+        // convert iv byte buffer into 32-bit integer array
+        iv = [iv.getInt32(), iv.getInt32(), iv.getInt32(), iv.getInt32()];
+      }
     }
 
     // set private vars
     _input = forge.util.createBuffer();
     _output = output || forge.util.createBuffer();
-    _prev = iv.slice(0);
     _inBlock = new Array(Nb);
     _outBlock = new Array(Nb);
     _finish = false;
     cipher.output = _output;
+    cipher.tag = forge.util.createBuffer();
 
     // CFB/OFB/CTR uses IV as first input
     if(['CFB', 'OFB', 'CTR'].indexOf(mode) !== -1) {
       for(var i = 0; i < Nb; ++i) {
-        _inBlock[i] = _prev[i];
+        _inBlock[i] = iv[i];
       }
-      _prev = null;
+    } else if(mode === 'CBC') {
+      // save IV as "previous" block
+      _prev = iv.slice(0);
+    } else if(mode === 'GCM') {
+      // no cipher data yet
+      _cLength = 0;
+
+      // default additional data is none
+      var additionalData;
+      if('additionalData' in options) {
+        additionalData = forge.util.createBuffer(options.additionalData);
+      } else {
+        additionalData = forge.util.createBuffer();
+      }
+
+      // default tag length is 128 bits
+      if('tagLength' in options) {
+        _tagLength = options.tagLength;
+      } else {
+        _tagLength = 128;
+      }
+
+      if(decrypt) {
+        // save tag to check later, create tmp storage for hash calculation
+        _tag = forge.util.createBuffer(options.tag).getBytes();
+        _tmpBlock = new Array(Nb);
+      }
+
+      // generate hash subkey
+      // (apply block cipher to "zero" block)
+      _hashSubkey = new Array(Nb);
+      _updateBlock(_w, [0, 0, 0, 0], _hashSubkey, false);
+
+      // TODO: generate table M_0
+
+      // Note: support IV length different from 96 bits? (only supporting
+      // 96 bits is recommended by NIST SP-800-38D)
+      // generate J_0
+      ivLength = iv.length();
+      if(ivLength === 12) {
+        // 96-bit IV
+        _j0 = [iv.getInt32(), iv.getInt32(), iv.getInt32(), 1];
+      } else {
+        // IV is NOT 96-bits
+        _j0 = [0, 0, 0, 0];
+        while(iv.length() > 0) {
+          _j0 = ghash(
+            _hashSubkey, _j0,
+            [iv.getInt32(), iv.getInt32(), iv.getInt32(), iv.getInt32()]);
+        }
+        _j0 = ghash(_hashSubkey, _j0, [0, 0].concat(from64To32(ivLength * 8)));
+      }
+
+      // generate ICB (initial counter block)
+      _inBlock = _j0.slice(0);
+      inc32(_inBlock);
+
+      // consume authentication data
+      additionalData = forge.util.createBuffer(additionalData);
+      // save additional data length as a BE 64-bit number
+      _aDataLength = from64To32(additionalData.length() * 8);
+      // pad additional data to 128 bit (16 byte) block size
+      var overflow = additionalData.length() % _blockSize;
+      if(overflow) {
+        additionalData.fillWithByte(0, _blockSize - overflow);
+      }
+      _s = [0, 0, 0, 0];
+      while(additionalData.length() > 0) {
+        _s = ghash(_hashSubkey, _s, [
+          additionalData.getInt32(),
+          additionalData.getInt32(),
+          additionalData.getInt32(),
+          additionalData.getInt32()
+        ]);
+      }
     }
   };
   if(iv !== null) {
@@ -1048,48 +1181,47 @@ var _createCipher = function(options) {
 
   // block cipher mode operations:
 
-  function cbcOp() {
+  function cbcEncryptOp() {
     // get next block
-    if(decrypt) {
-      for(var i = 0; i < Nb; ++i) {
-        _inBlock[i] = _input.getInt32();
-      }
-    } else {
-      // CBC XOR's IV (or previous block) with plaintext
-      for(var i = 0; i < Nb; ++i) {
-        _inBlock[i] = _prev[i] ^ _input.getInt32();
-      }
+    // CBC XOR's IV (or previous block) with plaintext
+    for(var i = 0; i < Nb; ++i) {
+      _inBlock[i] = _prev[i] ^ _input.getInt32();
+    }
+
+    // update block
+    _updateBlock(_w, _inBlock, _outBlock, decrypt);
+
+    // write output, save previous block
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_outBlock[i]);
+    }
+    _prev = _outBlock;
+  }
+
+  function cbcDecryptOp() {
+    // get next block
+    for(var i = 0; i < Nb; ++i) {
+      _inBlock[i] = _input.getInt32();
     }
 
     // update block
     _updateBlock(_w, _inBlock, _outBlock, decrypt);
 
     // write output, save previous ciphered block
-    if(decrypt) {
-      // CBC XOR's IV (or previous block) with ciphertext
-      for(var i = 0; i < Nb; ++i) {
-        _output.putInt32(_prev[i] ^ _outBlock[i]);
-      }
-      _prev = _inBlock.slice(0);
-    } else {
-      for(var i = 0; i < Nb; ++i) {
-        _output.putInt32(_outBlock[i]);
-      }
-      _prev = _outBlock;
+    // CBC XOR's IV (or previous block) with ciphertext
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_prev[i] ^ _outBlock[i]);
     }
+    _prev = _inBlock.slice(0);
   }
 
   function cfbOp() {
     // update block (CFB always uses encryption mode)
     _updateBlock(_w, _inBlock, _outBlock, false);
 
-    // get next input
-    for(var i = 0; i < Nb; ++i) {
-      _inBlock[i] = _input.getInt32();
-    }
-
     // XOR input with output
     for(var i = 0; i < Nb; ++i) {
+      _inBlock[i] = _input.getInt32();
       var result = _inBlock[i] ^ _outBlock[i];
       if(!decrypt) {
         // update next input block when encrypting
@@ -1103,14 +1235,9 @@ var _createCipher = function(options) {
     // update block (OFB always uses encryption mode)
     _updateBlock(_w, _inBlock, _outBlock, false);
 
-    // get next input
-    for(var i = 0; i < Nb; ++i) {
-      _inBlock[i] = _input.getInt32();
-    }
-
     // XOR input with output and update next input
     for(var i = 0; i < Nb; ++i) {
-      _output.putInt32(_inBlock[i] ^ _outBlock[i]);
+      _output.putInt32(_input.getInt32() ^ _outBlock[i]);
       _inBlock[i] = _outBlock[i];
     }
   }
@@ -1120,19 +1247,181 @@ var _createCipher = function(options) {
     _updateBlock(_w, _inBlock, _outBlock, false);
 
     // increment counter (input block)
-    for(var i = Nb - 1; i >= 0; --i) {
-      if(_inBlock[i] === 0xFFFFFFFF) {
-        _inBlock[i] = 0;
-      } else {
-        ++_inBlock[i];
-        break;
-      }
-    }
+    inc32(_inBlock);
 
     // XOR input with output
     for(var i = 0; i < Nb; ++i) {
       _output.putInt32(_input.getInt32() ^ _outBlock[i]);
     }
+  }
+
+  function gcmEncryptOp() {
+    // update block (GCM always uses encryption mode)
+    _updateBlock(_w, _inBlock, _outBlock, false);
+
+    // increment counter (input block)
+    inc32(_inBlock);
+
+    // save input length
+    var inputLength = _input.length();
+
+    // XOR input with output
+    for(var i = 0; i < Nb; ++i) {
+      _outBlock[i] ^= _input.getInt32();
+    }
+
+    // handle overflow
+    if(inputLength < _blockSize) {
+      // get block overflow
+      var overflow = inputLength % _blockSize;
+      _cLength += overflow;
+
+      // truncate for hash function
+      var tmp = forge.util.createBuffer();
+      tmp.putInt32(_outBlock[0]);
+      tmp.putInt32(_outBlock[1]);
+      tmp.putInt32(_outBlock[2]);
+      tmp.putInt32(_outBlock[3]);
+      tmp.truncate(_blockSize - overflow);
+      _outBlock[0] = tmp.getInt32();
+      _outBlock[1] = tmp.getInt32();
+      _outBlock[2] = tmp.getInt32();
+      _outBlock[3] = tmp.getInt32();
+    } else {
+      _cLength += _blockSize;
+    }
+
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_outBlock[i]);
+    }
+
+    // update hash block S
+    _s = ghash(_hashSubkey, _s, _outBlock);
+  }
+
+  function gcmDecryptOp() {
+    // update block (GCM always uses encryption mode)
+    _updateBlock(_w, _inBlock, _outBlock, false);
+
+    // increment counter (input block)
+    inc32(_inBlock);
+
+    // save input length
+    var inputLength = _input.length();
+
+    // update hash block S
+    _tmpBlock[0] = _input.getInt32();
+    _tmpBlock[1] = _input.getInt32();
+    _tmpBlock[2] = _input.getInt32();
+    _tmpBlock[3] = _input.getInt32();
+    _s = ghash(_hashSubkey, _s, _tmpBlock);
+
+    // XOR input with output
+    for(var i = 0; i < Nb; ++i) {
+      _output.putInt32(_outBlock[i] ^ _tmpBlock[i]);
+    }
+
+    // handle overflow
+    if(inputLength < _blockSize) {
+      _cLength += inputLength % _blockSize;
+
+      // Note: truncation currently handled by cipher.finish()
+      //_output.truncate(_blockSize - (inputLength % _blockSize));
+    } else {
+      _cLength += _blockSize;
+    }
+  }
+
+  function inc32(block) {
+    // increment last 32 bits of block only
+    block[Nb - 1] = (block[Nb - 1] + 1) & 0xFFFFFFFF;
+  }
+
+  function from64To32(num) {
+    // convert 64-bit number to two BE Int32s
+    return [Math.floor(num / 0x100000000), num & 0xFFFFFFFF];
+  }
+
+  /**
+   * See NIST SP-800-38D 6.3 (Algorithm 1). This function performs Galois
+   * field multiplication. The field, GF(2^128), is defined by the polynomial:
+   *
+   * x^128 + x^7 + x^2 + x + 1
+   *
+   * Which is represented in little-endian binary form as: 11100001 (0xe1). The
+   * value R, used in the multiplication to apply the polynomial, is the
+   * concatenation of that value and 120 zero bits, yielding a 128-bit value
+   * which makes the block size.
+   *
+   * @param x the first block to multiply by the second.
+   * @param y the second block to multiply by the first.
+   *
+   * @return the block result of the multiplication.
+   */
+  function gcmMultiply(x, y) {
+    // TODO: implement M_0 tables
+    var z_i = [0, 0, 0, 0];
+    var v_i = y.slice(0);
+
+    // R is actually this value concatenated with 120 more zero bits, but
+    // we only XOR against R so the other zeros have no effect -- we just
+    // apply this value to the first integer in the Vi block
+    var r = 0xE1000000;
+
+    // calculate Z_128 (block has 128 bits)
+    for(var i = 0; i < 128; ++i) {
+      // if x_i is 0, Z_{i+1} = Z_i (unchanged)
+      // else Z_{i+1} = Z_i ^ V_i
+      // get x_i by finding 32-bit int position, then left shift 1 by remainder
+      var x_i = x[Math.floor(i / 32)] & (1 << (31 - i % 32));
+      if(x_i) {
+        z_i[0] ^= v_i[0];
+        z_i[1] ^= v_i[1];
+        z_i[2] ^= v_i[2];
+        z_i[3] ^= v_i[3];
+      }
+
+      // if LSB(V_i) is 1, V_{i+1} = V_i >>> 1
+      // else V_{i+1} = (V_i >>> 1) ^ R
+      var lsbV_i = v_i[3] & 1;
+
+      // always do V_i >>> 1:
+      // starting with the rightmost integer, shift each integer to the right
+      // one bit, pulling in the bit from the integer to the left as its top
+      // most bit (do this for the last 3 integers)
+      for(var j = 3; j > 0; --j) {
+        v_i[j] = (v_i[j] >>> 1) | ((v_i[j - 1] & 1) << 31);
+      }
+      // shift the first integer normally
+      v_i[0] = v_i[0] >>> 1;
+
+      // XOR with R if lsbV_i was set, we only need to XOR the first integer
+      // since R technically ends w/120 zero bits
+      if(lsbV_i) {
+        v_i[0] ^= r;
+      }
+    }
+
+    return z_i;
+  }
+
+  /**
+   * A continuing version of the GHASH algorithm that operates on a single
+   * block. The hash block, last hash value (Ym) and the new block to hash
+   * are given.
+   *
+   * @param h the hash block.
+   * @param y the previous value for Ym, use [0, 0, 0, 0] for a new hash.
+   * @param x the block to hash.
+   *
+   * @return the hashed value (Ym).
+   */
+  function ghash(h, y, x) {
+    y[0] ^= x[0];
+    y[1] ^= x[1];
+    y[2] ^= x[2];
+    y[3] ^= x[3];
+    return gcmMultiply(y, h);
   }
 };
 
