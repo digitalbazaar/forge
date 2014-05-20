@@ -13,7 +13,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
