@@ -887,8 +887,9 @@ var _createCipher = function(options) {
   var _prev;
   var _finish;
   var _op;
+  var _r;
   var _hashSubkey;
-  var _m0;
+  var _m;
   var _j0;
   var _s;
   var _tag;
@@ -1104,6 +1105,11 @@ var _createCipher = function(options) {
       // no cipher data yet
       _cLength = 0;
 
+      // R is actually this value concatenated with 120 more zero bits, but
+      // we only XOR against R so the other zeros have no effect -- we just
+      // apply this value to the first integer in a block
+      _r = 0xE1000000;
+
       // default additional data is none
       var additionalData;
       if('additionalData' in options) {
@@ -1130,7 +1136,12 @@ var _createCipher = function(options) {
       _hashSubkey = new Array(Nb);
       _updateBlock(_w, [0, 0, 0, 0], _hashSubkey, false);
 
-      // TODO: generate table M_0
+      // generate table M
+      // use 4-bit tables (32 component decomposition of a 16 byte value)
+      // 8-bit tables take more space and are known to have security
+      // vulnerabilities (in native implementations)
+      var componentBits = 4;
+      _m = generateHashTable(_hashSubkey, componentBits);
 
       // Note: support IV length different from 96 bits? (only supporting
       // 96 bits is recommended by NIST SP-800-38D)
@@ -1348,10 +1359,19 @@ var _createCipher = function(options) {
    *
    * x^128 + x^7 + x^2 + x + 1
    *
-   * Which is represented in little-endian binary form as: 11100001 (0xe1). The
-   * value R, used in the multiplication to apply the polynomial, is the
-   * concatenation of that value and 120 zero bits, yielding a 128-bit value
-   * which makes the block size.
+   * Which is represented in little-endian binary form as: 11100001 (0xe1). When
+   * the value of a coefficient is 1, a bit is set. The value R, is the
+   * concatenation of this value and 120 zero bits, yielding a 128-bit value
+   * which matches the block size.
+   *
+   * This function will multiply two elements (vectors of bytes), X and Y, in
+   * the field GF(2^128). The result is initialized to zero. For each bit of
+   * X (out of 128), x_i, if x_i is set, then the result is multiplied (XOR'd)
+   * by the current value of Y. For each bit, the value of Y will be raised by
+   * a power of x (multiplied by the polynomial x). This can be achieved by
+   * shifting Y once to the right. If the current value of Y, prior to being
+   * multiplied by x, has 0 as its LSB, then it is a 127th degree polynomial.
+   * Otherwise, we must divide by R after shifting to find the remainder.
    *
    * @param x the first block to multiply by the second.
    * @param y the second block to multiply by the first.
@@ -1359,14 +1379,8 @@ var _createCipher = function(options) {
    * @return the block result of the multiplication.
    */
   function gcmMultiply(x, y) {
-    // TODO: implement M_0 tables
     var z_i = [0, 0, 0, 0];
     var v_i = y.slice(0);
-
-    // R is actually this value concatenated with 120 more zero bits, but
-    // we only XOR against R so the other zeros have no effect -- we just
-    // apply this value to the first integer in the Vi block
-    var r = 0xE1000000;
 
     // calculate Z_128 (block has 128 bits)
     for(var i = 0; i < 128; ++i) {
@@ -1381,28 +1395,126 @@ var _createCipher = function(options) {
         z_i[3] ^= v_i[3];
       }
 
-      // if LSB(V_i) is 1, V_{i+1} = V_i >>> 1
-      // else V_{i+1} = (V_i >>> 1) ^ R
-      var lsbV_i = v_i[3] & 1;
-
-      // always do V_i >>> 1:
-      // starting with the rightmost integer, shift each integer to the right
-      // one bit, pulling in the bit from the integer to the left as its top
-      // most bit (do this for the last 3 integers)
-      for(var j = 3; j > 0; --j) {
-        v_i[j] = (v_i[j] >>> 1) | ((v_i[j - 1] & 1) << 31);
-      }
-      // shift the first integer normally
-      v_i[0] = v_i[0] >>> 1;
-
-      // XOR with R if lsbV_i was set, we only need to XOR the first integer
-      // since R technically ends w/120 zero bits
-      if(lsbV_i) {
-        v_i[0] ^= r;
-      }
+      gcmPow(v_i, v_i);
     }
 
     return z_i;
+  }
+
+  /**
+   * Precomputes a table for multiplying against the hash subkey. This
+   * mechanism provides a substantial speed increase over multiplication
+   * performed without a table. The table-based multiplication this table is
+   * for solves X * H by multiplying each component of X by H and then
+   * composing the results together using XOR.
+   *
+   * This function can be used to generate tables with different bit sizes
+   * for the components, however, this implementation assumes there are
+   * 32 components of X (which is a 16 byte vector), therefore each component
+   * takes 4-bits (so the table is constructed with bits=4).
+   *
+   * @param h the hash subkey.
+   * @param bits the bit size for a component.
+   */
+  function generateHashTable(h, bits) {
+    // TODO: There are further optimizations that would use only the
+    // first table M_0 (or some variant) along with a remainder table;
+    // this can be explored in the future
+    var multiplier = 8 / bits;
+    var perInt = 4 * multiplier;
+    var size = 16 * multiplier;
+    var m = new Array(size);
+    for(var i = 0; i < size; ++i) {
+      var tmp = [0, 0, 0, 0];
+      var idx = Math.floor(i / perInt);
+      var shft = ((perInt - 1 - (i % perInt)) * bits);
+      tmp[idx] = (1 << (bits - 1)) << shft;
+      m[i] = generateSubHashTable(gcmMultiply(tmp, h), bits);
+    }
+    return m;
+  }
+
+  /**
+   * Generates a table for multiplying against the hash subkey for one
+   * particular component (out of all possible component values).
+   *
+   * @param mid the pre-multiplied value for the middle key of the table.
+   * @param bits the bit size for a component.
+   */
+  function generateSubHashTable(mid, bits) {
+    // compute the table quickly by minimizing the number of
+    // POW operations -- they only need to be performed for powers of 2,
+    // all other entries can be composed from those powers using XOR
+    var size = 1 << bits;
+    var half = size >>> 1;
+    var m = new Array(size);
+    m[half] = mid.slice(0);
+    var i = half >>> 1;
+    while(i > 0) {
+      // raise m0[2 * i] and store in m0[i]
+      gcmPow(m[2 * i], m[i] = []);
+      i >>= 1;
+    }
+    i = 2;
+    while(i < half) {
+      for(var j = 1; j < i; ++j) {
+        var m_i = m[i];
+        var m_j = m[j];
+        m[i + j] = [
+          m_i[0] ^ m_j[0],
+          m_i[1] ^ m_j[1],
+          m_i[2] ^ m_j[2],
+          m_i[3] ^ m_j[3]
+        ];
+      }
+      i *= 2;
+    }
+    m[0] = [0, 0, 0, 0];
+    /* Note: We could avoid storing these by doing composition during multiply
+    calculate top half using composition by speed is preferred. */
+    for(i = half + 1; i < size; ++i) {
+      var c = m[i ^ half];
+      m[i] = [mid[0] ^ c[0], mid[1] ^ c[1], mid[2] ^ c[2], mid[3] ^ c[3]];
+    }
+    return m;
+  }
+
+  function gcmPow(x, out) {
+    // if LSB(x) is 1, x = x >>> 1
+    // else x = (x >>> 1) ^ R
+    var lsb = x[3] & 1;
+
+    // always do x >>> 1:
+    // starting with the rightmost integer, shift each integer to the right
+    // one bit, pulling in the bit from the integer to the left as its top
+    // most bit (do this for the last 3 integers)
+    for(var i = 3; i > 0; --i) {
+      out[i] = (x[i] >>> 1) | ((x[i - 1] & 1) << 31);
+    }
+    // shift the first integer normally
+    out[0] = x[0] >>> 1;
+
+    // if lsb was not set, then polynomial had a degree of 127 and doesn't
+    // need to divided; otherwise, XOR with R to find the remainder; we only
+    // need to XOR the first integer since R technically ends w/120 zero bits
+    if(lsb) {
+      out[0] ^= _r;
+    }
+  }
+
+  function gcmHashMultiply(x) {
+    // assumes 4-bit tables are used
+    var z = [0, 0, 0, 0];
+    for(var i = 0; i < 32; ++i) {
+      var idx = Math.floor(i / 8);
+      var x_i = (x[idx] >>> ((7 - (i % 8)) * 4)) & 0xF;
+      var ah = _m[i][x_i];
+      z[0] ^= ah[0];
+      z[1] ^= ah[1];
+      z[2] ^= ah[2];
+      z[3] ^= ah[3];
+    }
+    return z;
   }
 
   /**
@@ -1421,7 +1533,8 @@ var _createCipher = function(options) {
     y[1] ^= x[1];
     y[2] ^= x[2];
     y[3] ^= x[3];
-    return gcmMultiply(y, h);
+    return gcmHashMultiply(y);
+    //return gcmMultiply(y, h);
   }
 };
 
