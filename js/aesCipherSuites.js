@@ -70,7 +70,7 @@ function initConnectionState(state, c, sp) {
   // MAC setup
   state.read.macLength = state.write.macLength = sp.mac_length;
   state.read.macFunction = state.write.macFunction = tls.hmac_sha1;
-};
+}
 
 /**
  * Encrypts the TLSCompressed record into a TLSCipherText record using AES

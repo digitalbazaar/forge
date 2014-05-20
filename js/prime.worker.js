@@ -67,7 +67,7 @@ function isProbablePrime(n) {
     }
     m = n.modInt(m);
     while(i < j) {
-      if(m % LOW_PRIMES[i++] == 0) {
+      if(m % LOW_PRIMES[i++] === 0) {
         return false;
       }
     }

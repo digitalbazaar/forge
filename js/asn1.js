@@ -289,7 +289,7 @@ asn1.fromDer = function(bytes, strict) {
       throw {
         message: 'Too few bytes to read ASN.1 value.',
         detail: bytes.length() + ' < ' + length
-      }
+      };
     }
     // Note: be lenient with truncated values
     length = bytes.length();

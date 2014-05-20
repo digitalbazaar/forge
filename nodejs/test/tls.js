@@ -165,7 +165,7 @@ function Tests(ASSERT, forge) {
           cert: forge.pki.certificateToPem(cert),
           privateKey: forge.pki.privateKeyToPem(keys.privateKey)
         };
-      };
+      }
     });
   });
 }
