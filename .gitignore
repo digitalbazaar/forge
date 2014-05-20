@@ -16,5 +16,6 @@ config.log
 config.status
 configure
 dist
-tests/forge
+js/forge.bundle.js
 node_modules
+tests/forge
