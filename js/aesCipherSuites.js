@@ -54,13 +54,13 @@ function initConnectionState(state, c, sp) {
   // cipher setup
   state.read.cipherState = {
     init: false,
-    cipher: forge.aes.createDecryptionCipher(client ?
+    cipher: forge.cipher.createDecipher('AES-CBC', client ?
       sp.keys.server_write_key : sp.keys.client_write_key),
     iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
   };
   state.write.cipherState = {
     init: false,
-    cipher: forge.aes.createEncryptionCipher(client ?
+    cipher: forge.cipher.createCipher('AES-CBC', client ?
       sp.keys.client_write_key : sp.keys.server_write_key),
     iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
   };
@@ -103,7 +103,7 @@ function encrypt_aes_cbc_sha1(record, s) {
 
   // start cipher
   var cipher = s.cipherState.cipher;
-  cipher.start(iv);
+  cipher.start({iv: iv});
 
   // TLS 1.1+ write IV into output
   if(record.version.minor >= tls.Versions.TLS_1_1.minor) {
@@ -199,8 +199,10 @@ function decrypt_aes_cbc_sha1_padding(blockSize, output, decrypt) {
  *
  * @return true on success, false on failure.
  */
+var count = 0;
 function decrypt_aes_cbc_sha1(record, s) {
   var rval = false;
+  ++count;
 
   var iv;
   if(record.version.minor === tls.Versions.TLS_1_0.minor) {
@@ -217,7 +219,7 @@ function decrypt_aes_cbc_sha1(record, s) {
 
   // start cipher
   var cipher = s.cipherState.cipher;
-  cipher.start(iv);
+  cipher.start({iv: iv});
 
   // do decryption
   cipher.update(record.fragment);
