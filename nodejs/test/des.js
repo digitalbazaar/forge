@@ -131,6 +131,7 @@ function Tests(ASSERT, CIPHER, DES, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
+    'forge/cipher',
     'forge/des',
     'forge/util'
   ], function(CIPHER, DES, UTIL) {
