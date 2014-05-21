@@ -545,7 +545,7 @@ console.log(encrypted.toHex());
 
 // decrypt some bytes using CBC mode
 // (other modes include: CFB, OFB, CTR, and GCM)
-var decipher = forge.aes.createDecipher('AES-CBC', key);
+var decipher = forge.cipher.createDecipher('AES-CBC', key);
 decipher.start({iv: iv});
 decipher.update(encrypted);
 decipher.finish();
@@ -569,7 +569,7 @@ console.log(encrypted.toHex());
 console.log(tag.toHex());
 
 // decrypt some bytes using GCM mode
-var decipher = forge.aes.createDecipher('AES-GCM', key);
+var decipher = forge.cipher.createDecipher('AES-GCM', key);
 decipher.start({
   iv: iv,
   additionalData: 'binary-encoded string', // optional
