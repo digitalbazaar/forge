@@ -146,6 +146,7 @@ var BlockCipher = forge.cipher.BlockCipher = function(options) {
  */
 BlockCipher.prototype.start = function(options) {
   options = options || {};
+  this._finish = false;
   this._input = forge.util.createBuffer();
   this.output = options.output || forge.util.createBuffer();
   this.mode.start(options);
