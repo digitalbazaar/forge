@@ -543,7 +543,7 @@ These algorithms are currently supported:
 When using an [AES][] algorithm, the key size will determine whether
 AES-128, AES-192, or AES-256 is used (all are supported). When a [DES][]
 algorithm is used, the key size will determine whether [3DES][] or regular
-[DES][] is used. Use a [3DES][] to enforce Triple-DES.
+[DES][] is used. Use a [3DES][] algorithm to enforce Triple-DES.
 
 __Examples__
 
@@ -603,10 +603,6 @@ if(pass) {
   // outputs decrypted hex
   console.log(decipher.output.toHex());
 }
-
-// generate a password-based 16-byte key
-var salt = forge.random.getBytesSync(128);
-var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 ```
 
 <a name="aes" />
