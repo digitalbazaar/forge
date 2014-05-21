@@ -311,7 +311,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         ASSERT.equal(p7.encryptedContent.content.length(), 80);
 
         p7.decrypt(key);
-        ASSERT.equal(p7.content.getBytes(), UTIL.hexToBytes(result));
+        ASSERT.equal(p7.content.toHex(), result);
       });
     });
   });
