@@ -564,7 +564,8 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
 function _decryptSafeContents(data, password) {
   var capture = {};
   var errors = [];
-  if(!asn1.validate(data, forge.pkcs7.asn1.encryptedDataValidator, capture, errors)) {
+  if(!asn1.validate(
+    data, forge.pkcs7.asn1.encryptedDataValidator, capture, errors)) {
     throw {
       message: 'Cannot read EncryptedContentInfo. ',
       errors: errors
