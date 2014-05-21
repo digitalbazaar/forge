@@ -1,3 +1,4 @@
-window.forge = require('js/forge');
 
-})();
+return require('js/forge');
+
+});
