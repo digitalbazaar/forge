@@ -12,7 +12,7 @@ function initModule(forge) {
 forge.cipher = forge.cipher || {};
 
 // registered algorithms
-forge.cipher.algorithms = {};
+forge.cipher.algorithms = forge.cipher.algorithms || {};
 
 /**
  * Creates a cipher object that can be used to encrypt data using the given
