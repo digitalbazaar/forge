@@ -150,6 +150,7 @@ modes.cfb.prototype.afterFinish = function(output, options) {
   if(options.overflow > 0) {
     output.truncate(this.blockSize - options.overflow);
   }
+  return true;
 };
 
 /** Output feedback (OFB) **/
@@ -191,6 +192,7 @@ modes.ofb.prototype.afterFinish = function(output, options) {
   if(options.overflow > 0) {
     output.truncate(this.blockSize - options.overflow);
   }
+  return true;
 };
 
 
@@ -235,6 +237,7 @@ modes.ctr.prototype.afterFinish = function(output, options) {
   if(options.overflow > 0) {
     output.truncate(this.blockSize - options.overflow);
   }
+  return true;
 };
 
 
