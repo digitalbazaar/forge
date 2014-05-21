@@ -81,6 +81,7 @@ modes.cbc.prototype.pad = function(input, options) {
   var padding = (input.length() === this.blockSize ?
     this.blockSize : (this.blockSize - input.length()));
   input.fillWithByte(padding, padding);
+  return true;
 };
 
 modes.cbc.prototype.unpad = function(output, options) {
