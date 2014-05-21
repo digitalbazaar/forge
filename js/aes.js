@@ -42,13 +42,14 @@ forge.aes = forge.aes || {};
  * @return the cipher.
  */
 forge.aes.startEncrypting = function(key, iv, output, mode) {
-  return _createCipher({
+  var cipher = _createCipher({
     key: key,
-    iv: iv,
     output: output,
     decrypt: false,
     mode: mode
   });
+  cipher.start(iv);
+  return cipher;
 };
 
 /**
@@ -98,13 +99,14 @@ forge.aes.createEncryptionCipher = function(key, mode) {
  * @return the cipher.
  */
 forge.aes.startDecrypting = function(key, iv, output, mode) {
-  return _createCipher({
+  var cipher = _createCipher({
     key: key,
-    iv: iv,
     output: output,
     decrypt: true,
     mode: mode
   });
+  cipher.start(iv);
+  return cipher;
 };
 
 /**
@@ -1054,13 +1056,10 @@ function _updateBlock(w, input, output, decrypt) {
  * CBC (cipher-block-chaining).
  *
  * The key and iv may be given as a string of bytes, an array of bytes, a
- * byte buffer, or an array of 32-bit words. If an iv is provided, then
- * encryption/decryption will be started, otherwise start() must be called
- * with an iv.
+ * byte buffer, or an array of 32-bit words.
  *
  * @param options the options to use.
  *          key the symmetric key to use.
- *          iv the initialization vector to start with, null not to start.
  *          output the buffer to write to.
  *          decrypt true for decryption, false for encryption.
  *          mode the cipher mode to use (default: 'CBC').
@@ -1089,14 +1088,10 @@ function _createCipher(options) {
       options = {};
     }
     options = options || {};
+    options.output = output;
     options.iv = iv;
     start.call(cipher, options);
   };
-
-  // start cipher if IV given
-  if('iv' in options) {
-    cipher.start(options);
-  }
 
   return cipher;
 }
