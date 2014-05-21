@@ -62,9 +62,6 @@ forge.aes.startEncrypting = function(key, iv, output, mode) {
  * The key may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words.
  *
- * To start encrypting call start() on the cipher with an iv and optional
- * output buffer.
- *
  * @param key the symmetric key to use.
  * @param mode the cipher mode to use (default: 'CBC').
  *
@@ -118,9 +115,6 @@ forge.aes.startDecrypting = function(key, iv, output, mode) {
  *
  * The key may be given as a string of bytes, an array of bytes, a
  * byte buffer, or an array of 32-bit words.
- *
- * To start decrypting call start() on the cipher with an iv and
- * optional output buffer.
  *
  * @param key the symmetric key to use.
  * @param mode the cipher mode to use (default: 'CBC').
