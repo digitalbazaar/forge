@@ -177,6 +177,7 @@ may retain it, so long as that license is compatible with the Forge license.
 
 ### Ciphers
 
+* [CIPHER](#cipher)
 * [AES](#aes)
 * [DES](#des)
 * [RC2](#rc2)
@@ -520,16 +521,35 @@ __Examples__
 ---------------------------------------
 ## Ciphers
 
-<a name="aes" />
-### AES
+<a name="cipher" />
+### CIPHER
 
-Provides basic [AES][] encryption and decryption in CBC, CFB, OFB, CTR, or
-GCM mode.
+Provides a basic API for block encryption and decryption. There is built-in
+support for the ciphers: [AES][], [3DES][], and [DES][], and for the modes
+of operation: ECB, CBC, CFB, OFB, CTR, and GCM.
+
+These algorithms are currently supported:
+
+* AES-CBC
+* AES-CFB
+* AES-OFB
+* AES-CTR
+* AES-GCM
+* 3DES-EBC
+* 3DES-CBC
+* DES-EBC
+* DES-CBC
+
+When using an [AES][] algorithm, the key size will determine whether
+AES-128, AES-192, or AES-256 is used (all are supported). When a [DES][]
+algorithm is used, the key size will determine whether [3DES][] or regular
+[DES][] is used. Use a [3DES][] to enforce Triple-DES.
 
 __Examples__
 
 ```js
 // generate a random key and IV
+// Note: a key size of 16 bytes will use AES-128, 24 => AES-192, 32 => AES-256
 var key = forge.random.getBytesSync(16);
 var iv = forge.random.getBytesSync(16);
 
@@ -589,33 +609,17 @@ var salt = forge.random.getBytesSync(128);
 var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 ```
 
+<a name="aes" />
+### AES
+
+Provides [AES][] encryption and decryption in CBC, CFB, OFB, CTR, or GCM mode.
+See [CIPHER](#cipher) for examples.
+
 <a name="des" />
 ### DES
 
-__Examples__
-
-```js
-// generate a random key and IV
-var key = forge.random.getBytesSync(24);
-var iv = forge.random.getBytesSync(8);
-
-// encrypt some bytes
-var cipher = forge.des.createEncryptionCipher(key);
-cipher.start(iv);
-cipher.update(forge.util.createBuffer(someBytes));
-cipher.finish();
-var encrypted = cipher.output;
-// outputs encrypted hex
-console.log(encrypted.toHex());
-
-// decrypt some bytes
-var cipher = forge.des.createDecryptionCipher(key);
-cipher.start(iv);
-cipher.update(encrypted);
-cipher.finish();
-// outputs decrypted hex
-console.log(cipher.output.toHex());
-```
+Provides [DES][] encryption and decryption in ECB or CBC mode.
+See [CIPHER](#cipher) for examples.
 
 <a name="rc2" />
 ### RC2
@@ -1417,14 +1421,23 @@ Contact
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
 [Apache]: http://httpd.apache.org/
+[CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CTR]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[3DES]: http://en.wikipedia.org/wiki/Triple_DES
+[DES]: http://en.wikipedia.org/wiki/Data_Encryption_Standard
+[ECB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [Fortuna]: http://en.wikipedia.org/wiki/Fortuna_(PRNG)
+[GCM]: http://en.wikipedia.org/wiki/GCM_mode
 [HMAC]: http://en.wikipedia.org/wiki/HMAC
 [JavaScript]: http://en.wikipedia.org/wiki/JavaScript
 [MD5]: http://en.wikipedia.org/wiki/MD5
+[OFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [PKCS#5]: http://en.wikipedia.org/wiki/PKCS
 [PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
 [PKCS#10]: http://en.wikipedia.org/wiki/Certificate_signing_request
 [PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
+[RC2]: http://en.wikipedia.org/wiki/RC2
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security

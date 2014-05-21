@@ -15,6 +15,78 @@ forge.cipher = forge.cipher || {};
 var modes = forge.cipher.modes = forge.cipher.modes || {};
 
 
+/** Electronic codebook (ECB) (Don't use this; it's not secure) **/
+
+modes.ecb = function(options) {
+  options = options || {};
+  this.name = 'ECB';
+  this.cipher = options.cipher;
+  this.blockSize = options.blockSize || 16;
+  this._blocks = this.blockSize / 4;
+  this._inBlock = new Array(this._blocks);
+  this._outBlock = new Array(this._blocks);
+};
+
+modes.ecb.prototype.start = function(options) {};
+
+modes.ecb.prototype.encrypt = function(input, output) {
+  // get next block
+  for(var i = 0; i < this._blocks; ++i) {
+    this._inBlock[i] = input.getInt32();
+  }
+
+  // encrypt block
+  this.cipher.encrypt(this._inBlock, this._outBlock);
+
+  // write output
+  for(var i = 0; i < this._blocks; ++i) {
+    output.putInt32(this._outBlock[i]);
+  }
+};
+
+modes.ecb.prototype.decrypt = function(input, output) {
+  // get next block
+  for(var i = 0; i < this._blocks; ++i) {
+    this._inBlock[i] = input.getInt32();
+  }
+
+  // decrypt block
+  this.cipher.decrypt(this._inBlock, this._outBlock);
+
+  // write output
+  for(var i = 0; i < this._blocks; ++i) {
+    output.putInt32(this._outBlock[i]);
+  }
+};
+
+modes.ecb.prototype.pad = function(input, options) {
+  // add PKCS#7 padding to block (each pad byte is the
+  // value of the number of pad bytes)
+  var padding = (input.length() === this.blockSize ?
+    this.blockSize : (this.blockSize - input.length()));
+  input.fillWithByte(padding, padding);
+  return true;
+};
+
+modes.ecb.prototype.unpad = function(output, options) {
+  // check for error: input data not a multiple of blockSize
+  if(options.overflow > 0) {
+    return false;
+  }
+
+  // ensure padding byte count is valid
+  var len = output.length();
+  var count = output.at(len - 1);
+  if(count > (this.blockSize << 2)) {
+    return false;
+  }
+
+  // trim off padding bytes
+  output.truncate(count);
+  return true;
+};
+
+
 /** Cipher-block Chaining (CBC) **/
 
 modes.cbc = function(options) {
@@ -31,6 +103,10 @@ modes.cbc.prototype.start = function(options) {
   // Note: legacy support for using IV residue (has security flaws)
   // if IV is null, reuse block from previous processing
   if(options.iv === null) {
+    // must have a previous block
+    if(!this._prev) {
+      throw new Error('Invalid IV parameter.');
+    }
     this._iv = this._prev.slice(0);
   } else if(!('iv' in options)) {
     throw new Error('Invalid IV parameter.');
