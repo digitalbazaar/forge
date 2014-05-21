@@ -193,8 +193,6 @@ BlockCipher.prototype.finish = function(pad) {
     };
   }
 
-  var rval = true;
-
   // build options for padding functions
   var options = {};
 
@@ -223,7 +221,7 @@ BlockCipher.prototype.finish = function(pad) {
     }
   }
 
-  return rval;
+  return true;
 };
 
 
