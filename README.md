@@ -526,7 +526,7 @@ __Examples__
 
 Provides a basic API for block encryption and decryption. There is built-in
 support for the ciphers: [AES][], [3DES][], and [DES][], and for the modes
-of operation: ECB, CBC, CFB, OFB, CTR, and GCM.
+of operation: [ECB][], [CBC][], [CFB][], [OFB][], [CTR][], and [GCM][].
 
 These algorithms are currently supported:
 
