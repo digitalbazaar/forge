@@ -62,6 +62,8 @@ define([
   './aes',
   './aesCipherSuites',
   './asn1',
+  './cipher',
+  './cipherModes',
   './debug',
   './des',
   './hmac',
