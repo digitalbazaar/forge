@@ -35,7 +35,9 @@ function aes_128(mode) {
     cipher.start(iv, {tag: tag});
     now = Date.now();
     cipher.update(ciphertext);
-    cipher.finish();
+    if(!cipher.finish()) {
+      throw new Error('Decryption error.');
+    }
     totalDecrypt += Date.now() - now;
 
     ++count;
