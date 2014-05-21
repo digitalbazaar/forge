@@ -111,7 +111,8 @@ util.ByteBuffer = function(b) {
     // copy existing buffer
     this.data = b.data;
     this.read = b.read;
-  } else if(typeof b === 'object' && 'data' in b && 'read' in b) {
+  } else if(typeof b === 'object' && 'data' in b && 'read' in b &&
+    typeof b.data === 'string' && typeof b.read === 'number') {
     // copy existing buffer w/matching interface
     this.data = b.data;
     this.read = b.read;
