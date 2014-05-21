@@ -32,6 +32,8 @@ modes.cbc.prototype.start = function(options) {
   // if IV is null, reuse block from previous processing
   if(options.iv === null) {
     this._iv = this._prev.slice(0);
+  } else if(!('iv' in options)) {
+    throw new Error('Invalid IV parameter.');
   } else {
     // save IV as "previous" block
     this._iv = transformIV(options.iv);
@@ -113,6 +115,9 @@ modes.cfb = function(options) {
 };
 
 modes.cfb.prototype.start = function(options) {
+  if(!('iv' in options)) {
+    throw new Error('Invalid IV parameter.');
+  }
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
@@ -160,6 +165,9 @@ modes.ofb = function(options) {
 };
 
 modes.ofb.prototype.start = function(options) {
+  if(!('iv' in options)) {
+    throw new Error('Invalid IV parameter.');
+  }
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
@@ -199,6 +207,9 @@ modes.ctr = function(options) {
 };
 
 modes.ctr.prototype.start = function(options) {
+  if(!('iv' in options)) {
+    throw new Error('Invalid IV parameter.');
+  }
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
@@ -245,6 +256,9 @@ modes.gcm = function(options) {
 };
 
 modes.gcm.prototype.start = function(options) {
+  if(!('iv' in options)) {
+    throw new Error('Invalid IV parameter.');
+  }
   // ensure IV is a byte buffer
   var iv = forge.util.createBuffer(options.iv);
 
