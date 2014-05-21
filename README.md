@@ -608,14 +608,14 @@ if(pass) {
 <a name="aes" />
 ### AES
 
-Provides [AES][] encryption and decryption in CBC, CFB, OFB, CTR, or GCM mode.
-See [CIPHER](#cipher) for examples.
+Provides [AES][] encryption and decryption in [CBC][], [CFB][], [OFB][],
+[CTR][], and [GCM][] modes. See [CIPHER](#cipher) for examples.
 
 <a name="des" />
 ### DES
 
-Provides [DES][] encryption and decryption in ECB or CBC mode.
-See [CIPHER](#cipher) for examples.
+Provides [3DES][] and [DES][] encryption and decryption in [ECB][] and
+[CBC][] modes. See [CIPHER](#cipher) for examples.
 
 <a name="rc2" />
 ### RC2
