@@ -553,6 +553,11 @@ __Examples__
 var key = forge.random.getBytesSync(16);
 var iv = forge.random.getBytesSync(16);
 
+/* alternatively, generate a password-based 16-byte key
+var salt = forge.random.getBytesSync(128);
+var key = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
+*/
+
 // encrypt some bytes using CBC mode
 // (other modes include: CFB, OFB, CTR, and GCM)
 var cipher = forge.cipher.createCipher('AES-CBC', key);
