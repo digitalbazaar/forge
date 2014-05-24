@@ -5,7 +5,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2013 Digital Bazaar, Inc.
+ * Copyright (c) 2013-2014 Digital Bazaar, Inc.
  *
  * A Forge PEM object has the following fields:
  *
@@ -204,10 +204,11 @@ function foldHeader(header) {
 
   // ensure values with CRLF are folded
   var values = [];
+  var insertSpace = function(match, $1) {
+    return ' ' + $1;
+  };
   for(var i = 0; i < header.values.length; ++i) {
-    values.push(header.values[i].replace(/^(\S+\r\n)/, function(match, $1) {
-      return ' ' + $1;
-    }));
+    values.push(header.values[i].replace(/^(\S+\r\n)/, insertSpace));
   }
   rval += values.join(',') + '\r\n';
 

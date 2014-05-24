@@ -4,7 +4,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  *
  * The ASN.1 representation of an X.509v3 certificate is as follows
  * (see RFC 2459):
@@ -1464,10 +1464,10 @@ pki.createCertificate = function() {
     }
 
     if(md !== null) {
-      var scheme = undefined;
+      var scheme;
 
       switch(child.signatureOid) {
-      case oids['sha1WithRSAEncryption']:
+      case oids.sha1WithRSAEncryption:
         scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
         break;
       case oids['RSASSA-PSS']:

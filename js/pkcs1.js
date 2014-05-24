@@ -41,7 +41,7 @@
  * @author Evan Jones (http://evanjones.ca/)
  * @author Dave Longley
  *
- * Copyright (c) 2013 Digital Bazaar, Inc.
+ * Copyright (c) 2013-2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -70,10 +70,10 @@ var pkcs1 = forge.pkcs1 = forge.pkcs1 || {};
  */
 pkcs1.encode_rsa_oaep = function(key, message, options) {
   // parse arguments
-  var label = undefined;
-  var seed = undefined;
-  var md = undefined;
-  var mgf1Md = undefined;
+  var label;
+  var seed;
+  var md;
+  var mgf1Md;
   // legacy args (label, seed, md)
   if(typeof options === 'string') {
     label = options;
@@ -165,9 +165,9 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
  */
 pkcs1.decode_rsa_oaep = function(key, em, options) {
   // parse args
-  var label = undefined;
-  var md = undefined;
-  var mgf1Md = undefined;
+  var label;
+  var md;
+  var mgf1Md;
   // legacy args
   if(typeof options === 'string') {
     label = options;

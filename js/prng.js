@@ -386,14 +386,14 @@ prng.create = function(plugin) {
       };
     } else {
       // main thread sends random bytes upon request
-      function listener(e) {
+      var listener = function(e) {
         var data = e.data;
         if(data.forge && data.forge.prng) {
           ctx.seedFile(data.forge.prng.needed, function(err, bytes) {
             worker.postMessage({forge: {prng: {err: err, bytes: bytes}}});
           });
         }
-      }
+      };
       // TODO: do we need to remove the event listener when the worker dies?
       worker.addEventListener('message', listener);
     }

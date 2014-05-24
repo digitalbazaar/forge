@@ -655,8 +655,8 @@ p7.createEnvelopedData = function() {
      * @param privKey The (RSA) private key object
      */
     decrypt: function(recipient, privKey) {
-      if(msg.encryptedContent.key === undefined && recipient !== undefined
-        && privKey !== undefined) {
+      if(msg.encryptedContent.key === undefined && recipient !== undefined &&
+        privKey !== undefined) {
         switch(recipient.encryptedContent.algorithm) {
           case forge.pki.oids.rsaEncryption:
           case forge.pki.oids.desCBC:
@@ -666,8 +666,8 @@ p7.createEnvelopedData = function() {
 
           default:
             throw {
-              message: 'Unsupported asymmetric cipher, '
-                + 'OID ' + recipient.encryptedContent.algorithm
+              message: 'Unsupported asymmetric cipher, ' +
+                'OID ' + recipient.encryptedContent.algorithm
             };
         }
       }
@@ -750,8 +750,8 @@ p7.createEnvelopedData = function() {
           key = forge.util.createBuffer(forge.random.getBytes(keyLen));
         } else if(key.length() != keyLen) {
           throw {
-            message: 'Symmetric key has wrong length, '
-              + 'got ' + key.length() + ' bytes, expected ' + keyLen
+            message: 'Symmetric key has wrong length; ' +
+              'got ' + key.length() + ' bytes, expected ' + keyLen + '.'
           };
         }
 

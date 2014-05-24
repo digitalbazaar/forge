@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  *
  * The only algorithm currently supported for PKI is RSA.
  *
@@ -1488,7 +1488,7 @@ function _generateKeyPair(state, options, callback) {
 
   // web workers unavailable, use setImmediate
   if(typeof(Worker) === 'undefined') {
-    function step() {
+    var step = function() {
       // 10 ms gives 5ms of leeway for other calculations before dropping
       // below 60fps (1000/60 == 16.67), but in reality, the number will
       // likely be higher due to an 'atomic' big int modPow
@@ -1496,7 +1496,7 @@ function _generateKeyPair(state, options, callback) {
         return callback(null, state.keys);
       }
       forge.util.setImmediate(step);
-    }
+    };
     return step();
   }
 

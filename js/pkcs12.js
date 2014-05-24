@@ -4,7 +4,7 @@
  * @author Dave Longley
  * @author Stefan Siegl <stesie@brokenpipe.de>
  *
- * Copyright (c) 2010-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of PKCS#12 is as follows

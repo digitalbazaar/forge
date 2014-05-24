@@ -3561,8 +3561,9 @@ tls.verifyCertificateChain = function(c, chain) {
       });
   } catch(ex) {
     // build tls error if not already customized
-    if(typeof ex !== 'object' || forge.util.isArray(ex)) {
-      ex = {
+    var err = ex;
+    if(typeof err !== 'object' || forge.util.isArray(err)) {
+      err = {
         send: true,
         alert: {
           level: tls.Alert.Level.fatal,
@@ -3570,18 +3571,18 @@ tls.verifyCertificateChain = function(c, chain) {
         }
       };
     }
-    if(!('send' in ex)) {
-      ex.send = true;
+    if(!('send' in err)) {
+      err.send = true;
     }
-    if(!('alert' in ex)) {
-      ex.alert = {
+    if(!('alert' in err)) {
+      err.alert = {
         level: tls.Alert.Level.fatal,
-        description: _certErrorToAlertDesc(ex.error)
+        description: _certErrorToAlertDesc(err.error)
       };
     }
 
     // send error
-    c.error(c, ex);
+    c.error(c, err);
   }
 
   return !c.fail;
