@@ -1,12 +1,9 @@
 /**
  * Secure Hash Algorithm with 160-bit digest (SHA-1) implementation.
  *
- * This implementation is currently limited to message lengths (in bytes) that
- * are up to 32-bits in size.
- *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -256,13 +253,12 @@ sha1.create = function() {
     padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
 
     /* Now append length of the message. The length is appended in bits
-      as a 64-bit number in big-endian order. Since we store the length
-      in bytes, we must multiply it by 8 (or left shift by 3). So here
-      store the high 3 bits in the low end of the first 32-bits of the
-      64-bit number and the lower 5 bits in the high end of the second
-      32-bits. */
-    padBytes.putInt32((len >>> 29) & 0xFF);
-    padBytes.putInt32((len << 3) & 0xFFFFFFFF);
+      as a 64-bit number in big-endian order. First we convert the length
+      into two 32-bit numbers. Then, since we store the length in bytes, we
+      must multiply the result by 8 (or left shift by 3). */
+    var len64 = [Math.floor(len / 0x100000000), len & 0xFFFFFFFF];
+    padBytes.putInt32((len64[0] << 3) | (len64[1] >>> 28));
+    padBytes.putInt32(len64[1] << 3);
     var s2 = {
       h0: _state.h0,
       h1: _state.h1,
