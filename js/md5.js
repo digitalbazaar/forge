@@ -15,7 +15,7 @@ function initModule(forge) {
 var md5 = forge.md5 = forge.md5 || {};
 forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
-forge.md.md5 = forge.md.algorithms['md5'] = md5;
+forge.md.md5 = forge.md.algorithms.md5 = md5;
 
 // padding, constant tables for calculating md5
 var _padding = null;

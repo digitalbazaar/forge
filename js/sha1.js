@@ -15,7 +15,7 @@ function initModule(forge) {
 var sha1 = forge.sha1 = forge.sha1 || {};
 forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
-forge.md.sha1 = forge.md.algorithms['sha1'] = sha1;
+forge.md.sha1 = forge.md.algorithms.sha1 = sha1;
 
 // sha-1 padding bytes not initialized yet
 var _padding = null;
