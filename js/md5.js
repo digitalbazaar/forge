@@ -101,21 +101,21 @@ md5.create = function() {
    */
   md.digest = function() {
     /* Note: Here we copy the remaining bytes in the input buffer and
-      add the appropriate MD5 padding. Then we do the final update
-      on a copy of the state so that if the user wants to get
-      intermediate digests they can do so. */
+    add the appropriate MD5 padding. Then we do the final update
+    on a copy of the state so that if the user wants to get
+    intermediate digests they can do so. */
 
     /* Determine the number of bytes that must be added to the message
-      to ensure its length is congruent to 448 mod 512. In other words,
-      a 64-bit integer that gives the length of the message will be
-      appended to the message and whatever the length of the message is
-      plus 64 bits must be a multiple of 512. So the length of the
-      message must be congruent to 448 mod 512 because 512 - 64 = 448.
+    to ensure its length is congruent to 448 mod 512. In other words,
+    a 64-bit integer that gives the length of the message will be
+    appended to the message and whatever the length of the message is
+    plus 64 bits must be a multiple of 512. So the length of the
+    message must be congruent to 448 mod 512 because 512 - 64 = 448.
 
-      In order to fill up the message length it must be filled with
-      padding that begins with 1 bit followed by all 0 bits. Padding
-      must *always* be present, so if the message length is already
-      congruent to 448 mod 512, then 512 padding bits must be added. */
+    In order to fill up the message length it must be filled with
+    padding that begins with 1 bit followed by all 0 bits. Padding
+    must *always* be present, so if the message length is already
+    congruent to 448 mod 512, then 512 padding bits must be added. */
 
     // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
     // _padding starts with 1 byte with first bit is set in it which
@@ -126,9 +126,9 @@ md5.create = function() {
     padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
 
     /* Now append length of the message. The length is appended in bits
-      as a 64-bit number in little-endian order. First we convert the length
-      into two 32-bit numbers. Then, since we store the length in bytes, we
-      must multiply the result by 8 (or left shift by 3). */
+    as a 64-bit number in little-endian order. First we convert the length
+    into two 32-bit numbers. Then, since we store the length in bytes, we
+    must multiply the result by 8 (or left shift by 3). */
     var len64 = [len & 0xFFFFFFFF, Math.floor(len / 0x100000000)];
     padBytes.putInt32Le((len64[0] << 3) | (len64[1] >>> 28));
     padBytes.putInt32Le(len64[1] << 3);
