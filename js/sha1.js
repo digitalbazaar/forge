@@ -14,132 +14,6 @@ forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
 forge.md.sha1 = forge.md.algorithms.sha1 = sha1;
 
-// sha-1 padding bytes not initialized yet
-var _padding = null;
-var _initialized = false;
-
-/**
- * Initializes the constant tables.
- */
-var _init = function() {
-  // create padding
-  _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
-
-  // now initialized
-  _initialized = true;
-};
-
-/**
- * Updates a SHA-1 state with the given byte buffer.
- *
- * @param s the SHA-1 state to update.
- * @param w the array to use to store words.
- * @param bytes the byte buffer to update with.
- */
-var _update = function(s, w, bytes) {
-  // consume 512 bit (64 byte) chunks
-  var t, a, b, c, d, e, f, i;
-  var len = bytes.length();
-  while(len >= 64) {
-    // the w array will be populated with sixteen 32-bit big-endian words
-    // and then extended into 80 32-bit words according to SHA-1 algorithm
-    // and for 32-79 using Max Locktyukhin's optimization
-
-    // initialize hash value for this chunk
-    a = s.h0;
-    b = s.h1;
-    c = s.h2;
-    d = s.h3;
-    e = s.h4;
-
-    // round 1
-    for(i = 0; i < 16; ++i) {
-      t = bytes.getInt32();
-      w[i] = t;
-      f = d ^ (b & (c ^ d));
-      t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-    for(; i < 20; ++i) {
-      t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
-      t = (t << 1) | (t >>> 31);
-      w[i] = t;
-      f = d ^ (b & (c ^ d));
-      t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-    // round 2
-    for(; i < 32; ++i) {
-      t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
-      t = (t << 1) | (t >>> 31);
-      w[i] = t;
-      f = b ^ c ^ d;
-      t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-    for(; i < 40; ++i) {
-      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
-      t = (t << 2) | (t >>> 30);
-      w[i] = t;
-      f = b ^ c ^ d;
-      t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-    // round 3
-    for(; i < 60; ++i) {
-      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
-      t = (t << 2) | (t >>> 30);
-      w[i] = t;
-      f = (b & c) | (d & (b ^ c));
-      t = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-    // round 4
-    for(; i < 80; ++i) {
-      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
-      t = (t << 2) | (t >>> 30);
-      w[i] = t;
-      f = b ^ c ^ d;
-      t = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + t;
-      e = d;
-      d = c;
-      c = (b << 30) | (b >>> 2);
-      b = a;
-      a = t;
-    }
-
-    // update hash state
-    s.h0 += a;
-    s.h1 += b;
-    s.h2 += c;
-    s.h3 += d;
-    s.h4 += e;
-
-    len -= 64;
-  }
-};
-
 /**
  * Creates a SHA-1 message digest object.
  *
@@ -278,6 +152,132 @@ sha1.create = function() {
 
   return md;
 };
+
+// sha-1 padding bytes not initialized yet
+var _padding = null;
+var _initialized = false;
+
+/**
+ * Initializes the constant tables.
+ */
+function _init() {
+  // create padding
+  _padding = String.fromCharCode(128);
+  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
+
+  // now initialized
+  _initialized = true;
+}
+
+/**
+ * Updates a SHA-1 state with the given byte buffer.
+ *
+ * @param s the SHA-1 state to update.
+ * @param w the array to use to store words.
+ * @param bytes the byte buffer to update with.
+ */
+function _update(s, w, bytes) {
+  // consume 512 bit (64 byte) chunks
+  var t, a, b, c, d, e, f, i;
+  var len = bytes.length();
+  while(len >= 64) {
+    // the w array will be populated with sixteen 32-bit big-endian words
+    // and then extended into 80 32-bit words according to SHA-1 algorithm
+    // and for 32-79 using Max Locktyukhin's optimization
+
+    // initialize hash value for this chunk
+    a = s.h0;
+    b = s.h1;
+    c = s.h2;
+    d = s.h3;
+    e = s.h4;
+
+    // round 1
+    for(i = 0; i < 16; ++i) {
+      t = bytes.getInt32();
+      w[i] = t;
+      f = d ^ (b & (c ^ d));
+      t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+    for(; i < 20; ++i) {
+      t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
+      t = (t << 1) | (t >>> 31);
+      w[i] = t;
+      f = d ^ (b & (c ^ d));
+      t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+    // round 2
+    for(; i < 32; ++i) {
+      t = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]);
+      t = (t << 1) | (t >>> 31);
+      w[i] = t;
+      f = b ^ c ^ d;
+      t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+    for(; i < 40; ++i) {
+      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
+      t = (t << 2) | (t >>> 30);
+      w[i] = t;
+      f = b ^ c ^ d;
+      t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+    // round 3
+    for(; i < 60; ++i) {
+      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
+      t = (t << 2) | (t >>> 30);
+      w[i] = t;
+      f = (b & c) | (d & (b ^ c));
+      t = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+    // round 4
+    for(; i < 80; ++i) {
+      t = (w[i - 6] ^ w[i - 16] ^ w[i - 28] ^ w[i - 32]);
+      t = (t << 2) | (t >>> 30);
+      w[i] = t;
+      f = b ^ c ^ d;
+      t = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + t;
+      e = d;
+      d = c;
+      c = (b << 30) | (b >>> 2);
+      b = a;
+      a = t;
+    }
+
+    // update hash state
+    s.h0 += a;
+    s.h1 += b;
+    s.h2 += c;
+    s.h3 += d;
+    s.h4 += e;
+
+    len -= 64;
+  }
+}
 
 } // end module implementation
 

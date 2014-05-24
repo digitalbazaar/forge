@@ -14,115 +14,6 @@ forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
 forge.md.md5 = forge.md.algorithms.md5 = md5;
 
-// padding, constant tables for calculating md5
-var _padding = null;
-var _g = null;
-var _r = null;
-var _k = null;
-var _initialized = false;
-
-/**
- * Initializes the constant tables.
- */
-var _init = function() {
-  // create padding
-  _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
-
-  // g values
-  _g = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12,
-    5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2,
-    0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9];
-
-  // rounds table
-  _r = [
-    7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
-    5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
-    4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
-    6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21];
-
-  // get the result of abs(sin(i + 1)) as a 32-bit integer
-  _k = new Array(64);
-  for(var i = 0; i < 64; ++i) {
-    _k[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000);
-  }
-
-  // now initialized
-  _initialized = true;
-};
-
-/**
- * Updates an MD5 state with the given byte buffer.
- *
- * @param s the MD5 state to update.
- * @param w the array to use to store words.
- * @param bytes the byte buffer to update with.
- */
-var _update = function(s, w, bytes) {
-  // consume 512 bit (64 byte) chunks
-  var t, a, b, c, d, f, r, i;
-  var len = bytes.length();
-  while(len >= 64) {
-    // initialize hash value for this chunk
-    a = s.h0;
-    b = s.h1;
-    c = s.h2;
-    d = s.h3;
-
-    // round 1
-    for(i = 0; i < 16; ++i) {
-      w[i] = bytes.getInt32Le();
-      f = d ^ (b & (c ^ d));
-      t = (a + f + _k[i] + w[i]);
-      r = _r[i];
-      a = d;
-      d = c;
-      c = b;
-      b += (t << r) | (t >>> (32 - r));
-    }
-    // round 2
-    for(; i < 32; ++i) {
-      f = c ^ (d & (b ^ c));
-      t = (a + f + _k[i] + w[_g[i]]);
-      r = _r[i];
-      a = d;
-      d = c;
-      c = b;
-      b += (t << r) | (t >>> (32 - r));
-    }
-    // round 3
-    for(; i < 48; ++i) {
-      f = b ^ c ^ d;
-      t = (a + f + _k[i] + w[_g[i]]);
-      r = _r[i];
-      a = d;
-      d = c;
-      c = b;
-      b += (t << r) | (t >>> (32 - r));
-    }
-    // round 4
-    for(; i < 64; ++i) {
-      f = c ^ (b | ~d);
-      t = (a + f + _k[i] + w[_g[i]]);
-      r = _r[i];
-      a = d;
-      d = c;
-      c = b;
-      b += (t << r) | (t >>> (32 - r));
-    }
-
-    // update hash state
-    s.h0 = (s.h0 + a) & 0xFFFFFFFF;
-    s.h1 = (s.h1 + b) & 0xFFFFFFFF;
-    s.h2 = (s.h2 + c) & 0xFFFFFFFF;
-    s.h3 = (s.h3 + d) & 0xFFFFFFFF;
-
-    len -= 64;
-  }
-};
-
 /**
  * Creates an MD5 message digest object.
  *
@@ -258,6 +149,115 @@ md5.create = function() {
 
   return md;
 };
+
+// padding, constant tables for calculating md5
+var _padding = null;
+var _g = null;
+var _r = null;
+var _k = null;
+var _initialized = false;
+
+/**
+ * Initializes the constant tables.
+ */
+function _init() {
+  // create padding
+  _padding = String.fromCharCode(128);
+  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
+
+  // g values
+  _g = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12,
+    5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2,
+    0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9];
+
+  // rounds table
+  _r = [
+    7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
+    5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
+    4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
+    6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21,  6, 10, 15, 21];
+
+  // get the result of abs(sin(i + 1)) as a 32-bit integer
+  _k = new Array(64);
+  for(var i = 0; i < 64; ++i) {
+    _k[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 0x100000000);
+  }
+
+  // now initialized
+  _initialized = true;
+}
+
+/**
+ * Updates an MD5 state with the given byte buffer.
+ *
+ * @param s the MD5 state to update.
+ * @param w the array to use to store words.
+ * @param bytes the byte buffer to update with.
+ */
+function _update(s, w, bytes) {
+  // consume 512 bit (64 byte) chunks
+  var t, a, b, c, d, f, r, i;
+  var len = bytes.length();
+  while(len >= 64) {
+    // initialize hash value for this chunk
+    a = s.h0;
+    b = s.h1;
+    c = s.h2;
+    d = s.h3;
+
+    // round 1
+    for(i = 0; i < 16; ++i) {
+      w[i] = bytes.getInt32Le();
+      f = d ^ (b & (c ^ d));
+      t = (a + f + _k[i] + w[i]);
+      r = _r[i];
+      a = d;
+      d = c;
+      c = b;
+      b += (t << r) | (t >>> (32 - r));
+    }
+    // round 2
+    for(; i < 32; ++i) {
+      f = c ^ (d & (b ^ c));
+      t = (a + f + _k[i] + w[_g[i]]);
+      r = _r[i];
+      a = d;
+      d = c;
+      c = b;
+      b += (t << r) | (t >>> (32 - r));
+    }
+    // round 3
+    for(; i < 48; ++i) {
+      f = b ^ c ^ d;
+      t = (a + f + _k[i] + w[_g[i]]);
+      r = _r[i];
+      a = d;
+      d = c;
+      c = b;
+      b += (t << r) | (t >>> (32 - r));
+    }
+    // round 4
+    for(; i < 64; ++i) {
+      f = c ^ (b | ~d);
+      t = (a + f + _k[i] + w[_g[i]]);
+      r = _r[i];
+      a = d;
+      d = c;
+      c = b;
+      b += (t << r) | (t >>> (32 - r));
+    }
+
+    // update hash state
+    s.h0 = (s.h0 + a) & 0xFFFFFFFF;
+    s.h1 = (s.h1 + b) & 0xFFFFFFFF;
+    s.h2 = (s.h2 + c) & 0xFFFFFFFF;
+    s.h3 = (s.h3 + d) & 0xFFFFFFFF;
+
+    len -= 64;
+  }
+}
 
 } // end module implementation
 
