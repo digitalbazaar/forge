@@ -3,6 +3,8 @@
  *
  * See FIPS 180-2 for details.
  *
+ * This implementation is currently limited to message lengths of 2^56 bits.
+ *
  * @author Dave Longley
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.

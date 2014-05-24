@@ -1,6 +1,8 @@
 /**
  * Secure Hash Algorithm with 160-bit digest (SHA-1) implementation.
  *
+ * This implementation is currently limited to message lengths of 2^56 bits.
+ *
  * @author Dave Longley
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.

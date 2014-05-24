@@ -1,6 +1,8 @@
 /**
  * Message Digest Algorithm 5 with 128-bit digest (MD5) implementation.
  *
+ * This implementation is currently limited to message lengths of 2^56 bits.
+ *
  * @author Dave Longley
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
