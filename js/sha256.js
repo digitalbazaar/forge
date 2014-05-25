@@ -115,10 +115,13 @@ sha256.create = function() {
 
     /* Determine the number of bytes that must be added to the message
     to ensure its length is congruent to 448 mod 512. In other words,
-    a 64-bit integer that gives the length of the message will be
-    appended to the message and whatever the length of the message is
-    plus 64 bits must be a multiple of 512. So the length of the
-    message must be congruent to 448 mod 512 because 512 - 64 = 448.
+    the data to be digested must be a multiple of 512 bits (or 128 bytes).
+    This data includes the message, some padding, and the length of the
+    message. Since the length of the message will be encoded as 8 bytes (64
+    bits), that means that the last segment of the data must have 56 bytes
+    (448 bits) of message and padding. Therefore, the length of the message
+    plus the padding must be congruent to 448 mod 512 because
+    512 - 128 = 448.
 
     In order to fill up the message length it must be filled with
     padding that begins with 1 bit followed by all 0 bits. Padding
@@ -131,7 +134,8 @@ sha256.create = function() {
     var len = md.messageLength;
     var padBytes = forge.util.createBuffer();
     padBytes.putBytes(_input.bytes());
-    padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) % 64)));
+    // 64 - (len + 1 padding byte) mod 64
+    padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) & 0x3F)));
 
     /* Now append length of the message. The length is appended in bits
     as a 64-bit number in big-endian order. First we convert the length
