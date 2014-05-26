@@ -44,7 +44,7 @@ sha256.create = function() {
     // 56-bit length of message so far (does not including padding)
     messageLength: 0,
     // true 64-bit message length as two 32-bit ints
-    messageLength128: [0, 0]
+    messageLength64: [0, 0]
   };
 
   /**

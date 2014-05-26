@@ -1,8 +1,6 @@
 /**
  * Secure Hash Algorithm with 160-bit digest (SHA-1) implementation.
  *
- * This implementation is currently limited to message lengths of 2^56 bits.
- *
  * @author Dave Longley
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
@@ -41,8 +39,10 @@ sha1.create = function() {
     algorithm: 'sha1',
     blockLength: 64,
     digestLength: 20,
-    // length of message so far (does not including padding)
-    messageLength: 0
+    // 56-bit length of message so far (does not including padding)
+    messageLength: 0,
+    // true 64-bit message length as two 32-bit ints
+    messageLength64: [0, 0]
   };
 
   /**
@@ -52,6 +52,7 @@ sha1.create = function() {
    */
   md.start = function() {
     md.messageLength = 0;
+    md.messageLength64 = [0, 0];
     _input = forge.util.createBuffer();
     _state = {
       h0: 0x67452301,
@@ -82,6 +83,8 @@ sha1.create = function() {
 
     // update message length
     md.messageLength += msg.length;
+    md.messageLength64[0] += (msg.length / 0x100000000) >>> 0;
+    md.messageLength64[1] += msg.length >>> 0;
 
     // add bytes to input buffer
     _input.putBytes(msg);
@@ -126,19 +129,18 @@ sha1.create = function() {
     // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
     // _padding starts with 1 byte with first bit is set in it which
     // is byte value 128, then there may be up to 63 other pad bytes
-    var len = md.messageLength;
     var padBytes = forge.util.createBuffer();
     padBytes.putBytes(_input.bytes());
     // 64 - (len + 1 padding byte) mod 64
-    padBytes.putBytes(_padding.substr(0, 64 - ((len + 8) & 0x3F)));
+    padBytes.putBytes(
+      _padding.substr(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)));
 
     /* Now append length of the message. The length is appended in bits
-    as a 64-bit number in big-endian order. First we convert the length
-    into two 32-bit numbers. Then, since we store the length in bytes, we
-    must multiply the result by 8 (or left shift by 3). */
-    var len64 = [(len / 0x100000000) | 0, len | 0];
-    padBytes.putInt32((len64[0] << 3) | (len64[1] >>> 28));
-    padBytes.putInt32(len64[1] << 3);
+    as a 64-bit number in big-endian order. Since we store the length in
+    bytes, we must multiply the 64-bit length by 8 (or left shift by 3). */
+    padBytes.putInt32(
+      (md.messageLength64[0] << 3) | (md.messageLength64[0] >>> 28));
+    padBytes.putInt32(md.messageLength64[1] << 3);
     var s2 = {
       h0: _state.h0,
       h1: _state.h1,
