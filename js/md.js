@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright 2011-2013 Digital Bazaar, Inc.
+ * Copyright 2011-2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -68,7 +68,8 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './md5', './sha1', './sha256'], function() {
+define(
+  ['require', 'module', './md5', './sha1', './sha256', './sha512'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

@@ -197,6 +197,8 @@ may retain it, so long as that license is compatible with the Forge license.
 
 * [SHA1](#sha1)
 * [SHA256](#sha256)
+* [SHA384](#sha384)
+* [SHA512](#sha512)
 * [MD5](#md5)
 * [HMAC](#hmac)
 
@@ -1230,6 +1232,47 @@ console.log(md.digest().toHex());
 // output: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
 ```
 
+<a name="sha384" />
+### SHA384
+
+Provides [SHA-384][] message digests.
+
+__Examples__
+
+```js
+var md = forge.md.sha384.create();
+md.update('The quick brown fox jumps over the lazy dog');
+console.log(md.digest().toHex());
+// output: ca737f1014a48f4c0b6dd43cb177b0afd9e5169367544c494011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1
+```
+
+<a name="sha512" />
+### SHA512
+
+Provides [SHA-512][] message digests.
+
+__Examples__
+
+```js
+// SHA-512
+var md = forge.md.sha512.create();
+md.update('The quick brown fox jumps over the lazy dog');
+console.log(md.digest().toHex());
+// output: 07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6
+
+// SHA-512/224
+var md = forge.md.sha512.sha224.create();
+md.update('The quick brown fox jumps over the lazy dog');
+console.log(md.digest().toHex());
+// output: 944cd2847fb54558d4775db0485a50003111c8e5daa63fe722c6aa37
+
+// SHA-512/256
+var md = forge.md.sha512.sha256.create();
+md.update('The quick brown fox jumps over the lazy dog');
+console.log(md.digest().toHex());
+// output: dd9d67b371519c339ed8dbd25af90e976a1eeefd4ad3d889005e532fc5bef04d
+```
+
 <a name="md5" />
 ### MD5
 
@@ -1441,6 +1484,8 @@ Contact
 [RC2]: http://en.wikipedia.org/wiki/RC2
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
+[SHA-384]: http://en.wikipedia.org/wiki/SHA-384
+[SHA-512]: http://en.wikipedia.org/wiki/SHA-512
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [X.509]: http://en.wikipedia.org/wiki/X.509
 [node.js]: http://nodejs.org/
