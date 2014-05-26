@@ -136,7 +136,7 @@ sha1.create = function() {
     as a 64-bit number in big-endian order. First we convert the length
     into two 32-bit numbers. Then, since we store the length in bytes, we
     must multiply the result by 8 (or left shift by 3). */
-    var len64 = [Math.floor(len / 0x100000000), len & 0xFFFFFFFF];
+    var len64 = [Math.floor(len / 0x100000000), len | 0];
     padBytes.putInt32((len64[0] << 3) | (len64[1] >>> 28));
     padBytes.putInt32(len64[1] << 3);
     var s2 = {
@@ -275,11 +275,11 @@ function _update(s, w, bytes) {
     }
 
     // update hash state
-    s.h0 += a;
-    s.h1 += b;
-    s.h2 += c;
-    s.h3 += d;
-    s.h4 += e;
+    s.h0 = (s.h0 + a) | 0;
+    s.h1 = (s.h1 + b) | 0;
+    s.h2 = (s.h2 + c) | 0;
+    s.h3 = (s.h3 + d) | 0;
+    s.h4 = (s.h4 + e) | 0;
 
     len -= 64;
   }

@@ -239,7 +239,7 @@ function _update(s, w, bytes) {
         ((t2 >>> 18) | (t2 << 14)) ^
         (t2 >>> 3);
       // sum(t1, word 7 ago, t2, word 16 ago) modulo 2^32
-      w[i] = (t1 + w[i - 7] + t2 + w[i - 16]) & 0xFFFFFFFF;
+      w[i] = (t1 + w[i - 7] + t2 + w[i - 16]) | 0;
     }
 
     // initialize hash value for this chunk
@@ -275,22 +275,22 @@ function _update(s, w, bytes) {
       h = g;
       g = f;
       f = e;
-      e = (d + t1) & 0xFFFFFFFF;
+      e = (d + t1) | 0;
       d = c;
       c = b;
       b = a;
-      a = (t1 + t2) & 0xFFFFFFFF;
+      a = (t1 + t2) | 0;
     }
 
     // update hash state
-    s.h0 = (s.h0 + a) & 0xFFFFFFFF;
-    s.h1 = (s.h1 + b) & 0xFFFFFFFF;
-    s.h2 = (s.h2 + c) & 0xFFFFFFFF;
-    s.h3 = (s.h3 + d) & 0xFFFFFFFF;
-    s.h4 = (s.h4 + e) & 0xFFFFFFFF;
-    s.h5 = (s.h5 + f) & 0xFFFFFFFF;
-    s.h6 = (s.h6 + g) & 0xFFFFFFFF;
-    s.h7 = (s.h7 + h) & 0xFFFFFFFF;
+    s.h0 = (s.h0 + a) | 0;
+    s.h1 = (s.h1 + b) | 0;
+    s.h2 = (s.h2 + c) | 0;
+    s.h3 = (s.h3 + d) | 0;
+    s.h4 = (s.h4 + e) | 0;
+    s.h5 = (s.h5 + f) | 0;
+    s.h6 = (s.h6 + g) | 0;
+    s.h7 = (s.h7 + h) | 0;
     len -= 64;
   }
 }
