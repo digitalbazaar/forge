@@ -565,7 +565,7 @@ modes.gcm.prototype.multiply = function(x, y) {
     // if x_i is 0, Z_{i+1} = Z_i (unchanged)
     // else Z_{i+1} = Z_i ^ V_i
     // get x_i by finding 32-bit int position, then left shift 1 by remainder
-    var x_i = x[Math.floor(i / 32)] & (1 << (31 - i % 32));
+    var x_i = x[(i / 32) | 0] & (1 << (31 - i % 32));
     if(x_i) {
       z_i[0] ^= v_i[0];
       z_i[1] ^= v_i[1];
@@ -608,7 +608,7 @@ modes.gcm.prototype.tableMultiply = function(x) {
   // assumes 4-bit tables are used
   var z = [0, 0, 0, 0];
   for(var i = 0; i < 32; ++i) {
-    var idx = Math.floor(i / 8);
+    var idx = (i / 8) | 0;
     var x_i = (x[idx] >>> ((7 - (i % 8)) * 4)) & 0xF;
     var ah = this._m[i][x_i];
     z[0] ^= ah[0];
@@ -664,7 +664,7 @@ modes.gcm.prototype.generateHashTable = function(h, bits) {
   var m = new Array(size);
   for(var i = 0; i < size; ++i) {
     var tmp = [0, 0, 0, 0];
-    var idx = Math.floor(i / perInt);
+    var idx = (i / perInt) | 0;
     var shft = ((perInt - 1 - (i % perInt)) * bits);
     tmp[idx] = (1 << (bits - 1)) << shft;
     m[i] = this.generateSubHashTable(this.multiply(tmp, h), bits);
@@ -749,7 +749,7 @@ function inc32(block) {
 
 function from64To32(num) {
   // convert 64-bit number to two BE Int32s
-  return [Math.floor(num / 0x100000000), num & 0xFFFFFFFF];
+  return [(num / 0x100000000) | 0, num & 0xFFFFFFFF];
 }
 
 

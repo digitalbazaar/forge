@@ -141,7 +141,7 @@ sha256.create = function() {
     as a 64-bit number in big-endian order. First we convert the length
     into two 32-bit numbers. Then, since we store the length in bytes, we
     must multiply the result by 8 (or left shift by 3). */
-    var len64 = [Math.floor(len / 0x100000000), len | 0];
+    var len64 = [(len / 0x100000000) | 0, len | 0];
     padBytes.putInt32((len64[0] << 3) | (len64[1] >>> 28));
     padBytes.putInt32(len64[1] << 3);
     var s2 = {
