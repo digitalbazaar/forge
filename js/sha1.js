@@ -131,7 +131,7 @@ sha1.create = function() {
     // is byte value 128, then there may be up to 63 other pad bytes
     var padBytes = forge.util.createBuffer();
     padBytes.putBytes(_input.bytes());
-    // 64 - (len + 1 padding byte) mod 64
+    // 64 - (remaining msg + 8 bytes msg length) mod 64
     padBytes.putBytes(
       _padding.substr(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)));
 
