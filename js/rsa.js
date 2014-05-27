@@ -313,122 +313,131 @@ var emsaPkcs1v15encode = function(md) {
  * @return the result of x^c mod n.
  */
 var _modPow = function(x, key, pub) {
-  var y;
-
   if(pub) {
-    y = x.modPow(key.e, key.n);
-  } else if(!key.p || !key.q) {
-    // allow calculation without CRT params (slow)
-    y = x.modPow(key.d, key.n);
-  } else {
-    // pre-compute dP, dQ, and qInv if necessary
-    if(!key.dP) {
-      key.dP = key.d.mod(key.p.subtract(BigInteger.ONE));
-    }
-    if(!key.dQ) {
-      key.dQ = key.d.mod(key.q.subtract(BigInteger.ONE));
-    }
-    if(!key.qInv) {
-      key.qInv = key.q.modInverse(key.p);
-    }
-
-    /* Chinese remainder theorem (CRT) states:
-
-      Suppose n1, n2, ..., nk are positive integers which are pairwise
-      coprime (n1 and n2 have no common factors other than 1). For any
-      integers x1, x2, ..., xk there exists an integer x solving the
-      system of simultaneous congruences (where ~= means modularly
-      congruent so a ~= b mod n means a mod n = b mod n):
-
-      x ~= x1 mod n1
-      x ~= x2 mod n2
-      ...
-      x ~= xk mod nk
-
-      This system of congruences has a single simultaneous solution x
-      between 0 and n - 1. Furthermore, each xk solution and x itself
-      is congruent modulo the product n = n1*n2*...*nk.
-      So x1 mod n = x2 mod n = xk mod n = x mod n.
-
-      The single simultaneous solution x can be solved with the following
-      equation:
-
-      x = sum(xi*ri*si) mod n where ri = n/ni and si = ri^-1 mod ni.
-
-      Where x is less than n, xi = x mod ni.
-
-      For RSA we are only concerned with k = 2. The modulus n = pq, where
-      p and q are coprime. The RSA decryption algorithm is:
-
-      y = x^d mod n
-
-      Given the above:
-
-      x1 = x^d mod p
-      r1 = n/p = q
-      s1 = q^-1 mod p
-      x2 = x^d mod q
-      r2 = n/q = p
-      s2 = p^-1 mod q
-
-      So y = (x1r1s1 + x2r2s2) mod n
-           = ((x^d mod p)q(q^-1 mod p) + (x^d mod q)p(p^-1 mod q)) mod n
-
-      According to Fermat's Little Theorem, if the modulus P is prime,
-      for any integer A not evenly divisible by P, A^(P-1) ~= 1 mod P.
-      Since A is not divisible by P it follows that if:
-      N ~= M mod (P - 1), then A^N mod P = A^M mod P. Therefore:
-
-      A^N mod P = A^(M mod (P - 1)) mod P. (The latter takes less effort
-      to calculate). In order to calculate x^d mod p more quickly the
-      exponent d mod (p - 1) is stored in the RSA private key (the same
-      is done for x^d mod q). These values are referred to as dP and dQ
-      respectively. Therefore we now have:
-
-      y = ((x^dP mod p)q(q^-1 mod p) + (x^dQ mod q)p(p^-1 mod q)) mod n
-
-      Since we'll be reducing x^dP by modulo p (same for q) we can also
-      reduce x by p (and q respectively) before hand. Therefore, let
-
-      xp = ((x mod p)^dP mod p), and
-      xq = ((x mod q)^dQ mod q), yielding:
-
-      y = (xp*q*(q^-1 mod p) + xq*p*(p^-1 mod q)) mod n
-
-      This can be further reduced to a simple algorithm that only
-      requires 1 inverse (the q inverse is used) to be used and stored.
-      The algorithm is called Garner's algorithm. If qInv is the
-      inverse of q, we simply calculate:
-
-      y = (qInv*(xp - xq) mod p) * q + xq
-
-      However, there are two further complications. First, we need to
-      ensure that xp > xq to prevent signed BigIntegers from being used
-      so we add p until this is true (since we will be mod'ing with
-      p anyway). Then, there is a known timing attack on algorithms
-      using the CRT. To mitigate this risk, "cryptographic blinding"
-      should be used (*Not yet implemented*). This requires simply
-      generating a random number r between 0 and n-1 and its inverse
-      and multiplying x by r^e before calculating y and then multiplying
-      y by r^-1 afterwards.
-    */
-
-    // TODO: do cryptographic blinding
-
-    // calculate xp and xq
-    var xp = x.mod(key.p).modPow(key.dP, key.p);
-    var xq = x.mod(key.q).modPow(key.dQ, key.q);
-
-    // xp must be larger than xq to avoid signed bit usage
-    while(xp.compareTo(xq) < 0) {
-      xp = xp.add(key.p);
-    }
-
-    // do last step
-    y = xp.subtract(xq)
-      .multiply(key.qInv).mod(key.p)
-      .multiply(key.q).add(xq);
+    return x.modPow(key.e, key.n);
   }
+
+  if(!key.p || !key.q) {
+    // allow calculation without CRT params (slow)
+    return x.modPow(key.d, key.n);
+  }
+
+  // pre-compute dP, dQ, and qInv if necessary
+  if(!key.dP) {
+    key.dP = key.d.mod(key.p.subtract(BigInteger.ONE));
+  }
+  if(!key.dQ) {
+    key.dQ = key.d.mod(key.q.subtract(BigInteger.ONE));
+  }
+  if(!key.qInv) {
+    key.qInv = key.q.modInverse(key.p);
+  }
+
+  /* Chinese remainder theorem (CRT) states:
+
+    Suppose n1, n2, ..., nk are positive integers which are pairwise
+    coprime (n1 and n2 have no common factors other than 1). For any
+    integers x1, x2, ..., xk there exists an integer x solving the
+    system of simultaneous congruences (where ~= means modularly
+    congruent so a ~= b mod n means a mod n = b mod n):
+
+    x ~= x1 mod n1
+    x ~= x2 mod n2
+    ...
+    x ~= xk mod nk
+
+    This system of congruences has a single simultaneous solution x
+    between 0 and n - 1. Furthermore, each xk solution and x itself
+    is congruent modulo the product n = n1*n2*...*nk.
+    So x1 mod n = x2 mod n = xk mod n = x mod n.
+
+    The single simultaneous solution x can be solved with the following
+    equation:
+
+    x = sum(xi*ri*si) mod n where ri = n/ni and si = ri^-1 mod ni.
+
+    Where x is less than n, xi = x mod ni.
+
+    For RSA we are only concerned with k = 2. The modulus n = pq, where
+    p and q are coprime. The RSA decryption algorithm is:
+
+    y = x^d mod n
+
+    Given the above:
+
+    x1 = x^d mod p
+    r1 = n/p = q
+    s1 = q^-1 mod p
+    x2 = x^d mod q
+    r2 = n/q = p
+    s2 = p^-1 mod q
+
+    So y = (x1r1s1 + x2r2s2) mod n
+         = ((x^d mod p)q(q^-1 mod p) + (x^d mod q)p(p^-1 mod q)) mod n
+
+    According to Fermat's Little Theorem, if the modulus P is prime,
+    for any integer A not evenly divisible by P, A^(P-1) ~= 1 mod P.
+    Since A is not divisible by P it follows that if:
+    N ~= M mod (P - 1), then A^N mod P = A^M mod P. Therefore:
+
+    A^N mod P = A^(M mod (P - 1)) mod P. (The latter takes less effort
+    to calculate). In order to calculate x^d mod p more quickly the
+    exponent d mod (p - 1) is stored in the RSA private key (the same
+    is done for x^d mod q). These values are referred to as dP and dQ
+    respectively. Therefore we now have:
+
+    y = ((x^dP mod p)q(q^-1 mod p) + (x^dQ mod q)p(p^-1 mod q)) mod n
+
+    Since we'll be reducing x^dP by modulo p (same for q) we can also
+    reduce x by p (and q respectively) before hand. Therefore, let
+
+    xp = ((x mod p)^dP mod p), and
+    xq = ((x mod q)^dQ mod q), yielding:
+
+    y = (xp*q*(q^-1 mod p) + xq*p*(p^-1 mod q)) mod n
+
+    This can be further reduced to a simple algorithm that only
+    requires 1 inverse (the q inverse is used) to be used and stored.
+    The algorithm is called Garner's algorithm. If qInv is the
+    inverse of q, we simply calculate:
+
+    y = (qInv*(xp - xq) mod p) * q + xq
+
+    However, there are two further complications. First, we need to
+    ensure that xp > xq to prevent signed BigIntegers from being used
+    so we add p until this is true (since we will be mod'ing with
+    p anyway). Then, there is a known timing attack on algorithms
+    using the CRT. To mitigate this risk, "cryptographic blinding"
+    should be used. This requires simply generating a random number r between
+    0 and n-1 and its inverse and multiplying x by r^e before calculating y
+    and then multiplying y by r^-1 afterwards.
+  */
+
+  // cryptographic blinding
+  var r;
+  do {
+    r = new BigInteger(
+      forge.util.bytesToHex(forge.random.getBytes(key.n.bitLength() / 8)),
+      16).mod(key.n);
+  } while(r.equals(BigInteger.ZERO));
+  x = x.multiply(r.modPow(key.e, key.n)).mod(key.n);
+
+  // calculate xp and xq
+  var xp = x.mod(key.p).modPow(key.dP, key.p);
+  var xq = x.mod(key.q).modPow(key.dQ, key.q);
+
+  // xp must be larger than xq to avoid signed bit usage
+  while(xp.compareTo(xq) < 0) {
+    xp = xp.add(key.p);
+  }
+
+  // do last step
+  var y = xp.subtract(xq)
+    .multiply(key.qInv).mod(key.p)
+    .multiply(key.q).add(xq);
+
+  // remove effect of random for cryptographic blinding
+  y = y.multiply(r.modInverse(key.n)).mod(key.n);
 
   return y;
 };
@@ -815,19 +824,21 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
       bits = undefined;
     }
   } else if(arguments.length === 2) {
-    // (bits, options), (bits, callback), (options, callback)
+    // (bits, e), (bits, options), (bits, callback), (options, callback)
     if(typeof bits === 'number') {
       if(typeof e === 'function') {
         callback = e;
-      } else {
+        e = undefined;
+      } else if(typeof e !== 'number') {
         options = e;
+        e = undefined;
       }
     } else {
       options = bits;
       callback = e;
       bits = undefined;
+      e = undefined;
     }
-    e = undefined;
   } else if(arguments.length === 3) {
     // (bits, e, options), (bits, e, callback), (bits, options, callback)
     if(typeof e === 'number') {
