@@ -27,6 +27,8 @@ self.postMessage({found: false});
 var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 
 function findPrime(data) {
+  // TODO: abstract based on data.algorithm (PRIMEINC vs. others)
+
   // create BigInteger from given random bytes
   var num = new BigInteger(data.hex, 16);
 
@@ -94,8 +96,7 @@ function runMillerRabin(n) {
     // select witness 'a' at random from between 1 and n - 1
     do {
       a = new BigInteger(n.bitLength(), prng);
-    }
-    while(a.compareTo(BigInteger.ONE) <= 0 || a.compareTo(n1) >= 0);
+    } while(a.compareTo(BigInteger.ONE) <= 0 || a.compareTo(n1) >= 0);
 
     /* See if 'a' is a composite witness. */
 

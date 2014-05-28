@@ -580,6 +580,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
  * @param [options] the options to use.
  *          prng a custom crypto-secure pseudo-random number generator to use,
  *            that must define "getBytesSync".
+ *          algorithm the algorithm to use (default: 'PRIMEINC').
  *
  * @return the state object to use to generate the key-pair.
  */
@@ -603,21 +604,30 @@ pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
     }
   };
 
-  var rval = {
-    state: 0,
-    bits: bits,
-    rng: rng,
-    eInt: e || 65537,
-    e: new BigInteger(null),
-    p: null,
-    q: null,
-    qBits: bits >> 1,
-    pBits: bits - (bits >> 1),
-    pqState: 0,
-    num: null,
-    keys: null
-  };
-  rval.e.fromInt(rval.eInt);
+  options.algorithm = options.algorithm || 'PRIMEINC';
+
+  // create PRIMEINC algorithm state
+  var rval;
+  if(options.algorithm === 'PRIMEINC') {
+    rval = {
+      algorithm: options.algorithm || 'PRIMEINC',
+      state: 0,
+      bits: bits,
+      rng: rng,
+      eInt: e || 65537,
+      e: new BigInteger(null),
+      p: null,
+      q: null,
+      qBits: bits >> 1,
+      pBits: bits - (bits >> 1),
+      pqState: 0,
+      num: null,
+      keys: null
+    };
+    rval.e.fromInt(rval.eInt);
+  } else {
+    throw new Error('Invalid key generation algorithm: ' + options.algorithm);
+  }
 
   return rval;
 };
@@ -652,6 +662,13 @@ pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
  * @return true if the key-generation completed, false if not.
  */
 pki.rsa.stepKeyPairGenerationState = function(state, n) {
+  // set default algorithm if not set
+  if(!('algorithm' in state)) {
+    state.algorithm = 'PRIMEINC';
+  }
+
+  // TODO: abstract as PRIMEINC algorithm
+
   // do key generation (based on Tom Wu's rsa.js, see jsbn.js license)
   // with some minor optimizations and designed to run in steps
 
@@ -809,6 +826,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
  *          e the public exponent to use, defaults to 65537.
  *          prng a custom crypto-secure pseudo-random number generator to use,
  *            that must define "getBytesSync".
+ *          algorithm the algorithm to use (default: 'PRIMEINC').
  * @param [callback(err, keypair)] called once the operation completes.
  *
  * @return an object with privateKey and publicKey properties.

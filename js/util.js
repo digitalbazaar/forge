@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -299,8 +299,7 @@ util.ByteBuffer.prototype.putInt = function(i, n) {
   do {
     n -= 8;
     this.data += String.fromCharCode((i >> n) & 0xFF);
-  }
-  while(n > 0);
+  } while(n > 0);
   return this;
 };
 
@@ -444,8 +443,7 @@ util.ByteBuffer.prototype.getInt = function(n) {
   do {
     rval = (rval << 8) + this.data.charCodeAt(this.read++);
     n -= 8;
-  }
-  while(n > 0);
+  } while(n > 0);
   return rval;
 };
 

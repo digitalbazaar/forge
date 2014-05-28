@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc. All rights reserved.
  */
 (function() {
 
@@ -1279,8 +1279,7 @@ http.createResponse = function() {
                }
              }
            }
-         }
-         while(m !== null && m[0] !== '');
+         } while(m !== null && m[0] !== '');
          rval.push(cookie);
        }
      }

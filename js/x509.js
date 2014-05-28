@@ -3010,8 +3010,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     // no longer first cert in chain
     first = false;
     ++depth;
-  }
-  while(chain.length > 0);
+  } while(chain.length > 0);
 
   return true;
 };

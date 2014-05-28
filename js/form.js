@@ -5,7 +5,7 @@
  * @author Dave Longley
  * @author Mike Johnson
  *
- * Copyright (c) 2011-2012 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2011-2014 Digital Bazaar, Inc. All rights reserved.
  */
 (function($) {
 
@@ -64,8 +64,7 @@ var _addField = function(obj, names, value, dict) {
       i < names.length - 1) {
       do {
         name += '.' + names[++i];
-      }
-      while(i < names.length - 1 && names[i].indexOf(']') === -1);
+      } while(i < names.length - 1 && names[i].indexOf(']') === -1);
     }
     tmp.push(name);
   }

@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2013 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  *
  * An API for storing data using the Abstract Syntax Notation Number One
  * format using DER (Distinguished Encoding Rules) encoding. This encoding is
@@ -447,8 +447,7 @@ asn1.toDer = function(obj) {
     do {
       lenBytes += String.fromCharCode(len & 0xFF);
       len = len >>> 8;
-    }
-    while(len > 0);
+    } while(len > 0);
 
     // set first byte to # bytes used to store the length and turn on
     // bit 8 to indicate long-form length is used
@@ -499,8 +498,7 @@ asn1.oidToDer = function(oid) {
       }
       valueBytes.push(b);
       last = false;
-    }
-    while(value > 0);
+    } while(value > 0);
 
     // add value bytes in reverse (needs to be in big endian)
     for(var n = valueBytes.length - 1; n >= 0; --n) {
