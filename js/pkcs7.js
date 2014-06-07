@@ -36,16 +36,13 @@ p7.messageFromPem = function(pem) {
   var msg = forge.pem.decode(pem)[0];
 
   if(msg.type !== 'PKCS7') {
-    throw {
-      message: 'Could not convert PKCS#7 message from PEM; PEM header type ' +
-        'is not "PKCS#7".',
-      headerType: msg.type
-    };
+    var error = new Error('Could not convert PKCS#7 message from PEM; PEM ' +
+      'header type is not "PKCS#7".');
+    error.headerType = msg.type;
+    throw error;
   }
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert PKCS#7 message from PEM; PEM is encrypted.'
-    };
+    throw new Error('Could not convert PKCS#7 message from PEM; PEM is encrypted.');
   }
 
   // convert DER to ASN.1 object
@@ -84,11 +81,10 @@ p7.messageFromAsn1 = function(obj) {
   var errors = [];
   if(!asn1.validate(obj, p7.asn1.contentInfoValidator, capture, errors))
   {
-    throw {
-      message: 'Cannot read PKCS#7 message. ' +
-        'ASN.1 object is not an PKCS#7 ContentInfo.',
-      errors: errors
-    };
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not an PKCS#7 ContentInfo.');
+    error.errors = errors;
+    throw error;
   }
 
   var contentType = asn1.derToOid(capture.contentType);
@@ -108,10 +104,8 @@ p7.messageFromAsn1 = function(obj) {
       break;
 
     default:
-      throw {
-        message: 'Cannot read PKCS#7 message. ContentType with OID ' +
-          contentType + ' is not (yet) supported.'
-      };
+      throw new Error('Cannot read PKCS#7 message. ContentType with OID ' +
+        contentType + ' is not (yet) supported.');
   }
 
   msg.fromAsn1(capture.content.value[0]);
@@ -131,11 +125,10 @@ var _recipientInfoFromAsn1 = function(obj) {
   var errors = [];
   if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors))
   {
-    throw {
-      message: 'Cannot read PKCS#7 message. ' +
-        'ASN.1 object is not an PKCS#7 EnvelopedData.',
-      errors: errors
-    };
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not an PKCS#7 EnvelopedData.');
+    error.errors = errors;
+    throw error;
   }
 
   return {
@@ -264,20 +257,17 @@ var _fromAsn1 = function(msg, obj, validator) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(obj, validator, capture, errors)) {
-    throw {
-      message: 'Cannot read PKCS#7 message. ' +
-        'ASN.1 object is not a supported PKCS#7 message.',
-      errors: errors
-    };
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not a supported PKCS#7 message.');
+    error.errors = error;
+    throw error;
   }
 
   // Check contentType, so far we only support (raw) Data.
   var contentType = asn1.derToOid(capture.contentType);
   if(contentType !== forge.pki.oids.data) {
-    throw {
-      message: 'Unsupported PKCS#7 message. ' +
-        'Only wrapped ContentType Data supported.'
-    };
+    throw new Error('Unsupported PKCS#7 message. ' +
+      'Only wrapped ContentType Data supported.');
   }
 
   if(capture.encryptedContent) {
@@ -285,10 +275,8 @@ var _fromAsn1 = function(msg, obj, validator) {
     if(forge.util.isArray(capture.encryptedContent)) {
       for(var i = 0; i < capture.encryptedContent.length; ++i) {
         if(capture.encryptedContent[i].type !== asn1.Type.OCTETSTRING) {
-          throw {
-            message: 'Malformed PKCS#7 message, expecting encrypted ' +
-              'content constructed of only OCTET STRING objects.'
-          };
+          throw new Error('Malformed PKCS#7 message, expecting encrypted ' +
+            'content constructed of only OCTET STRING objects.');
         }
         content += capture.encryptedContent[i].value;
       }
@@ -307,10 +295,8 @@ var _fromAsn1 = function(msg, obj, validator) {
     if(forge.util.isArray(capture.content)) {
       for(var i = 0; i < capture.content.length; ++i) {
         if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
-          throw {
-            message: 'Malformed PKCS#7 message, expecting ' +
-              'content constructed of only OCTET STRING objects.'
-          };
+          throw new Error('Malformed PKCS#7 message, expecting ' +
+            'content constructed of only OCTET STRING objects.');
         }
         content += capture.content[i].value;
       }
@@ -338,9 +324,7 @@ var _fromAsn1 = function(msg, obj, validator) {
  */
 var _decryptContent = function (msg) {
   if(msg.encryptedContent.key === undefined) {
-    throw {
-      message: 'Symmetric key not available.'
-    };
+    throw new Error('Symmetric key not available.');
   }
 
   if(msg.content === undefined) {
@@ -359,18 +343,14 @@ var _decryptContent = function (msg) {
         break;
 
       default:
-        throw {
-          message: 'Unsupported symmetric cipher, OID ' +
-            msg.encryptedContent.algorithm
-        };
+        throw new Error('Unsupported symmetric cipher, OID ' +
+          msg.encryptedContent.algorithm);
     }
     ciph.start(msg.encryptedContent.parameter);
     ciph.update(msg.encryptedContent.content);
 
     if(!ciph.finish()) {
-      throw {
-        message: 'Symmetric decryption failed.'
-      };
+      throw new Error('Symmetric decryption failed.');
     }
 
     msg.content = ciph.output;
@@ -409,7 +389,7 @@ p7.createSignedData = function() {
     toAsn1: function() {
       // TODO: add support for more data types here
       if('content' in msg) {
-        throw 'Signing PKCS#7 content not yet implemented.';
+        throw new Error('Signing PKCS#7 content not yet implemented.');
       }
 
       // degenerate case with no content
@@ -464,7 +444,7 @@ p7.createSignedData = function() {
      */
     sign: function(signer) {
       if('content' in msg) {
-        throw 'PKCS#7 signing not yet implemented.';
+        throw new Error('PKCS#7 signing not yet implemented.');
       }
 
       if(typeof msg.content !== 'object') {
@@ -493,7 +473,7 @@ p7.createSignedData = function() {
     },
 
     verify: function() {
-      throw 'PKCS#7 signature verification not yet implemented.';
+      throw new Error('PKCS#7 signature verification not yet implemented.');
     },
 
     /**
@@ -515,7 +495,7 @@ p7.createSignedData = function() {
      * @param crl the certificate revokation list to add.
      */
     addCertificateRevokationList: function(crl) {
-      throw 'PKCS#7 CRL support not yet implemented.';
+      throw new Error('PKCS#7 CRL support not yet implemented.');
     }
   };
   return msg;
@@ -665,10 +645,8 @@ p7.createEnvelopedData = function() {
             break;
 
           default:
-            throw {
-              message: 'Unsupported asymmetric cipher, ' +
-                'OID ' + recipient.encryptedContent.algorithm
-            };
+            throw new Error('Unsupported asymmetric cipher, ' +
+              'OID ' + recipient.encryptedContent.algorithm);
         }
       }
 
@@ -741,18 +719,14 @@ p7.createEnvelopedData = function() {
             break;
 
           default:
-            throw {
-              message: 'Unsupported symmetric cipher, OID ' + cipher
-            };
+            throw new Error('Unsupported symmetric cipher, OID ' + cipher);
         }
 
         if(key === undefined) {
           key = forge.util.createBuffer(forge.random.getBytes(keyLen));
         } else if(key.length() != keyLen) {
-          throw {
-            message: 'Symmetric key has wrong length; ' +
-              'got ' + key.length() + ' bytes, expected ' + keyLen + '.'
-          };
+          throw new Error('Symmetric key has wrong length; ' +
+            'got ' + key.length() + ' bytes, expected ' + keyLen + '.');
         }
 
         // Keep a copy of the key & IV in the object, so the caller can
@@ -769,9 +743,7 @@ p7.createEnvelopedData = function() {
         // The finish function does PKCS#7 padding by default, therefore
         // no action required by us.
         if(!ciph.finish()) {
-          throw {
-            message: 'Symmetric encryption failed.'
-          };
+          throw new Error('Symmetric encryption failed.');
         }
 
         msg.encryptedContent.content = ciph.output;
@@ -794,10 +766,8 @@ p7.createEnvelopedData = function() {
             break;
 
           default:
-            throw {
-              message: 'Unsupported asymmetric cipher, OID ' +
-                recipient.encryptedContent.algorithm
-            };
+            throw new Error('Unsupported asymmetric cipher, OID ' +
+              recipient.encryptedContent.algorithm);
         }
       }
     }

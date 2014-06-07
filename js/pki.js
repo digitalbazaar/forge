@@ -28,9 +28,7 @@ var pki = forge.pki = forge.pki || {};
 pki.pemToDer = function(pem) {
   var msg = forge.pem.decode(pem)[0];
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert PEM to DER; PEM is encrypted.'
-    };
+    throw new Error('Could not convert PEM to DER; PEM is encrypted.');
   }
   return forge.util.createBuffer(msg.body);
 };
@@ -46,16 +44,13 @@ pki.privateKeyFromPem = function(pem) {
   var msg = forge.pem.decode(pem)[0];
 
   if(msg.type !== 'PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
-    throw {
-      message: 'Could not convert private key from PEM; PEM header type is ' +
-        'not "PRIVATE KEY" or "RSA PRIVATE KEY".',
-      headerType: msg.type
-    };
+    var error = new Error('Could not convert private key from PEM; PEM ' +
+      'header type is not "PRIVATE KEY" or "RSA PRIVATE KEY".');
+    error.headerType = msg.type;
+    throw error;
   }
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert private key from PEM; PEM is encrypted.'
-    };
+    throw new Error('Could not convert private key from PEM; PEM is encrypted.');
   }
 
   // convert DER to ASN.1 object

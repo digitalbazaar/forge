@@ -1419,9 +1419,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
     if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
       version.minor !== sp.pre_master_secret.charCodeAt(1)) {
       // error, do not send alert (see BLEI attack below)
-      throw {
-        message: 'TLS version rollback attack detected.'
-      };
+      throw new Error('TLS version rollback attack detected.');
     }
   } catch(ex) {
     /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
@@ -1548,9 +1546,7 @@ tls.handleCertificateVerify = function(c, record, length) {
       msg.signature, cert.publicKey, true, verify.length);
     if(b !== verify) {*/
     if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
-      throw {
-        message: 'CertificateVerify signature does not match.'
-      };
+      throw new Error('CertificateVerify signature does not match.');
     }
 
     // digest message now that it has been handled
@@ -2366,9 +2362,7 @@ tls.generateKeys = function(c, sp) {
     break;
   default:
     // should never happen
-    throw {
-      message: 'Invalid PRF'
-    };
+    throw new Error('Invalid PRF');
   }
   */
 
@@ -2554,9 +2548,7 @@ tls.createConnectionState = function(c) {
       state.write.compressFunction = deflate;
       break;
     default:
-      throw {
-        message: 'Unsupported compression algorithm.'
-      };
+      throw new Error('Unsupported compression algorithm.');
     }
   }
 
@@ -2893,17 +2885,14 @@ tls.createCertificate = function(c) {
         if(msg.type !== 'CERTIFICATE' &&
           msg.type !== 'X509 CERTIFICATE' &&
           msg.type !== 'TRUSTED CERTIFICATE') {
-          throw {
-            message: 'Could not convert certificate from PEM; PEM header ' +
-              'type is not "CERTIFICATE", "X509 CERTIFICATE", or ' +
-              '"TRUSTED CERTIFICATE".',
-            headerType: msg.type
-          };
+          var error = new Error('Could not convert certificate from PEM; PEM ' +
+            'header type is not "CERTIFICATE", "X509 CERTIFICATE", or ' +
+            '"TRUSTED CERTIFICATE".');
+          error.headerType = msg.type;
+          throw error;
         }
         if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-          throw {
-            message: 'Could not convert certificate from PEM; PEM is encrypted.'
-          };
+          throw new Error('Could not convert certificate from PEM; PEM is encrypted.');
         }
 
         var der = forge.util.createBuffer(msg.body);
@@ -3534,13 +3523,11 @@ tls.verifyCertificateChain = function(c, chain) {
         if(ret !== true) {
           if(typeof ret === 'object' && !forge.util.isArray(ret)) {
             // throw custom error
-            var error = {
-              message: 'The application rejected the certificate.',
-              send: true,
-              alert: {
-                level: tls.Alert.Level.fatal,
-                description: tls.Alert.Description.bad_certificate
-              }
+            var error = new Error('The application rejected the certificate.');
+            error.send = true;
+            error.alert = {
+              level: tls.Alert.Level.fatal,
+              description: tls.Alert.Description.bad_certificate
             };
             if(ret.message) {
               error.message = ret.message;

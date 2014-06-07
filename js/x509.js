@@ -858,10 +858,9 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(obj, rsassaPssParameterValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read RSASSA-PSS parameter block.',
-      errors: errors
-    };
+    var error = new Error('Cannot read RSASSA-PSS parameter block.');
+    error.errors = errors;
+    throw error;
   }
 
   if(capture.hashOid !== undefined) {
@@ -904,16 +903,13 @@ pki.certificateFromPem = function(pem, computeHash, strict) {
   if(msg.type !== 'CERTIFICATE' &&
     msg.type !== 'X509 CERTIFICATE' &&
     msg.type !== 'TRUSTED CERTIFICATE') {
-    throw {
-      message: 'Could not convert certificate from PEM; PEM header type is ' +
-        'not "CERTIFICATE", "X509 CERTIFICATE", or "TRUSTED CERTIFICATE".',
-      headerType: msg.type
-    };
+    var error = new Error('Could not convert certificate from PEM; PEM header type ' +
+      'is not "CERTIFICATE", "X509 CERTIFICATE", or "TRUSTED CERTIFICATE".');
+    error.headerType = msg.type;
+    throw error;
   }
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert certificate from PEM; PEM is encrypted.'
-    };
+    throw new Error('Could not convert certificate from PEM; PEM is encrypted.');
   }
 
   // convert DER to ASN.1 object
@@ -950,16 +946,13 @@ pki.publicKeyFromPem = function(pem) {
   var msg = forge.pem.decode(pem)[0];
 
   if(msg.type !== 'PUBLIC KEY' && msg.type !== 'RSA PUBLIC KEY') {
-    throw {
-      message: 'Could not convert public key from PEM; PEM header type is ' +
-        'not "PUBLIC KEY" or "RSA PUBLIC KEY".',
-      headerType: msg.type
-    };
+    var error = new Error('Could not convert public key from PEM; PEM header ' +
+      'type is not "PUBLIC KEY" or "RSA PUBLIC KEY".');
+    error.headerType = msg.type;
+    throw error;
   }
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert public key from PEM; PEM is encrypted.'
-    };
+    throw new Error('Could not convert public key from PEM; PEM is encrypted.');
   }
 
   // convert DER to ASN.1 object
@@ -1021,17 +1014,14 @@ pki.certificationRequestFromPem = function(pem, computeHash, strict) {
   var msg = forge.pem.decode(pem)[0];
 
   if(msg.type !== 'CERTIFICATE REQUEST') {
-    throw {
-      message: 'Could not convert certification request from PEM; PEM header ' +
-        'type is not "CERTIFICATE REQUEST".',
-      headerType: msg.type
-    };
+    var error = new Error('Could not convert certification request from PEM; ' +
+      'PEM header type is not "CERTIFICATE REQUEST".');
+    error.headerType = msg.type;
+    throw error;
   }
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-    throw {
-      message: 'Could not convert certification request from PEM; ' +
-        'PEM is encrypted.'
-    };
+    throw new Error('Could not convert certification request from PEM; ' +
+      'PEM is encrypted.');
   }
 
   // convert DER to ASN.1 object
@@ -1156,10 +1146,9 @@ pki.createCertificate = function() {
         if(e.name && e.name in pki.oids) {
           e.id = pki.oids[e.name];
         } else {
-          throw {
-            message: 'Extension ID not specified.',
-            extension: e
-          };
+          var error = new Error('Extension ID not specified.');
+          error.extension = e;
+          throw error;
         }
       }
 
@@ -1310,11 +1299,10 @@ pki.createCertificate = function() {
             if(altName.type === 7 && altName.ip) {
               value = forge.util.bytesFromIP(altName.ip);
               if(value === null) {
-                throw {
-                  message: 'Extension "ip" value is not a valid IPv4 ' +
-                    'or IPv6 address.',
-                  extension: e
-                };
+                var error = new Error('Extension "ip" value is not a valid IPv4 ' +
+                  'or IPv6 address.');
+                error.extension = e;
+                throw error;
               }
             } else if(altName.type === 8) {
               // handle OID
@@ -1339,10 +1327,9 @@ pki.createCertificate = function() {
 
         // ensure value has been defined by now
         if(typeof(e.value) === 'undefined') {
-          throw {
-            message: 'Extension value not specified.',
-            extension: e
-          };
+          var error = new Error('Extension value not specified.');
+          error.extension = e;
+          throw error;
         }
       }
     }
@@ -1389,11 +1376,10 @@ pki.createCertificate = function() {
     cert.md = md || forge.md.sha1.create();
     var algorithmOid = oids[cert.md.algorithm + 'WithRSAEncryption'];
     if(!algorithmOid) {
-      throw {
-        message: 'Could not compute certificate digest. ' +
-          'Unknown message digest algorithm OID.',
-        algorithm: cert.md.algorithm
-      };
+      var error = new Error('Could not compute certificate digest. ' +
+        'Unknown message digest algorithm OID.');
+      error.algorithm = cert.md.algorithm;
+      throw error;
     }
     cert.signatureOid = cert.siginfo.algorithmOid = algorithmOid;
 
@@ -1420,13 +1406,12 @@ pki.createCertificate = function() {
     if(!cert.issued(child)) {
       var issuer = child.issuer;
       var subject = cert.subject;
-      throw {
-        message: 'The parent certificate did not issue the given child ' +
-          'certificate; the child certificate\'s issuer does not match the ' +
-          'parent\'s subject.',
-        expectedIssuer: issuer.attributes,
-        actualIssuer: subject.attributes
-      };
+      var error = new Error('The parent certificate did not issue the given child ' +
+        'certificate; the child certificate\'s issuer does not match the ' +
+        'parent\'s subject.');
+      error.expectedIssuer = issuer.attributes;
+      error.actualIssuer = subject.attributes;
+      throw error;
     }
 
     var md = child.md;
@@ -1450,11 +1435,10 @@ pki.createCertificate = function() {
         }
       }
       if(md === null) {
-        throw {
-          message: 'Could not compute certificate digest. ' +
-            'Unknown signature OID.',
-          signatureOid: child.signatureOid
-        };
+        var error = new Error('Could not compute certificate digest. ' +
+          'Unknown signature OID.');
+        error.signatureOid = child.signatureOid;
+        throw error;
       }
 
       // produce DER formatted TBSCertificate and digest it
@@ -1476,20 +1460,18 @@ pki.createCertificate = function() {
         /* initialize mgf */
         hash = oids[child.signatureParameters.mgf.hash.algorithmOid];
         if(hash === undefined || forge.md[hash] === undefined) {
-          throw {
-            message: 'Unsupported MGF hash function.',
-            oid: child.signatureParameters.mgf.hash.algorithmOid,
-            name: hash
-          };
+          var error = new Error('Unsupported MGF hash function.');
+          error.oid = child.signatureParameters.mgf.hash.algorithmOid;
+          error.name = hash;
+          throw error;
         }
 
         mgf = oids[child.signatureParameters.mgf.algorithmOid];
         if(mgf === undefined || forge.mgf[mgf] === undefined) {
-          throw {
-            message: 'Unsupported MGF function.',
-            oid: child.signatureParameters.mgf.algorithmOid,
-            name: mgf
-          };
+          var error = new Error('Unsupported MGF function.');
+          error.oid = child.signatureParameters.mgf.algorithmOid;
+          error.name = mgf;
+          throw error;
         }
 
         mgf = forge.mgf[mgf].create(forge.md[hash].create());
@@ -1634,11 +1616,10 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(obj, x509CertificateValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read X.509 certificate. ' +
-        'ASN.1 object is not an X509v3 Certificate.',
-      errors: errors
-    };
+    var error = new Error('Cannot read X.509 certificate. ' +
+      'ASN.1 object is not an X509v3 Certificate.');
+    error.errors = errors;
+    throw error;
   }
 
   // ensure signature is not interpreted as an embedded ASN.1 object
@@ -1653,9 +1634,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   // get oid
   var oid = asn1.derToOid(capture.publicKeyOid);
   if(oid !== pki.oids['rsaEncryption']) {
-    throw {
-      message: 'Cannot read public key. OID is not RSA.'
-    };
+    throw new Error('Cannot read public key. OID is not RSA.');
   }
 
   // create certificate
@@ -1691,16 +1670,12 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
       capture.certValidity4GeneralizedTime));
   }
   if(validity.length > 2) {
-    throw {
-      message: 'Cannot read notBefore/notAfter validity times; more than ' +
-        'two times were provided in the certificate.'
-    };
+    throw new Error('Cannot read notBefore/notAfter validity times; more ' +
+      'than two times were provided in the certificate.');
   }
   if(validity.length < 2) {
-    throw {
-      message: 'Cannot read notBefore/notAfter validity times; they were not ' +
-        'provided as either UTCTime or GeneralizedTime.'
-    };
+    throw new Error('Cannot read notBefore/notAfter validity times; they ' +
+      'were not provided as either UTCTime or GeneralizedTime.');
   }
   cert.validity.notBefore = validity[0];
   cert.validity.notAfter = validity[1];
@@ -1729,11 +1704,10 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
       }
     }
     if(cert.md === null) {
-      throw {
-        message: 'Could not compute certificate digest. ' +
-          'Unknown signature OID.',
-        signatureOid: cert.signatureOid
-      };
+      var error = new Error('Could not compute certificate digest. ' +
+        'Unknown signature OID.');
+      error.signatureOid = cert.signatureOid;
+      throw error;
     }
 
     // produce DER formatted TBSCertificate and digest it
@@ -1802,11 +1776,10 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(obj, certificationRequestValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read PKCS#10 certificate request. ' +
-        'ASN.1 object is not a PKCS#10 CertificationRequest.',
-      errors: errors
-    };
+    var error = new Error('Cannot read PKCS#10 certificate request. ' +
+      'ASN.1 object is not a PKCS#10 CertificationRequest.');
+    error.errors = errors;
+    throw error;
   }
 
   // ensure signature is not interpreted as an embedded ASN.1 object
@@ -1821,9 +1794,7 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   // get oid
   var oid = asn1.derToOid(capture.publicKeyOid);
   if(oid !== pki.oids.rsaEncryption) {
-    throw {
-      message: 'Cannot read public key. OID is not RSA.'
-    };
+    throw new Error('Cannot read public key. OID is not RSA.');
   }
 
   // create certification request
@@ -1864,11 +1835,10 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
       }
     }
     if(csr.md === null) {
-      throw {
-        message: 'Could not compute certification request digest. ' +
-          'Unknown signature OID.',
-        signatureOid: csr.signatureOid
-      };
+      var error = new Error('Could not compute certification request digest. ' +
+        'Unknown signature OID.');
+      error.signatureOid = csr.signatureOid;
+      throw error;
     }
 
     // produce DER formatted CertificationRequestInfo and digest it
@@ -1977,11 +1947,10 @@ pki.createCertificationRequest = function() {
     csr.md = md || forge.md.sha1.create();
     var algorithmOid = oids[csr.md.algorithm + 'WithRSAEncryption'];
     if(!algorithmOid) {
-      throw {
-        message: 'Could not compute certification request digest. ' +
-          'Unknown message digest algorithm OID.',
-        algorithm: csr.md.algorithm
-      };
+      var error = new Error('Could not compute certification request digest. ' +
+        'Unknown message digest algorithm OID.');
+      error.algorithm = csr.md.algorithm;
+      throw error;
     }
     csr.signatureOid = csr.siginfo.algorithmOid = algorithmOid;
 
@@ -2029,11 +1998,10 @@ pki.createCertificationRequest = function() {
         }
       }
       if(md === null) {
-        throw {
-          message: 'Could not compute certification request digest. ' +
-            'Unknown signature OID.',
-          signatureOid: csr.signatureOid
-        };
+        var error = new Error('Could not compute certification request digest. ' +
+          'Unknown signature OID.');
+        error.signatureOid = csr.signatureOid;
+        throw error;
       }
 
       // produce DER formatted CertificationRequestInfo and digest it
@@ -2056,20 +2024,18 @@ pki.createCertificationRequest = function() {
         /* initialize mgf */
         hash = oids[csr.signatureParameters.mgf.hash.algorithmOid];
         if(hash === undefined || forge.md[hash] === undefined) {
-          throw {
-            message: 'Unsupported MGF hash function.',
-            oid: csr.signatureParameters.mgf.hash.algorithmOid,
-            name: hash
-          };
+          var error = new Error('Unsupported MGF hash function.');
+          error.oid = csr.signatureParameters.mgf.hash.algorithmOid;
+          error.name = hash;
+          throw error;
         }
 
         mgf = oids[csr.signatureParameters.mgf.algorithmOid];
         if(mgf === undefined || forge.mgf[mgf] === undefined) {
-          throw {
-            message: 'Unsupported MGF function.',
-            oid: csr.signatureParameters.mgf.algorithmOid,
-            name: mgf
-          };
+          var error = new Error('Unsupported MGF function.');
+          error.oid = csr.signatureParameters.mgf.algorithmOid;
+          error.name = mgf;
+          throw error;
         }
 
         mgf = forge.mgf[mgf].create(forge.md[hash].create());
@@ -2077,11 +2043,10 @@ pki.createCertificationRequest = function() {
         /* initialize hash function */
         hash = oids[csr.signatureParameters.hash.algorithmOid];
         if(hash === undefined || forge.md[hash] === undefined) {
-          throw {
-            message: 'Unsupported RSASSA-PSS hash function.',
-            oid: csr.signatureParameters.hash.algorithmOid,
-            name: hash
-          };
+          var error = new Error('Unsupported RSASSA-PSS hash function.');
+          error.oid = csr.signatureParameters.hash.algorithmOid;
+          error.name = hash;
+          throw error;
         }
 
         scheme = forge.pss.create(forge.md[hash].create(), mgf,
@@ -2254,10 +2219,9 @@ function _fillMissingFields(attrs) {
       if(attr.name && attr.name in pki.oids) {
         attr.type = pki.oids[attr.name];
       } else {
-        throw {
-          message: 'Attribute type not specified.',
-          attribute: attr
-        };
+        var error = new Error('Attribute type not specified.');
+        error.attribute = attr;
+        throw error;
       }
     }
 
@@ -2269,10 +2233,9 @@ function _fillMissingFields(attrs) {
     }
 
     if(typeof(attr.value) === 'undefined') {
-      throw {
-        message: 'Attribute value not specified.',
-        attribute: attr
-      };
+      var error = new Error('Attribute value not specified.');
+      error.attribute = attr;
+      throw error;
     }
   }
 }
@@ -2593,9 +2556,7 @@ pki.createCaStore = function(certs) {
         // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
         // FIXME: or alternatively do authority key mapping
         // if possible (X.509v1 certs can't work?)
-        throw {
-          message: 'Resolving multiple issuer matches not implemented yet.'
-        };
+        throw new Error('Resolving multiple issuer matches not implemented yet.');
       }
     }
 

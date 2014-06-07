@@ -151,15 +151,11 @@ pem.decode = function(str) {
         // Proc-Type must be the first header
         if(!msg.procType) {
           if(header.name !== 'Proc-Type') {
-            throw {
-              message: 'Invalid PEM formatted message. The first ' +
-                'encapsulated header must be "Proc-Type".'
-            };
+            throw new Error('Invalid PEM formatted message. The first ' +
+              'encapsulated header must be "Proc-Type".');
           } else if(header.values.length !== 2) {
-            throw {
-              message: 'Invalid PEM formatted message. The "Proc-Type" ' +
-                'header must have two subfields.'
-            };
+            throw new Error('Invalid PEM formatted message. The "Proc-Type" ' +
+              'header must have two subfields.');
           }
           msg.procType = {version: values[0], type: values[1]};
         } else if(!msg.contentDomain && header.name === 'Content-Domain') {
@@ -168,10 +164,8 @@ pem.decode = function(str) {
         } else if(!msg.dekInfo && header.name === 'DEK-Info') {
           // special-case DEK-Info
           if(header.values.length === 0) {
-            throw {
-              message: 'Invalid PEM formatted message. The "DEK-Info" ' +
-                'header must have at least one subfield.'
-            };
+            throw new Error('Invalid PEM formatted message. The "DEK-Info" ' +
+              'header must have at least one subfield.');
           }
           msg.dekInfo = {algorithm: values[0], parameters: values[1] || null};
         } else {
@@ -183,17 +177,13 @@ pem.decode = function(str) {
     }
 
     if(msg.procType === 'ENCRYPTED' && !msg.dekInfo) {
-      throw {
-        message: 'Invalid PEM formatted message. The "DEK-Info" ' +
-          'header must be present if "Proc-Type" is "ENCRYPTED".'
-      };
+      throw new Error('Invalid PEM formatted message. The "DEK-Info" ' +
+        'header must be present if "Proc-Type" is "ENCRYPTED".');
     }
   }
 
   if(rval.length === 0) {
-    throw {
-      message: 'Invalid PEM formatted message.'
-    };
+    throw new Error('Invalid PEM formatted message.');
   }
 
   return rval;
