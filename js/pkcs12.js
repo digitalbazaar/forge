@@ -318,11 +318,10 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(obj, pfxValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read PKCS#12 PFX. ' +
-        'ASN.1 object is not an PKCS#12 PFX.',
-      errors: errors
-    };
+    var error = new Error('Cannot read PKCS#12 PFX. ' +
+      'ASN.1 object is not an PKCS#12 PFX.');
+    error.errors = error;
+    throw error;
   }
 
   var pfx = {
@@ -405,25 +404,21 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
   };
 
   if(capture.version.charCodeAt(0) !== 3) {
-    throw {
-      message: 'PKCS#12 PFX of version other than 3 not supported.',
-      version: capture.version.charCodeAt(0)
-    };
+    var error = new Error('PKCS#12 PFX of version other than 3 not supported.');
+    error.version = capture.version.charCodeAt(0);
+    throw error;
   }
 
   if(asn1.derToOid(capture.contentType) !== pki.oids.data) {
-    throw {
-      message: 'Only PKCS#12 PFX in password integrity mode supported.',
-      oid: asn1.derToOid(capture.contentType)
-    };
+    var error = new Error('Only PKCS#12 PFX in password integrity mode supported.');
+    error.oid = asn1.derToOid(capture.contentType);
+    throw error;
   }
 
   var data = capture.content.value[0];
   if(data.tagClass !== asn1.Class.UNIVERSAL ||
      data.type !== asn1.Type.OCTETSTRING) {
-    throw {
-      message: 'PKCS#12 authSafe content data is not an OCTET STRING.'
-    };
+    throw new Error('PKCS#12 authSafe content data is not an OCTET STRING.');
   }
 
   // check for MAC
@@ -454,9 +449,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       break;
     }
     if(md === null) {
-      throw {
-        message: 'PKCS#12 uses unsupported MAC algorithm: ' + macAlgorithm
-      };
+      throw new Error('PKCS#12 uses unsupported MAC algorithm: ' + macAlgorithm);
     }
 
     // verify MAC (iterations default to 1)
@@ -470,9 +463,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     mac.update(data.value);
     var macValue = mac.getMac();
     if(macValue.getBytes() !== capture.macDigest) {
-      throw {
-        message: 'PKCS#12 MAC could not be verified. Invalid password?'
-      };
+      throw new Error('PKCS#12 MAC could not be verified. Invalid password?');
     }
   }
 
@@ -496,10 +487,8 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
   if(authSafe.tagClass !== asn1.Class.UNIVERSAL ||
      authSafe.type !== asn1.Type.SEQUENCE ||
      authSafe.constructed !== true) {
-    throw {
-      message: 'PKCS#12 AuthenticatedSafe expected to be a ' +
-        'SEQUENCE OF ContentInfo'
-    };
+    throw new Error('PKCS#12 AuthenticatedSafe expected to be a ' +
+      'SEQUENCE OF ContentInfo');
   }
 
   for(var i = 0; i < authSafe.value.length; i ++) {
@@ -509,10 +498,9 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
     var capture = {};
     var errors = [];
     if(!asn1.validate(contentInfo, contentInfoValidator, capture, errors)) {
-      throw {
-        message: 'Cannot read ContentInfo.',
-        errors: errors
-      };
+      var error = new Error('Cannot read ContentInfo.');
+      error.errors = errors;
+      throw error;
     }
 
     var obj = {
@@ -524,29 +512,24 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
       case pki.oids.data:
         if(data.tagClass !== asn1.Class.UNIVERSAL ||
            data.type !== asn1.Type.OCTETSTRING) {
-          throw {
-            message: 'PKCS#12 SafeContents Data is not an OCTET STRING.'
-          };
+          throw new Error('PKCS#12 SafeContents Data is not an OCTET STRING.');
         }
         safeContents = data.value;
         break;
 
       case pki.oids.encryptedData:
         if(password === undefined) {
-          throw {
-            message: 'Found PKCS#12 Encrypted SafeContents Data but ' +
-              'no password available.'
-          };
+          throw new Error('Found PKCS#12 Encrypted SafeContents Data but ' +
+            'no password available.');
         }
         safeContents = _decryptSafeContents(data, password);
         obj.encrypted = true;
         break;
 
       default:
-        throw {
-          message: 'Unsupported PKCS#12 contentType.',
-          contentType: asn1.derToOid(capture.contentType)
-        };
+        var error = new Error('Unsupported PKCS#12 contentType.');
+        error.contentType = asn1.derToOid(capture.contentType);
+        throw error;
     }
 
     obj.safeBags = _decodeSafeContents(safeContents, strict, password);
@@ -566,18 +549,16 @@ function _decryptSafeContents(data, password) {
   var errors = [];
   if(!asn1.validate(
     data, forge.pkcs7.asn1.encryptedDataValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read EncryptedContentInfo. ',
-      errors: errors
-    };
+    var error = new Error('Cannot read EncryptedContentInfo.');
+    error.errors = errors;
+    throw error;
   }
 
   var oid = asn1.derToOid(capture.contentType);
   if(oid !== pki.oids.data) {
-    throw {
-      message: 'PKCS#12 EncryptedContentInfo ContentType is not Data.',
-      oid: oid
-    };
+    var error = new Error('PKCS#12 EncryptedContentInfo ContentType is not Data.');
+    error.oid = oid;
+    throw error;
   }
 
   // get cipher
@@ -589,9 +570,7 @@ function _decryptSafeContents(data, password) {
 
   cipher.update(encrypted);
   if(!cipher.finish()) {
-    throw {
-      message: 'Failed to decrypt PKCS#12 SafeContents.'
-    };
+    throw new Error('Failed to decrypt PKCS#12 SafeContents.');
   }
 
   return cipher.output.getBytes();
@@ -615,10 +594,8 @@ function _decodeSafeContents(safeContents, strict, password) {
   if(safeContents.tagClass !== asn1.Class.UNIVERSAL ||
     safeContents.type !== asn1.Type.SEQUENCE ||
     safeContents.constructed !== true) {
-    throw {
-      message: 'PKCS#12 SafeContents expected to be a ' +
-        'SEQUENCE OF SafeBag'
-    };
+    throw new Error('PKCS#12 SafeContents expected to be a ' +
+      'SEQUENCE OF SafeBag');
   }
 
   var res = [];
@@ -629,10 +606,9 @@ function _decodeSafeContents(safeContents, strict, password) {
     var capture = {};
     var errors = [];
     if(!asn1.validate(safeBag, safeBagValidator, capture, errors)) {
-      throw {
-        message: 'Cannot read SafeBag.',
-        errors: errors
-      };
+      var error = new Error('Cannot read SafeBag.');
+      error.errors = errors;
+      throw error;
     }
 
     /* Create bag object and push to result array. */
@@ -650,16 +626,12 @@ function _decodeSafeContents(safeContents, strict, password) {
            Afterwards we can handle it like a keyBag,
            which is a PrivateKeyInfo. */
         if(password === undefined) {
-          throw {
-            message: 'Found PKCS#8 ShroudedKeyBag but no password available.'
-          };
+          throw new Error('Found PKCS#8 ShroudedKeyBag but no password available.');
         }
 
         bagAsn1 = pki.decryptPrivateKeyInfo(bagAsn1, password);
         if(bagAsn1 === null) {
-          throw {
-            message: 'Unable to decrypt PKCS#8 ShroudedKeyBag, wrong password?'
-          };
+          throw new Error('Unable to decrypt PKCS#8 ShroudedKeyBag, wrong password?');
         }
 
         /* fall through */
@@ -677,10 +649,10 @@ function _decodeSafeContents(safeContents, strict, password) {
         validator = certBagValidator;
         decoder = function() {
           if(asn1.derToOid(capture.certId) !== pki.oids.x509Certificate) {
-            throw {
-              message: 'Unsupported certificate type, only X.509 supported.',
-              oid: asn1.derToOid(capture.certId)
-            };
+            var error = new Error('Unsupported certificate type, only ' +
+              'X.509 supported.');
+            error.oid = asn1.derToOid(capture.certId);
+            throw error;
           }
 
           // true=produce cert hash
@@ -690,19 +662,17 @@ function _decodeSafeContents(safeContents, strict, password) {
         break;
 
       default:
-        throw {
-          message: 'Unsupported PKCS#12 SafeBag type.',
-          oid: bag.type
-        };
+        var error = new Error('Unsupported PKCS#12 SafeBag type.');
+        error.oid = bag.type;
+        throw error;
     }
 
     /* Validate SafeBag value (i.e. CertBag, etc.) and capture data if needed. */
     if(validator !== undefined &&
        !asn1.validate(bagAsn1, validator, capture, errors)) {
-      throw {
-        message: 'Cannot read PKCS#12 ' + validator.name,
-        errors: errors
-      };
+      var error = new Error('Cannot read PKCS#12 ' + validator.name);
+      error.errors = errors;
+      throw error;
     }
 
     /* Call decoder function from above to store the results. */
@@ -727,10 +697,9 @@ function _decodeBagAttributes(attributes) {
       var capture = {};
       var errors = [];
       if(!asn1.validate(attributes[i], attributeValidator, capture, errors)) {
-        throw {
-          message: 'Cannot read PKCS#12 BagAttribute.',
-          errors: errors
-        };
+        var error = new Error('Cannot read PKCS#12 BagAttribute.');
+        error.errors = errors;
+        throw error;
       }
 
       var oid = asn1.derToOid(capture.oid);

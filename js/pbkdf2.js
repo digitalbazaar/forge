@@ -36,9 +36,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   /* 1. If dkLen > (2^32 - 1) * hLen, output "derived key too long" and
        stop. */
   if(dkLen > (0xFFFFFFFF * hLen)) {
-    throw {
-      message: 'Derived key is too long.'
-    };
+    throw new Error('Derived key is too long.');
   }
 
   /* 2. Let len be the number of hLen-octet blocks in the derived key,

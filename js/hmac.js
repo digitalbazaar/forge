@@ -51,7 +51,7 @@ hmac.create = function() {
         if(md in forge.md.algorithms) {
           _md = forge.md.algorithms[md].create();
         } else {
-          throw 'Unknown hash algorithm "' + md + '"';
+          throw new Error('Unknown hash algorithm "' + md + '"');
         }
       } else {
         // store message digest

@@ -265,10 +265,9 @@ asn1.fromDer = function(bytes, strict) {
 
   // minimum length for ASN.1 DER structure is 2
   if(bytes.length() < 2)    {
-    throw {
-      message: 'Too few bytes to parse DER.',
-      bytes: bytes.length()
-    };
+    var error = new Error('Too few bytes to parse DER.');
+    error.bytes = bytes.length();
+    throw error;
   }
 
   // get the first byte
@@ -286,10 +285,9 @@ asn1.fromDer = function(bytes, strict) {
   // ensure there are enough bytes to get the value
   if(bytes.length() < length) {
     if(strict) {
-      throw {
-        message: 'Too few bytes to read ASN.1 value.',
-        detail: bytes.length() + ' < ' + length
-      };
+      var error = new Error('Too few bytes to read ASN.1 value.');
+      error.detail = bytes.length() + ' < ' + length;
+      throw error;
     }
     // Note: be lenient with truncated values
     length = bytes.length();
@@ -363,9 +361,7 @@ asn1.fromDer = function(bytes, strict) {
 
     if(length === undefined) {
       if(strict) {
-        throw {
-          message: 'Non-constructed ASN.1 object of indefinite length.'
-        };
+        throw new Error('Non-constructed ASN.1 object of indefinite length.');
       }
       // be lenient and use remaining bytes
       length = bytes.length();
@@ -777,10 +773,9 @@ asn1.integerToDer = function(x) {
   if(x >= -0x80000000 && x < 0x80000000) {
     return rval.putSignedInt(x, 32);
   }
-  throw {
-    message: 'Integer too large; max is 32-bits.',
-    integer: x
-  };
+  var error = new Error('Integer too large; max is 32-bits.');
+  error.integer = x;
+  throw error;
 };
 
 /**
@@ -799,7 +794,7 @@ asn1.derToInteger = function(bytes) {
 
   var n = bytes.length() * 8;
   if(n > 32) {
-    throw {message: 'Integer too large; max is 32-bits.'};
+    throw new Error('Integer too large; max is 32-bits.');
   }
   return bytes.getSignedInt(n);
 };

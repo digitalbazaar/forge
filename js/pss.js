@@ -47,17 +47,13 @@ pss.create = function(hash, mgf, sLen) {
 
     /* 3. If emLen < hLen + sLen + 2, output "inconsistent" and stop. */
     if(emLen < hLen + sLen + 2) {
-      throw {
-        message: 'Inconsistent parameters to PSS signature verification.'
-      };
+      throw new Error('Inconsistent parameters to PSS signature verification.');
     }
 
     /* 4. If the rightmost octet of EM does not have hexadecimal value
      *    0xbc, output "inconsistent" and stop. */
     if(em.charCodeAt(emLen - 1) !== 0xbc) {
-      throw {
-        message: 'Encoded message does not end in 0xBC.'
-      };
+      throw new Error('Encoded message does not end in 0xBC.');
     }
 
     /* 5. Let maskedDB be the leftmost emLen - hLen - 1 octets of EM, and
@@ -70,9 +66,7 @@ pss.create = function(hash, mgf, sLen) {
      *    maskedDB are not all equal to zero, output "inconsistent" and stop. */
     var mask = (0xFF00 >> (8 * emLen - emBits)) & 0xFF;
     if((maskedDB.charCodeAt(0) & mask) !== 0) {
-      throw {
-        message: 'Bits beyond keysize not zero as expected.'
-      };
+      throw new Error('Bits beyond keysize not zero as expected.');
     }
 
     /* 7. Let dbMask = MGF(H, emLen - hLen - 1). */
@@ -95,16 +89,12 @@ pss.create = function(hash, mgf, sLen) {
     var checkLen = emLen - hLen - sLen - 2;
     for(i = 0; i < checkLen; i ++) {
       if(db.charCodeAt(i) !== 0x00) {
-        throw {
-          message: 'Leftmost octets not zero as expected'
-        };
+        throw new Error('Leftmost octets not zero as expected');
       }
     }
 
     if(db.charCodeAt(checkLen) !== 0x01) {
-      throw {
-        message: 'Inconsistent PSS signature, 0x01 marker not found'
-      };
+      throw new Error('Inconsistent PSS signature, 0x01 marker not found');
     }
 
     /* 11. Let salt be the last sLen octets of DB. */
@@ -144,9 +134,7 @@ pss.create = function(hash, mgf, sLen) {
 
     /* 3. If emLen < hLen + sLen + 2, output "encoding error" and stop. */
     if(emLen < hLen + sLen + 2) {
-      throw {
-        message: 'Message is too long to encrypt'
-      };
+      throw new Error('Message is too long to encrypt');
     }
 
     /* 4. Generate a random octet string salt of length sLen; if sLen = 0,

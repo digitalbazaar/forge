@@ -446,10 +446,9 @@ http.createClient = function(options) {
     window.location.protocol + '//' + window.location.host);
   var url = http.parseUrl(options.url);
   if(!url) {
-    throw {
-      message: 'Invalid url.',
-      details: {url: options.url}
-    };
+    var error = new Error('Invalid url.');
+    error.details = {url: options.url};
+    throw error;
   }
 
   // default to 1 connection
@@ -681,21 +680,19 @@ http.createClient = function(options) {
 
         // do secure check
         if(cookie.secure !== client.secure) {
-          throw {
-            message: 'Http client url scheme is incompatible ' +
-              'with cookie secure flag.',
-            url: client.url,
-            cookie: cookie
-          };
+          var error = new Error('Http client url scheme is incompatible ' +
+            'with cookie secure flag.');
+          error.url = client.url;
+          error.cookie = cookie;
+          throw error;
         }
         // make sure url host is within cookie.domain
         if(!http.withinCookieDomain(client.url, cookie)) {
-          throw {
-            message: 'Http client url host is incompatible with ' +
-              'cookie domain.',
-            url: client.url,
-            cookie: cookie
-          };
+          var error = new Error('Http client url scheme is incompatible ' +
+            'with cookie secure flag.');
+          error.url = client.url;
+          error.cookie = cookie;
+          throw error;
         }
 
         // add new cookie
@@ -1052,10 +1049,9 @@ http.createResponse = function() {
             response.message = tmp.slice(2).join(' ');
           } else {
             // invalid header
-            throw {
-              message: 'Invalid http response header.',
-              details: {'line': line}
-            };
+            var error = new Error('Invalid http response header.');
+            error.details = {'line': line};
+            throw error;
           }
         } else if(line.length === 0) {
           // handle final line, end of header
@@ -1182,10 +1178,9 @@ http.createResponse = function() {
         response.body = response.body || '';
         _readChunkedBody(b);
       } else {
-        throw {
-          message: 'Unknown Transfer-Encoding.',
-          details: {'transferEncoding' : transferEncoding}
-        };
+        var error = new Error('Unknown Transfer-Encoding.');
+        error.details = {'transferEncoding' : transferEncoding};
+        throw error;
       }
     } else if((contentLength !== null && contentLength < 0) ||
       (contentLength === null &&

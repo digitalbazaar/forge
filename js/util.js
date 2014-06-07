@@ -917,9 +917,7 @@ util.inflate = function(api, bytes, raw) {
  */
 var _setStorageObject = function(api, id, obj) {
   if(!api) {
-    throw {
-      message: 'WebStorage not available.'
-    };
+    throw new Error('WebStorage not available.');
   }
 
   var rval;
@@ -947,9 +945,7 @@ var _setStorageObject = function(api, id, obj) {
  */
 var _getStorageObject = function(api, id) {
   if(!api) {
-    throw {
-      message: 'WebStorage not available.'
-    };
+    throw new Error('WebStorage not available.');
   }
 
   // get the existing entry
@@ -1090,9 +1086,7 @@ var _callStorageFunction = function(func, args, location) {
     try {
       if(type === 'flash' || type === 'both') {
         if(args[0] === null) {
-          throw {
-            message: 'Flash local storage not available.'
-          };
+          throw new Error('Flash local storage not available.');
         } else {
           rval = func.apply(this, args);
           done = (type === 'flash');

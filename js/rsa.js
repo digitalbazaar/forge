@@ -277,10 +277,9 @@ var emsaPkcs1v15encode = function(md) {
   if(md.algorithm in pki.oids) {
     oid = pki.oids[md.algorithm];
   } else {
-    throw {
-      message: 'Unknown message digest algorithm.',
-      algorithm: md.algorithm
-    };
+    var error = new Error('Unknown message digest algorithm.');
+    error.algorithm = md.algorithm;
+    throw error;
   }
   var oidBytes = asn1.oidToDer(oid).getBytes();
 
@@ -527,11 +526,10 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
 
   // error if the length of the encrypted data ED is not k
   if(ed.length !== k) {
-    throw {
-      message: 'Encrypted message length is invalid.',
-      length: ed.length,
-      expected: k
-    };
+    var error = new Error('Encrypted message length is invalid.');
+    error.length = ed.length;
+    error.expected = k;
+    throw error;
   }
 
   // convert encrypted data into a big integer
@@ -541,9 +539,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
   if(y.compareTo(key.n) >= 0) {
-    throw {
-      message: 'Encrypted message is invalid.'
-    };
+    throw new Error('Encrypted message is invalid.');
   }
 
   // do RSA decryption
@@ -935,9 +931,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
     } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
       scheme = { encode: function(e) { return e; } };
     } else {
-      throw {
-        message: 'Unsupported encryption scheme: "' + scheme + '".'
-      };
+      throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
 
     // do scheme-based encoding then rsa encryption
@@ -1073,9 +1067,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
       scheme = { decode: function(d) { return d; } };
     } else {
-      throw {
-        message: 'Unsupported encryption scheme: "' + scheme + '".'
-      };
+      throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
 
     // decode according to scheme
@@ -1176,11 +1168,10 @@ pki.privateKeyFromAsn1 = function(obj) {
   capture = {};
   errors = [];
   if(!asn1.validate(obj, rsaPrivateKeyValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read private key. ' +
-        'ASN.1 object does not contain an RSAPrivateKey.',
-      errors: errors
-    };
+    var error = new Error('Cannot read private key. ' +
+      'ASN.1 object does not contain an RSAPrivateKey.');
+    error.errors = errors;
+    throw error;
   }
 
   // Note: Version is currently ignored.
@@ -1263,10 +1254,9 @@ pki.publicKeyFromAsn1 = function(obj) {
     // get oid
     var oid = asn1.derToOid(capture.publicKeyOid);
     if(oid !== pki.oids.rsaEncryption) {
-      throw {
-        message: 'Cannot read public key. Unknown OID.',
-        oid: oid
-      };
+      var error = new Error('Cannot read public key. Unknown OID.');
+      error.oid = oid;
+      throw error;
     }
     obj = capture.rsaPublicKey;
   }
@@ -1274,11 +1264,10 @@ pki.publicKeyFromAsn1 = function(obj) {
   // get RSA params
   errors = [];
   if(!asn1.validate(obj, rsaPublicKeyValidator, capture, errors)) {
-    throw {
-      message: 'Cannot read public key. ' +
-        'ASN.1 object does not contain an RSAPublicKey.',
-      errors: errors
-    };
+    var error = new Error('Cannot read public key. ' +
+      'ASN.1 object does not contain an RSAPublicKey.');
+    error.errors = errors;
+    throw error;
   }
 
   // FIXME: inefficient, get a BigInteger that uses byte strings
@@ -1353,11 +1342,10 @@ function _encodePkcs1_v1_5(m, key, bt) {
 
   /* use PKCS#1 v1.5 padding */
   if(m.length > (k - 11)) {
-    throw {
-      message: 'Message is too long for PKCS#1 v1.5 padding.',
-      length: m.length,
-      max: (k - 11)
-    };
+    var error = new Error('Message is too long for PKCS#1 v1.5 padding.');
+    error.length = m.length;
+    error.max = k - 11;
+    throw error;
   }
 
   /* A block type BT, a padding string PS, and the data D shall be
@@ -1446,9 +1434,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
     (pub && bt !== 0x00 && bt !== 0x01) ||
     (!pub && bt != 0x02) ||
     (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
+    throw new Error('Encryption block is invalid.');
   }
 
   var padNum = 0;
@@ -1457,9 +1443,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
     padNum = k - 3 - ml;
     for(var i = 0; i < padNum; ++i) {
       if(eb.getByte() !== 0x00) {
-        throw {
-          message: 'Encryption block is invalid.'
-        };
+        throw new Error('Encryption block is invalid.');
       }
     }
   } else if(bt === 0x01) {
@@ -1487,9 +1471,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
   // zero must be 0x00 and padNum must be (k - 3 - message length)
   var zero = eb.getByte();
   if(zero !== 0x00 || padNum !== (k - 3 - eb.length())) {
-    throw {
-      message: 'Encryption block is invalid.'
-    };
+    throw new Error('Encryption block is invalid.');
   }
 
   return eb.getBytes();

@@ -104,11 +104,10 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var keyLength = Math.ceil(key.n.bitLength() / 8);
   var maxLength = keyLength - 2 * md.digestLength - 2;
   if(message.length > maxLength) {
-    throw {
-      message: 'RSAES-OAEP input message length is too long.',
-      length: message.length,
-      maxLength: maxLength
-    };
+    var error = new Error('RSAES-OAEP input message length is too long.');
+    error.length = message.length;
+    error.maxLength = maxLength;
+    throw error;
   }
 
   if(!label) {
@@ -128,12 +127,11 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   if(!seed) {
     seed = forge.random.getBytes(md.digestLength);
   } else if(seed.length !== md.digestLength) {
-    throw {
-      message: 'Invalid RSAES-OAEP seed. The seed length must match the ' +
-        'digest length.',
-      seedLength: seed.length,
-      digestLength: md.digestLength
-    };
+    var error = new Error('Invalid RSAES-OAEP seed. The seed length must ' +
+      'match the digest length.')
+    error.seedLength = seed.length;
+    error.digestLength = md.digestLength;
+    throw error;
   }
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
@@ -184,11 +182,10 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   var keyLength = Math.ceil(key.n.bitLength() / 8);
 
   if(em.length !== keyLength) {
-    throw {
-      message: 'RSAES-OAEP encoded message length is invalid.',
-      length: em.length,
-      expectedLength: keyLength
-    };
+    var error = new Error('RSAES-OAEP encoded message length is invalid.');
+    error.length = em.length;
+    error.expectedLength = keyLength;
+    throw error;
   }
 
   // default OAEP to SHA-1 message digest
@@ -204,9 +201,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   }
 
   if(keyLength < 2 * md.digestLength + 2) {
-    throw {
-      message: 'RSAES-OAEP key is too short for the hash function.'
-    };
+    throw new Error('RSAES-OAEP key is too short for the hash function.');
   }
 
   if(!label) {
@@ -256,9 +251,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   }
 
   if(error || db.charCodeAt(index) !== 0x1) {
-    throw {
-      message: 'Invalid RSAES-OAEP padding.'
-    };
+    throw new Error('Invalid RSAES-OAEP padding.');
   }
 
   return db.substring(index + 1);

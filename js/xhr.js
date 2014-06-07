@@ -382,11 +382,9 @@ xhrApi.create = function(options) {
   } else {
     var url = http.parseUrl(options.url);
     if(!url) {
-      throw {
-        message: 'Invalid url.',
-        details: {
-          url: options.url
-        }
+      var error = new Error('Invalid url.');
+      error.details = {
+        url: options.url
       };
     }
 
@@ -446,12 +444,9 @@ xhrApi.create = function(options) {
     case 'CONNECT':
     case 'TRACE':
     case 'TRACK':
-      // FIXME: handle exceptions
-      throw SECURITY_ERR;
+      throw new Error('CONNECT, TRACE and TRACK methods are disallowed');
     default:
-      // FIXME: handle exceptions
-      //throw new SyntaxError('Invalid method: ' + method);
-      throw SYNTAX_ERR;
+      throw new Error('Invalid method: ' + method);;
     }
 
     // TODO: other validation steps in algorithm are not implemented
@@ -495,8 +490,7 @@ xhrApi.create = function(options) {
   xhr.setRequestHeader = function(header, value) {
     // 1. if state is not OPENED or send flag is true, raise exception
     if(xhr.readyState != OPENED || _state.sendFlag) {
-      // FIXME: handle exceptions properly
-      throw INVALID_STATE_ERR;
+      throw new Error('XHR not open or sending');
     }
 
     // TODO: other validation steps in spec aren't implemented
@@ -514,8 +508,7 @@ xhrApi.create = function(options) {
     // 1. if state is not OPENED or 2. send flag is true, raise
     // an invalid state exception
     if(xhr.readyState != OPENED || _state.sendFlag) {
-       // FIXME: handle exceptions properly
-       throw INVALID_STATE_ERR;
+      throw new Error('XHR not open or sending');
     }
 
     // 3. ignore data if method is GET or HEAD
