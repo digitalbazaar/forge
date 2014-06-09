@@ -264,7 +264,7 @@ asn1.fromDer = function(bytes, strict) {
   }
 
   // minimum length for ASN.1 DER structure is 2
-  if(bytes.length() < 2)    {
+  if(bytes.length() < 2) {
     var error = new Error('Too few bytes to parse DER.');
     error.bytes = bytes.length();
     throw error;
