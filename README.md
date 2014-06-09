@@ -1065,27 +1065,31 @@ __Examples__
 var p12Der = forge.util.decode64(p12b64);
 // get p12 as ASN.1 object
 var p12Asn1 = forge.asn1.fromDer(p12Der);
-// decrypt p12
+// decrypt p12 using the password 'password'
 var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, 'password');
+// decrypt p12 using literally no password (eg: Mac OS X/apple push)
+var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1);
+// decrypt p12 using an "empty" password (eg: OpenSSL with no password input)
+var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '');
 // p12.safeContents is an array of safe contents, each of
 // which contains an array of safeBags
 
 // get bags by friendlyName
-var bags = pkcs12.getBags({friendlyName: 'test'});
+var bags = p12.getBags({friendlyName: 'test'});
 
 // get bags by localKeyId
-var bags = pkcs12.getBags({localKeyId: buffer});
+var bags = p12.getBags({localKeyId: buffer});
 
 // get bags by localKeyId (input in hex)
-var bags = pkcs12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879'});
+var bags = p12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879'});
 
 // get bags by type
-var bags = pkcs12.getBags({bagType: forge.pki.oids.certBag});
+var bags = p12.getBags({bagType: forge.pki.oids.certBag});
 // each bag as a 'cert' property with the certificate object
 var cert = bags[0].cert;
 
 // get bags by friendlyName and filter on bag type
-var bags = pkcs12.getBags({
+var bags = p12.getBags({
   friendlyName: 'test',
   bagType: forge.pki.oids.certBag
 });
