@@ -427,23 +427,23 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     var macKeyBytes = 0;
     var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
     switch(macAlgorithm) {
-    case pki.oids['sha1']:
+    case pki.oids.sha1:
       md = forge.md.sha1.create();
       macKeyBytes = 20;
       break;
-    case pki.oids['sha256']:
+    case pki.oids.sha256:
       md = forge.md.sha256.create();
       macKeyBytes = 32;
       break;
-    case pki.oids['sha384']:
+    case pki.oids.sha384:
       md = forge.md.sha384.create();
       macKeyBytes = 48;
       break;
-    case pki.oids['sha512']:
+    case pki.oids.sha512:
       md = forge.md.sha512.create();
       macKeyBytes = 64;
       break;
-    case pki.oids['md5']:
+    case pki.oids.md5:
       md = forge.md.md5.create();
       macKeyBytes = 16;
       break;
@@ -457,7 +457,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     var macIterations = (('macIterations' in capture) ?
       parseInt(forge.util.bytesToHex(capture.macIterations), 16) : 1);
     var macKey = p12.generateKey(
-      password || '', macSalt, 3, macIterations, macKeyBytes, md);
+      password, macSalt, 3, macIterations, macKeyBytes, md);
     var mac = forge.hmac.create();
     mac.start(md, macKey);
     mac.update(data.value);
@@ -518,11 +518,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
         break;
 
       case pki.oids.encryptedData:
-        if(password === undefined) {
-          throw new Error('Found PKCS#12 Encrypted SafeContents Data but ' +
-            'no password available.');
-        }
-        safeContents = _decryptSafeContents(data, password);
+        safeContents = _decryptSafeContents(data, password || '');
         obj.encrypted = true;
         break;
 
@@ -625,13 +621,10 @@ function _decodeSafeContents(safeContents, strict, password) {
         /* bagAsn1 has a EncryptedPrivateKeyInfo, which we need to decrypt.
            Afterwards we can handle it like a keyBag,
            which is a PrivateKeyInfo. */
-        if(password === undefined) {
-          throw new Error('Found PKCS#8 ShroudedKeyBag but no password available.');
-        }
-
-        bagAsn1 = pki.decryptPrivateKeyInfo(bagAsn1, password);
+        bagAsn1 = pki.decryptPrivateKeyInfo(bagAsn1, password || '');
         if(bagAsn1 === null) {
-          throw new Error('Unable to decrypt PKCS#8 ShroudedKeyBag, wrong password?');
+          throw new Error(
+            'Unable to decrypt PKCS#8 ShroudedKeyBag, wrong password?');
         }
 
         /* fall through */
@@ -649,8 +642,8 @@ function _decodeSafeContents(safeContents, strict, password) {
         validator = certBagValidator;
         decoder = function() {
           if(asn1.derToOid(capture.certId) !== pki.oids.x509Certificate) {
-            var error = new Error('Unsupported certificate type, only ' +
-              'X.509 supported.');
+            var error = new Error(
+              'Unsupported certificate type, only X.509 supported.');
             error.oid = asn1.derToOid(capture.certId);
             throw error;
           }
@@ -959,7 +952,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       forge.random.getBytes(options.saltSize));
     var count = options.count;
     // 160-bit key
-    var key = p12.generateKey(password || '', macSalt, 3, count, 20);
+    var key = p12.generateKey(password, macSalt, 3, count, 20);
     var mac = forge.hmac.create();
     mac.start(sha1, key);
     mac.update(asn1.toDer(safe).getBytes());
@@ -971,7 +964,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           // algorithm = SHA-1
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(pki.oids['sha1']).getBytes()),
+            asn1.oidToDer(pki.oids.sha1).getBytes()),
           // parameters = Null
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
         ]),
@@ -1015,7 +1008,8 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
 /**
  * Derives a PKCS#12 key.
  *
- * @param password the password to derive the key material from.
+ * @param password the password to derive the key material from, null or
+ *          undefined for none.
  * @param salt the salt, as a ByteBuffer, to use.
  * @param id the PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC).
  * @param iter the iteration count.
