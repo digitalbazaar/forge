@@ -15,9 +15,9 @@ function initModule(forge) {
 
 var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
-var crypto = null;
+var _crypto = null;
 if(!forge.disableNativeCode && _nodejs) {
-  crypto = require('crypto');
+  _crypto = require('crypto');
 }
 
 /* PRNG API */
@@ -251,10 +251,10 @@ prng.create = function(plugin) {
     // use window.crypto.getRandomValues strong source of entropy if available
     var getRandomValues = null;
     if(typeof window !== 'undefined') {
-      var crypto = window.crypto || window.msCrypto;
-      if(crypto && crypto.getRandomValues) {
+      var _crypto = window.crypto || window.msCrypto;
+      if(_crypto && _crypto.getRandomValues) {
         getRandomValues = function(arr) {
-          return crypto.getRandomValues(arr);
+          return _crypto.getRandomValues(arr);
         };
       }
     }
@@ -309,10 +309,10 @@ prng.create = function(plugin) {
     return b.getBytes(needed);
   }
   // initialize seed file APIs
-  if(crypto) {
+  if(_crypto) {
     // use nodejs async API
     ctx.seedFile = function(needed, callback) {
-      crypto.randomBytes(needed, function(err, bytes) {
+      _crypto.randomBytes(needed, function(err, bytes) {
         if(err) {
           return callback(err);
         }
@@ -321,7 +321,7 @@ prng.create = function(plugin) {
     };
     // use nodejs sync API
     ctx.seedFileSync = function(needed) {
-      return crypto.randomBytes(needed).toString();
+      return _crypto.randomBytes(needed).toString();
     };
   } else {
     ctx.seedFile = function(needed, callback) {

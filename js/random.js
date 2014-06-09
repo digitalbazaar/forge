@@ -113,10 +113,10 @@ var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
 var getRandomValues = null;
 if(typeof window !== 'undefined') {
-  var crypto = window.crypto || window.msCrypto;
-  if(crypto && crypto.getRandomValues) {
+  var _crypto = window.crypto || window.msCrypto;
+  if(_crypto && _crypto.getRandomValues) {
     getRandomValues = function(arr) {
-      return crypto.getRandomValues(arr);
+      return _crypto.getRandomValues(arr);
     };
   }
 }
