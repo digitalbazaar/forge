@@ -420,6 +420,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
      data.type !== asn1.Type.OCTETSTRING) {
     throw new Error('PKCS#12 authSafe content data is not an OCTET STRING.');
   }
+  data = _decodePkcs7Data(data);
 
   // check for MAC
   if(capture.mac) {
@@ -472,6 +473,28 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
 };
 
 /**
+ * Decodes PKCS#7 Data. PKCS#7 (RFC 2315) defines "Data" as an OCTET STRING,
+ * but it is sometimes an OCTET STRING that is composed/constructed of chunks,
+ * each its own OCTET STRING. This function transforms this corner-case into
+ * the usual simple, non-composed/constructed OCTET STRING.
+ *
+ * @param data the ASN.1 Data object to transform.
+ */
+function _decodePkcs7Data(data) {
+  // handle special case of "chunked" data content: an octet string composed
+  // of other octet strings
+  if(data.composed || data.constructed) {
+    var value = forge.util.createBuffer();
+    for(var i = 0; i < data.value.length; ++i) {
+      value.putBytes(data.value[i].value);
+    }
+    data.composed = data.constructed = false;
+    data.value = value.getBytes();
+  }
+  return data;
+}
+
+/**
  * Decode PKCS#12 AuthenticatedSafe (BER encoded) into PFX object.
  *
  * The AuthenticatedSafe is a BER-encoded SEQUENCE OF ContentInfo.
@@ -509,23 +532,21 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
     var safeContents = null;
     var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
-      case pki.oids.data:
-        if(data.tagClass !== asn1.Class.UNIVERSAL ||
-           data.type !== asn1.Type.OCTETSTRING) {
-          throw new Error('PKCS#12 SafeContents Data is not an OCTET STRING.');
-        }
-        safeContents = data.value;
-        break;
-
-      case pki.oids.encryptedData:
-        safeContents = _decryptSafeContents(data, password || '');
-        obj.encrypted = true;
-        break;
-
-      default:
-        var error = new Error('Unsupported PKCS#12 contentType.');
-        error.contentType = asn1.derToOid(capture.contentType);
-        throw error;
+    case pki.oids.data:
+      if(data.tagClass !== asn1.Class.UNIVERSAL ||
+         data.type !== asn1.Type.OCTETSTRING) {
+        throw new Error('PKCS#12 SafeContents Data is not an OCTET STRING.');
+      }
+      safeContents = _decodePkcs7Data(data).value;
+      break;
+    case pki.oids.encryptedData:
+      safeContents = _decryptSafeContents(data, password || '');
+      obj.encrypted = true;
+      break;
+    default:
+      var error = new Error('Unsupported PKCS#12 contentType.');
+      error.contentType = asn1.derToOid(capture.contentType);
+      throw error;
     }
 
     obj.safeBags = _decodeSafeContents(safeContents, strict, password);
@@ -534,11 +555,12 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
 }
 
 /**
- * Decrypt PKCS#7 EncryptedData structure
+ * Decrypt PKCS#7 EncryptedData structure.
  *
- * @param data ASN.1 encoded EncryptedContentInfo object
- * @param password The user-provided password
- * @return The decrypted SafeContents (ASN.1 object)
+ * @param data ASN.1 encoded EncryptedContentInfo object.
+ * @param password The user-provided password.
+ *
+ * @return The decrypted SafeContents (ASN.1 object).
  */
 function _decryptSafeContents(data, password) {
   var capture = {};
@@ -552,7 +574,8 @@ function _decryptSafeContents(data, password) {
 
   var oid = asn1.derToOid(capture.contentType);
   if(oid !== pki.oids.data) {
-    var error = new Error('PKCS#12 EncryptedContentInfo ContentType is not Data.');
+    var error = new Error(
+      'PKCS#12 EncryptedContentInfo ContentType is not Data.');
     error.oid = oid;
     throw error;
   }
@@ -575,7 +598,7 @@ function _decryptSafeContents(data, password) {
 /**
  * Decode PKCS#12 SafeContents (BER-encoded) into array of Bag objects.
  *
- * The safeContents is a BER-encoded SEQUENCE OF SafeBag
+ * The safeContents is a BER-encoded SEQUENCE OF SafeBag.
  *
  * @param {String} safeContents BER-encoded safeContents.
  * @param strict true to use strict DER decoding, false not to.
@@ -584,14 +607,19 @@ function _decryptSafeContents(data, password) {
  * @return {Array} Array of Bag objects.
  */
 function _decodeSafeContents(safeContents, strict, password) {
+  // if strict and no safe contents, return empty safes
+  if(!strict && safeContents.length === 0) {
+    return [];
+  }
+
   // actually it's BER-encoded
   safeContents = asn1.fromDer(safeContents, strict);
 
   if(safeContents.tagClass !== asn1.Class.UNIVERSAL ||
     safeContents.type !== asn1.Type.SEQUENCE ||
     safeContents.constructed !== true) {
-    throw new Error('PKCS#12 SafeContents expected to be a ' +
-      'SEQUENCE OF SafeBag');
+    throw new Error(
+      'PKCS#12 SafeContents expected to be a SEQUENCE OF SafeBag.');
   }
 
   var res = [];
