@@ -596,7 +596,8 @@ pki.decryptRsaPrivateKey = function(pem, password) {
 /**
  * Derives a PKCS#12 key.
  *
- * @param password the password to derive the key material from.
+ * @param password the password to derive the key material from, null or
+ *          undefined for none.
  * @param salt the salt, as a ByteBuffer, to use.
  * @param id the PKCS#12 ID byte (1 = key material, 2 = IV, 3 = MAC).
  * @param iter the iteration count.
@@ -618,10 +619,12 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
   /* Convert password to Unicode byte buffer + trailing 0-byte. */
   var passBuf = new forge.util.ByteBuffer();
-  for(l = 0; l < password.length; l++) {
-    passBuf.putInt16(password.charCodeAt(l));
+  if(password !== null && password !== undefined) {
+    for(l = 0; l < password.length; l++) {
+      passBuf.putInt16(password.charCodeAt(l));
+    }
+    passBuf.putInt16(0);
   }
-  passBuf.putInt16(0);
 
   /* Length of salt and password in BYTES. */
   var p = passBuf.length();
