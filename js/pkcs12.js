@@ -475,8 +475,12 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
 /**
  * Decodes PKCS#7 Data. PKCS#7 (RFC 2315) defines "Data" as an OCTET STRING,
  * but it is sometimes an OCTET STRING that is composed/constructed of chunks,
- * each its own OCTET STRING. This function transforms this corner-case into
- * the usual simple, non-composed/constructed OCTET STRING.
+ * each its own OCTET STRING. This is BER-encoding vs. DER-encoding. This
+ * function transforms this corner-case into the usual simple,
+ * non-composed/constructed OCTET STRING.
+ *
+ * This function may be moved to ASN.1 at some point to better deal with
+ * more BER-encoding issues, should they arise.
  *
  * @param data the ASN.1 Data object to transform.
  */
