@@ -17,7 +17,7 @@ var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
 var crypto = null;
 if(!forge.disableNativeCode && _nodejs) {
-  crypto = require('crypto');
+  crypto = global.require('crypto');
 }
 
 /* PRNG API */
