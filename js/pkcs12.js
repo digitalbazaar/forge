@@ -589,8 +589,8 @@ function _decryptSafeContents(data, password) {
   var cipher = pki.pbe.getCipher(oid, capture.encParameter, password);
 
   // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encryptedContent);
-
+  var encryptedContentAsn1 = _decodePkcs7Data(capture.encryptedContentAsn1);
+  var encrypted = forge.util.createBuffer(encryptedContentAsn1.value);
   cipher.update(encrypted);
   if(!cipher.finish()) {
     throw new Error('Failed to decrypt PKCS#12 SafeContents.');
