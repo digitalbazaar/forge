@@ -544,7 +544,7 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
       safeContents = _decodePkcs7Data(data).value;
       break;
     case pki.oids.encryptedData:
-      safeContents = _decryptSafeContents(data, password || '');
+      safeContents = _decryptSafeContents(data, password);
       obj.encrypted = true;
       break;
     default:
@@ -591,6 +591,7 @@ function _decryptSafeContents(data, password) {
   // get encrypted data
   var encryptedContentAsn1 = _decodePkcs7Data(capture.encryptedContentAsn1);
   var encrypted = forge.util.createBuffer(encryptedContentAsn1.value);
+
   cipher.update(encrypted);
   if(!cipher.finish()) {
     throw new Error('Failed to decrypt PKCS#12 SafeContents.');
@@ -653,7 +654,7 @@ function _decodeSafeContents(safeContents, strict, password) {
         /* bagAsn1 has a EncryptedPrivateKeyInfo, which we need to decrypt.
            Afterwards we can handle it like a keyBag,
            which is a PrivateKeyInfo. */
-        bagAsn1 = pki.decryptPrivateKeyInfo(bagAsn1, password || '');
+        bagAsn1 = pki.decryptPrivateKeyInfo(bagAsn1, password);
         if(bagAsn1 === null) {
           throw new Error(
             'Unable to decrypt PKCS#8 ShroudedKeyBag, wrong password?');
