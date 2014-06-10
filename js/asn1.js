@@ -1027,7 +1027,7 @@ asn1.prettyPrint = function(obj, level, indentation) {
       rval += oid;
       if(forge.pki && forge.pki.oids) {
         if(oid in forge.pki.oids) {
-          rval += ' (' + forge.pki.oids[oid] + ')';
+          rval += ' (' + forge.pki.oids[oid] + ') ';
         }
       }
     }
@@ -1037,9 +1037,18 @@ asn1.prettyPrint = function(obj, level, indentation) {
       } catch(ex) {
         rval += '0x' + forge.util.bytesToHex(obj.value);
       }
+    } else if(obj.type === asn1.Type.OCTETSTRING) {
+      if(!_nonLatinRegex.test(obj.value)) {
+        rval += '(' + obj.value + ') ';
+      }
+      rval += '0x' + forge.util.bytesToHex(obj.value);
+    } else if(obj.type === asn1.Type.UTF8) {
+      rval += forge.util.decodeUtf8(obj.value);
+    } else if(obj.type === asn1.Type.PRINTABLESTRING ||
+      obj.type === asn1.Type.IA5String) {
+      rval += obj.value;
     } else if(_nonLatinRegex.test(obj.value)) {
-      // FIXME: choose output (hex vs. printable) based on asn1.Type
-      rval += '0x' + forge.util.createBuffer(obj.value, 'utf8').toHex();
+      rval += '0x' + forge.util.bytesToHex(obj.value);
     } else if(obj.value.length === 0) {
       rval += '[null]';
     } else {
