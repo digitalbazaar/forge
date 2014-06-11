@@ -28,7 +28,8 @@ requirejs([
     'test/des',
     'test/pkcs7',
     'test/pkcs12',
-    'test/tls'
+    'test/tls',
+    'test/kem'
 ], function() {
     mocha.run();
 });
