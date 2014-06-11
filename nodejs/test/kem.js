@@ -22,6 +22,7 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL) {
       var out = initArray(65);
       var key1 = kem.encrypt(pair.publicKey, out, 0, 256);
 
+
       // console.log("out", out);
       // console.log("key1", key1);
 
