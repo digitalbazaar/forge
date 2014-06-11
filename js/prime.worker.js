@@ -89,7 +89,7 @@ function runMillerRabin(n) {
   }
   var d = n1.shiftRight(s);
 
-  var k = _getMillerRabinIterations(n);
+  var k = _getMillerRabinTests(n.bitLength());
   var prng = getPrng();
   var a;
   for(var i = 0; i < k; ++i) {
@@ -146,7 +146,7 @@ function getPrng() {
 }
 
 /**
- * Returns the required number of Miller-Rabin iterations to generate a
+ * Returns the required number of Miller-Rabin tests to generate a
  * prime with an error probability of (1/2)^80.
  *
  * See Handbook of Applied Cryptography Chapter 4, Table 4.4.
@@ -155,7 +155,7 @@ function getPrng() {
  *
  * @return the required number of iterations.
  */
-function _getMillerRabinIterations(bits) {
+function _getMillerRabinTests(bits) {
   if(bits <= 100) return 27;
   if(bits <= 150) return 18;
   if(bits <= 200) return 15;

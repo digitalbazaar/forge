@@ -581,6 +581,8 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
  * @return the state object to use to generate the key-pair.
  */
 pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
+  // TODO: migrate step-based prime generation code to forge.prime
+
   // set default bits
   if(typeof(bits) === 'string') {
     bits = parseInt(bits, 10);
@@ -709,9 +711,9 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
         if(state.num.bitLength() > bits) {
           // overflow, try again
           state.pqState = 0;
-        } else if(state.num.isProbablePrime(
           // do primality test
-          _getMillerRabinIterations(state.num.bitLength()))) {
+        } else if(state.num.isProbablePrime(
+          _getMillerRabinTests(state.num.bitLength()))) {
           ++state.pqState;
         } else {
           // get next potential prime
@@ -1497,6 +1499,8 @@ function _generateKeyPair(state, options, callback) {
     options = {};
   }
 
+  // TODO: migrate prime generation code to forge.prime
+
   // web workers unavailable, use setImmediate
   if(typeof(Worker) === 'undefined') {
     var step = function() {
@@ -1694,7 +1698,7 @@ function _bnToBytes(b) {
 }
 
 /**
- * Returns the required number of Miller-Rabin iterations to generate a
+ * Returns the required number of Miller-Rabin tests to generate a
  * prime with an error probability of (1/2)^80.
  *
  * See Handbook of Applied Cryptography Chapter 4, Table 4.4.
@@ -1703,7 +1707,7 @@ function _bnToBytes(b) {
  *
  * @return the required number of iterations.
  */
-function _getMillerRabinIterations(bits) {
+function _getMillerRabinTests(bits) {
   if(bits <= 100) return 27;
   if(bits <= 150) return 18;
   if(bits <= 200) return 15;

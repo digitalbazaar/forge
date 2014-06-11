@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright 2011-2013 Digital Bazaar, Inc.
+ * Copyright 2011-2014 Digital Bazaar, Inc.
  */
 (function() {
 var name = 'forge';
@@ -74,6 +74,7 @@ define([
   './pkcs1',
   './pkcs12',
   './pki',
+  './prime',
   './prng',
   './pss',
   './random',
