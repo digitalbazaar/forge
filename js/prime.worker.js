@@ -40,17 +40,11 @@ function findPrime(data) {
 
   // find nearest prime
   var workLoad = data.workLoad;
-  var e = new BigInteger(null);
-  e.fromInt(data.e);
   for(var i = 0; i < workLoad; ++i) {
     // do primality test
     if(isProbablePrime(num)) {
-      // ensure number is coprime with e
-      if(num.subtract(BigInteger.ONE).gcd(e).compareTo(BigInteger.ONE) === 0) {
-        return {found: true, prime: num.toString(16)};
-      }
+      return {found: true, prime: num.toString(16)};
     }
-
     // get next potential prime
     num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
   }

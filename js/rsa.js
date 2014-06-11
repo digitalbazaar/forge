@@ -1499,8 +1499,6 @@ function _generateKeyPair(state, options, callback) {
     options = {};
   }
 
-  // TODO: migrate prime generation code to forge.prime
-
   // web workers unavailable, use setImmediate
   if(typeof(Worker) === 'undefined') {
     var step = function() {
@@ -1514,6 +1512,8 @@ function _generateKeyPair(state, options, callback) {
     };
     return step();
   }
+
+  // TODO: migrate prime generation code to forge.prime
 
   // use web workers to generate keys
   var numWorkers = options.workers || 2;
@@ -1545,6 +1545,9 @@ function _generateKeyPair(state, options, callback) {
         return callback(err);
       }
       state.p = num;
+      if(state.q !== null) {
+        return finish(err, state.q);
+      }
       getPrime(state.qBits, finish);
     });
   }
@@ -1625,7 +1628,6 @@ function _generateKeyPair(state, options, callback) {
 
       // start prime search
       e.target.postMessage({
-        e: state.eInt,
         hex: hex,
         workLoad: workLoad
       });
@@ -1643,6 +1645,22 @@ function _generateKeyPair(state, options, callback) {
       var tmp = state.p;
       state.p = state.q;
       state.q = tmp;
+    }
+
+    // ensure p is coprime with e
+    if(state.p.subtract(BigInteger.ONE).gcd(state.e)
+      .compareTo(BigInteger.ONE) !== 0) {
+      state.p = null;
+      generate();
+      return;
+    }
+
+    // ensure q is coprime with e
+    if(state.q.subtract(BigInteger.ONE).gcd(state.e)
+      .compareTo(BigInteger.ONE) !== 0) {
+      state.q = null;
+      getPrime(state.qBits, finish);
+      return;
     }
 
     // compute phi: (p - 1)(q - 1) (Euler's totient function)
