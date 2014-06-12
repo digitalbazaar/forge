@@ -1334,7 +1334,7 @@ var options = {
   }
 };
 forge.prime.generateProbablePrime(bits, options, function(err, num) {
-    console.log('random prime', num.toString(16));
+  console.log('random prime', num.toString(16));
 });
 ```
 
