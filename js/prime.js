@@ -69,11 +69,11 @@ prime.generateProbablePrime = function(bits, options, callback) {
   algorithm.options = algorithm.options || {};
 
   // create prng with api that matches BigInteger secure random
-  options.prng = options.prng || forge.random;
+  var prng = options.prng || forge.random;
   var rng = {
     // x is an array to fill with bytes
     nextBytes: function(x) {
-      var b = options.prng.getBytesSync(x.length);
+      var b = prng.getBytesSync(x.length);
       for(var i = 0; i < x.length; ++i) {
         x[i] = b.charCodeAt(i);
       }
@@ -119,10 +119,9 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
     maxBlockTime = options.maxBlockTime;
   }
   var start = +new Date();
-  while(maxBlockTime === -1 || (+new Date() - start < maxBlockTime)) {
+  do {
     // overflow, regenerate random number
     if(num.bitLength() > bits) {
-      console.log('regenerate');
       num = generateRandom(bits, rng);
     }
     // do primality test
@@ -131,7 +130,7 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
     }
     // get next potential prime
     num.dAddOffset(GCD_30_DELTA[deltaIdx++ % 8], 0);
-  }
+  } while(maxBlockTime < 0 || (+new Date() - start < maxBlockTime));
 
   // keep trying (setImmediate would be better here)
   forge.util.setImmediate(function() {
