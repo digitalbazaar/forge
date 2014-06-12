@@ -11,7 +11,7 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL) {
   }
 
   describe('kem', function() {
-    it('should digest the empty string', function() {
+    it('should escrypt and decrypt', function() {
       
       var mgf = MGF.mgf1.create(MD.sha256.create());
       var kem = KEM.create(mgf);
@@ -22,11 +22,14 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL) {
       var out = initArray(65);
       var key1 = kem.encrypt(pair.publicKey, out, 0, 256);
 
+      console.log("key1", key1);
 
-      // console.log("out", out);
-      // console.log("key1", key1);
+      var key2 = kem.decrypt(pair.privateKey, out, 0, out.length, 256);
 
-      ASSERT.equal(1, 1);
+      console.log("key2", key2);
+
+      ASSERT.equal(key1, key2);
+
     });
   });
 }

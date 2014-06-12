@@ -88,12 +88,7 @@ forge.kem.asUnsignedByteArray = function(length, value) {
   }
 
   var tmp = initArray(length);
-  // for ( var i = 0; i<(length-count); i++ ) {
-  //   tmp.push(0);
-  // }
-  // for ( var i = 0; i<count; i++ ) {
-  //   tmp.push(bytes[start+i]);
-  // }
+
   arraycopy(bytes,start, tmp, tmp.length - count, count)
   return tmp;
 };
@@ -140,6 +135,38 @@ forge.kem.create = function(mgf1, rnd) {
             forge.kem.asUnsignedByteArray((n.bitLength() + 7) / 8, c);
 
       arraycopy(bytesC, 0, out, outOff, bytesC.length);
+
+      var bytesK = this.mgf1.generate(bytesR, keyLen);
+
+      return bytesK;
+    },
+    /**
+     * Decrypt an encapsulated session key.
+     * 
+     * @param key
+     *            the RSA private key to decrypt
+     * @param in
+     *            the input buffer for the encapsulated key.
+     * @param inOff
+     *            the offset for the input buffer.
+     * @param inLen
+     *            the length of the encapsulated key.
+     * @param keyLen
+     *            the length of the session key.
+     * @return the session key.
+     */
+    decrypt: function(key, input, inputOff, inputLen, keyLen) {
+
+      var n = key.n;
+      var d = key.d;
+
+      // Decode the input
+      var bytesC = initArray(inputLen);
+      arraycopy(input, inputOff, bytesC, 0, bytesC.length);
+      var c = new forge.jsbn.BigInteger(bytesC);
+
+      var r = c.modPow(d, n);
+      var bytesR = forge.kem.asUnsignedByteArray((n.bitLength() + 7) / 8, r);
 
       var bytesK = this.mgf1.generate(bytesR, keyLen);
 
