@@ -591,24 +591,24 @@ pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
 
   // create prng with api that matches BigInteger secure random
   options = options || {};
-  options.prng = options.prng || forge.random;
+  var prng = options.prng || forge.random;
   var rng = {
     // x is an array to fill with bytes
     nextBytes: function(x) {
-      var b = options.prng.getBytesSync(x.length);
+      var b = prng.getBytesSync(x.length);
       for(var i = 0; i < x.length; ++i) {
         x[i] = b.charCodeAt(i);
       }
     }
   };
 
-  options.algorithm = options.algorithm || 'PRIMEINC';
+  var algorithm = options.algorithm || 'PRIMEINC';
 
   // create PRIMEINC algorithm state
   var rval;
-  if(options.algorithm === 'PRIMEINC') {
+  if(algorithm === 'PRIMEINC') {
     rval = {
-      algorithm: options.algorithm || 'PRIMEINC',
+      algorithm: algorithm,
       state: 0,
       bits: bits,
       rng: rng,
@@ -624,7 +624,7 @@ pki.rsa.createKeyPairGenerationState = function(bits, e, options) {
     };
     rval.e.fromInt(rval.eInt);
   } else {
-    throw new Error('Invalid key generation algorithm: ' + options.algorithm);
+    throw new Error('Invalid key generation algorithm: ' + algorithm);
   }
 
   return rval;
@@ -665,6 +665,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
     state.algorithm = 'PRIMEINC';
   }
 
+  // TODO: migrate step-based prime generation code to forge.prime
   // TODO: abstract as PRIMEINC algorithm
 
   // do key generation (based on Tom Wu's rsa.js, see jsbn.js license)
@@ -1498,48 +1499,26 @@ function _generateKeyPair(state, options, callback) {
     callback = options;
     options = {};
   }
+  options = options || {};
 
-  // web workers unavailable, use setImmediate
-  if(typeof(Worker) === 'undefined') {
-    var step = function() {
-      // 10 ms gives 5ms of leeway for other calculations before dropping
-      // below 60fps (1000/60 == 16.67), but in reality, the number will
-      // likely be higher due to an 'atomic' big int modPow
-      if(pki.rsa.stepKeyPairGenerationState(state, 10)) {
-        return callback(null, state.keys);
+  var opts = {
+    algorithm: {
+      name: options.algorithm || 'PRIMEINC',
+      options: {
+        workers: options.workers || 2,
+        workLoad: options.workLoad || 100,
+        workerScript: options.workerScript
       }
-      forge.util.setImmediate(step);
-    };
-    return step();
+    }
+  };
+  if('prng' in options) {
+    opts.prng = options.prng;
   }
 
-  // TODO: migrate prime generation code to forge.prime
-
-  // use web workers to generate keys
-  var numWorkers = options.workers || 2;
-  var workLoad = options.workLoad || 100;
-  var range = workLoad * 30/8;
-  var workerScript = options.workerScript || 'forge/prime.worker.js';
-  var THIRTY = new BigInteger(null);
-  THIRTY.fromInt(30);
-  var op_or = function(x,y) { return x|y; };
-  if(numWorkers === -1) {
-    return forge.util.estimateCores(function(err, cores) {
-      if(err) {
-        // default to 2
-        cores = 2;
-      }
-      numWorkers = cores - 1;
-      generate();
-    });
-  }
   generate();
 
   function generate() {
-    // require at least 1 worker
-    numWorkers = Math.max(1, numWorkers);
-
-    // find p and then q (done in series to simplify setting worker number)
+    // find p and then q (done in series to simplify)
     getPrime(state.pBits, function(err, num) {
       if(err) {
         return callback(err);
@@ -1552,91 +1531,15 @@ function _generateKeyPair(state, options, callback) {
     });
   }
 
-  // implement prime number generation using web workers
   function getPrime(bits, callback) {
-    // TODO: consider optimizing by starting workers outside getPrime() ...
-    // note that in order to clean up they will have to be made internally
-    // asynchronous which may actually be slower
-
-    // start workers immediately
-    var workers = [];
-    for(var i = 0; i < numWorkers; ++i) {
-      // FIXME: fix path or use blob URLs
-      workers[i] = new Worker(workerScript);
-    }
-    var running = numWorkers;
-
-    // initialize random number
-    var num = generateRandom();
-
-    // listen for requests from workers and assign ranges to find prime
-    for(var i = 0; i < numWorkers; ++i) {
-      workers[i].addEventListener('message', workerMessage);
-    }
-
-    /* Note: The distribution of random numbers is unknown. Therefore, each
-    web worker is continuously allocated a range of numbers to check for a
-    random number until one is found.
-
-    Every 30 numbers will be checked just 8 times, because prime numbers
-    have the form:
-
-    30k+i, for i < 30 and gcd(30, i)=1 (there are 8 values of i for this)
-
-    Therefore, if we want a web worker to run N checks before asking for
-    a new range of numbers, each range must contain N*30/8 numbers.
-
-    For 100 checks (workLoad), this is a range of 375. */
-
-    function generateRandom() {
-      var bits1 = bits - 1;
-      var num = new BigInteger(bits, state.rng);
-      // force MSB set
-      if(!num.testBit(bits1)) {
-        num.bitwiseTo(BigInteger.ONE.shiftLeft(bits1), op_or, num);
-      }
-      // align number on 30k+1 boundary
-      num.dAddOffset(31 - num.mod(THIRTY).byteValue(), 0);
-      return num;
-    }
-
-    var found = false;
-    function workerMessage(e) {
-      // ignore message, prime already found
-      if(found) {
-        return;
-      }
-
-      --running;
-      var data = e.data;
-      if(data.found) {
-        // terminate all workers
-        for(var i = 0; i < workers.length; ++i) {
-          workers[i].terminate();
-        }
-        found = true;
-        return callback(null, new BigInteger(data.prime, 16));
-      }
-
-      // overflow, regenerate prime
-      if(num.bitLength() > bits) {
-        num = generateRandom();
-      }
-
-      // assign new range to check
-      var hex = num.toString(16);
-
-      // start prime search
-      e.target.postMessage({
-        hex: hex,
-        workLoad: workLoad
-      });
-
-      num.dAddOffset(range, 0);
-    }
+    forge.prime.generateProbablePrime(bits, opts, callback);
   }
 
   function finish(err, num) {
+    if(err) {
+      return callback(err);
+    }
+
     // set q
     state.q = num;
 
@@ -1793,11 +1696,12 @@ define([
   'require',
   'module',
   './asn1',
-  './oids',
-  './random',
-  './util',
   './jsbn',
-  './pkcs1'
+  './oids',
+  './pkcs1',
+  './prime',
+  './random',
+  './util'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
