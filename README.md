@@ -204,6 +204,7 @@ may retain it, so long as that license is compatible with the Forge license.
 
 ### Utilities
 
+* [Prime](#prime)
 * [PRNG](#prng)
 * [Tasks](#task)
 * [Utilities](#util)
@@ -1308,6 +1309,34 @@ console.log(hmac.digest().toHex());
 
 ---------------------------------------
 ## Message Digests
+
+<a name="prime" />
+### Prime
+
+Provides an API for generating large, random, probable primes.
+
+__Examples__
+
+```js
+// generate a random prime on the main JS thread
+var bits = 1024;
+forge.prime.generateProbablePrime(bits, function(err, num) {
+  console.log('random prime', num.toString(16));
+});
+
+// generate a random prime using Web Workers (if available, otherwise
+// falls back to the main thread)
+var bits = 1024;
+var options = {
+  algorithm: {
+    name: 'PRIMEINC',
+    workers: -1 // auto-optimize # of workers
+  }
+};
+forge.prime.generateProbablePrime(bits, options, function(err, num) {
+    console.log('random prime', num.toString(16));
+});
+```
 
 <a name="prng" />
 ### PRNG
