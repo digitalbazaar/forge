@@ -1308,7 +1308,7 @@ console.log(hmac.digest().toHex());
 ```
 
 ---------------------------------------
-## Message Digests
+## Utilities
 
 <a name="prime" />
 ### Prime
