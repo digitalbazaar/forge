@@ -661,7 +661,7 @@ p7.createEnvelopedData = function() {
     addRecipient: function(cert) {
       msg.recipients.push({
         version: 0,
-        issuer: cert.subject.attributes,
+        issuer: cert.issuer.attributes,
         serialNumber: cert.serialNumber,
         encryptedContent: {
           // We simply assume rsaEncryption here, since forge.pki only
