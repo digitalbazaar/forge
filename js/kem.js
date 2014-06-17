@@ -184,7 +184,7 @@ forge.kem.create = function(mgf1, rnd) {
 
       var bytesK = this.mgf1.generate(bytesR, keyLen);
 
-      return utf8ToByes(bytesK);
+      return strToBytes(bytesK);
     },
     /**
      * Decrypt an encapsulated session key.
@@ -216,7 +216,7 @@ forge.kem.create = function(mgf1, rnd) {
 
       var bytesK = this.mgf1.generate(bytesR, keyLen);
 
-      return utf8ToByes(bytesK);
+      return strToBytes(bytesK);
     }
 
 

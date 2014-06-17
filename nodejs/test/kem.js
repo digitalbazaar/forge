@@ -58,8 +58,8 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
     for (var i = 0; i < hex.length; i += 2) {
       var n =parseInt(hex.substr(i, 2), 16);
       
-      if ( n > 127 ) n = n - 256;
-      console.log("n",n)
+      // if ( n > 127 ) n = n - 256;
+      // console.log("n",n)
       str += String.fromCharCode(n);
     }
      
@@ -68,11 +68,13 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
 
   function strToBytes (str) {
     str = hex2a(str);
+    console.log("strToBytes.str: ", str);
 
     var bytes = [];
     for ( var i=0; i<str.length; i++ ) {
       bytes.push(str.charCodeAt(i));
     }
+    console.log("strToBytes.bytes: ", bytes);
     return bytes;
   }
 
@@ -92,6 +94,7 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
       var key1 = kem.encrypt(pair.publicKey, out, 0, 256);
 
       console.log("key1", key1);
+      console.log("out", out.length);
 
       var key2 = kem.decrypt(pair.privateKey, out, 0, out.length, 256);
 
@@ -124,18 +127,20 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
       // var pair = RSA.generateKeyPair(512);
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
-      console.log("rsaPrivateKey", rsaPrivateKey.n.bitLength());
+      // console.log("rsaPrivateKey", rsaPrivateKey.n.bitLength());
       
+      console.log("expectedK");
       var expectedC0 = strToBytes(C0);
       var expectedK = strToBytes(K);
+
 
       var out = initArray(64);
       var generatedKey = kem.encrypt(rsaPublicKey, out, 0, 128);
       // console.log('expectedK', expectedK);
-      // console.log('generatedKey',generatedKey);
+      console.log('generatedKey',generatedKey);
       // ASSERT.deepEqual(expectedK,generatedKey);
-      console.log('expectedC0', expectedC0)
-      console.log('out',out);
+      // console.log('expectedC0', expectedC0)
+      // console.log('out',out);
       ASSERT.deepEqual(expectedC0,out);
 
 
