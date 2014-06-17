@@ -134,9 +134,7 @@ forge.kem.create = function(mgf1, rnd) {
       var bytesC = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), c);
       arraycopy(bytesC, 0, out, outOff, bytesC.length);
 
-      // console.log("keyLen", keyLen);
       var bytesK = this.mgf1.generate(bytesR, keyLen);
-      // console.log("bytesK", bytesK);
 
       return bytesK;
     },
