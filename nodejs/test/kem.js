@@ -20,8 +20,9 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
   }
 
   function FixedSecureRandom(str) {
-    var _str = str;
-    var bytes = strToBytes(str);
+    // var _str = str;
+    var _str = UTIL.hexToBytes(str);
+    // console.log("Rnd.bytes: ",UTIL.createBuffer( bytes, 'raw').getBytes());
     var index = 0;
     
     // for ( var i = 0; i < str.length; ++i ) {
@@ -29,57 +30,28 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
     // }
 
     this.getBytes = this.getBytesSync = function(count, callback) {
-      // var r = _str.substr(index,count);
-      // console.log('count', count);
-
-      var out = initArray(count);
-      arraycopy(bytes, index, out, 0, out.length);
+      var r = _str.substr(index,count);
         
       index += count;
 
-      // var result = "";
-      // for (var i = 0; i < out.length; i++) {
-      //   result += String.fromCharCode(parseInt(out[i],8));
-      // }
-      // return result;
-      var result = "";
-      for (var i = 0; i < out.length; i++) {
-        result += out[i].toString();
-      }
-      return result;
-      // return r;
+      return r;
     }
-
-
   }
 
-  function hex2a(hex) {
-    var str = '';
-    for (var i = 0; i < hex.length; i += 2) {
-      var n =parseInt(hex.substr(i, 2), 16);
-      
-      // if ( n > 127 ) n = n - 256;
-      // console.log("n",n)
-      str += String.fromCharCode(n);
-    }
-     
-    return str;
-  } 
-
-  function strToBytes (str) {
-    str = hex2a(str);
-    console.log("strToBytes.str: ", str);
-
+  function bytesToArray(str) {
     var bytes = [];
-    for ( var i=0; i<str.length; i++ ) {
-      bytes.push(str.charCodeAt(i));
+    for ( var i = 0; i < str.length; ++i ) {
+      var c = str.charCodeAt(i);
+      if ( c > 127 ) c = c - 256;
+      bytes.push(c);
     }
-    console.log("strToBytes.bytes: ", bytes);
     return bytes;
   }
 
+  // function arrayToByteStr(bytes) {
+  //   var str = "";
 
-
+  // }
 
   describe('kem', function() {
     it('should escrypt and decrypt', function() {
@@ -94,13 +66,13 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
       var key1 = kem.encrypt(pair.publicKey, out, 0, 256);
 
       console.log("key1", key1);
-      console.log("out", out.length);
+      // console.log("out", out.length);
 
       var key2 = kem.decrypt(pair.privateKey, out, 0, out.length, 256);
 
       console.log("key2", key2);
 
-      ASSERT.deepEqual(key1, key2);
+      ASSERT.equal(key1, key2);
 
     });
   });
@@ -113,7 +85,7 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
       var d = "3202313555859948186315374524474173995679783580392140237044349728046479396037520308981353808895461806395564474639124525446044708705259675840210989546479265";
 
       var C0 = "4603e5324cab9cef8365c817052d954d44447b1667099edc69942d32cd594e4ffcf268ae3836e2c35744aaa53ae201fe499806b67dedaa26bf72ecbd117a6fc0";
-      var K = "10a2403db42a8743cb989de86e668d168cbe604611ac179f819a3d18412e9eb45668f2923c087c12fee0c5a0d2a8aa70185401fbbd99379ec76c663e875a60b4aacb1319fa11c3365a8b79a44669f26fb555c80391847b05eca1cb5cf8c2d531448d33fbaca19f6410ee1fcb260892670e0814c348664f6a7248aaf998a3acc6";
+      var K = "5f8de105b5e96b2e490ddecbd147dd1def7e3b8e0e6a26eb7b956ccb8b3bdc1ca975bc57c3989e8fbad31a224655d800c46954840ff32052cdf0d640562bdfadfa263cfccf3c52b29f2af4a1869959bc77f854cf15bd7a25192985a842dbff8e13efee5b7e7e55bbe4d389647c686a9a9ab3fb889b2d7767d3837eea4e0a2f04";
 
       var mgf = MGF.mgf1.create(MD.sha1.create());
       
@@ -122,26 +94,23 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN) {
 
       var kem = KEM.create(mgf, rnd);
 
-      // console.log(kem);
-
-      // var pair = RSA.generateKeyPair(512);
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
-      // console.log("rsaPrivateKey", rsaPrivateKey.n.bitLength());
       
-      console.log("expectedK");
-      var expectedC0 = strToBytes(C0);
-      var expectedK = strToBytes(K);
+      var expectedC0 = UTIL.hexToBytes(C0);
+      var expectedK = UTIL.hexToBytes(K);
 
 
       var out = initArray(64);
       var generatedKey = kem.encrypt(rsaPublicKey, out, 0, 128);
-      // console.log('expectedK', expectedK);
+      console.log('expectedK(array)', bytesToArray(expectedK));
+      console.log('expectedK', expectedK);
+      console.log('generatedKey(array)',bytesToArray(generatedKey));
       console.log('generatedKey',generatedKey);
-      // ASSERT.deepEqual(expectedK,generatedKey);
-      // console.log('expectedC0', expectedC0)
+      ASSERT.equal(expectedK,generatedKey);
+      // console.log('expectedC0', bytesToArray(expectedC0));
       // console.log('out',out);
-      ASSERT.deepEqual(expectedC0,out);
+      ASSERT.deepEqual(bytesToArray(expectedC0),out);
 
 
 
