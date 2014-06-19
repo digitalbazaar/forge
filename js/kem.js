@@ -3,7 +3,7 @@
  *
  * @author Lautaro Cozzani Rodriguez
  *
- * Copyright (c) 2014 Stefan Siegl <lautaro.cozzani@scytl.com>
+ * Copyright (c) 2014 Lautaro Cozzani <lautaro.cozzani@scytl.com>
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -35,6 +35,25 @@ function initArray(length) {
   return array;
 }
 
+function byteArrayToString(bytes) {
+  // var str = "";
+  var t = new forge.util.ByteBuffer();
+  for ( var i=0; i<bytes.length; i++ ) {
+    // str += String.fromCharCode(bytes[i]);
+    t.putInt32(bytes[i]);
+  }
+  return t.getBytes();
+}
+
+function bytesToArray(str) {
+    var bytes = [];
+    for ( var i = 0; i < str.length; ++i ) {
+      var c = str.charCodeAt(i);
+      if ( c > 127 ) c = c - 256;
+      bytes.push(c);
+    }
+    return bytes;
+  }
 
 var MAX_ITERATIONS = 1000;
 
@@ -94,6 +113,15 @@ forge.kem.asUnsignedByteArray = function(length, value) {
   return tmp;
 };
 
+function bnToBytes(b) {
+  // prepend 0x00 if first byte >= 0x80
+  var hex = b.toString(16);
+  if(hex[0] >= '8') {
+    hex = '00' + hex;
+  }
+  return forge.util.hexToBytes(hex);
+}
+
 forge.kem.create = function(mgf1, rnd) {
 
   if ( !rnd ) {
@@ -126,7 +154,8 @@ forge.kem.create = function(mgf1, rnd) {
       var r =  forge.kem.createRandomInRange(forge.jsbn.BigInteger.ZERO, n.subtract(forge.jsbn.BigInteger.ONE), this.rnd);
 
       //byte[]
-      var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
+      // var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
+
 
       // Encrypt the random and encode it
       var c = r.modPow(e, n);
@@ -134,7 +163,8 @@ forge.kem.create = function(mgf1, rnd) {
       var bytesC = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), c);
       arraycopy(bytesC, 0, out, outOff, bytesC.length);
 
-      var bytesK = this.mgf1.generate(bytesR, keyLen);
+      // var bytesK = this.mgf1.generate(byteArrayToString(bytesR), keyLen);
+      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);
 
       return bytesK;
     },
@@ -164,9 +194,11 @@ forge.kem.create = function(mgf1, rnd) {
       var c = new forge.jsbn.BigInteger(bytesC);
 
       var r = c.modPow(d, n);
-      var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
+      // var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
 
-      var bytesK = this.mgf1.generate(bytesR, keyLen);
+      // var bytesK = this.mgf1.generate(byteArrayToString(bytesR), keyLen);
+      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);
+      
 
       return bytesK;
     }
