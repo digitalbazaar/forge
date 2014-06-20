@@ -21,8 +21,9 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
  *
  * @return a mask generation function object.
  */
-mgf1.create = function(md, digestLength) {
+mgf1.create = function(md, digestLength, counterStart) {
   digestLength = digestLength || md.digestLength;
+  counterStart = counterStart || 0;
   var mgf = {
     /**
      * Generate mask of specified length.
@@ -36,11 +37,11 @@ mgf1.create = function(md, digestLength) {
       var t = new forge.util.ByteBuffer();
 
       /* 3. For counter from 0 to ceil(maskLen / hLen), do the following: */
-      var len = Math.ceil((maskLen + digestLength - 1) / digestLength);
+      var len = Math.ceil((maskLen + digestLength - 1) / digestLength) + counterStart;
       
       var outOffset = 0;
       var outLength = maskLen;
-      for(var i = 0; i < len; i++) {
+      for(var i = counterStart; i < len; i++) {
         /* a. Convert counter to an octet string C of length 4 octets */
         var c = new forge.util.ByteBuffer();
         c.putInt32(i);
