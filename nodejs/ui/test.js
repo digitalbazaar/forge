@@ -29,8 +29,7 @@ requirejs([
     'test/pkcs7',
     'test/pkcs12',
     'test/tls',
-    'test/kem',
-    'test/kdf'
+    'test/kem'
 ], function() {
     mocha.run();
 });
