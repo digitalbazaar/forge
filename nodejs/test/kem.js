@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN, KDF) {
+function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN, KDF, RANDOM) {
 
   function initArray(length) {
     var array = [];
@@ -56,6 +56,7 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN, KDF) {
   describe('kem', function() {
     it('should escrypt and decrypt', function() {
       for ( var i=0; i<1; i++ ) {
+        
         var kdf = KDF.create(MD.sha256.create());
         var kem = KEM.create(kdf);
         // console.log(kem);
@@ -65,12 +66,12 @@ function Tests(ASSERT, KEM, MD, MGF, RSA, UTIL, JSBN, KDF) {
         var out = initArray(64);
         var key1 = kem.encrypt(pair.publicKey, out, 0, 256);
 
-        console.log("key1", bytesToArray(key1));
+        console.log("key1", bytesToArray(key1).length);
         // console.log("out", out.length);
 
         var key2 = kem.decrypt(pair.privateKey, out, 0, out.length, 256);
 
-        console.log("key2", bytesToArray(key2));
+        console.log("key2", bytesToArray(key2).length);
 
         ASSERT.equal(key1, key2);
 
@@ -159,8 +160,9 @@ if(typeof define === 'function') {
     'forge/rsa',
     'forge/util',
     'forge/jsbn',
-    'forge/kdf'
-  ], function(KEM, MD, MGF, RSA, UTIL, JSBN, KFD) {
+    'forge/kdf',
+    'forge/random'
+  ], function(KEM, MD, MGF, RSA, UTIL, JSBN, KFD, RANDOM) {
     Tests(
       // Global provided by test harness
       ASSERT,
@@ -170,7 +172,8 @@ if(typeof define === 'function') {
       RSA(),
       UTIL(),
       JSBN(),
-      KFD()
+      KFD(),
+      RANDOM()
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -183,7 +186,8 @@ if(typeof define === 'function') {
     require('../../js/rsa')(),
     require('../../js/util')(),
     require('../../js/jsbn')(),
-    require('../../js/kdf')());
+    require('../../js/kdf')(),
+    require('../../js/random')());
 }
 
 })();
