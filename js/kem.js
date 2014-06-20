@@ -35,16 +35,9 @@ function initArray(length) {
   return array;
 }
 
-function byteArrayToString(bytes) {
-  // var str = "";
-  var t = new forge.util.ByteBuffer();
-  for ( var i=0; i<bytes.length; i++ ) {
-    // str += String.fromCharCode(bytes[i]);
-    t.putInt32(bytes[i]);
-  }
-  return t.getBytes();
-}
-
+/*
+* Convert String of Bytes in a byte[] as singed char [-128,127]
+*/
 function bytesToArray(str) {
     var bytes = [];
     for ( var i = 0; i < str.length; ++i ) {
@@ -113,6 +106,9 @@ forge.kem.asUnsignedByteArray = function(length, value) {
   return tmp;
 };
 
+/*
+* Convert BigInteger to string of Bytes
+*/
 function bnToBytes(b) {
   // prepend 0x00 if first byte >= 0x80
   var hex = b.toString(16);
@@ -122,6 +118,9 @@ function bnToBytes(b) {
   return forge.util.hexToBytes(hex);
 }
 
+/*
+ * The RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
+ */
 forge.kem.create = function(mgf1, rnd) {
 
   if ( !rnd ) {
@@ -143,7 +142,6 @@ forge.kem.create = function(mgf1, rnd) {
     * @return the random session key.
     */
     encrypt: function(key, out, outOff, keyLen) {
-      // console.log("key", key);
 
       //BigInteger
       var n = key.n;
@@ -153,21 +151,17 @@ forge.kem.create = function(mgf1, rnd) {
       //BigInteger
       var r =  forge.kem.createRandomInRange(forge.jsbn.BigInteger.ZERO, n.subtract(forge.jsbn.BigInteger.ONE), this.rnd);
 
-      //byte[]
-      // var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
-
-
       // Encrypt the random and encode it
       var c = r.modPow(e, n);
 
       var bytesC = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), c);
       arraycopy(bytesC, 0, out, outOff, bytesC.length);
 
-      // var bytesK = this.mgf1.generate(byteArrayToString(bytesR), keyLen);
       var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);
 
       return bytesK;
     },
+
     /**
      * Decrypt an encapsulated session key.
      * 
@@ -194,18 +188,13 @@ forge.kem.create = function(mgf1, rnd) {
       var c = new forge.jsbn.BigInteger(bytesC);
 
       var r = c.modPow(d, n);
-      // var bytesR = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), r);
 
-      // var bytesK = this.mgf1.generate(byteArrayToString(bytesR), keyLen);
-      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);
-      
+      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);      
 
       return bytesK;
     }
 
-
   };
-
 
   return kem;
 };
