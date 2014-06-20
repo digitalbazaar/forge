@@ -14,6 +14,10 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
 
 /**
  * Creates a MGF1 mask generation function object.
+ * @param md sha1/sha256
+ * @param digestLength  the number of bytes of the digest to to be used as the source
+ *                      of derived keys. Must be positive, equal or less than the
+ *                      digest's bytes
  *
  * @return a mask generation function object.
  */
