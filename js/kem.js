@@ -96,7 +96,7 @@ forge.kem.rsa = {};
  * will produce the same secret key for the recipient to use to decrypt a
  * message that was encrypted with the secret key.
  */
-forge.kem.create = function(kdf, options) {
+forge.kem.rsa.create = function(kdf, options) {
   options = options || {};
   var rng = options.rng || forge.random;
 

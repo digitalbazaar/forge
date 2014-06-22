@@ -19,7 +19,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
   describe('kem', function() {
     it('should encrypt and decrypt', function() {
       var kdf = new KEM.kdf1(MD.sha256.create());
-      var kem = KEM.create(kdf);
+      var kem = KEM.rsa.create(kdf);
 
       var pair = RSA.generateKeyPair(512);
 
@@ -51,7 +51,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
 
-      var kem = KEM.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {rng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
@@ -79,7 +79,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
 
-      var kem = KEM.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {rng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
@@ -107,7 +107,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
 
-      var kem = KEM.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {rng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
@@ -135,7 +135,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
 
-      var kem = KEM.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {rng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
