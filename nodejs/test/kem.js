@@ -17,7 +17,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
   }
 
   describe('kem', function() {
-    it('should encrypt and decrypt', function() {
+    it('should generate and encrypt a symmetric key and decrypt it', function() {
       var kdf = new KEM.kdf1(MD.sha256.create());
       var kem = KEM.rsa.create(kdf);
 
@@ -34,11 +34,10 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
   /**
    * According to section "C.6 Test vectors for RSA-KEM" from ISO-18033-2 final
-   * draft
+   * draft.
    */
-  describe('RsaKeyEncapsulationTestVectors', function() {
-    // C.6.1
-    it('Test 1', function() {
+  describe('C.6 Test vectors for RSA-KEM from ISO-18033-2 final', function() {
+    it('should pass test vector C.6.1', function() {
 
       var n = '5888113332502691251761936431009284884966640757179802337490546478326238537107326596800820237597139824869184990638749556269785797065508097452399642780486933';
       var e = '65537';
@@ -65,8 +64,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
     });
 
-    // C.6.2
-    it('Test 2', function() {
+    it('should pass test vector C.6.2', function() {
 
       var n = '5888113332502691251761936431009284884966640757179802337490546478326238537107326596800820237597139824869184990638749556269785797065508097452399642780486933';
       var e = '65537';
@@ -93,8 +91,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
     });
 
-    // C.6.3
-    it('Test 3', function() {
+    it('should pass test vector C.6.3', function() {
 
       var n = '5888113332502691251761936431009284884966640757179802337490546478326238537107326596800820237597139824869184990638749556269785797065508097452399642780486933';
       var e = '65537';
@@ -121,8 +118,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
     });
 
-    // C.6.4
-    it('Test 4', function() {
+    it('should pass test vector C.6.4', function() {
 
       var n = '5888113332502691251761936431009284884966640757179802337490546478326238537107326596800820237597139824869184990638749556269785797065508097452399642780486933';
       var e = '65537';
