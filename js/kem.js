@@ -100,66 +100,63 @@ forge.kem.rsa.create = function(kdf, options) {
   options = options || {};
   var rng = options.rng || forge.random;
 
-  var kem = {
-    /**
-    * @param {Object} key the RSA public key to encrypt
-    * @param {byte[]} out the output buffer for the encapsulated key.
-    * @param {int} outOff the offset for the output buffer.
-    * @param {int} keyLen the length of the random session key.
-    *
-    * @return the ciphertext for generating the secret key and the secret key.
-    */
-    encrypt: function(key, keyLen) {
-      var n = key.n;
-      var e = key.e;
+  var kem = {};
 
-      // generate a random
-      var r =  forge.kem.createRandomInRange(
-        forge.jsbn.BigInteger.ZERO,
-        n.subtract(forge.jsbn.BigInteger.ONE),
-        rng);
+  /**
+   * @param {Object} key the RSA public key to encrypt
+   * @param {byte[]} out the output buffer for the encapsulated key.
+   * @param {int} outOff the offset for the output buffer.
+   * @param {int} keyLen the length of the random session key.
+   *
+   * @return the ciphertext for generating the secret key and the secret key.
+   */
+  kem.encrypt = function(key, keyLen) {
+    // generate a random
+    var r =  forge.kem.createRandomInRange(
+      forge.jsbn.BigInteger.ZERO,
+      key.n.subtract(forge.jsbn.BigInteger.ONE),
+      rng);
+    r = bnToBytes(r);
 
-      // FIXME: use key.encrypt
-      // encrypt the random
-      var c = r.modPow(e, n);
-      var ciphertext = forge.util.hexToBytes(c.toString(16));
+    // encrypt the random
+    var ciphertext = key.encrypt(r, 'NONE');
 
-      var secretKey = kdf.generate(bnToBytes(r), keyLen);
+    // generate the secret key
+    var secretKey = kdf.generate(r, keyLen);
 
-      return {
-        ciphertext: ciphertext,
-        key: secretKey
-      };
-    },
+    return {
+      ciphertext: ciphertext,
+      key: secretKey
+    };
+  };
 
-    /**
-     * Decrypt an encapsulated session key.
-     *
-     * @param key
-     *            the RSA private key to decrypt
-     * @param in
-     *            the input buffer for the encapsulated key.
-     * @param inOff
-     *            the offset for the input buffer.
-     * @param inLen
-     *            the length of the encapsulated key.
-     * @param keyLen
-     *            the length of the session key.
-     * @return the session key.
-     */
-    decrypt: function(key, ciphertext, keyLen) {
-      var n = key.n;
-      var d = key.d;
+  /**
+   * Decrypt an encapsulated session key.
+   *
+   * @param key
+   *            the RSA private key to decrypt
+   * @param in
+   *            the input buffer for the encapsulated key.
+   * @param inOff
+   *            the offset for the input buffer.
+   * @param inLen
+   *            the length of the encapsulated key.
+   * @param keyLen
+   *            the length of the session key.
+   * @return the session key.
+   */
+  kem.decrypt = function(key, ciphertext, keyLen) {
+    var n = key.n;
+    var d = key.d;
+    var c = new forge.jsbn.BigInteger(forge.util.bytesToHex(ciphertext), 16);
+    var r = c.modPow(d, n);
+    return kdf.generate(bnToBytes(r), keyLen);
 
-      // FIXME: use key.decrypt
-      // Decode the input
-      var c = new forge.jsbn.BigInteger(forge.util.bytesToHex(ciphertext), 16);
-
-      var r = c.modPow(d, n);
-
-      return kdf.generate(bnToBytes(r), keyLen);
-    }
-
+    // FIXME:
+    // decrypt the input
+    //var r = key.decrypt(ciphertext, 'NONE');
+    // generate the secret key
+    //return kdf.generate(r, keyLen);
   };
 
   return kem;
