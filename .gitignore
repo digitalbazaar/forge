@@ -19,3 +19,4 @@ dist
 js/forge.bundle.js
 node_modules
 tests/forge
+js/forge.min.js

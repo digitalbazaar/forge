@@ -84,7 +84,8 @@ define([
   './util',
   './md',
   './mgf1',
-  './ssh'
+  './ssh',
+  './kem'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });

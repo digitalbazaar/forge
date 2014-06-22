@@ -14,10 +14,16 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
 
 /**
  * Creates a MGF1 mask generation function object.
+ * @param md sha1/sha256
+ * @param digestLength  the number of bytes of the digest to to be used as the source
+ *                      of derived keys. Must be positive, equal or less than the
+ *                      digest's bytes
  *
  * @return a mask generation function object.
  */
-mgf1.create = function(md) {
+mgf1.create = function(md, digestLength, counterStart) {
+  digestLength = digestLength || md.digestLength;
+  counterStart = counterStart || 0;
   var mgf = {
     /**
      * Generate mask of specified length.
@@ -31,8 +37,11 @@ mgf1.create = function(md) {
       var t = new forge.util.ByteBuffer();
 
       /* 3. For counter from 0 to ceil(maskLen / hLen), do the following: */
-      var len = Math.ceil(maskLen / md.digestLength);
-      for(var i = 0; i < len; i++) {
+      var len = Math.ceil((maskLen + digestLength - 1) / digestLength) + counterStart;
+      
+      var outOffset = 0;
+      var outLength = maskLen;
+      for(var i = counterStart; i < len; i++) {
         /* a. Convert counter to an octet string C of length 4 octets */
         var c = new forge.util.ByteBuffer();
         c.putInt32(i);
@@ -41,7 +50,18 @@ mgf1.create = function(md) {
          * string T: */
         md.start();
         md.update(seed + c.getBytes());
-        t.putBuffer(md.digest());
+        var dig = md.digest();
+
+        if (outLength > digestLength) {
+            // System.arraycopy(dig, 0, out, outOffset, digestLength);
+            outOffset += digestLength;
+            outLength -= digestLength;
+            var subDig = dig.getBytes().substr(0,digestLength); 
+            t.putBytes(subDig);
+        } else {
+            // System.arraycopy(dig, 0, out, outOffset, outLength);
+            t.putBuffer(dig);
+        }
       }
 
       /* Output the leading maskLen octets of T as the octet string mask. */
