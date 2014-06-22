@@ -2,8 +2,10 @@
  * Javascript implementation of mask generation function MGF1.
  *
  * @author Stefan Siegl
+ * @author Dave Longley
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -14,16 +16,12 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
 
 /**
  * Creates a MGF1 mask generation function object.
- * @param md sha1/sha256
- * @param digestLength  the number of bytes of the digest to to be used as the source
- *                      of derived keys. Must be positive, equal or less than the
- *                      digest's bytes
+ *
+ * @param md the message digest API to use (eg: forge.md.sha1.create()).
  *
  * @return a mask generation function object.
  */
-mgf1.create = function(md, digestLength, counterStart) {
-  digestLength = digestLength || md.digestLength;
-  counterStart = counterStart || 0;
+mgf1.create = function(md) {
   var mgf = {
     /**
      * Generate mask of specified length.
@@ -37,11 +35,8 @@ mgf1.create = function(md, digestLength, counterStart) {
       var t = new forge.util.ByteBuffer();
 
       /* 3. For counter from 0 to ceil(maskLen / hLen), do the following: */
-      var len = Math.ceil((maskLen + digestLength - 1) / digestLength) + counterStart;
-      
-      var outOffset = 0;
-      var outLength = maskLen;
-      for(var i = counterStart; i < len; i++) {
+      var len = Math.ceil(maskLen / md.digestLength);
+      for(var i = 0; i < len; i++) {
         /* a. Convert counter to an octet string C of length 4 octets */
         var c = new forge.util.ByteBuffer();
         c.putInt32(i);
@@ -50,18 +45,7 @@ mgf1.create = function(md, digestLength, counterStart) {
          * string T: */
         md.start();
         md.update(seed + c.getBytes());
-        var dig = md.digest();
-
-        if (outLength > digestLength) {
-            // System.arraycopy(dig, 0, out, outOffset, digestLength);
-            outOffset += digestLength;
-            outLength -= digestLength;
-            var subDig = dig.getBytes().substr(0,digestLength); 
-            t.putBytes(subDig);
-        } else {
-            // System.arraycopy(dig, 0, out, outOffset, outLength);
-            t.putBuffer(dig);
-        }
+        t.putBuffer(md.digest());
       }
 
       /* Output the leading maskLen octets of T as the octet string mask. */
