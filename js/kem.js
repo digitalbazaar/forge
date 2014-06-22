@@ -2,8 +2,10 @@
  * Javascript implementation of RSA-KEM.
  *
  * @author Lautaro Cozzani Rodriguez
+ * @author Dave Longley
  *
  * Copyright (c) 2014 Lautaro Cozzani <lautaro.cozzani@scytl.com>
+ * Copyright (c) 2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -11,47 +13,10 @@ function initModule(forge) {
 
 forge.kem = forge.kem || {};
 
-/*
-* @param      src      the source array.
-* @param      srcPos   starting position in the source array.
-* @param      dest     the destination array.
-* @param      destPos  starting position in the destination data.
-* @param      length   the number of array elements to be copied.
-*/
-function arraycopy(src, srcPos, dest, destPos, length) {
-  for ( var i = 0; i<destPos; i++ ) {
-    dest[i] =0;
-  }
-  for ( var i = 0; i<length; i++ ) {
-    dest[destPos + i] = src[srcPos+i];
-  }
-}
-
-function initArray(length) {
-  var array = [];
-  for ( var i = 0; i<length; i++ ) {
-    array.push(0);
-  }
-  return array;
-}
-
-/*
-* Convert String of Bytes in a byte[] as singed char [-128,127]
-*/
-function bytesToArray(str) {
-    var bytes = [];
-    for ( var i = 0; i < str.length; ++i ) {
-      var c = str.charCodeAt(i);
-      if ( c > 127 ) c = c - 256;
-      bytes.push(c);
-    }
-    return bytes;
-  }
-
 var MAX_ITERATIONS = 1000;
 
 forge.kem.createRandomInRange = function(min, max, rnd) {
-  
+
   if (min.bitLength() > max.bitLength() / 2) {
     return forge.kem.createRandomInRange(forge.jsbn.BigInteger.ZERO, max.subtract(min), rnd)
       .add(min);
@@ -79,33 +44,6 @@ forge.kem.createRandomInRange = function(min, max, rnd) {
     .add(min);
 };
 
-/**
-* Return the passed in value as an unsigned byte array.
-* 
-* @param {BigInteger} value
-*            value to be converted.
-* @return a byte array without a leading zero byte if present in the signed
-*         encoding.
-*/
-forge.kem.asUnsignedByteArray = function(length, value) {
-  var bytes = value.toByteArray();
-  if (bytes.length == length) {
-    return bytes;
-  }
-
-  var start = bytes[0] == 0 ? 1 : 0;
-  var count = bytes.length - start;
-
-  if (count > length) {
-    throw {message: "standard length exceeded for value"};
-  }
-
-  var tmp = initArray(length);
-
-  arraycopy(bytes,start, tmp, tmp.length - count, count)
-  return tmp;
-};
-
 /*
 * Convert BigInteger to string of Bytes
 */
@@ -118,53 +56,85 @@ function bnToBytes(b) {
   return forge.util.hexToBytes(hex);
 }
 
-/*
- * The RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
+/**
+ * Creates a key derivation API object that implements KDF1 per ISO 18033-2.
+ *
+ * @param md the hash API to use.
+ * @param [digestLength] an optional digest length that must be positive and
+ *          less than or equal to md.digestLength.
+ *
+ * @return a KDF1 API object.
  */
-forge.kem.create = function(mgf1, rnd) {
+forge.kem.kdf1 = function(md, digestLength) {
+  _createKDF(this, md, 0, digestLength || md.digestLength);
+};
 
-  if ( !rnd ) {
-    rnd = forge.random;
-  }
+/**
+ * Creates a key derivation API object that implements KDF2 per ISO 18033-2.
+ *
+ * @param md the hash API to use.
+ * @param [digestLength] an optional digest length that must be positive and
+ *          less than or equal to md.digestLength.
+ *
+ * @return a KDF2 API object.
+ */
+forge.kem.kdf2 = function(md, digestLength) {
+  _createKDF(this, md, 1, digestLength || md.digestLength);
+};
+
+/**
+ * The API for the RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
+ */
+forge.kem.rsa = {};
+
+/**
+ * Creates an RSA KEM API object for generating a secret asymmetric key.
+ *
+ * The symmetric key may be generated via a call to 'encrypt', which will
+ * produce a ciphertext to be transmitted to the recipient and a key to be
+ * kept secret. The ciphertext is a parameter to be passed to 'decrypt' which
+ * will produce the same secret key for the recipient to use to decrypt a
+ * message that was encrypted with the secret key.
+ */
+forge.kem.create = function(kdf, options) {
+  options = options || {};
+  var rng = options.rng || forge.random;
 
   var kem = {
-    
-    mgf1: mgf1,
-    
-    rnd: rnd,
-
     /**
     * @param {Object} key the RSA public key to encrypt
     * @param {byte[]} out the output buffer for the encapsulated key.
     * @param {int} outOff the offset for the output buffer.
     * @param {int} keyLen the length of the random session key.
-    * 
-    * @return the random session key.
+    *
+    * @return the ciphertext for generating the secret key and the secret key.
     */
-    encrypt: function(key, out, outOff, keyLen) {
-
-      //BigInteger
+    encrypt: function(key, keyLen) {
       var n = key.n;
-      //BigInteger
       var e = key.e;
 
-      //BigInteger
-      var r =  forge.kem.createRandomInRange(forge.jsbn.BigInteger.ZERO, n.subtract(forge.jsbn.BigInteger.ONE), this.rnd);
+      // generate a random
+      var r =  forge.kem.createRandomInRange(
+        forge.jsbn.BigInteger.ZERO,
+        n.subtract(forge.jsbn.BigInteger.ONE),
+        rng);
 
-      // Encrypt the random and encode it
+      // FIXME: use key.encrypt
+      // encrypt the random
       var c = r.modPow(e, n);
+      var ciphertext = forge.util.hexToBytes(c.toString(16));
 
-      var bytesC = forge.kem.asUnsignedByteArray(Math.floor((n.bitLength() + 7) / 8), c);
-      arraycopy(bytesC, 0, out, outOff, bytesC.length);
+      var secretKey = kdf.generate(bnToBytes(r), keyLen);
 
-      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);
-
-      return bytesK;
+      return {
+        ciphertext: ciphertext,
+        key: secretKey
+      };
     },
 
     /**
      * Decrypt an encapsulated session key.
-     * 
+     *
      * @param key
      *            the RSA private key to decrypt
      * @param in
@@ -177,27 +147,65 @@ forge.kem.create = function(mgf1, rnd) {
      *            the length of the session key.
      * @return the session key.
      */
-    decrypt: function(key, input, inputOff, inputLen, keyLen) {
-
+    decrypt: function(key, ciphertext, keyLen) {
       var n = key.n;
       var d = key.d;
 
+      // FIXME: use key.decrypt
       // Decode the input
-      var bytesC = initArray(inputLen);
-      arraycopy(input, inputOff, bytesC, 0, bytesC.length);
-      var c = new forge.jsbn.BigInteger(bytesC);
+      var c = new forge.jsbn.BigInteger(forge.util.bytesToHex(ciphertext), 16);
 
       var r = c.modPow(d, n);
 
-      var bytesK = this.mgf1.generate(bnToBytes(r), keyLen);      
-
-      return bytesK;
+      return kdf.generate(bnToBytes(r), keyLen);
     }
 
   };
 
   return kem;
 };
+
+/**
+ * Creates a KDF1 or KDF2 API object.
+ *
+ * @param md the hash API to use.
+ * @param counterStart the starting index for the counter.
+ * @param digestLength the digest length to use.
+ *
+ * @return the KDF API object.
+ */
+function _createKDF(kdf, md, counterStart, digestLength) {
+  /**
+   * Generate a key of the specified length.
+   *
+   * @param x the binary-encoded byte string to generate a key from.
+   * @param length the number of bytes to generate (the size of the key).
+   *
+   * @return the key as a binary-encoded string.
+   */
+  kdf.generate = function(x, length) {
+    var key = new forge.util.ByteBuffer();
+
+    // run counter from counterStart to ceil(length / Hash.len)
+    var k = Math.ceil(length / digestLength) + counterStart;
+
+    var c = new forge.util.ByteBuffer();
+    for(var i = counterStart; i < k; ++i) {
+      // I2OSP(i, 4): convert counter to an octet string of 4 octets
+      c.putInt32(i);
+
+      // digest 'x' and the counter and add the result to the key
+      md.start();
+      md.update(x + c.getBytes());
+      var hash = md.digest();
+      key.putBytes(hash.getBytes(digestLength));
+    }
+
+    // truncate to the correct key length
+    key.truncate(key.length() - length);
+    return key.getBytes();
+  };
+}
 
 } // end module implementation
 
