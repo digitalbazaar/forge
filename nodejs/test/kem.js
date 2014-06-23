@@ -22,7 +22,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
       var key1 = result.key;
       var key2 = kem.decrypt(pair.privateKey, result.encapsulation, 256);
 
-      ASSERT.equal(key1, key2);
+      ASSERT.equal(UTIL.bytesToHex(key1), UTIL.bytesToHex(key2));
     });
   });
 
