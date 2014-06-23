@@ -83,11 +83,17 @@ forge.kem.rsa.create = function(kdf, options) {
   kem.decrypt = function(privateKey, encapsulation, keyLength) {
     // decrypt the encapsulation and generate the secret key
     var r = privateKey.decrypt(encapsulation, 'NONE');
+    // strip any leading zeros
+    var i = 0;
+    for(; r.charCodeAt(i) === 0; ++i);
+    r = r.substr(i);
     return kdf.generate(r, keyLength);
   };
 
   return kem;
 };
+
+// TODO: add forge.kem.kdf.create('KDF1', {md: ..., ...}) API?
 
 /**
  * Creates a key derivation API object that implements KDF1 per ISO 18033-2.
