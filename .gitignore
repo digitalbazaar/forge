@@ -17,6 +17,6 @@ config.status
 configure
 dist
 js/forge.bundle.js
+js/forge.min.js
 node_modules
 tests/forge
-js/forge.min.js

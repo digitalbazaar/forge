@@ -20,6 +20,7 @@ requirejs([
     'test/asn1',
     'test/pem',
     'test/rsa',
+    'test/kem',
     'test/pkcs1',
     'test/x509',
     'test/csr',
@@ -28,8 +29,7 @@ requirejs([
     'test/des',
     'test/pkcs7',
     'test/pkcs12',
-    'test/tls',
-    'test/kem'
+    'test/tls'
 ], function() {
     mocha.run();
 });
