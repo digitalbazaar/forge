@@ -67,7 +67,10 @@ define([
   './debug',
   './des',
   './hmac',
+  './kem',
   './log',
+  './md',
+  './mgf1',
   './pbkdf2',
   './pem',
   './pkcs7',
@@ -79,12 +82,10 @@ define([
   './pss',
   './random',
   './rc2',
+  './ssh',
   './task',
   './tls',
-  './util',
-  './md',
-  './mgf1',
-  './ssh'
+  './util'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });

@@ -20,6 +20,7 @@ requirejs([
     'test/asn1',
     'test/pem',
     'test/rsa',
+    'test/kem',
     'test/pkcs1',
     'test/x509',
     'test/csr',

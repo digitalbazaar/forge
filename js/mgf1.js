@@ -2,8 +2,10 @@
  * Javascript implementation of mask generation function MGF1.
  *
  * @author Stefan Siegl
+ * @author Dave Longley
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2014 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -14,6 +16,8 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
 
 /**
  * Creates a MGF1 mask generation function object.
+ *
+ * @param md the message digest API to use (eg: forge.md.sha1.create()).
  *
  * @return a mask generation function object.
  */
