@@ -3,12 +3,11 @@
 function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
   function FixedSecureRandom(str) {
-    var _str = UTIL.hexToBytes(str);
-    var index = 0;
+    var bytes = UTIL.hexToBytes(str);
     this.getBytesSync = function(count) {
-      var r = _str.substr(index, count);
-      index += count;
-      return r;
+      // prepend zeros
+      return UTIL.fillString(String.fromCharCode(0), bytes.length - count) +
+        bytes;
     };
   }
 
@@ -21,7 +20,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var result = kem.encrypt(pair.publicKey, 256);
       var key1 = result.key;
-      var key2 = kem.decrypt(pair.privateKey, result.ciphertext, 256);
+      var key2 = kem.decrypt(pair.privateKey, result.encapsulation, 256);
 
       ASSERT.equal(key1, key2);
     });
@@ -42,7 +41,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var kdf = new KEM.kdf1(MD.sha1.create());
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
-      var kem = KEM.rsa.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
         new JSBN.BigInteger(n), new JSBN.BigInteger(e));
@@ -50,10 +49,10 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.ciphertext), C0);
+      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
       ASSERT.equal(UTIL.bytesToHex(result.key), K);
 
-      var decryptedKey = kem.decrypt(rsaPrivateKey, result.ciphertext, 128);
+      var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
       ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
     });
 
@@ -67,7 +66,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var kdf = new KEM.kdf2(MD.sha1.create());
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
-      var kem = KEM.rsa.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
         new JSBN.BigInteger(n), new JSBN.BigInteger(e));
@@ -75,10 +74,10 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.ciphertext), C0);
+      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
       ASSERT.equal(UTIL.bytesToHex(result.key), K);
 
-      var decryptedKey = kem.decrypt(rsaPrivateKey, result.ciphertext, 128);
+      var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
       ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
     });
 
@@ -92,7 +91,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var kdf = new KEM.kdf1(MD.sha256.create(), 20);
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
-      var kem = KEM.rsa.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
         new JSBN.BigInteger(n), new JSBN.BigInteger(e));
@@ -100,10 +99,10 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.ciphertext), C0);
+      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
       ASSERT.equal(UTIL.bytesToHex(result.key), K);
 
-      var decryptedKey = kem.decrypt(rsaPrivateKey, result.ciphertext, 128);
+      var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
       ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
     });
 
@@ -117,7 +116,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
       var kdf = new KEM.kdf2(MD.sha256.create(), 20);
       var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
-      var kem = KEM.rsa.create(kdf, {rng: rnd});
+      var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
         new JSBN.BigInteger(n), new JSBN.BigInteger(e));
@@ -125,10 +124,10 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.ciphertext), C0);
+      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
       ASSERT.equal(UTIL.bytesToHex(result.key), K);
 
-      var decryptedKey = kem.decrypt(rsaPrivateKey, result.ciphertext, 128);
+      var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
       ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
     });
   });
