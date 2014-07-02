@@ -792,7 +792,7 @@ cipher.finish();
 var encrypted = cipher.output.getBytes();
 var tag = cipher.mode.tag.getBytes();
 
-// send 'encrypted', 'tag', and result.encapsulation to recipient
+// send 'encrypted', 'iv', 'tag', and result.encapsulation to recipient
 
 // decrypt encapsulated 16-byte secret key
 var kdf1 = new forge.kem.kdf1(forge.md.sha1.create());
