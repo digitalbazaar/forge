@@ -360,8 +360,17 @@ modes.gcm.prototype.start = function(options) {
     this._tagLength = 128;
   }
 
-  // save tag to check later, create tmp storage for hash calculation
-  this._tag = forge.util.createBuffer(options.tag).getBytes();
+  // if tag is given, ensure tag matches tag length
+  this._tag = null;
+  if(options.decrypt) {
+    // save tag to check later
+    this._tag = forge.util.createBuffer(options.tag).getBytes();
+    if(this._tag.length !== (this._tagLength / 8)) {
+      throw new Error('Authentication tag does not match tag length.');
+    }
+  }
+
+  // create tmp storage for hash calculation
   this._hashBlock = new Array(this._blocks);
 
   // no tag generated yet
@@ -524,7 +533,7 @@ modes.gcm.prototype.afterFinish = function(output, options) {
   this.tag.truncate(this.tag.length() % (this._tagLength / 8));
 
   // check authentication tag
-  if(this._tag && this.tag.bytes() !== this._tag) {
+  if(options.decrypt && this.tag.bytes() !== this._tag) {
     rval = false;
   }
 

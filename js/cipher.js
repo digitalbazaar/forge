@@ -146,10 +146,15 @@ var BlockCipher = forge.cipher.BlockCipher = function(options) {
  */
 BlockCipher.prototype.start = function(options) {
   options = options || {};
+  var opts = {};
+  for(var key in options) {
+    opts[key] = options[key];
+  }
+  opts.decrypt = this._decrypt;
   this._finish = false;
   this._input = forge.util.createBuffer();
   this.output = options.output || forge.util.createBuffer();
-  this.mode.start(options);
+  this.mode.start(opts);
 };
 
 /**
@@ -193,8 +198,9 @@ BlockCipher.prototype.finish = function(pad) {
     };
   }
 
-  // build options for padding functions
+  // build options for padding and afterFinish functions
   var options = {};
+  options.decrypt = this._decrypt;
 
   // get # of bytes that won't fill a block
   options.overflow = this._input.length() % this.blockSize;
