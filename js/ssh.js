@@ -151,6 +151,46 @@ ssh.privateKeyToOpenSSH = function(privateKey, passphrase) {
 };
 
 /**
+ * Gets the SSH fingerprint for the given public key.
+ *
+ * @param options the options to use.
+ *          [md] the message digest object to use (defaults to forge.md.md5).
+ *          [encoding] an alternative output encoding, such as 'hex'
+ *            (defaults to none, outputs a byte buffer).
+ *          [delimiter] the delimiter to use between bytes for 'hex' encoded
+ *            output, eg: ':' (defaults to none).
+ *
+ * @return the fingerprint as a byte buffer or other encoding based on options.
+ */
+ssh.getPublicKeyFingerprint = function(key, options) {
+  options = options || {};
+  var md = options.md || forge.md.md5.create();
+
+  var type = 'ssh-rsa';
+  var buffer = forge.util.createBuffer();
+  _addStringToBuffer(buffer, type);
+  _addBigIntegerToBuffer(buffer, key.e);
+  _addBigIntegerToBuffer(buffer, key.n);
+
+  // hash public key bytes
+  md.start();
+  md.update(buffer.getBytes());
+  var digest = md.digest();
+  if(options.encoding === 'hex') {
+    var hex = digest.toHex();
+    if(options.delimiter) {
+      return hex.match(/.{2}/g).join(options.delimiter);
+    }
+    return hex;
+  } else if(options.encoding === 'binary') {
+    return digest.getBytes();
+  } else if(options.encoding) {
+    throw new Error('Unknown encoding "' + options.encoding + '".');
+  }
+  return digest;
+};
+
+/**
  * Adds len(val) then val to a buffer.
  *
  * @param buffer the buffer to add to.
@@ -241,7 +281,15 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './util', './sha1', './aes', './hmac'], function() {
+define([
+  'require',
+  'module',
+  './aes',
+  './hmac',
+  './md5',
+  './sha1',
+  './util'
+], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

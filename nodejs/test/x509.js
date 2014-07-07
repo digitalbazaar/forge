@@ -362,6 +362,94 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.ok(issuer.verify(cert));
     });
   });
+
+  describe('public key fingerprints', function() {
+    it('should get a SHA-1 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(publicKey, {type: 'RSAPublicKey'});
+      ASSERT.equal(fp.toHex(), 'f57563e0c75d6e9b03fafdb2fd72349f23030300');
+    });
+
+    it('should get a SHA-1 SubjectPublicKeyInfo fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {type: 'SubjectPublicKeyInfo'});
+      ASSERT.equal(fp.toHex(), '984724bc548bbc2c8acbac044bd8d518abd26dd8');
+    });
+
+    it('should get a hex SHA-1 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {type: 'RSAPublicKey', encoding: 'hex'});
+      ASSERT.equal(fp, 'f57563e0c75d6e9b03fafdb2fd72349f23030300');
+    });
+
+    it('should get a hex, colon-delimited SHA-1 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {type: 'RSAPublicKey', encoding: 'hex', delimiter: ':'});
+      ASSERT.equal(
+        fp, 'f5:75:63:e0:c7:5d:6e:9b:03:fa:fd:b2:fd:72:34:9f:23:03:03:00');
+    });
+
+    it('should get a hex, colon-delimited SHA-1 SubjectPublicKeyInfo fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {
+          type: 'SubjectPublicKeyInfo',
+          encoding: 'hex',
+          delimiter: ':'
+        });
+      ASSERT.equal(
+        fp, '98:47:24:bc:54:8b:bc:2c:8a:cb:ac:04:4b:d8:d5:18:ab:d2:6d:d8');
+    });
+
+    it('should get an MD5 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {md: MD.md5.create(), type: 'RSAPublicKey'});
+      ASSERT.equal(fp.toHex(), 'c7da180cc48d31a071d31a78bc43d9d7');
+    });
+
+    it('should get an MD5 SubjectPublicKeyInfo fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {md: MD.md5.create(), type: 'SubjectPublicKeyInfo'});
+      ASSERT.equal(fp.toHex(), 'e5c5ba577fe24fb8a678d8d58f539cd7');
+    });
+
+    it('should get a hex MD5 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey,
+        {md: MD.md5.create(), type: 'RSAPublicKey', encoding: 'hex'});
+      ASSERT.equal(fp, 'c7da180cc48d31a071d31a78bc43d9d7');
+    });
+
+    it('should get a hex, colon-delimited MD5 RSAPublicKey fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {
+          md: MD.md5.create(),
+          type: 'RSAPublicKey',
+          encoding: 'hex',
+          delimiter: ':'
+        });
+      ASSERT.equal(fp, 'c7:da:18:0c:c4:8d:31:a0:71:d3:1a:78:bc:43:d9:d7');
+    });
+
+    it('should get a hex, colon-delimited MD5 SubjectPublicKeyInfo fingerprint', function() {
+      var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+      var fp = PKI.getPublicKeyFingerprint(
+        publicKey, {
+          md: MD.md5.create(),
+          type: 'SubjectPublicKeyInfo',
+          encoding: 'hex',
+          delimiter: ':'
+        });
+      ASSERT.equal(fp, 'e5:c5:ba:57:7f:e2:4f:b8:a6:78:d8:d5:8f:53:9c:d7');
+    });
+  });
 }
 
 // check for AMD

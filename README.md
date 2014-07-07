@@ -500,6 +500,12 @@ forge.ssh.publicKeyToOpenSSH(key, comment);
 
 // encodes a private RSA key as an OpenSSH file
 forge.ssh.privateKeyToOpenSSH(privateKey, passphrase);
+
+// gets the SSH public key fingerprint in a byte buffer
+forge.ssh.getPublicKeyFingerPrint(key);
+
+// gets a hex-encoded, colon-delimited SSH public key fingerprint
+forge.ssh.getPublicKeyFingerPrint(key, {encoding: 'hex', delimiter: ':'});
 ```
 
 <a name="xhr" />
@@ -831,6 +837,29 @@ var publicKey = pki.publicKeyFromAsn1(subjectPublicKeyInfo);
 
 // convert a Forge public key to an ASN.1 SubjectPublicKeyInfo
 var subjectPublicKeyInfo = pki.publicKeyToAsn1(publicKey);
+
+// gets a SHA-1 RSAPublicKey fingerprint a byte buffer
+pki.getPublicKeyFingerPrint(key);
+
+// gets a SHA-1 SubjectPublicKeyInfo fingerprint a byte buffer
+pki.getPublicKeyFingerPrint(key, {type: 'SubjectPublicKeyInfo'});
+
+// gets a hex-encoded, colon-delimited SHA-1 RSAPublicKey public key fingerprint
+pki.getPublicKeyFingerPrint(key, {encoding: 'hex', delimiter: ':'});
+
+// gets a hex-encoded, colon-delimited SHA-1 SubjectPublicKeyInfo public key fingerprint
+pki.getPublicKeyFingerPrint(key, {
+  type: 'SubjectPublicKeyInfo',
+  encoding: 'hex',
+  delimiter: ':'
+});
+
+// gets a hex-encoded, colon-delimited MD5 RSAPublicKey public key fingerprint
+pki.getPublicKeyFingerPrint(key, {
+  md: forge.md.md5.create(),
+  encoding: 'hex',
+  delimiter: ':'
+});
 
 // creates a CA store
 var caStore = pki.createCaStore([/* PEM-encoded cert */, ...]);

@@ -996,6 +996,55 @@ pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
 };
 
 /**
+ * Gets a fingerprint for the given public key.
+ *
+ * @param options the options to use.
+ *          [md] the message digest object to use (defaults to forge.md.sha1).
+ *          [type] the type of fingerprint, such as 'RSAPublicKey',
+ *            'SubjectPublicKeyInfo' (defaults to 'RSAPublicKey').
+ *          [encoding] an alternative output encoding, such as 'hex'
+ *            (defaults to none, outputs a byte buffer).
+ *          [delimiter] the delimiter to use between bytes for 'hex' encoded
+ *            output, eg: ':' (defaults to none).
+ *
+ * @return the fingerprint as a byte buffer or other encoding based on options.
+ */
+pki.getPublicKeyFingerprint = function(key, options) {
+  options = options || {};
+  var md = options.md || forge.md.sha1.create();
+  var type = options.type || 'RSAPublicKey';
+
+  var bytes;
+  switch(type) {
+  case 'RSAPublicKey':
+    bytes = asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes();
+    break;
+  case 'SubjectPublicKeyInfo':
+    bytes = asn1.toDer(pki.publicKeyToAsn1(key)).getBytes();
+    break;
+  default:
+    throw new Error('Unknown fingerprint type "' + options.type + '".');
+  }
+
+  // hash public key bytes
+  md.start();
+  md.update(bytes);
+  var digest = md.digest();
+  if(options.encoding === 'hex') {
+    var hex = digest.toHex();
+    if(options.delimiter) {
+      return hex.match(/.{2}/g).join(options.delimiter);
+    }
+    return hex;
+  } else if(options.encoding === 'binary') {
+    return digest.getBytes();
+  } else if(options.encoding) {
+    throw new Error('Unknown encoding "' + options.encoding + '".');
+  }
+  return digest;
+};
+
+/**
  * Converts a PKCS#10 certification request (CSR) from PEM format.
  *
  * Note: If the certification request is to be verified then compute hash
@@ -1568,12 +1617,7 @@ pki.createCertificate = function() {
     // skipping the tag, length, and number of unused bits is the same
     // as just using the RSAPublicKey (for RSA keys, which are the
     // only ones supported)
-    var der = asn1.toDer(pki.publicKeyToRSAPublicKey(cert.publicKey));
-
-    // hash public key
-    var md = forge.md.sha1.create();
-    md.update(der.getBytes());
-    return md.digest();
+    return pki.getPublicKeyFingerprint(cert.publicKey, {type: 'RSAPublicKey'});
   };
 
   /**

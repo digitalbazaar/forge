@@ -154,6 +154,21 @@ function Tests(ASSERT, forge) {
       ASSERT.equal(forge.ssh.privateKeyToOpenSSH(key, ''), expect);
     });
 
+    it('should get an MD5 SSH fingerprint', function() {
+      var fp = forge.ssh.getPublicKeyFingerprint(key);
+      ASSERT.equal(fp.toHex(), '46549abeb89422a0955d4041ae7322ec');
+    });
+
+    it('should get a hex MD5 SSH fingerprint', function() {
+      var fp = forge.ssh.getPublicKeyFingerprint(key, {encoding: 'hex'});
+      ASSERT.equal(fp, '46549abeb89422a0955d4041ae7322ec');
+    });
+
+    it('should get a hex, colon-delimited MD5 SSH fingerprint', function() {
+      var fp = forge.ssh.getPublicKeyFingerprint(
+        key, {encoding: 'hex', delimiter: ':'});
+      ASSERT.equal(fp, '46:54:9a:be:b8:94:22:a0:95:5d:40:41:ae:73:22:ec');
+    });
   });
 }
 
