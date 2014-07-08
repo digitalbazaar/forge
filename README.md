@@ -711,13 +711,22 @@ var verified = publicKey.verify(md.digest().bytes(), signature);
 // masking function MGF1, and a 20 byte salt
 var md = forge.md.sha1.create();
 md.update('sign this', 'utf8');
-var pss = forge.pss.create(
-  forge.md.sha1.create(), forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+var pss = forge.pss.create({
+  md: forge.md.sha1.create(),
+  mgf: forge.mgf.mgf1.create(forge.md.sha1.create()),
+  saltLength: 20
+  // optionally pass 'prng' with a custom PRNG implementation
+  // optionalls pass 'salt' with a forge.util.ByteBuffer w/custom salt
+});
 var signature = privateKey.sign(md, pss);
 
 // verify RSASSA-PSS signature
-var pss = forge.pss.create(
-  forge.md.sha1.create(), forge.mgf.mgf1.create(forge.md.sha1.create()), 20);
+var pss = forge.pss.create({
+  md: forge.md.sha1.create(),
+  mgf: forge.mgf.mgf1.create(forge.md.sha1.create()),
+  saltLength: 20
+  // optionally pass 'prng' with a custom PRNG implementation
+});
 var md = forge.md.sha1.create();
 md.update('sign this', 'utf8');
 publicKey.verify(md.digest().getBytes(), signature, pss);
