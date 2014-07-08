@@ -214,7 +214,9 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           '-----END PUBLIC KEY-----\r\n',
         encrypted: 'jsej3OoacmJ1VjWrlw68F+drnQORAuKAqVu6RMbz1xSXjzA355vctrJZXolRU0mvzuu/6VuNynkKGGyRJ6DHt85CvwTMChw4tOMV4Dy6bgnUt3j+DZA2sWTwFhOlpzvNQMK70QpuqrXtOZmAO59EwoDeJkW/iH6t4YzNOVYo9Jg=',
         signature: 'GT0/3EV2zrXxPd1ydijJq3R7lkI4c0GtcprgpG04dSECv/xyXtikuzivxv7XzUdHpu6QiYmM0xE4D4i7LK3Mzy+f7aB4o/dg8XXO3htLiBzVI+ZJCRh06RdYctPtclAWmyZikZ8Etw3NnA/ldKuG4jApbwRb21UFm5gYLrJ4SP4=',
-        signaturePss: 'F4xffaANDBjhFxeSJx8ANuBbdhaWZjUHRQh4ueYQMPPCaR2mpwdqxE04sbgNgIiZzBuLIAI4HpTMMoDk3Rruhjefx3+9UhzTxgB0hRI+KzRChRs+ToltWWDZdYzt9T8hfTlELeqT4V8HgjDuteO/IAvIVlRIBwMNv53Iebu1FY4='
+        signaturePss: 'F4xffaANDBjhFxeSJx8ANuBbdhaWZjUHRQh4ueYQMPPCaR2mpwdqxE04sbgNgIiZzBuLIAI4HpTMMoDk3Rruhjefx3+9UhzTxgB0hRI+KzRChRs+ToltWWDZdYzt9T8hfTlELeqT4V8HgjDuteO/IAvIVlRIBwMNv53Iebu1FY4=',
+        signatureWithAbcSalt: 'GYA/Zp8G+jqG2Fu7Um+XP7Cr/yaVdzJN8lyt57Lw6gFflia2CPbOVMLyqLzD7fKoE8UD0Rc6DF8k04xhEu60sudw2nxGHeDvpL4M9du0uYra/WSr9kv7xNjAW62NyNerDngHD2J7O8gQ07TZiTXkrfS724vQab5xZL/+FhvisMY=',
+        signatureWithCustomPrng: 'LzWcUpUYK+URDp72hJbz1GVEp0rG0LHjd+Pdh2w5rfQFbUThbmXDl3X6DUT5UZr5RjUSHtc2usvH+w49XskyIJJO929sUk9EkMJMK/6QAnYYEp5BA+48pdGNNMZyjIbhyl9Y4lInzFPX8XYMM8o+tdSK+hj+dW5OPdnwWbDtR7U='
       }, {
         keySize: 1025,
         privateKeyPem: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
@@ -240,7 +242,9 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           '-----END PUBLIC KEY-----\r\n',
         encrypted: 'AOVeCUN8BOVkZvt4mxyNn/yCYE1MZ40A3e/osh6EvCBcJ09hyYbx7bzKSrdkhRnDyW0pGtgP352CollasllQZ9HlfI2Wy9zKM0aYZZn8OHBA+60Tc3xHHDGznLZqggUKuhoNpj+faVZ1uzb285eTpQQa+4mLUue2svJD4ViM8+ng',
         signature: 'AFSx0axDYXlF2rO3ofgUhYSI8ZlIWtJUUZ62PhgdBp9O5zFqMX3DXoiov1e7NenSOz1khvTSMctFWzKP3GU3F0yewe+Yd3UAZE0dM8vAxigSSfAchUkBDmp9OFuszUie63zwWwpG+gXtvyfueZs1RniBvW1ZmXJvS+HFgX4ouzwd',
-        signaturePss: 'AQvBdhAXDpu+7RpcybMgwuTUk6w+qa08Lcq3G1xHY4kC7ZUzauZd/Jn9e0ePKApDqs7eDNAOV+dQkU2wiH/uBg6VGelzb0hFwcpSLyBW92Vw0q3GlzY7myWn8qnNzasrt110zFflWQa1GiuzH/C8f+Z82/MzlWDxloJIYbq2PRC8'
+        signaturePss: 'AQvBdhAXDpu+7RpcybMgwuTUk6w+qa08Lcq3G1xHY4kC7ZUzauZd/Jn9e0ePKApDqs7eDNAOV+dQkU2wiH/uBg6VGelzb0hFwcpSLyBW92Vw0q3GlzY7myWn8qnNzasrt110zFflWQa1GiuzH/C8f+Z82/MzlWDxloJIYbq2PRC8',
+        signatureWithAbcSalt: 'AW4bKnG/0TGvAZgqX5Dk+fXpUNgX7INFelE46d3m+spaMTG5XalY0xP1sxWfaE/+Zl3FmZcfTNtfOCo0eNRO1h1+GZZfp32ZQZmZvkdUG+dUQp318LNzgygrVf/5iIX+QKV5/soSDuAHBzS7yDfMgzJfnXNpFE/zPLOgZIoOIuLq',
+        signatureWithCustomPrng: 'AVxfCyGC/7Y3kz//eYFEuWQijjR7eR05AM36CwDlLsVkDRtXoeVzz2yTFBdP+i+QgQ73C/I3lLtvXTwfleorvIX9YncVBeGDQXssmULxzqsM3izaLfJXCRAGx9ErL1Az10+fAqPZpq954OVSDqrR/61Q7CsMY7CiQO3nfIIaxgVL'
       }, {
         keySize: 1031,
         privateKeyPem: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
@@ -266,7 +270,9 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           '-----END PUBLIC KEY-----\r\n',
         encrypted: 'ShSS4/fEAkuS6XiQakhOpWp82IXaaCaDNtsndU4uokvriqgCGZyqc+IkIk3eVmZ8bn4vVIRR43ydFuvGgsptVjizOdLGZudph3TJ1clcYEMcCXk4z5HaEu0bx5SW9jmzHhE/z+WV8PB48q7y7C2qtmPmfttG2NMsNLBvkiaDopRO',
         signature: 'Z3vYgRdezrWmdA3NC1Uz2CcHRTcE+/C2idGZA1FjUGqFztAHQ31k0QW/F5zuJdKvg8LQU45S3KxW+OQpbGPL98QbzJLhml88mFGe6OinLXJbi7UQWrtXwamc2jMdiXwovSLbXaXy6PX2QW089iC8XuAZftVi3T/IKV0458FQQprg',
-        signaturePss: 'R6QsK6b3QinIPZPamm/dP0Zndqti1TzAkFTRSZJaRSa1u2zuvZC5QHF4flDjEtHosWeDyxrBE7PHGQZ0b1bHv9qgHGsJCMwaQPj3AWj9fjYmx7b86KM2vHr8q/vqDaa9pTvVRSSwvD6fwoZPc9twQEfdjdDBAiy23yLDzk/zZiwM'
+        signaturePss: 'R6QsK6b3QinIPZPamm/dP0Zndqti1TzAkFTRSZJaRSa1u2zuvZC5QHF4flDjEtHosWeDyxrBE7PHGQZ0b1bHv9qgHGsJCMwaQPj3AWj9fjYmx7b86KM2vHr8q/vqDaa9pTvVRSSwvD6fwoZPc9twQEfdjdDBAiy23yLDzk/zZiwM',
+        signatureWithAbcSalt: 'Ep9qx4/FPNcWTixWhvL2IAyJR69o5I4MIJi3cMAhDmpuTvAaL/ThQwFWkBPPOPT4Jbumnu6ELjPNjo72wa00e5k64qnZgy1pauBPMlXRlKehRc9UJZ6+xot642z8Qs+rt89OgbYTsvlyr8lzXooUHz/lPpfawYCqd7maRMs8YlYM',
+        signatureWithCustomPrng: 'NHAwyn2MdM5ez/WbDNbu2A2JNS+cRiWk/zBoh0lg3aq/RsBS0nrYr4AGiC5jt6KWVcN4AIVOomYtX2k+MhLoemN2t2rDj/+LXOeU7kgCAz0q0ED2NFQz7919JU+PuYXMy03qTMfl5jbvStdi/00eQHjJKGEH+xAgrDcED2lrhtCu'
       }, {
         keySize: 1032,
         privateKeyPem: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
@@ -292,7 +298,9 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           '-----END PUBLIC KEY-----\r\n',
         encrypted: 'pKTbv+xgXPDc+wbjsANFu1/WTcmy4aZFKXKnxddHbU5S0Dpdj2OqCACiBwu1oENPMgPAJ27XRbFtKG+eS8tX47mKP2Fo0Bi+BPFtzuQ1bj3zUzTwzjemT+PU+a4Tho/eKjPhm6xrwGAoQH2VEDEpvcYf+SRmGFJpJ/zPUrSxgffj',
         signature: 'R9WBFprCfcIC4zY9SmBpEM0E+cr5j4gMn3Ido5mktoR9VBoJqC6eR6lubIPvZZUz9e4yUSYX0squ56Q9Y0yZFQjTHgsrlmhB2YW8kpv4h8P32Oz2TLcMJK9R2tIh9vvyxwBkd/Ml1qG60GnOFUFzxUad9VIlzaF1PFR6EfnkgBUW',
-        signaturePss: 'v9UBd4XzBxSRz8yhWKjUkFpBX4Fr2G+ImjqbePL4sAZvYw1tWL+aUQpzG8eOyMxxE703VDh9nIZULYI/uIb9HYHQoGYQ3WoUaWqtZg1x8pZP+Ad7ilUWk5ImRl57fTznNQiVdwlkS5Wgheh1yJCES570a4eujiK9OyB0ba4rKIcM'
+        signaturePss: 'v9UBd4XzBxSRz8yhWKjUkFpBX4Fr2G+ImjqbePL4sAZvYw1tWL+aUQpzG8eOyMxxE703VDh9nIZULYI/uIb9HYHQoGYQ3WoUaWqtZg1x8pZP+Ad7ilUWk5ImRl57fTznNQiVdwlkS5Wgheh1yJCES570a4eujiK9OyB0ba4rKIcM',
+        signatureWithAbcSalt: 'HCm0FI1jE6wQgwwi0ZwPTkGjssxAPtRh6tWXhNd2J2IoJYj9oQMMjCEElnvQFBa/l00sIsw2YV1tKyoTABaSTGV4vlJcDF+K0g/wiAf30TRUZo72DZKDNdyffDlH0wBDkNVW+F6uqdciJqBC6zz+unNh7x+FRwYaY8xhudIPXdyP',
+        signatureWithCustomPrng: 'AGyN8xu+0yfCR1tyB9mCXcTGb2vdLnsX9ro2Qy5KV6Hw5YMVNltAt65dKR4Y8pfu6D4WUyyJRUtJ8td2ZHYzIVtWY6bG1xFt5rkjTVg4v1tzQgUQq8AHvRE2qLzwDXhazJ1e6Id2Nuxb1uInFyRC6/gLmiPga1WRDEVvFenuIA48'
       }];
       for(var i = 0; i < tests.length; ++i) {
         createTests(tests[i]);
@@ -430,6 +438,126 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var pss = PSS.create(
             MD.sha1.create(), MGF.mgf1.create(MD.sha1.create()), 20);
+          ASSERT.equal(
+            key.verify(md.digest().getBytes(), signature, pss), true);
+        });
+
+        it('should rsa sign using a ' + keySize + '-bit key and PSS padding using pss named-param API', function() {
+          var privateKey = PKI.privateKeyFromPem(params.privateKeyPem);
+          var publicKey = PKI.publicKeyFromPem(params.publicKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          // create signature
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            saltLength: 20
+          });
+          var signature = privateKey.sign(md, pss);
+
+          // verify signature
+          md.start();
+          md.update('just testing');
+          ASSERT.equal(
+            publicKey.verify(md.digest().getBytes(), signature, pss), true);
+        });
+
+        it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using pss named-param API', function() {
+          var signature = UTIL.decode64(params.signaturePss);
+          var key = PKI.publicKeyFromPem(params.publicKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            saltLength: 20
+          });
+          ASSERT.equal(
+            key.verify(md.digest().getBytes(), signature, pss), true);
+        });
+
+        it('should rsa sign using a ' + keySize + '-bit key and PSS padding using salt "abc"', function() {
+          var privateKey = PKI.privateKeyFromPem(params.privateKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          // create signature
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            salt: UTIL.createBuffer('abc')
+          });
+          var signature = privateKey.sign(md, pss);
+          var b64 = UTIL.encode64(signature);
+          ASSERT.equal(b64, params.signatureWithAbcSalt);
+        });
+
+        it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using salt "abc"', function() {
+          var signature = UTIL.decode64(params.signatureWithAbcSalt);
+          var key = PKI.publicKeyFromPem(params.publicKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            saltLength: 3
+          });
+          ASSERT.equal(
+            key.verify(md.digest().getBytes(), signature, pss), true);
+        });
+
+        it('should rsa sign using a ' + keySize + '-bit key and PSS padding using custom PRNG', function() {
+          var prng = RANDOM.createInstance();
+          prng.seedFileSync = function(needed) {
+            return UTIL.fillString('a', needed);
+          };
+          var privateKey = PKI.privateKeyFromPem(params.privateKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          // create signature
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            saltLength: 20,
+            prng: prng
+          });
+          var signature = privateKey.sign(md, pss);
+          var b64 = UTIL.encode64(signature);
+          ASSERT.equal(b64, params.signatureWithCustomPrng);
+        });
+
+        it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using custom PRNG', function() {
+          var prng = RANDOM.createInstance();
+          prng.seedFileSync = function(needed) {
+            return UTIL.fillString('a', needed);
+          };
+          var signature = UTIL.decode64(params.signatureWithCustomPrng);
+          var key = PKI.publicKeyFromPem(params.publicKeyPem);
+
+          var md = MD.sha1.create();
+          md.start();
+          md.update('just testing');
+
+          var pss = PSS.create({
+            md: MD.sha1.create(),
+            mgf: MGF.mgf1.create(MD.sha1.create()),
+            saltLength: 20,
+            prng: prng
+          });
           ASSERT.equal(
             key.verify(md.digest().getBytes(), signature, pss), true);
         });

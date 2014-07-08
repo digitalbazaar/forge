@@ -965,8 +965,9 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    * To perform PSS signature verification, provide an instance
    * of Forge PSS object as the scheme parameter.
    *
-   * @param digest the message digest hash to compare against the signature.
-   * @param signature the signature to verify.
+   * @param digest the message digest hash to compare against the signature,
+   *          as a binary-encoded string.
+   * @param signature the signature to verify, as a binary-encoded string.
    * @param scheme signature verification scheme to use:
    *          'RSASSA-PKCS1-V1_5' or undefined for RSASSA PKCS#1 v1.5,
    *          a Forge PSS object for RSASSA-PSS,
