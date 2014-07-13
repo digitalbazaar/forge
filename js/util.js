@@ -1715,18 +1715,18 @@ util.binary.base64.decode = function(input, output, offset) {
     enc3 = _base64Idx[input.charCodeAt(i++) - 43];
     enc4 = _base64Idx[input.charCodeAt(i++) - 43];
 
-    output[j++] = (enc1 << 2) | (enc2 >> 4);
+    out[j++] = (enc1 << 2) | (enc2 >> 4);
     if(enc3 !== 64) {
       // decoded at least 2 bytes
-      output[j++] = ((enc2 & 15) << 4) | (enc3 >> 2);
+      out[j++] = ((enc2 & 15) << 4) | (enc3 >> 2);
       if(enc4 !== 64) {
         // decoded 3 bytes
-        output[j++] = ((enc3 & 3) << 6) | enc4;
+        out[j++] = ((enc3 & 3) << 6) | enc4;
       }
     }
   }
 
-  return output ? (j - offset) : output;
+  return output ? (j - offset) : out;
 };
 
 // text encoding/decoding tools
