@@ -1639,13 +1639,13 @@ util.binary.hex.decode = function(hex, output, offset) {
   if(hex.length & 1) {
     // odd number of characters, convert first character alone
     i = 1;
-    output[j++] = parseInt(hex[0], 16);
+    out[j++] = parseInt(hex[0], 16);
   }
   // convert 2 characters (1 byte) at a time
   for(; i < hex.length; i += 2) {
-    output[j++] = parseInt(hex.substr(i, 2), 16);
+    out[j++] = parseInt(hex.substr(i, 2), 16);
   }
-  return output ? (j - offset) : output;
+  return output ? (j - offset) : out;
 };
 
 /**
