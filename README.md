@@ -502,10 +502,10 @@ forge.ssh.publicKeyToOpenSSH(key, comment);
 forge.ssh.privateKeyToOpenSSH(privateKey, passphrase);
 
 // gets the SSH public key fingerprint in a byte buffer
-forge.ssh.getPublicKeyFingerPrint(key);
+forge.ssh.getPublicKeyFingerprint(key);
 
 // gets a hex-encoded, colon-delimited SSH public key fingerprint
-forge.ssh.getPublicKeyFingerPrint(key, {encoding: 'hex', delimiter: ':'});
+forge.ssh.getPublicKeyFingerprint(key, {encoding: 'hex', delimiter: ':'});
 ```
 
 <a name="xhr" />
@@ -848,23 +848,23 @@ var publicKey = pki.publicKeyFromAsn1(subjectPublicKeyInfo);
 var subjectPublicKeyInfo = pki.publicKeyToAsn1(publicKey);
 
 // gets a SHA-1 RSAPublicKey fingerprint a byte buffer
-pki.getPublicKeyFingerPrint(key);
+pki.getPublicKeyFingerprint(key);
 
 // gets a SHA-1 SubjectPublicKeyInfo fingerprint a byte buffer
-pki.getPublicKeyFingerPrint(key, {type: 'SubjectPublicKeyInfo'});
+pki.getPublicKeyFingerprint(key, {type: 'SubjectPublicKeyInfo'});
 
 // gets a hex-encoded, colon-delimited SHA-1 RSAPublicKey public key fingerprint
-pki.getPublicKeyFingerPrint(key, {encoding: 'hex', delimiter: ':'});
+pki.getPublicKeyFingerprint(key, {encoding: 'hex', delimiter: ':'});
 
 // gets a hex-encoded, colon-delimited SHA-1 SubjectPublicKeyInfo public key fingerprint
-pki.getPublicKeyFingerPrint(key, {
+pki.getPublicKeyFingerprint(key, {
   type: 'SubjectPublicKeyInfo',
   encoding: 'hex',
   delimiter: ':'
 });
 
 // gets a hex-encoded, colon-delimited MD5 RSAPublicKey public key fingerprint
-pki.getPublicKeyFingerPrint(key, {
+pki.getPublicKeyFingerprint(key, {
   md: forge.md.md5.create(),
   encoding: 'hex',
   delimiter: ':'
