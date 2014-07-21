@@ -3,7 +3,6 @@
 function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
   function FixedSecureRandom(str) {
-    var randomBitLength = new JSBN.BigInteger(str, 16).bitLength();
     var bytes = UTIL.hexToBytes(str);
     this.getBytesSync = function(count) {
       // prepend zeros
