@@ -3,6 +3,7 @@
 function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 
   function FixedSecureRandom(str) {
+    var randomBitLength = new JSBN.BigInteger(str, 16).bitLength();
     var bytes = UTIL.hexToBytes(str);
     this.getBytesSync = function(count) {
       // prepend zeros
@@ -12,17 +13,19 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
   }
 
   describe('kem', function() {
-    it('should generate and encrypt a symmetric key and decrypt it', function() {
-      var kdf = new KEM.kdf1(MD.sha256.create());
-      var kem = KEM.rsa.create(kdf);
+    it('should generate and encrypt a symmetric key and decrypt it 10x', function() {
+      for(var i = 0; i < 10; ++i) {
+        var kdf = new KEM.kdf1(MD.sha256.create());
+        var kem = KEM.rsa.create(kdf);
 
-      var pair = RSA.generateKeyPair(512);
+        var pair = RSA.generateKeyPair(512);
 
-      var result = kem.encrypt(pair.publicKey, 256);
-      var key1 = result.key;
-      var key2 = kem.decrypt(pair.privateKey, result.encapsulation, 256);
+        var result = kem.encrypt(pair.publicKey, 256);
+        var key1 = result.key;
+        var key2 = kem.decrypt(pair.privateKey, result.encapsulation, 256);
 
-      ASSERT.equal(UTIL.bytesToHex(key1), UTIL.bytesToHex(key2));
+        ASSERT.equal(UTIL.bytesToHex(key1), UTIL.bytesToHex(key2));
+      }
     });
   });
 
@@ -115,7 +118,34 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
       var K = '10a2403db42a8743cb989de86e668d168cbe604611ac179f819a3d18412e9eb45668f2923c087c12fee0c5a0d2a8aa70185401fbbd99379ec76c663e875a60b4aacb1319fa11c3365a8b79a44669f26fb555c80391847b05eca1cb5cf8c2d531448d33fbaca19f6410ee1fcb260892670e0814c348664f6a7248aaf998a3acc6';
 
       var kdf = new KEM.kdf2(MD.sha256.create(), 20);
-      var rnd = new FixedSecureRandom('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
+      var rnd = new FixedSecureRandom('00032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
+      var kem = KEM.rsa.create(kdf, {prng: rnd});
+
+      var rsaPublicKey = RSA.setPublicKey(
+        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+      var rsaPrivateKey = RSA.setPrivateKey(
+        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+
+      var result = kem.encrypt(rsaPublicKey, 128);
+      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
+      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+
+      var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
+      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+    });
+  });
+
+  describe('prepended zeros test', function() {
+    it('should pass when random has leading zeros', function() {
+      var n = '5888113332502691251761936431009284884966640757179802337490546478326238537107326596800820237597139824869184990638749556269785797065508097452399642780486933';
+      var e = '65537';
+      var d = '3202313555859948186315374524474173995679783580392140237044349728046479396037520308981353808895461806395564474639124525446044708705259675840210989546479265';
+
+      var C0 = '5f268a76c1aed04bc195a143d7ee768bee0aad308d16196274a02d9c1a72bbe10cbf718de323fc0135c5f8129f96ac8f504d9623960dc54cd87bddee94f5a0b2';
+      var K = '8bf41e59dc1b83142ee32569a347a94539e48c98347c685a29e3aa8b7a3ea714d68c1a43c4a760c9d4a45149b0ce8b681e98076bdd4393394c7832a7fa71848257772ac38a4e7fbe96e8bb383becbb7242841946e82e35d9ef1667245fc82601e7edf53b897f5ce2b6bce8e1e3212abd5a8a99a0c9b99472e22a313dac396383';
+
+      var kdf = new KEM.kdf1(MD.sha1.create());
+      var rnd = new FixedSecureRandom('000e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(

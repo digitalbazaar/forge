@@ -53,14 +53,20 @@ forge.kem.rsa.create = function(kdf, options) {
    */
   kem.encrypt = function(publicKey, keyLength) {
     // generate a random r where 1 > r > n
+    var byteLength = Math.ceil(publicKey.n.bitLength() / 8);
     var r;
     do {
       r = new BigInteger(
-        forge.util.bytesToHex(prng.getBytesSync(
-          Math.ceil(publicKey.n.bitLength() / 8))),
+        forge.util.bytesToHex(prng.getBytesSync(byteLength)),
         16).mod(publicKey.n);
     } while(r.equals(BigInteger.ZERO));
+
+    // prepend r with zeros
     r = forge.util.hexToBytes(r.toString(16));
+    var zeros = byteLength - r.length;
+    if(zeros > 0) {
+      r = forge.util.fillString(String.fromCharCode(0), zeros) + r;
+    }
 
     // encrypt the random
     var encapsulation = publicKey.encrypt(r, 'NONE');
@@ -84,10 +90,6 @@ forge.kem.rsa.create = function(kdf, options) {
   kem.decrypt = function(privateKey, encapsulation, keyLength) {
     // decrypt the encapsulation and generate the secret key
     var r = privateKey.decrypt(encapsulation, 'NONE');
-    // strip any leading zeros
-    var i = 0;
-    for(; r.charCodeAt(i) === 0; ++i);
-    r = r.substr(i);
     return kdf.generate(r, keyLength);
   };
 
