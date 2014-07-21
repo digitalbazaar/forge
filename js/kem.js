@@ -56,7 +56,8 @@ forge.kem.rsa.create = function(kdf, options) {
     var r;
     do {
       r = new BigInteger(
-        forge.util.bytesToHex(prng.getBytesSync(publicKey.n.bitLength() / 8)),
+        forge.util.bytesToHex(prng.getBytesSync(
+          Math.ceil(publicKey.n.bitLength() / 8))),
         16).mod(publicKey.n);
     } while(r.equals(BigInteger.ZERO));
     r = forge.util.hexToBytes(r.toString(16));
