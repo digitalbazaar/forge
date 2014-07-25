@@ -1185,7 +1185,7 @@ var bags = p12.getBags({
 // generate p12, base64 encode
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');
-var p12Der = forge.asn1.ToDer(p12Asn1).getBytes();
+var p12Der = forge.asn1.toDer(p12Asn1).getBytes();
 var p12b64 = forge.util.encode64(p12Der);
 ```
 
