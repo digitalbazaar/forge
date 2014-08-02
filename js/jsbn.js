@@ -615,6 +615,7 @@ BigInteger.ONE = nbv(1);
 //Extended JavaScript BN functions, required for RSA private ops.
 
 //Version 1.1: new BigInteger("0", 10) returns "proper" zero
+//Version 1.2: square() API, isProbablePrime fix
 
 //(public)
 function bnClone() { var r = nbi(); this.copyTo(r); return r; }
@@ -895,6 +896,9 @@ function bnSubtract(a) { var r = nbi(); this.subTo(a,r); return r; }
 //(public) this * a
 function bnMultiply(a) { var r = nbi(); this.multiplyTo(a,r); return r; }
 
+// (public) this^2
+function bnSquare() { var r = nbi(); this.squareTo(r); return r; }
+
 //(public) this / a
 function bnDivide(a) { var r = nbi(); this.divRemTo(a,r,null); return r; }
 
@@ -1164,31 +1168,31 @@ while(i < lowprimes.length) {
 return x.millerRabin(t);
 }
 
-//(protected) true if probably prime (HAC 4.24, Miller-Rabin)
+// (protected) true if probably prime (HAC 4.24, Miller-Rabin)
 function bnpMillerRabin(t) {
-var n1 = this.subtract(BigInteger.ONE);
-var k = n1.getLowestSetBit();
-if(k <= 0) return false;
-var r = n1.shiftRight(k);
+  var n1 = this.subtract(BigInteger.ONE);
+  var k = n1.getLowestSetBit();
+  if(k <= 0) return false;
+  var r = n1.shiftRight(k);
 var prng = bnGetPrng();
 var a;
-for(var i = 0; i < t; ++i) {
+  for(var i = 0; i < t; ++i) {
  // select witness 'a' at random from between 1 and n1
  do {
    a = new BigInteger(this.bitLength(), prng);
  }
  while(a.compareTo(BigInteger.ONE) <= 0 || a.compareTo(n1) >= 0);
- var y = a.modPow(r,this);
- if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
-   var j = 1;
-   while(j++ < k && y.compareTo(n1) != 0) {
-     y = y.modPowInt(2,this);
-     if(y.compareTo(BigInteger.ONE) == 0) return false;
-   }
-   if(y.compareTo(n1) != 0) return false;
- }
-}
-return true;
+    var y = a.modPow(r,this);
+    if(y.compareTo(BigInteger.ONE) != 0 && y.compareTo(n1) != 0) {
+      var j = 1;
+      while(j++ < k && y.compareTo(n1) != 0) {
+        y = y.modPowInt(2,this);
+        if(y.compareTo(BigInteger.ONE) == 0) return false;
+      }
+      if(y.compareTo(n1) != 0) return false;
+    }
+  }
+  return true;
 }
 
 // get pseudo random number generator
