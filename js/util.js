@@ -2785,8 +2785,8 @@ util.estimateCores = function(options, callback) {
     return callback(null, util.cores);
   }
   if(typeof navigator !== 'undefined' &&
-      'hardwareConcurrency' in navigator &&
-      navigator.hardwareConcurrency > 0) {
+    'hardwareConcurrency' in navigator &&
+    navigator.hardwareConcurrency > 0) {
     util.cores = navigator.hardwareConcurrency;
     return callback(null, util.cores);
   }
