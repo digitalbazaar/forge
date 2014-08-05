@@ -2784,12 +2784,18 @@ util.estimateCores = function(options, callback) {
   if('cores' in util && !options.update) {
     return callback(null, util.cores);
   }
-  if(typeof Worker === undefined) {
+  if(typeof navigator !== 'undefined' &&
+      navigator.hardwareConcurrency !== undefined &&
+      navigator.hardwareConcurrency > 0) {
+    util.cores = navigator.hardwareConcurrency;
+    return callback(null, util.cores);
+  }
+  if(typeof Worker === 'undefined') {
     // workers not available
     util.cores = 1;
     return callback(null, util.cores);
   }
-  if(typeof Blob === undefined) {
+  if(typeof Blob === 'undefined') {
     // can't estimate, default to 2
     util.cores = 2;
     return callback(null, util.cores);
