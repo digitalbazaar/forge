@@ -545,9 +545,9 @@ These algorithms are currently supported:
 * AES-OFB
 * AES-CTR
 * AES-GCM
-* 3DES-EBC
+* 3DES-ECB
 * 3DES-CBC
-* DES-EBC
+* DES-ECB
 * DES-CBC
 
 When using an [AES][] algorithm, the key size will determine whether
