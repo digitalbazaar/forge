@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Forge : Cryptographic tools written in JavaScript, including a native implementation of TLS">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Forge</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/digitalbazaar/forge">View on GitHub</a>
+
+          <h1 id="project_title">Forge</h1>
+          <h2 id="project_tagline">Cryptographic tools written in JavaScript, including a native implementation of TLS</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/digitalbazaar/forge/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/digitalbazaar/forge/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="forge" class="anchor" href="#forge"><span class="octicon octicon-link"></span></a>Forge</h1>
+
+<p><a href="https://travis-ci.org/digitalbazaar/forge"><img src="https://travis-ci.org/digitalbazaar/forge.png?branch=master" alt="Build Status"></a></p>
+
+<p>A native implementation of <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">TLS</a> (and various other cryptographic tools) in
+<a href="http://en.wikipedia.org/wiki/JavaScript">JavaScript</a>.</p>
+
+<h2>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>The Forge software is a fully native implementation of the <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">TLS</a> protocol in
+JavaScript as well as a set of tools for developing Web Apps that utilize many
+network resources.</p>
+
+<h2>
+<a name="performance" class="anchor" href="#performance"><span class="octicon octicon-link"></span></a>Performance</h2>
+
+<p>Forge is fast. Benchmarks against other popular JavaScript cryptography
+libraries can be found here:</p>
+
+<p><a href="http://dominictarr.github.io/crypto-bench/">http://dominictarr.github.io/crypto-bench/</a></p>
+
+<p><a href="http://cryptojs.altervista.org/test/simulate-threading-speed_test.html">http://cryptojs.altervista.org/test/simulate-threading-speed_test.html</a></p>
+
+<h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting Started</h2>
+
+<hr><h3>
+<a name="nodejs" class="anchor" href="#nodejs"><span class="octicon octicon-link"></span></a>Node.js</h3>
+
+<p>If you want to use forge with <a href="http://nodejs.org/">node.js</a>, it is available through <code>npm</code>:</p>
+
+<p><a href="https://npmjs.org/package/node-forge">https://npmjs.org/package/node-forge</a></p>
+
+<p>Installation:</p>
+
+<pre><code>npm install node-forge
+</code></pre>
+
+<p>You can then use forge as a regular module:</p>
+
+<pre><code>var forge = require('node-forge');
+</code></pre>
+
+<h3>
+<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h3>
+
+<ul>
+<li>General
+
+<ul>
+<li>Optional: GNU autotools for the build infrastructure if using Flash.</li>
+</ul>
+</li>
+<li>Building a Browser Bundle:
+
+<ul>
+<li>nodejs</li>
+<li>npm</li>
+</ul>
+</li>
+<li>Testing
+
+<ul>
+<li>nodejs</li>
+<li>Optional: Python and OpenSSL development environment to build</li>
+<li>a special SSL module with session cache support for testing with flash.</li>
+<li><a href="http://www.python.org/dev/">http://www.python.org/dev/</a></li>
+<li><a href="http://www.openssl.org/">http://www.openssl.org/</a></li>
+<li>Debian users should install python-dev and libssl-dev.</li>
+</ul>
+</li>
+<li>Optional: Flash
+
+<ul>
+<li>A pre-built SocketPool.swf is included.</li>
+<li>Adobe Flex 3 SDK to build the Flash socket code.</li>
+<li><a href="http://opensource.adobe.com/wiki/display/flexsdk/">http://opensource.adobe.com/wiki/display/flexsdk/</a></li>
+</ul>
+</li>
+</ul><h3>
+<a name="building-a-browser-bundle" class="anchor" href="#building-a-browser-bundle"><span class="octicon octicon-link"></span></a>Building a browser bundle</h3>
+
+<p>To create a minimized JavaScript bundle, run the following:</p>
+
+<pre><code>npm install
+npm run minify
+</code></pre>
+
+<p>This will create a single minimized file that can be included in
+the browser:</p>
+
+<pre><code>js/forge.min.js
+</code></pre>
+
+<p>Include the file via:</p>
+
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"js/forge.min.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+</pre></div>
+
+<p>Note that the minify script depends on the requirejs package,
+and that the requirejs binary 'r.js' assumes that the name of
+the node binary is 'node' not 'nodejs', as it is on some
+systems. You may need to change the hashbang line to use
+'nodejs' or run the command manually.</p>
+
+<p>To create a single non-minimized file that can be included in
+the browser:</p>
+
+<pre><code>npm install
+npm run bundle
+</code></pre>
+
+<p>This will create:</p>
+
+<pre><code>js/forge.bundle.js
+</code></pre>
+
+<p>Include the file via:</p>
+
+<div class="highlight highlight-html"><pre><span class="nt">&lt;script </span><span class="na">src=</span><span class="s">"js/forge.bundle.js"</span><span class="nt">&gt;&lt;/script&gt;</span>
+</pre></div>
+
+<p>The above bundles will synchronously create a global 'forge' object.</p>
+
+<p>Keep in mind that these bundles will not include any WebWorker
+scripts (eg: prime.worker.js) or their dependencies, so these will
+need to be accessible from the browser if any WebWorkers are used.</p>
+
+<h3>
+<a name="testing-with-nodejs--requirejs" class="anchor" href="#testing-with-nodejs--requirejs"><span class="octicon octicon-link"></span></a>Testing with NodeJS &amp; RequireJS</h3>
+
+<p>A test server for <a href="http://nodejs.org/">node.js</a> can be found at <code>./nodejs</code>. The following are included:</p>
+
+<ul>
+<li>Example of how to use <code>forge</code> within NodeJS in the form of a <a href="http://visionmedia.github.io/mocha/">mocha</a> test.</li>
+<li>Example of how to serve <code>forge</code> to the browser using <a href="http://requirejs.org/">RequireJS</a>.</li>
+</ul><p>To run:</p>
+
+<pre><code>cd nodejs
+npm install
+npm test
+npm start
+</code></pre>
+
+<h3>
+<a name="old-build-system-that-includes-flash-support" class="anchor" href="#old-build-system-that-includes-flash-support"><span class="octicon octicon-link"></span></a>Old build system that includes flash support</h3>
+
+<p>To build the whole project, including Flash, run the following:</p>
+
+<pre><code>$ ./build-setup
+$ make
+</code></pre>
+
+<p>This will create the SWF, symlink all the JavaScript files, and build a Python
+SSL module for testing. To see configure options, run <code>./configure --help</code>.</p>
+
+<h3>
+<a name="old-test-system-including-flash-support" class="anchor" href="#old-test-system-including-flash-support"><span class="octicon octicon-link"></span></a>Old test system including flash support</h3>
+
+<p>A test server is provided which can be run in TLS mode and non-TLS mode. Use
+the --help option to get help for configuring ports. The server will print out
+the local URL you can vist to run tests.</p>
+
+<p>Some of the simplier tests should be run with just the non-TLS server::</p>
+
+<pre><code>$ ./tests/server.py
+</code></pre>
+
+<p>More advanced tests need TLS enabled::</p>
+
+<pre><code>$ ./tests/server.py --tls
+</code></pre>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<hr><p>Any contributions (eg: PRs) that are accepted will be brought under the same
+license used by the rest of the Forge project. This license allows Forge to
+be used under the terms of either the BSD License or the GNU General Public
+License (GPL) Version 2.</p>
+
+<p>See: <a href="https://github.com/digitalbazaar/forge/blob/cbebca3780658703d925b61b2caffb1d263a6c1d/LICENSE">LICENSE</a></p>
+
+<p>If a contribution contains 3rd party source code with its own license, it
+may retain it, so long as that license is compatible with the Forge license.</p>
+
+<h2>
+<a name="documentation" class="anchor" href="#documentation"><span class="octicon octicon-link"></span></a>Documentation</h2>
+
+<hr><h3>
+<a name="transports" class="anchor" href="#transports"><span class="octicon octicon-link"></span></a>Transports</h3>
+
+<ul>
+<li><a href="#tls">TLS</a></li>
+<li><a href="#http">HTTP</a></li>
+<li><a href="#ssh">SSH</a></li>
+<li><a href="#xhr">XHR</a></li>
+<li><a href="#socket">Sockets</a></li>
+</ul><h3>
+<a name="ciphers" class="anchor" href="#ciphers"><span class="octicon octicon-link"></span></a>Ciphers</h3>
+
+<ul>
+<li><a href="#cipher">CIPHER</a></li>
+<li><a href="#aes">AES</a></li>
+<li><a href="#des">DES</a></li>
+<li><a href="#rc2">RC2</a></li>
+</ul><h3>
+<a name="pki" class="anchor" href="#pki"><span class="octicon octicon-link"></span></a>PKI</h3>
+
+<ul>
+<li><a href="#rsa">RSA</a></li>
+<li><a href="#rsakem">RSA-KEM</a></li>
+<li><a href="#x509">X.509</a></li>
+<li><a href="#pkcs5">PKCS#5</a></li>
+<li><a href="#pkcs7">PKCS#7</a></li>
+<li><a href="#pkcs8">PKCS#8</a></li>
+<li><a href="#pkcs10">PKCS#10</a></li>
+<li><a href="#pkcs12">PKCS#12</a></li>
+<li><a href="#asn">ASN.1</a></li>
+</ul><h3>
+<a name="message-digests" class="anchor" href="#message-digests"><span class="octicon octicon-link"></span></a>Message Digests</h3>
+
+<ul>
+<li><a href="#sha1">SHA1</a></li>
+<li><a href="#sha256">SHA256</a></li>
+<li><a href="#sha384">SHA384</a></li>
+<li><a href="#sha512">SHA512</a></li>
+<li><a href="#md5">MD5</a></li>
+<li><a href="#hmac">HMAC</a></li>
+</ul><h3>
+<a name="utilities" class="anchor" href="#utilities"><span class="octicon octicon-link"></span></a>Utilities</h3>
+
+<ul>
+<li><a href="#prime">Prime</a></li>
+<li><a href="#prng">PRNG</a></li>
+<li><a href="#task">Tasks</a></li>
+<li><a href="#util">Utilities</a></li>
+<li><a href="#log">Logging</a></li>
+<li><a href="#debug">Debugging</a></li>
+<li><a href="#fsp">Flash Socket Policy Module</a></li>
+</ul><hr><p>If at any time you wish to disable the use of native code, where available,
+for particular forge features like its secure random number generator, you
+may set the <code>disableNativeCode</code> flag on <code>forge</code> to <code>true</code>. It
+is not recommended that you set this flag as native code is typically more
+performant and may have stronger security properties. It may be useful to
+set this flag to test certain features that you plan to run in environments
+that are different from your testing environment.</p>
+
+<p>To disable native code when including forge in the browser:</p>
+
+<div class="highlight highlight-js"><pre><span class="nx">forge</span> <span class="o">=</span> <span class="p">{</span><span class="nx">disableNativeCode</span><span class="o">:</span> <span class="kc">true</span><span class="p">};</span>
+<span class="c1">// now include other files</span>
+</pre></div>
+
+<p>To disable native code when using node.js:</p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">forge</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">'node-forge'</span><span class="p">)({</span><span class="nx">disableNativeCode</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
+</pre></div>
+
+<hr><h2>
+<a name="transports-1" class="anchor" href="#transports-1"><span class="octicon octicon-link"></span></a>Transports</h2>
+
+<p><a name="tls"></a></p>
+
+<h3>
+<a name="tls" class="anchor" href="#tls"><span class="octicon octicon-link"></span></a>TLS</h3>
+
+<p>Provides a native javascript client and server-side <a href="http://en.wikipedia.org/wiki/Transport_Layer_Security">TLS</a> implementation.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// create TLS client</span>
+<span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">createConnection</span><span class="p">({</span>
+  <span class="nx">server</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">caStore</span><span class="o">:</span> <span class="cm">/* Array of PEM-formatted certs or a CA store object */</span><span class="p">,</span>
+  <span class="nx">sessionCache</span><span class="o">:</span> <span class="p">{},</span>
+  <span class="c1">// supported cipher suites in order of preference</span>
+  <span class="nx">cipherSuites</span><span class="o">:</span> <span class="p">[</span>
+    <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">CipherSuites</span><span class="p">.</span><span class="nx">TLS_RSA_WITH_AES_128_CBC_SHA</span><span class="p">,</span>
+    <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">CipherSuites</span><span class="p">.</span><span class="nx">TLS_RSA_WITH_AES_256_CBC_SHA</span><span class="p">],</span>
+  <span class="nx">virtualHost</span><span class="o">:</span> <span class="s1">'example.com'</span><span class="p">,</span>
+  <span class="nx">verify</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">verified</span><span class="p">,</span> <span class="nx">depth</span><span class="p">,</span> <span class="nx">certs</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">depth</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">cn</span> <span class="o">=</span> <span class="nx">certs</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">subject</span><span class="p">.</span><span class="nx">getField</span><span class="p">(</span><span class="s1">'CN'</span><span class="p">).</span><span class="nx">value</span><span class="p">;</span>
+      <span class="k">if</span><span class="p">(</span><span class="nx">cn</span> <span class="o">!==</span> <span class="s1">'example.com'</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">verified</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="nx">alert</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">Alert</span><span class="p">.</span><span class="nx">Description</span><span class="p">.</span><span class="nx">bad_certificate</span><span class="p">,</span>
+          <span class="nx">message</span><span class="o">:</span> <span class="s1">'Certificate common name does not match hostname.'</span>
+        <span class="p">};</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">verified</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">connected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'connected'</span><span class="p">);</span>
+    <span class="c1">// send message to server</span>
+    <span class="nx">connection</span><span class="p">.</span><span class="nx">prepare</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">encodeUtf8</span><span class="p">(</span><span class="s1">'Hi server!'</span><span class="p">));</span>
+    <span class="cm">/* NOTE: experimental, start heartbeat retransmission timer</span>
+<span class="cm">    myHeartbeatTimer = setInterval(function() {</span>
+<span class="cm">      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));</span>
+<span class="cm">    }, 5*60*1000);*/</span>
+  <span class="p">},</span>
+  <span class="cm">/* provide a client-side cert if you want</span>
+<span class="cm">  getCertificate: function(connection, hint) {</span>
+<span class="cm">    return myClientCertificate;</span>
+<span class="cm">  },</span>
+<span class="cm">  /* the private key for the client-side cert if provided */</span>
+  <span class="nx">getPrivateKey</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">cert</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">myClientPrivateKey</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">tlsDataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// TLS data (encrypted) is ready to be sent to the server</span>
+    <span class="nx">sendToServerSomehow</span><span class="p">(</span><span class="nx">connection</span><span class="p">.</span><span class="nx">tlsData</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">());</span>
+    <span class="c1">// if you were communicating with the server below, you'd do:</span>
+    <span class="c1">// server.process(connection.tlsData.getBytes());</span>
+  <span class="p">},</span>
+  <span class="nx">dataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// clear data from the server is ready</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'the server sent: '</span> <span class="o">+</span>
+      <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">decodeUtf8</span><span class="p">(</span><span class="nx">connection</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">()));</span>
+    <span class="c1">// close connection</span>
+    <span class="nx">connection</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+  <span class="p">},</span>
+  <span class="cm">/* NOTE: experimental</span>
+<span class="cm">  heartbeatReceived: function(connection, payload) {</span>
+<span class="cm">    // restart retransmission timer, look at payload</span>
+<span class="cm">    clearInterval(myHeartbeatTimer);</span>
+<span class="cm">    myHeartbeatTimer = setInterval(function() {</span>
+<span class="cm">      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));</span>
+<span class="cm">    }, 5*60*1000);</span>
+<span class="cm">    payload.getBytes();</span>
+<span class="cm">  },*/</span>
+  <span class="nx">closed</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'disconnected'</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'uh oh'</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// start the handshake process</span>
+<span class="nx">client</span><span class="p">.</span><span class="nx">handshake</span><span class="p">();</span>
+
+<span class="c1">// when encrypted TLS data is received from the server, process it</span>
+<span class="nx">client</span><span class="p">.</span><span class="nx">process</span><span class="p">(</span><span class="nx">encryptedBytesFromServer</span><span class="p">);</span>
+
+<span class="c1">// create TLS server</span>
+<span class="kd">var</span> <span class="nx">server</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">createConnection</span><span class="p">({</span>
+  <span class="nx">server</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">caStore</span><span class="o">:</span> <span class="cm">/* Array of PEM-formatted certs or a CA store object */</span><span class="p">,</span>
+  <span class="nx">sessionCache</span><span class="o">:</span> <span class="p">{},</span>
+  <span class="c1">// supported cipher suites in order of preference</span>
+  <span class="nx">cipherSuites</span><span class="o">:</span> <span class="p">[</span>
+    <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">CipherSuites</span><span class="p">.</span><span class="nx">TLS_RSA_WITH_AES_128_CBC_SHA</span><span class="p">,</span>
+    <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">CipherSuites</span><span class="p">.</span><span class="nx">TLS_RSA_WITH_AES_256_CBC_SHA</span><span class="p">],</span>
+  <span class="c1">// require a client-side certificate if you want</span>
+  <span class="nx">verifyClient</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">verify</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">verified</span><span class="p">,</span> <span class="nx">depth</span><span class="p">,</span> <span class="nx">certs</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">depth</span> <span class="o">===</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">var</span> <span class="nx">cn</span> <span class="o">=</span> <span class="nx">certs</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">subject</span><span class="p">.</span><span class="nx">getField</span><span class="p">(</span><span class="s1">'CN'</span><span class="p">).</span><span class="nx">value</span><span class="p">;</span>
+      <span class="k">if</span><span class="p">(</span><span class="nx">cn</span> <span class="o">!==</span> <span class="s1">'the-client'</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">verified</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="nx">alert</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">Alert</span><span class="p">.</span><span class="nx">Description</span><span class="p">.</span><span class="nx">bad_certificate</span><span class="p">,</span>
+          <span class="nx">message</span><span class="o">:</span> <span class="s1">'Certificate common name does not match expected client.'</span>
+        <span class="p">};</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nx">verified</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">connected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'connected'</span><span class="p">);</span>
+    <span class="c1">// send message to client</span>
+    <span class="nx">connection</span><span class="p">.</span><span class="nx">prepare</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">encodeUtf8</span><span class="p">(</span><span class="s1">'Hi client!'</span><span class="p">));</span>
+    <span class="cm">/* NOTE: experimental, start heartbeat retransmission timer</span>
+<span class="cm">    myHeartbeatTimer = setInterval(function() {</span>
+<span class="cm">      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));</span>
+<span class="cm">    }, 5*60*1000);*/</span>
+  <span class="p">},</span>
+  <span class="nx">getCertificate</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">hint</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">myServerCertificate</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">getPrivateKey</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">cert</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">myServerPrivateKey</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">tlsDataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// TLS data (encrypted) is ready to be sent to the client</span>
+    <span class="nx">sendToClientSomehow</span><span class="p">(</span><span class="nx">connection</span><span class="p">.</span><span class="nx">tlsData</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">());</span>
+    <span class="c1">// if you were communicating with the client above you'd do:</span>
+    <span class="c1">// client.process(connection.tlsData.getBytes());</span>
+  <span class="p">},</span>
+  <span class="nx">dataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// clear data from the client is ready</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'the client sent: '</span> <span class="o">+</span>
+      <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">decodeUtf8</span><span class="p">(</span><span class="nx">connection</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">()));</span>
+    <span class="c1">// close connection</span>
+    <span class="nx">connection</span><span class="p">.</span><span class="nx">close</span><span class="p">();</span>
+  <span class="p">},</span>
+  <span class="cm">/* NOTE: experimental</span>
+<span class="cm">  heartbeatReceived: function(connection, payload) {</span>
+<span class="cm">    // restart retransmission timer, look at payload</span>
+<span class="cm">    clearInterval(myHeartbeatTimer);</span>
+<span class="cm">    myHeartbeatTimer = setInterval(function() {</span>
+<span class="cm">      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));</span>
+<span class="cm">    }, 5*60*1000);</span>
+<span class="cm">    payload.getBytes();</span>
+<span class="cm">  },*/</span>
+  <span class="nx">closed</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'disconnected'</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'uh oh'</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// when encrypted TLS data is received from the client, process it</span>
+<span class="nx">server</span><span class="p">.</span><span class="nx">process</span><span class="p">(</span><span class="nx">encryptedBytesFromClient</span><span class="p">);</span>
+</pre></div>
+
+<p>Connect to a TLS server using node's net.Socket:</p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">socket</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">net</span><span class="p">.</span><span class="nx">Socket</span><span class="p">();</span>
+
+<span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">tls</span><span class="p">.</span><span class="nx">createConnection</span><span class="p">({</span>
+  <span class="nx">server</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+  <span class="nx">verify</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">verified</span><span class="p">,</span> <span class="nx">depth</span><span class="p">,</span> <span class="nx">certs</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// skip verification for testing</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[tls] server certificate verified'</span><span class="p">);</span>
+    <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+  <span class="p">},</span>
+  <span class="nx">connected</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[tls] connected'</span><span class="p">);</span>
+    <span class="c1">// prepare some data to send (note that the string is interpreted as</span>
+    <span class="c1">// 'binary' encoded, which works for HTTP which only uses ASCII, use</span>
+    <span class="c1">// forge.util.encodeUtf8(str) otherwise</span>
+    <span class="nx">client</span><span class="p">.</span><span class="nx">prepare</span><span class="p">(</span><span class="s1">'GET / HTTP/1.0\r\n\r\n'</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="nx">tlsDataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// encrypted data is ready to be sent to the server</span>
+    <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">connection</span><span class="p">.</span><span class="nx">tlsData</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">();</span>
+    <span class="nx">socket</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">data</span><span class="p">,</span> <span class="s1">'binary'</span><span class="p">);</span> <span class="c1">// encoding should be 'binary'</span>
+  <span class="p">},</span>
+  <span class="nx">dataReady</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// clear data from the server is ready</span>
+    <span class="kd">var</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">connection</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">();</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[tls] data received from the server: '</span> <span class="o">+</span> <span class="nx">data</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="nx">closed</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[tls] disconnected'</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">connection</span><span class="p">,</span> <span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[tls] error'</span><span class="p">,</span> <span class="nx">error</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'connect'</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[socket] connected'</span><span class="p">);</span>
+  <span class="nx">client</span><span class="p">.</span><span class="nx">handshake</span><span class="p">();</span>
+<span class="p">});</span>
+<span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'data'</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">client</span><span class="p">.</span><span class="nx">process</span><span class="p">(</span><span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="s1">'binary'</span><span class="p">));</span> <span class="c1">// encoding should be 'binary'</span>
+<span class="p">});</span>
+<span class="nx">socket</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">'end'</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'[socket] disconnected'</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="c1">// connect to google.com</span>
+<span class="nx">socket</span><span class="p">.</span><span class="nx">connect</span><span class="p">(</span><span class="mi">443</span><span class="p">,</span> <span class="s1">'google.com'</span><span class="p">);</span>
+
+<span class="c1">// or connect to gmail's imap server (but don't send the HTTP header above)</span>
+<span class="c1">//socket.connect(993, 'imap.gmail.com');</span>
+</pre></div>
+
+<p><a name="http"></a></p>
+
+<h3>
+<a name="http" class="anchor" href="#http"><span class="octicon octicon-link"></span></a>HTTP</h3>
+
+<p>Provides a native <a href="http://en.wikipedia.org/wiki/JavaScript">JavaScript</a> mini-implementation of an http client that
+uses pooled sockets.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// create an HTTP GET request</span>
+<span class="kd">var</span> <span class="nx">request</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">createRequest</span><span class="p">({</span><span class="nx">method</span><span class="o">:</span> <span class="s1">'GET'</span><span class="p">,</span> <span class="nx">path</span><span class="o">:</span> <span class="nx">url</span><span class="p">.</span><span class="nx">path</span><span class="p">});</span>
+
+<span class="c1">// send the request somewhere</span>
+<span class="nx">sendSomehow</span><span class="p">(</span><span class="nx">request</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
+
+<span class="c1">// receive response</span>
+<span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">response</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">http</span><span class="p">.</span><span class="nx">createResponse</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">someAsyncDataHandler</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">bytes</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">bodyReceived</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">buffer</span><span class="p">.</span><span class="nx">putBytes</span><span class="p">(</span><span class="nx">bytes</span><span class="p">);</span>
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">headerReceived</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">readHeader</span><span class="p">(</span><span class="nx">buffer</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'HTTP response header: '</span> <span class="o">+</span> <span class="nx">response</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">headerReceived</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nx">response</span><span class="p">.</span><span class="nx">bodyReceived</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span><span class="p">(</span><span class="nx">response</span><span class="p">.</span><span class="nx">readBody</span><span class="p">(</span><span class="nx">buffer</span><span class="p">))</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'HTTP response body: '</span> <span class="o">+</span> <span class="nx">response</span><span class="p">.</span><span class="nx">body</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></div>
+
+<p><a name="ssh"></a></p>
+
+<h3>
+<a name="ssh" class="anchor" href="#ssh"><span class="octicon octicon-link"></span></a>SSH</h3>
+
+<p>Provides some SSH utility functions.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// encodes (and optionally encrypts) a private RSA key as a Putty PPK file</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">privateKeyToPutty</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">,</span> <span class="nx">passphrase</span><span class="p">,</span> <span class="nx">comment</span><span class="p">);</span>
+
+<span class="c1">// encodes a public RSA key as an OpenSSH file</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">publicKeyToOpenSSH</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="nx">comment</span><span class="p">);</span>
+
+<span class="c1">// encodes a private RSA key as an OpenSSH file</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">privateKeyToOpenSSH</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">,</span> <span class="nx">passphrase</span><span class="p">);</span>
+
+<span class="c1">// gets the SSH public key fingerprint in a byte buffer</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+
+<span class="c1">// gets a hex-encoded, colon-delimited SSH public key fingerprint</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">ssh</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span><span class="nx">encoding</span><span class="o">:</span> <span class="s1">'hex'</span><span class="p">,</span> <span class="nx">delimiter</span><span class="o">:</span> <span class="s1">':'</span><span class="p">});</span>
+</pre></div>
+
+<p><a name="xhr"></a></p>
+
+<h3>
+<a name="xhr" class="anchor" href="#xhr"><span class="octicon octicon-link"></span></a>XHR</h3>
+
+<p>Provides an XmlHttpRequest implementation using forge.http as a backend.</p>
+
+<p><strong>Examples</strong></p>
+
+<pre><code></code></pre>
+<p><a name="socket"></a></p>
+
+<h3>
+<a name="sockets" class="anchor" href="#sockets"><span class="octicon octicon-link"></span></a>Sockets</h3>
+
+<p>Provides an interface to create and use raw sockets provided via Flash.</p>
+
+<p><strong>Examples</strong></p>
+
+<pre><code></code></pre>
+<hr><h2>
+<a name="ciphers-1" class="anchor" href="#ciphers-1"><span class="octicon octicon-link"></span></a>Ciphers</h2>
+
+<p><a name="cipher"></a></p>
+
+<h3>
+<a name="cipher" class="anchor" href="#cipher"><span class="octicon octicon-link"></span></a>CIPHER</h3>
+
+<p>Provides a basic API for block encryption and decryption. There is built-in
+support for the ciphers: <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES</a>, <a href="http://en.wikipedia.org/wiki/Triple_DES">3DES</a>, and <a href="http://en.wikipedia.org/wiki/Data_Encryption_Standard">DES</a>, and for the modes
+of operation: <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">ECB</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CBC</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CFB</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">OFB</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CTR</a>, and <a href="http://en.wikipedia.org/wiki/GCM_mode">GCM</a>.</p>
+
+<p>These algorithms are currently supported:</p>
+
+<ul>
+<li>AES-CBC</li>
+<li>AES-CFB</li>
+<li>AES-OFB</li>
+<li>AES-CTR</li>
+<li>AES-GCM</li>
+<li>3DES-ECB</li>
+<li>3DES-CBC</li>
+<li>DES-ECB</li>
+<li>DES-CBC</li>
+</ul><p>When using an <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES</a> algorithm, the key size will determine whether
+AES-128, AES-192, or AES-256 is used (all are supported). When a <a href="http://en.wikipedia.org/wiki/Data_Encryption_Standard">DES</a>
+algorithm is used, the key size will determine whether <a href="http://en.wikipedia.org/wiki/Triple_DES">3DES</a> or regular
+<a href="http://en.wikipedia.org/wiki/Data_Encryption_Standard">DES</a> is used. Use a <a href="http://en.wikipedia.org/wiki/Triple_DES">3DES</a> algorithm to enforce Triple-DES.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate a random key and IV</span>
+<span class="c1">// Note: a key size of 16 bytes will use AES-128, 24 =&gt; AES-192, 32 =&gt; AES-256</span>
+<span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">iv</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+
+<span class="cm">/* alternatively, generate a password-based 16-byte key</span>
+<span class="cm">var salt = forge.random.getBytesSync(128);</span>
+<span class="cm">var key = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);</span>
+<span class="cm">*/</span>
+
+<span class="c1">// encrypt some bytes using CBC mode</span>
+<span class="c1">// (other modes include: CFB, OFB, CTR, and GCM)</span>
+<span class="kd">var</span> <span class="nx">cipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createCipher</span><span class="p">(</span><span class="s1">'AES-CBC'</span><span class="p">,</span> <span class="nx">key</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span><span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">});</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">someBytes</span><span class="p">));</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">output</span><span class="p">;</span>
+<span class="c1">// outputs encrypted hex</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+
+<span class="c1">// decrypt some bytes using CBC mode</span>
+<span class="c1">// (other modes include: CFB, OFB, CTR, and GCM)</span>
+<span class="kd">var</span> <span class="nx">decipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createDecipher</span><span class="p">(</span><span class="s1">'AES-CBC'</span><span class="p">,</span> <span class="nx">key</span><span class="p">);</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span><span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">});</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">);</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="c1">// outputs decrypted hex</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">decipher</span><span class="p">.</span><span class="nx">output</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+
+<span class="c1">// encrypt some bytes using GCM mode</span>
+<span class="kd">var</span> <span class="nx">cipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createCipher</span><span class="p">(</span><span class="s1">'AES-GCM'</span><span class="p">,</span> <span class="nx">key</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span>
+  <span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">,</span> <span class="c1">// should be a 12-byte binary-encoded string or byte buffer</span>
+  <span class="nx">additionalData</span><span class="o">:</span> <span class="s1">'binary-encoded string'</span><span class="p">,</span> <span class="c1">// optional</span>
+  <span class="nx">tagLength</span><span class="o">:</span> <span class="mi">128</span> <span class="c1">// optional, defaults to 128 bits</span>
+<span class="p">});</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">someBytes</span><span class="p">));</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">output</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">tag</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">mode</span><span class="p">.</span><span class="nx">tag</span><span class="p">;</span>
+<span class="c1">// outputs encrypted hex</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// outputs authentication tag</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">tag</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+
+<span class="c1">// decrypt some bytes using GCM mode</span>
+<span class="kd">var</span> <span class="nx">decipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createDecipher</span><span class="p">(</span><span class="s1">'AES-GCM'</span><span class="p">,</span> <span class="nx">key</span><span class="p">);</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span>
+  <span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">,</span>
+  <span class="nx">additionalData</span><span class="o">:</span> <span class="s1">'binary-encoded string'</span><span class="p">,</span> <span class="c1">// optional</span>
+  <span class="nx">tagLength</span><span class="o">:</span> <span class="mi">128</span><span class="p">,</span> <span class="c1">// optional, defaults to 128 bits</span>
+  <span class="nx">tag</span><span class="o">:</span> <span class="nx">tag</span> <span class="c1">// authentication tag from encryption</span>
+<span class="p">});</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">pass</span> <span class="o">=</span> <span class="nx">decipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="c1">// pass is false if there was a failure (eg: authentication tag didn't match)</span>
+<span class="k">if</span><span class="p">(</span><span class="nx">pass</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// outputs decrypted hex</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">decipher</span><span class="p">.</span><span class="nx">output</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><a name="aes"></a></p>
+
+<h3>
+<a name="aes" class="anchor" href="#aes"><span class="octicon octicon-link"></span></a>AES</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES</a> encryption and decryption in <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CBC</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CFB</a>, <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">OFB</a>,
+<a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CTR</a>, and <a href="http://en.wikipedia.org/wiki/GCM_mode">GCM</a> modes. See <a href="#cipher">CIPHER</a> for examples.</p>
+
+<p><a name="des"></a></p>
+
+<h3>
+<a name="des" class="anchor" href="#des"><span class="octicon octicon-link"></span></a>DES</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/Triple_DES">3DES</a> and <a href="http://en.wikipedia.org/wiki/Data_Encryption_Standard">DES</a> encryption and decryption in <a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">ECB</a> and
+<a href="http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation">CBC</a> modes. See <a href="#cipher">CIPHER</a> for examples.</p>
+
+<p><a name="rc2"></a></p>
+
+<h3>
+<a name="rc2" class="anchor" href="#rc2"><span class="octicon octicon-link"></span></a>RC2</h3>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate a random key and IV</span>
+<span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">16</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">iv</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+
+<span class="c1">// encrypt some bytes</span>
+<span class="kd">var</span> <span class="nx">cipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">rc2</span><span class="p">.</span><span class="nx">createEncryptionCipher</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">start</span><span class="p">(</span><span class="nx">iv</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">someBytes</span><span class="p">));</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">output</span><span class="p">;</span>
+<span class="c1">// outputs encrypted hex</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+
+<span class="c1">// decrypt some bytes</span>
+<span class="kd">var</span> <span class="nx">cipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">rc2</span><span class="p">.</span><span class="nx">createDecryptionCipher</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">start</span><span class="p">(</span><span class="nx">iv</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="c1">// outputs decrypted hex</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">output</span><span class="p">.</span><span class="nx">toHex</span><span class="p">());</span>
+</pre></div>
+
+<hr><h2>
+<a name="pki-1" class="anchor" href="#pki-1"><span class="octicon octicon-link"></span></a>PKI</h2>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/X.509">X.509</a> certificate and RSA public and private key encoding,
+decoding, encryption/decryption, and signing/verifying.</p>
+
+<p><a name="rsa"></a></p>
+
+<h3>
+<a name="rsa" class="anchor" href="#rsa"><span class="octicon octicon-link"></span></a>RSA</h3>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">rsa</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">rsa</span><span class="p">;</span>
+
+<span class="c1">// generate an RSA key pair synchronously</span>
+<span class="kd">var</span> <span class="nx">keypair</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">generateKeyPair</span><span class="p">({</span><span class="nx">bits</span><span class="o">:</span> <span class="mi">2048</span><span class="p">,</span> <span class="nx">e</span><span class="o">:</span> <span class="mh">0x10001</span><span class="p">});</span>
+
+<span class="c1">// generate an RSA key pair asynchronously (uses web workers if available)</span>
+<span class="c1">// use workers: -1 to run a fast core estimator to optimize # of workers</span>
+<span class="nx">rsa</span><span class="p">.</span><span class="nx">generateKeyPair</span><span class="p">({</span><span class="nx">bits</span><span class="o">:</span> <span class="mi">2048</span><span class="p">,</span> <span class="nx">workers</span><span class="o">:</span> <span class="mi">2</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">keypair</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// keypair.privateKey, keypair.publicKey</span>
+<span class="p">});</span>
+
+<span class="c1">// generate an RSA key pair in steps that attempt to run for a specified period</span>
+<span class="c1">// of time on the main JS thread</span>
+<span class="kd">var</span> <span class="nx">state</span> <span class="o">=</span> <span class="nx">rsa</span><span class="p">.</span><span class="nx">createKeyPairGenerationState</span><span class="p">(</span><span class="mi">2048</span><span class="p">,</span> <span class="mh">0x10001</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">step</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="c1">// run for 100 ms</span>
+  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">stepKeyPairGenerationState</span><span class="p">(</span><span class="nx">state</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span> <span class="p">{</span>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">step</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// done, turn off progress indicator, use state.keys</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+<span class="c1">// turn on progress indicator, schedule generation to run</span>
+<span class="nx">setTimeout</span><span class="p">(</span><span class="nx">step</span><span class="p">);</span>
+
+<span class="c1">// sign data with a private key and output DigestInfo DER-encoded bytes</span>
+<span class="c1">// (defaults to RSASSA PKCS#1 v1.5)</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'sign this'</span><span class="p">,</span> <span class="s1">'utf8'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">signature</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">md</span><span class="p">);</span>
+
+<span class="c1">// verify data with a public key</span>
+<span class="c1">// (defaults to RSASSA PKCS#1 v1.5)</span>
+<span class="kd">var</span> <span class="nx">verified</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">bytes</span><span class="p">(),</span> <span class="nx">signature</span><span class="p">);</span>
+
+<span class="c1">// sign data using RSASSA-PSS where PSS uses a SHA-1 hash, a SHA-1 based</span>
+<span class="c1">// masking function MGF1, and a 20 byte salt</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'sign this'</span><span class="p">,</span> <span class="s1">'utf8'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">pss</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pss</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">(),</span>
+  <span class="nx">mgf</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">mgf</span><span class="p">.</span><span class="nx">mgf1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">()),</span>
+  <span class="nx">saltLength</span><span class="o">:</span> <span class="mi">20</span>
+  <span class="c1">// optionally pass 'prng' with a custom PRNG implementation</span>
+  <span class="c1">// optionalls pass 'salt' with a forge.util.ByteBuffer w/custom salt</span>
+<span class="p">});</span>
+<span class="kd">var</span> <span class="nx">signature</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">md</span><span class="p">,</span> <span class="nx">pss</span><span class="p">);</span>
+
+<span class="c1">// verify RSASSA-PSS signature</span>
+<span class="kd">var</span> <span class="nx">pss</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pss</span><span class="p">.</span><span class="nx">create</span><span class="p">({</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">(),</span>
+  <span class="nx">mgf</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">mgf</span><span class="p">.</span><span class="nx">mgf1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">()),</span>
+  <span class="nx">saltLength</span><span class="o">:</span> <span class="mi">20</span>
+  <span class="c1">// optionally pass 'prng' with a custom PRNG implementation</span>
+<span class="p">});</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'sign this'</span><span class="p">,</span> <span class="s1">'utf8'</span><span class="p">);</span>
+<span class="nx">publicKey</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">getBytes</span><span class="p">(),</span> <span class="nx">signature</span><span class="p">,</span> <span class="nx">pss</span><span class="p">);</span>
+
+<span class="c1">// encrypt data with a public key (defaults to RSAES PKCS#1 v1.5)</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">bytes</span><span class="p">);</span>
+
+<span class="c1">// decrypt data with a private key (defaults to RSAES PKCS#1 v1.5)</span>
+<span class="kd">var</span> <span class="nx">decrypted</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">);</span>
+
+<span class="c1">// encrypt data with a public key using RSAES PKCS#1 v1.5</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="s1">'RSAES-PKCS1-V1_5'</span><span class="p">);</span>
+
+<span class="c1">// decrypt data with a private key using RSAES PKCS#1 v1.5</span>
+<span class="kd">var</span> <span class="nx">decrypted</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">,</span> <span class="s1">'RSAES-PKCS1-V1_5'</span><span class="p">);</span>
+
+<span class="c1">// encrypt data with a public key using RSAES-OAEP</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">);</span>
+
+<span class="c1">// decrypt data with a private key using RSAES-OAEP</span>
+<span class="kd">var</span> <span class="nx">decrypted</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">);</span>
+
+<span class="c1">// encrypt data with a public key using RSAES-OAEP/SHA-256</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+<span class="p">});</span>
+
+<span class="c1">// decrypt data with a private key using RSAES-OAEP/SHA-256</span>
+<span class="kd">var</span> <span class="nx">decrypted</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+<span class="p">});</span>
+
+<span class="c1">// encrypt data with a public key using RSAES-OAEP/SHA-256/MGF1-SHA-1</span>
+<span class="c1">// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">publicKey</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">bytes</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">(),</span>
+  <span class="nx">mgf1</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+<span class="c1">// decrypt data with a private key using RSAES-OAEP/SHA-256/MGF1-SHA-1</span>
+<span class="c1">// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding</span>
+<span class="kd">var</span> <span class="nx">decrypted</span> <span class="o">=</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">,</span> <span class="s1">'RSA-OAEP'</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">(),</span>
+  <span class="nx">mgf1</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">()</span>
+  <span class="p">}</span>
+<span class="p">});</span>
+
+</pre></div>
+
+<p><a name="rsakem"></a></p>
+
+<h3>
+<a name="rsa-kem" class="anchor" href="#rsa-kem"><span class="octicon octicon-link"></span></a>RSA-KEM</h3>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate an RSA key pair asynchronously (uses web workers if available)</span>
+<span class="c1">// use workers: -1 to run a fast core estimator to optimize # of workers</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">generateKeyPair</span><span class="p">({</span><span class="nx">bits</span><span class="o">:</span> <span class="mi">2048</span><span class="p">,</span> <span class="nx">workers</span><span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">keypair</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// keypair.privateKey, keypair.publicKey</span>
+<span class="p">});</span>
+
+<span class="c1">// generate and encapsulate a 16-byte secret key</span>
+<span class="kd">var</span> <span class="nx">kdf1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">kem</span><span class="p">.</span><span class="nx">kdf1</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">());</span>
+<span class="kd">var</span> <span class="nx">kem</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">kem</span><span class="p">.</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">kdf1</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="nx">kem</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">(</span><span class="nx">keypair</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="c1">// result has 'encapsulation' and 'key'</span>
+
+<span class="c1">// encrypt some bytes</span>
+<span class="kd">var</span> <span class="nx">iv</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">someBytes</span> <span class="o">=</span> <span class="s1">'hello world!'</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">cipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createCipher</span><span class="p">(</span><span class="s1">'AES-GCM'</span><span class="p">,</span> <span class="nx">result</span><span class="p">.</span><span class="nx">key</span><span class="p">);</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span><span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">});</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">someBytes</span><span class="p">));</span>
+<span class="nx">cipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">encrypted</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">output</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">tag</span> <span class="o">=</span> <span class="nx">cipher</span><span class="p">.</span><span class="nx">mode</span><span class="p">.</span><span class="nx">tag</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">();</span>
+
+<span class="c1">// send 'encrypted', 'iv', 'tag', and result.encapsulation to recipient</span>
+
+<span class="c1">// decrypt encapsulated 16-byte secret key</span>
+<span class="kd">var</span> <span class="nx">kdf1</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">kem</span><span class="p">.</span><span class="nx">kdf1</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">());</span>
+<span class="kd">var</span> <span class="nx">kem</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">kem</span><span class="p">.</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">kdf1</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">key</span> <span class="o">=</span> <span class="nx">kem</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">keypair</span><span class="p">.</span><span class="nx">privateKey</span><span class="p">,</span> <span class="nx">result</span><span class="p">.</span><span class="nx">encapsulation</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+
+<span class="c1">// decrypt some bytes</span>
+<span class="kd">var</span> <span class="nx">decipher</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">cipher</span><span class="p">.</span><span class="nx">createDecipher</span><span class="p">(</span><span class="s1">'AES-GCM'</span><span class="p">,</span> <span class="nx">key</span><span class="p">);</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">start</span><span class="p">({</span><span class="nx">iv</span><span class="o">:</span> <span class="nx">iv</span><span class="p">,</span> <span class="nx">tag</span><span class="o">:</span> <span class="nx">tag</span><span class="p">});</span>
+<span class="nx">decipher</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">encrypted</span><span class="p">));</span>
+<span class="kd">var</span> <span class="nx">pass</span> <span class="o">=</span> <span class="nx">decipher</span><span class="p">.</span><span class="nx">finish</span><span class="p">();</span>
+<span class="c1">// pass is false if there was a failure (eg: authentication tag didn't match)</span>
+<span class="k">if</span><span class="p">(</span><span class="nx">pass</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// outputs 'hello world!'</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">decipher</span><span class="p">.</span><span class="nx">output</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">());</span>
+<span class="p">}</span>
+
+</pre></div>
+
+<p><a name="x509"></a></p>
+
+<h3>
+<a name="x509" class="anchor" href="#x509"><span class="octicon octicon-link"></span></a>X.509</h3>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">pki</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">;</span>
+
+<span class="c1">// convert a PEM-formatted public key to a Forge public key</span>
+<span class="kd">var</span> <span class="nx">publicKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">publicKeyFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge public key to PEM-format</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">publicKeyToPem</span><span class="p">(</span><span class="nx">publicKey</span><span class="p">);</span>
+
+<span class="c1">// convert an ASN.1 SubjectPublicKeyInfo to a Forge public key</span>
+<span class="kd">var</span> <span class="nx">publicKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">publicKeyFromAsn1</span><span class="p">(</span><span class="nx">subjectPublicKeyInfo</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge public key to an ASN.1 SubjectPublicKeyInfo</span>
+<span class="kd">var</span> <span class="nx">subjectPublicKeyInfo</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">publicKeyToAsn1</span><span class="p">(</span><span class="nx">publicKey</span><span class="p">);</span>
+
+<span class="c1">// gets a SHA-1 RSAPublicKey fingerprint a byte buffer</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">);</span>
+
+<span class="c1">// gets a SHA-1 SubjectPublicKeyInfo fingerprint a byte buffer</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span><span class="nx">type</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo'</span><span class="p">});</span>
+
+<span class="c1">// gets a hex-encoded, colon-delimited SHA-1 RSAPublicKey public key fingerprint</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span><span class="nx">encoding</span><span class="o">:</span> <span class="s1">'hex'</span><span class="p">,</span> <span class="nx">delimiter</span><span class="o">:</span> <span class="s1">':'</span><span class="p">});</span>
+
+<span class="c1">// gets a hex-encoded, colon-delimited SHA-1 SubjectPublicKeyInfo public key fingerprint</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">type</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo'</span><span class="p">,</span>
+  <span class="nx">encoding</span><span class="o">:</span> <span class="s1">'hex'</span><span class="p">,</span>
+  <span class="nx">delimiter</span><span class="o">:</span> <span class="s1">':'</span>
+<span class="p">});</span>
+
+<span class="c1">// gets a hex-encoded, colon-delimited MD5 RSAPublicKey public key fingerprint</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">getPublicKeyFingerprint</span><span class="p">(</span><span class="nx">key</span><span class="p">,</span> <span class="p">{</span>
+  <span class="nx">md</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">md5</span><span class="p">.</span><span class="nx">create</span><span class="p">(),</span>
+  <span class="nx">encoding</span><span class="o">:</span> <span class="s1">'hex'</span><span class="p">,</span>
+  <span class="nx">delimiter</span><span class="o">:</span> <span class="s1">':'</span>
+<span class="p">});</span>
+
+<span class="c1">// creates a CA store</span>
+<span class="kd">var</span> <span class="nx">caStore</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">createCaStore</span><span class="p">([</span><span class="cm">/* PEM-encoded cert */</span><span class="p">,</span> <span class="p">...]);</span>
+
+<span class="c1">// add a certificate to the CA store</span>
+<span class="nx">caStore</span><span class="p">.</span><span class="nx">addCertificate</span><span class="p">(</span><span class="nx">certObjectOrPemString</span><span class="p">);</span>
+
+<span class="c1">// gets the issuer (its certificate) for the given certificate</span>
+<span class="kd">var</span> <span class="nx">issuerCert</span> <span class="o">=</span> <span class="nx">caStore</span><span class="p">.</span><span class="nx">getIssuer</span><span class="p">(</span><span class="nx">subjectCert</span><span class="p">);</span>
+
+<span class="c1">// verifies a certificate chain against a CA store</span>
+<span class="nx">pki</span><span class="p">.</span><span class="nx">verifyCertificateChain</span><span class="p">(</span><span class="nx">caStore</span><span class="p">,</span> <span class="nx">chain</span><span class="p">,</span> <span class="nx">customVerifyCallback</span><span class="p">);</span>
+
+<span class="c1">// signs a certificate using the given private key</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// signs a certificate using SHA-256 instead of SHA-1</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">,</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">());</span>
+
+<span class="c1">// verifies an issued certificate using the certificates public key</span>
+<span class="kd">var</span> <span class="nx">verified</span> <span class="o">=</span> <span class="nx">issuer</span><span class="p">.</span><span class="nx">verify</span><span class="p">(</span><span class="nx">issued</span><span class="p">);</span>
+
+<span class="c1">// generate a keypair and create an X.509v3 certificate</span>
+<span class="kd">var</span> <span class="nx">keys</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="mi">2048</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">cert</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">createCertificate</span><span class="p">();</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">publicKey</span> <span class="o">=</span> <span class="nx">keys</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">;</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">serialNumber</span> <span class="o">=</span> <span class="s1">'01'</span><span class="p">;</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">validity</span><span class="p">.</span><span class="nx">notBefore</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">();</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">validity</span><span class="p">.</span><span class="nx">notAfter</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Date</span><span class="p">();</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">validity</span><span class="p">.</span><span class="nx">notAfter</span><span class="p">.</span><span class="nx">setFullYear</span><span class="p">(</span><span class="nx">cert</span><span class="p">.</span><span class="nx">validity</span><span class="p">.</span><span class="nx">notBefore</span><span class="p">.</span><span class="nx">getFullYear</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">attrs</span> <span class="o">=</span> <span class="p">[{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'commonName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'example.org'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'countryName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'US'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">shortName</span><span class="o">:</span> <span class="s1">'ST'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Virginia'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'localityName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Blacksburg'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'organizationName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Test'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">shortName</span><span class="o">:</span> <span class="s1">'OU'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Test'</span>
+<span class="p">}];</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">setSubject</span><span class="p">(</span><span class="nx">attrs</span><span class="p">);</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">setIssuer</span><span class="p">(</span><span class="nx">attrs</span><span class="p">);</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">setExtensions</span><span class="p">([{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'basicConstraints'</span><span class="p">,</span>
+  <span class="nx">cA</span><span class="o">:</span> <span class="kc">true</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'keyUsage'</span><span class="p">,</span>
+  <span class="nx">keyCertSign</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">digitalSignature</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">nonRepudiation</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">keyEncipherment</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">dataEncipherment</span><span class="o">:</span> <span class="kc">true</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'extKeyUsage'</span><span class="p">,</span>
+  <span class="nx">serverAuth</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">clientAuth</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">codeSigning</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">emailProtection</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">timeStamping</span><span class="o">:</span> <span class="kc">true</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'nsCertType'</span><span class="p">,</span>
+  <span class="nx">client</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">server</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">email</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">objsign</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">sslCA</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">emailCA</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">objCA</span><span class="o">:</span> <span class="kc">true</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'subjectAltName'</span><span class="p">,</span>
+  <span class="nx">altNames</span><span class="o">:</span> <span class="p">[{</span>
+    <span class="nx">type</span><span class="o">:</span> <span class="mi">6</span><span class="p">,</span> <span class="c1">// URI</span>
+    <span class="nx">value</span><span class="o">:</span> <span class="s1">'http://example.org/webid#me'</span>
+  <span class="p">},</span> <span class="p">{</span>
+    <span class="nx">type</span><span class="o">:</span> <span class="mi">7</span><span class="p">,</span> <span class="c1">// IP</span>
+    <span class="nx">ip</span><span class="o">:</span> <span class="s1">'127.0.0.1'</span>
+  <span class="p">}]</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'subjectKeyIdentifier'</span>
+<span class="p">}]);</span>
+<span class="c1">// self-sign certificate</span>
+<span class="nx">cert</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">keys</span><span class="p">.</span><span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge certificate to PEM</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">certificateToPem</span><span class="p">(</span><span class="nx">cert</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge certificate from PEM</span>
+<span class="kd">var</span> <span class="nx">cert</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">certificateFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+
+<span class="c1">// convert an ASN.1 X.509x3 object to a Forge certificate</span>
+<span class="kd">var</span> <span class="nx">cert</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">certificateFromAsn1</span><span class="p">(</span><span class="nx">obj</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge certificate to an ASN.1 X.509v3 object</span>
+<span class="kd">var</span> <span class="nx">asn1Cert</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">certificateToAsn1</span><span class="p">(</span><span class="nx">cert</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="pkcs5"></a></p>
+
+<h3>
+<a name="pkcs5" class="anchor" href="#pkcs5"><span class="octicon octicon-link"></span></a>PKCS#5</h3>
+
+<p>Provides the password-based key-derivation function from <a href="http://en.wikipedia.org/wiki/PKCS">PKCS#5</a>.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate a password-based 16-byte key</span>
+<span class="kd">var</span> <span class="nx">salt</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">128</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">derivedKey</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs5</span><span class="p">.</span><span class="nx">pbkdf2</span><span class="p">(</span><span class="s1">'password'</span><span class="p">,</span> <span class="nx">salt</span><span class="p">,</span> <span class="nx">numIterations</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="pkcs7"></a></p>
+
+<h3>
+<a name="pkcs7" class="anchor" href="#pkcs7"><span class="octicon octicon-link"></span></a>PKCS#7</h3>
+
+<p>Provides cryptographically protected messages from <a href="http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax">PKCS#7</a>.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// convert a message from PEM</span>
+<span class="kd">var</span> <span class="nx">p7</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs7</span><span class="p">.</span><span class="nx">messageFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+<span class="c1">// look at p7.recipients</span>
+
+<span class="c1">// find a recipient by the issuer of a certificate</span>
+<span class="kd">var</span> <span class="nx">recipient</span> <span class="o">=</span> <span class="nx">p7</span><span class="p">.</span><span class="nx">findRecipient</span><span class="p">(</span><span class="nx">cert</span><span class="p">);</span>
+
+<span class="c1">// decrypt</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">decrypt</span><span class="p">(</span><span class="nx">p7</span><span class="p">.</span><span class="nx">recipients</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// create a p7 enveloped message</span>
+<span class="kd">var</span> <span class="nx">p7</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs7</span><span class="p">.</span><span class="nx">createEnvelopedData</span><span class="p">();</span>
+
+<span class="c1">// add a recipient</span>
+<span class="kd">var</span> <span class="nx">cert</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">certificateFromPem</span><span class="p">(</span><span class="nx">certPem</span><span class="p">);</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">addRecipient</span><span class="p">(</span><span class="nx">cert</span><span class="p">);</span>
+
+<span class="c1">// set content</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">content</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="s1">'Hello'</span><span class="p">);</span>
+
+<span class="c1">// encrypt</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">encrypt</span><span class="p">();</span>
+
+<span class="c1">// convert message to PEM</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs7</span><span class="p">.</span><span class="nx">messageToPem</span><span class="p">(</span><span class="nx">p7</span><span class="p">);</span>
+
+<span class="c1">// create a degenerate PKCS#7 certificate container</span>
+<span class="c1">// (CRLs not currently supported, only certificates)</span>
+<span class="kd">var</span> <span class="nx">p7</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs7</span><span class="p">.</span><span class="nx">createSignedData</span><span class="p">();</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">addCertificate</span><span class="p">(</span><span class="nx">certOrCertPem1</span><span class="p">);</span>
+<span class="nx">p7</span><span class="p">.</span><span class="nx">addCertificate</span><span class="p">(</span><span class="nx">certOrCertPem2</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs7</span><span class="p">.</span><span class="nx">messageToPem</span><span class="p">(</span><span class="nx">p7</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="pkcs8"></a></p>
+
+<h3>
+<a name="pkcs8" class="anchor" href="#pkcs8"><span class="octicon octicon-link"></span></a>PKCS#8</h3>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">pki</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">;</span>
+
+<span class="c1">// convert a PEM-formatted private key to a Forge private key</span>
+<span class="kd">var</span> <span class="nx">privateKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">privateKeyFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge private key to PEM-format</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">privateKeyToPem</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// convert an ASN.1 PrivateKeyInfo or RSAPrivateKey to a Forge private key</span>
+<span class="kd">var</span> <span class="nx">privateKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">privateKeyFromAsn1</span><span class="p">(</span><span class="nx">rsaPrivateKey</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge private key to an ASN.1 RSAPrivateKey</span>
+<span class="kd">var</span> <span class="nx">rsaPrivateKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">privateKeyToAsn1</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// wrap an RSAPrivateKey ASN.1 object in a PKCS#8 ASN.1 PrivateKeyInfo</span>
+<span class="kd">var</span> <span class="nx">privateKeyInfo</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">wrapRsaPrivateKey</span><span class="p">(</span><span class="nx">rsaPrivateKey</span><span class="p">);</span>
+
+<span class="c1">// convert a PKCS#8 ASN.1 PrivateKeyInfo to PEM</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">privateKeyInfoToPem</span><span class="p">(</span><span class="nx">privateKeyInfo</span><span class="p">);</span>
+
+<span class="c1">// encrypts a PrivateKeyInfo and outputs an EncryptedPrivateKeyInfo</span>
+<span class="kd">var</span> <span class="nx">encryptedPrivateKeyInfo</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">encryptPrivateKeyInfo</span><span class="p">(</span>
+  <span class="nx">privateKeyInfo</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">,</span> <span class="p">{</span>
+    <span class="nx">algorithm</span><span class="o">:</span> <span class="s1">'aes256'</span><span class="p">,</span> <span class="c1">// 'aes128', 'aes192', 'aes256', '3des'</span>
+  <span class="p">});</span>
+
+<span class="c1">// decrypts an ASN.1 EncryptedPrivateKeyInfo</span>
+<span class="kd">var</span> <span class="nx">privateKeyInfo</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">decryptPrivateKeyInfo</span><span class="p">(</span>
+  <span class="nx">encryptedPrivateKeyInfo</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">);</span>
+
+<span class="c1">// converts an EncryptedPrivateKeyInfo to PEM</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">encryptedPrivateKeyToPem</span><span class="p">(</span><span class="nx">encryptedPrivateKeyInfo</span><span class="p">);</span>
+
+<span class="c1">// converts a PEM-encoded EncryptedPrivateKeyInfo to ASN.1 format</span>
+<span class="kd">var</span> <span class="nx">encryptedPrivateKeyInfo</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">encryptedPrivateKeyFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+
+<span class="c1">// wraps and encrypts a Forge private key and outputs it in PEM format</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">encryptRsaPrivateKey</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">);</span>
+
+<span class="c1">// encrypts a Forge private key and outputs it in PEM format using OpenSSL's</span>
+<span class="c1">// proprietary legacy format + encapsulated PEM headers (DEK-Info)</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">encryptRsaPrivateKey</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">,</span> <span class="p">{</span><span class="nx">legacy</span><span class="o">:</span> <span class="kc">true</span><span class="p">});</span>
+
+<span class="c1">// decrypts a PEM-formatted, encrypted private key</span>
+<span class="kd">var</span> <span class="nx">privateKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">decryptRsaPrivateKey</span><span class="p">(</span><span class="nx">pem</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">);</span>
+
+<span class="c1">// sets an RSA public key from a private key</span>
+<span class="kd">var</span> <span class="nx">publicKey</span> <span class="o">=</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">setRsaPublicKey</span><span class="p">(</span><span class="nx">privateKey</span><span class="p">.</span><span class="nx">n</span><span class="p">,</span> <span class="nx">privateKey</span><span class="p">.</span><span class="nx">e</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="pkcs10"></a></p>
+
+<h3>
+<a name="pkcs10" class="anchor" href="#pkcs10"><span class="octicon octicon-link"></span></a>PKCS#10</h3>
+
+<p>Provides certification requests or certificate signing requests (CSR) from
+<a href="http://en.wikipedia.org/wiki/Certificate_signing_request">PKCS#10</a>.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate a key pair</span>
+<span class="kd">var</span> <span class="nx">keys</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">rsa</span><span class="p">.</span><span class="nx">generateKeyPair</span><span class="p">(</span><span class="mi">1024</span><span class="p">);</span>
+
+<span class="c1">// create a certification request (CSR)</span>
+<span class="kd">var</span> <span class="nx">csr</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">createCertificationRequest</span><span class="p">();</span>
+<span class="nx">csr</span><span class="p">.</span><span class="nx">publicKey</span> <span class="o">=</span> <span class="nx">keys</span><span class="p">.</span><span class="nx">publicKey</span><span class="p">;</span>
+<span class="nx">csr</span><span class="p">.</span><span class="nx">setSubject</span><span class="p">([{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'commonName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'example.org'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'countryName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'US'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">shortName</span><span class="o">:</span> <span class="s1">'ST'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Virginia'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'localityName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Blacksburg'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'organizationName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Test'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">shortName</span><span class="o">:</span> <span class="s1">'OU'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'Test'</span>
+<span class="p">}]);</span>
+<span class="c1">// set (optional) attributes</span>
+<span class="nx">csr</span><span class="p">.</span><span class="nx">setAttributes</span><span class="p">([{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'challengePassword'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'password'</span>
+<span class="p">},</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'unstructuredName'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="s1">'My Company, Inc.'</span>
+<span class="p">}]);</span>
+
+<span class="c1">// sign certification request</span>
+<span class="nx">csr</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="nx">keys</span><span class="p">.</span><span class="nx">privateKey</span><span class="p">);</span>
+
+<span class="c1">// verify certification request</span>
+<span class="kd">var</span> <span class="nx">verified</span> <span class="o">=</span> <span class="nx">csr</span><span class="p">.</span><span class="nx">verify</span><span class="p">();</span>
+
+<span class="c1">// convert certification request to PEM-format</span>
+<span class="kd">var</span> <span class="nx">pem</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">certificationRequestToPem</span><span class="p">(</span><span class="nx">csr</span><span class="p">);</span>
+
+<span class="c1">// convert a Forge certification request from PEM-format</span>
+<span class="kd">var</span> <span class="nx">csr</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">certificationRequestFromPem</span><span class="p">(</span><span class="nx">pem</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="pkcs12"></a></p>
+
+<h3>
+<a name="pkcs12" class="anchor" href="#pkcs12"><span class="octicon octicon-link"></span></a>PKCS#12</h3>
+
+<p>Provides the cryptographic archive file format from <a href="http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12">PKCS#12</a>.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// decode p12 from base64</span>
+<span class="kd">var</span> <span class="nx">p12Der</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">decode64</span><span class="p">(</span><span class="nx">p12b64</span><span class="p">);</span>
+<span class="c1">// get p12 as ASN.1 object</span>
+<span class="kd">var</span> <span class="nx">p12Asn1</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">fromDer</span><span class="p">(</span><span class="nx">p12Der</span><span class="p">);</span>
+<span class="c1">// decrypt p12 using the password 'password'</span>
+<span class="kd">var</span> <span class="nx">p12</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs12</span><span class="p">.</span><span class="nx">pkcs12FromAsn1</span><span class="p">(</span><span class="nx">p12Asn1</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">);</span>
+<span class="c1">// decrypt p12 using literally no password (eg: Mac OS X/apple push)</span>
+<span class="kd">var</span> <span class="nx">p12</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs12</span><span class="p">.</span><span class="nx">pkcs12FromAsn1</span><span class="p">(</span><span class="nx">p12Asn1</span><span class="p">);</span>
+<span class="c1">// decrypt p12 using an "empty" password (eg: OpenSSL with no password input)</span>
+<span class="kd">var</span> <span class="nx">p12</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs12</span><span class="p">.</span><span class="nx">pkcs12FromAsn1</span><span class="p">(</span><span class="nx">p12Asn1</span><span class="p">,</span> <span class="s1">''</span><span class="p">);</span>
+<span class="c1">// p12.safeContents is an array of safe contents, each of</span>
+<span class="c1">// which contains an array of safeBags</span>
+
+<span class="c1">// get bags by friendlyName</span>
+<span class="kd">var</span> <span class="nx">bags</span> <span class="o">=</span> <span class="nx">p12</span><span class="p">.</span><span class="nx">getBags</span><span class="p">({</span><span class="nx">friendlyName</span><span class="o">:</span> <span class="s1">'test'</span><span class="p">});</span>
+
+<span class="c1">// get bags by localKeyId</span>
+<span class="kd">var</span> <span class="nx">bags</span> <span class="o">=</span> <span class="nx">p12</span><span class="p">.</span><span class="nx">getBags</span><span class="p">({</span><span class="nx">localKeyId</span><span class="o">:</span> <span class="nx">buffer</span><span class="p">});</span>
+
+<span class="c1">// get bags by localKeyId (input in hex)</span>
+<span class="kd">var</span> <span class="nx">bags</span> <span class="o">=</span> <span class="nx">p12</span><span class="p">.</span><span class="nx">getBags</span><span class="p">({</span><span class="nx">localKeyIdHex</span><span class="o">:</span> <span class="s1">'7b59377ff142d0be4565e9ac3d396c01401cd879'</span><span class="p">});</span>
+
+<span class="c1">// get bags by type</span>
+<span class="kd">var</span> <span class="nx">bags</span> <span class="o">=</span> <span class="nx">p12</span><span class="p">.</span><span class="nx">getBags</span><span class="p">({</span><span class="nx">bagType</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">oids</span><span class="p">.</span><span class="nx">certBag</span><span class="p">});</span>
+<span class="c1">// each bag as a 'cert' property with the certificate object</span>
+<span class="kd">var</span> <span class="nx">cert</span> <span class="o">=</span> <span class="nx">bags</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">cert</span><span class="p">;</span>
+
+<span class="c1">// get bags by friendlyName and filter on bag type</span>
+<span class="kd">var</span> <span class="nx">bags</span> <span class="o">=</span> <span class="nx">p12</span><span class="p">.</span><span class="nx">getBags</span><span class="p">({</span>
+  <span class="nx">friendlyName</span><span class="o">:</span> <span class="s1">'test'</span><span class="p">,</span>
+  <span class="nx">bagType</span><span class="o">:</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pki</span><span class="p">.</span><span class="nx">oids</span><span class="p">.</span><span class="nx">certBag</span>
+<span class="p">});</span>
+
+<span class="c1">// generate p12, base64 encode</span>
+<span class="kd">var</span> <span class="nx">p12Asn1</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">pkcs12</span><span class="p">.</span><span class="nx">toPkcs12Asn1</span><span class="p">(</span>
+  <span class="nx">privateKey</span><span class="p">,</span> <span class="nx">certificateChain</span><span class="p">,</span> <span class="s1">'password'</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">p12Der</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">toDer</span><span class="p">(</span><span class="nx">p12Asn1</span><span class="p">).</span><span class="nx">getBytes</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">p12b64</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">encode64</span><span class="p">(</span><span class="nx">p12Der</span><span class="p">);</span>
+</pre></div>
+
+<p><a name="asn"></a></p>
+
+<h3>
+<a name="asn1" class="anchor" href="#asn1"><span class="octicon octicon-link"></span></a>ASN.1</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/ASN.1">ASN.1</a> DER encoding and decoding.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">asn1</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">asn1</span><span class="p">;</span>
+
+<span class="c1">// create a SubjectPublicKeyInfo</span>
+<span class="kd">var</span> <span class="nx">subjectPublicKeyInfo</span> <span class="o">=</span>
+  <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="p">[</span>
+    <span class="c1">// AlgorithmIdentifier</span>
+    <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="p">[</span>
+      <span class="c1">// algorithm</span>
+      <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">OID</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span>
+        <span class="nx">asn1</span><span class="p">.</span><span class="nx">oidToDer</span><span class="p">(</span><span class="nx">pki</span><span class="p">.</span><span class="nx">oids</span><span class="p">[</span><span class="s1">'rsaEncryption'</span><span class="p">]).</span><span class="nx">getBytes</span><span class="p">()),</span>
+      <span class="c1">// parameters (null)</span>
+      <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">NULL</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>
+    <span class="p">]),</span>
+    <span class="c1">// subjectPublicKey</span>
+    <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">BITSTRING</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span> <span class="p">[</span>
+      <span class="c1">// RSAPublicKey</span>
+      <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span> <span class="kc">true</span><span class="p">,</span> <span class="p">[</span>
+        <span class="c1">// modulus (n)</span>
+        <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">INTEGER</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span>
+          <span class="nx">_bnToBytes</span><span class="p">(</span><span class="nx">key</span><span class="p">.</span><span class="nx">n</span><span class="p">)),</span>
+        <span class="c1">// publicExponent (e)</span>
+        <span class="nx">asn1</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">INTEGER</span><span class="p">,</span> <span class="kc">false</span><span class="p">,</span>
+          <span class="nx">_bnToBytes</span><span class="p">(</span><span class="nx">key</span><span class="p">.</span><span class="nx">e</span><span class="p">))</span>
+      <span class="p">])</span>
+    <span class="p">])</span>
+  <span class="p">]);</span>
+
+<span class="c1">// serialize an ASN.1 object to DER format</span>
+<span class="kd">var</span> <span class="nx">derBuffer</span> <span class="o">=</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">toDer</span><span class="p">(</span><span class="nx">subjectPublicKeyInfo</span><span class="p">);</span>
+
+<span class="c1">// deserialize to an ASN.1 object from a byte buffer filled with DER data</span>
+<span class="kd">var</span> <span class="nx">object</span> <span class="o">=</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">fromDer</span><span class="p">(</span><span class="nx">derBuffer</span><span class="p">);</span>
+
+<span class="c1">// convert an OID dot-separated string to a byte buffer</span>
+<span class="kd">var</span> <span class="nx">derOidBuffer</span> <span class="o">=</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">oidToDer</span><span class="p">(</span><span class="s1">'1.2.840.113549.1.1.5'</span><span class="p">);</span>
+
+<span class="c1">// convert a byte buffer with a DER-encoded OID to a dot-separated string</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">derToDer</span><span class="p">(</span><span class="nx">derOidBuffer</span><span class="p">));</span>
+<span class="c1">// output: 1.2.840.113549.1.1.5</span>
+
+<span class="c1">// validates that an ASN.1 object matches a particular ASN.1 structure and</span>
+<span class="c1">// captures data of interest from that structure for easy access</span>
+<span class="kd">var</span> <span class="nx">publicKeyValidator</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="nx">name</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo'</span><span class="p">,</span>
+  <span class="nx">tagClass</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span>
+  <span class="nx">type</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span>
+  <span class="nx">constructed</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+  <span class="nx">captureAsn1</span><span class="o">:</span> <span class="s1">'subjectPublicKeyInfo'</span><span class="p">,</span>
+  <span class="nx">value</span><span class="o">:</span> <span class="p">[{</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo.AlgorithmIdentifier'</span><span class="p">,</span>
+    <span class="nx">tagClass</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span>
+    <span class="nx">type</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span>
+    <span class="nx">constructed</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+    <span class="nx">value</span><span class="o">:</span> <span class="p">[{</span>
+      <span class="nx">name</span><span class="o">:</span> <span class="s1">'AlgorithmIdentifier.algorithm'</span><span class="p">,</span>
+      <span class="nx">tagClass</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span>
+      <span class="nx">type</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">OID</span><span class="p">,</span>
+      <span class="nx">constructed</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+      <span class="nx">capture</span><span class="o">:</span> <span class="s1">'publicKeyOid'</span>
+    <span class="p">}]</span>
+  <span class="p">},</span> <span class="p">{</span>
+    <span class="c1">// subjectPublicKey</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo.subjectPublicKey'</span><span class="p">,</span>
+    <span class="nx">tagClass</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span>
+    <span class="nx">type</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">BITSTRING</span><span class="p">,</span>
+    <span class="nx">constructed</span><span class="o">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="nx">value</span><span class="o">:</span> <span class="p">[{</span>
+      <span class="c1">// RSAPublicKey</span>
+      <span class="nx">name</span><span class="o">:</span> <span class="s1">'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey'</span><span class="p">,</span>
+      <span class="nx">tagClass</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Class</span><span class="p">.</span><span class="nx">UNIVERSAL</span><span class="p">,</span>
+      <span class="nx">type</span><span class="o">:</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nx">SEQUENCE</span><span class="p">,</span>
+      <span class="nx">constructed</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nx">optional</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+      <span class="nx">captureAsn1</span><span class="o">:</span> <span class="s1">'rsaPublicKey'</span>
+    <span class="p">}]</span>
+  <span class="p">}]</span>
+<span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">capture</span> <span class="o">=</span> <span class="p">{};</span>
+<span class="kd">var</span> <span class="nx">errors</span> <span class="o">=</span> <span class="p">[];</span>
+<span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="nx">asn1</span><span class="p">.</span><span class="nx">validate</span><span class="p">(</span>
+  <span class="nx">publicKeyValidator</span><span class="p">,</span> <span class="nx">subjectPublicKeyInfo</span><span class="p">,</span> <span class="nx">validator</span><span class="p">,</span> <span class="nx">capture</span><span class="p">,</span> <span class="nx">errors</span><span class="p">))</span> <span class="p">{</span>
+  <span class="k">throw</span> <span class="s1">'ASN.1 object is not a SubjectPublicKeyInfo.'</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// capture.subjectPublicKeyInfo contains the full ASN.1 object</span>
+<span class="c1">// capture.rsaPublicKey contains the full ASN.1 object for the RSA public key</span>
+<span class="c1">// capture.publicKeyOid only contains the value for the OID</span>
+<span class="kd">var</span> <span class="nx">oid</span> <span class="o">=</span> <span class="nx">asn1</span><span class="p">.</span><span class="nx">derToOid</span><span class="p">(</span><span class="nx">capture</span><span class="p">.</span><span class="nx">publicKeyOid</span><span class="p">);</span>
+<span class="k">if</span><span class="p">(</span><span class="nx">oid</span> <span class="o">!==</span> <span class="nx">pki</span><span class="p">.</span><span class="nx">oids</span><span class="p">[</span><span class="s1">'rsaEncryption'</span><span class="p">])</span> <span class="p">{</span>
+  <span class="k">throw</span> <span class="s1">'Unsupported OID.'</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// pretty print an ASN.1 object to a string for debugging purposes</span>
+<span class="nx">asn1</span><span class="p">.</span><span class="nx">prettyPrint</span><span class="p">(</span><span class="nx">object</span><span class="p">);</span>
+</pre></div>
+
+<hr><h2>
+<a name="message-digests-1" class="anchor" href="#message-digests-1"><span class="octicon octicon-link"></span></a>Message Digests</h2>
+
+<p><a name="sha1"></a></p>
+
+<h3>
+<a name="sha1" class="anchor" href="#sha1"><span class="octicon octicon-link"></span></a>SHA1</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/SHA-1">SHA-1</a> message digests.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha1</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12</span>
+</pre></div>
+
+<p><a name="sha256"></a></p>
+
+<h3>
+<a name="sha256" class="anchor" href="#sha256"><span class="octicon octicon-link"></span></a>SHA256</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/SHA-256">SHA-256</a> message digests.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592</span>
+</pre></div>
+
+<p><a name="sha384"></a></p>
+
+<h3>
+<a name="sha384" class="anchor" href="#sha384"><span class="octicon octicon-link"></span></a>SHA384</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/SHA-384">SHA-384</a> message digests.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha384</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: ca737f1014a48f4c0b6dd43cb177b0afd9e5169367544c494011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1</span>
+</pre></div>
+
+<p><a name="sha512"></a></p>
+
+<h3>
+<a name="sha512" class="anchor" href="#sha512"><span class="octicon octicon-link"></span></a>SHA512</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/SHA-512">SHA-512</a> message digests.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// SHA-512</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha512</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: 07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6</span>
+
+<span class="c1">// SHA-512/224</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha512</span><span class="p">.</span><span class="nx">sha224</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: 944cd2847fb54558d4775db0485a50003111c8e5daa63fe722c6aa37</span>
+
+<span class="c1">// SHA-512/256</span>
+<span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">sha512</span><span class="p">.</span><span class="nx">sha256</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: dd9d67b371519c339ed8dbd25af90e976a1eeefd4ad3d889005e532fc5bef04d</span>
+</pre></div>
+
+<p><a name="md5"></a></p>
+
+<h3>
+<a name="md5" class="anchor" href="#md5"><span class="octicon octicon-link"></span></a>MD5</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/MD5">MD5</a> message digests.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">md</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">md</span><span class="p">.</span><span class="nx">md5</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">md</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'The quick brown fox jumps over the lazy dog'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">md</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: 9e107d9d372bb6826bd81d3542a419d6</span>
+</pre></div>
+
+<p><a name="hmac"></a></p>
+
+<h3>
+<a name="hmac" class="anchor" href="#hmac"><span class="octicon octicon-link"></span></a>HMAC</h3>
+
+<p>Provides <a href="http://en.wikipedia.org/wiki/HMAC">HMAC</a> w/any supported message digest algorithm.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="kd">var</span> <span class="nx">hmac</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">hmac</span><span class="p">.</span><span class="nx">create</span><span class="p">();</span>
+<span class="nx">hmac</span><span class="p">.</span><span class="nx">start</span><span class="p">(</span><span class="s1">'sha1'</span><span class="p">,</span> <span class="s1">'Jefe'</span><span class="p">);</span>
+<span class="nx">hmac</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="s1">'what do ya want for nothing?'</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">hmac</span><span class="p">.</span><span class="nx">digest</span><span class="p">().</span><span class="nx">toHex</span><span class="p">());</span>
+<span class="c1">// output: effcdf6ae5eb2fa2d27416d5f184df9c259a7c79</span>
+</pre></div>
+
+<hr><h2>
+<a name="utilities-1" class="anchor" href="#utilities-1"><span class="octicon octicon-link"></span></a>Utilities</h2>
+
+<p><a name="prime"></a></p>
+
+<h3>
+<a name="prime" class="anchor" href="#prime"><span class="octicon octicon-link"></span></a>Prime</h3>
+
+<p>Provides an API for generating large, random, probable primes.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// generate a random prime on the main JS thread</span>
+<span class="kd">var</span> <span class="nx">bits</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">;</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">prime</span><span class="p">.</span><span class="nx">generateProbablePrime</span><span class="p">(</span><span class="nx">bits</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">num</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'random prime'</span><span class="p">,</span> <span class="nx">num</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="p">});</span>
+
+<span class="c1">// generate a random prime using Web Workers (if available, otherwise</span>
+<span class="c1">// falls back to the main thread)</span>
+<span class="kd">var</span> <span class="nx">bits</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">options</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="nx">algorithm</span><span class="o">:</span> <span class="p">{</span>
+    <span class="nx">name</span><span class="o">:</span> <span class="s1">'PRIMEINC'</span><span class="p">,</span>
+    <span class="nx">workers</span><span class="o">:</span> <span class="o">-</span><span class="mi">1</span> <span class="c1">// auto-optimize # of workers</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">prime</span><span class="p">.</span><span class="nx">generateProbablePrime</span><span class="p">(</span><span class="nx">bits</span><span class="p">,</span> <span class="nx">options</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">num</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">'random prime'</span><span class="p">,</span> <span class="nx">num</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="mi">16</span><span class="p">));</span>
+<span class="p">});</span>
+</pre></div>
+
+<p><a name="prng"></a></p>
+
+<h3>
+<a name="prng" class="anchor" href="#prng"><span class="octicon octicon-link"></span></a>PRNG</h3>
+
+<p>Provides a <a href="http://en.wikipedia.org/wiki/Fortuna_(PRNG)">Fortuna</a>-based cryptographically-secure pseudo-random number
+generator, to be used with a cryptographic function backend, ie: <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES</a>. An
+implementation using <a href="http://en.wikipedia.org/wiki/Advanced_Encryption_Standard">AES</a> as a backend is provided. An API for collecting
+entropy is given, though if window.crypto.getRandomValues is available, it will
+be used automatically.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// get some random bytes synchronously</span>
+<span class="kd">var</span> <span class="nx">bytes</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytesSync</span><span class="p">(</span><span class="mi">32</span><span class="p">);</span>
+<span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">bytesToHex</span><span class="p">(</span><span class="nx">bytes</span><span class="p">));</span>
+
+<span class="c1">// get some random bytes asynchronously</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">bytes</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">bytesToHex</span><span class="p">(</span><span class="nx">bytes</span><span class="p">));</span>
+<span class="p">});</span>
+
+<span class="c1">// collect some entropy if you'd like</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">collect</span><span class="p">(</span><span class="nx">someRandomBytes</span><span class="p">);</span>
+<span class="nx">jQuery</span><span class="p">().</span><span class="nx">mousemove</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+  <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">collectInt</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">clientX</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+  <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">collectInt</span><span class="p">(</span><span class="nx">e</span><span class="p">.</span><span class="nx">clientY</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="c1">// specify a seed file for use with the synchronous API if you'd like</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">seedFileSync</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">needed</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// get 'needed' number of random bytes from somewhere</span>
+  <span class="k">return</span> <span class="nx">fetchedRandomBytes</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="c1">// specify a seed file for use with the asynchronous API if you'd like</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">seedFile</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">needed</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// get the 'needed' number of random bytes from somewhere</span>
+  <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">fetchedRandomBytes</span><span class="p">);</span>
+<span class="p">});</span>
+
+<span class="c1">// register the main thread to send entropy or a Web Worker to receive</span>
+<span class="c1">// entropy on demand from the main thread</span>
+<span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">registerWorker</span><span class="p">(</span><span class="nx">self</span><span class="p">);</span>
+
+<span class="c1">// generate a new instance of a PRNG with no collected entropy</span>
+<span class="kd">var</span> <span class="nx">myPrng</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">random</span><span class="p">.</span><span class="nx">createInstance</span><span class="p">();</span>
+</pre></div>
+
+<p><a name="task"></a></p>
+
+<h3>
+<a name="tasks" class="anchor" href="#tasks"><span class="octicon octicon-link"></span></a>Tasks</h3>
+
+<p>Provides queuing and synchronizing tasks in a web application.</p>
+
+<p><strong>Examples</strong></p>
+
+<pre><code></code></pre>
+<p><a name="util"></a></p>
+
+<h3>
+<a name="utilities-2" class="anchor" href="#utilities-2"><span class="octicon octicon-link"></span></a>Utilities</h3>
+
+<p>Provides utility functions, including byte buffer support, base64,
+bytes to/from hex, zlib inflate/deflate, etc.</p>
+
+<p><strong>Examples</strong></p>
+
+<div class="highlight highlight-js"><pre><span class="c1">// encode/decode base64</span>
+<span class="kd">var</span> <span class="nx">encoded</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">encode64</span><span class="p">(</span><span class="nx">str</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">str</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">decode64</span><span class="p">(</span><span class="nx">decoded</span><span class="p">);</span>
+
+<span class="c1">// encode/decode UTF-8</span>
+<span class="kd">var</span> <span class="nx">encoded</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">encodeUtf8</span><span class="p">(</span><span class="nx">str</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">str</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">decodeUtf8</span><span class="p">(</span><span class="nx">decoded</span><span class="p">);</span>
+
+<span class="c1">// bytes to/from hex</span>
+<span class="kd">var</span> <span class="nx">bytes</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">hexToBytes</span><span class="p">(</span><span class="nx">hex</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">hex</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">bytesToHex</span><span class="p">(</span><span class="nx">bytes</span><span class="p">);</span>
+
+<span class="c1">// create an empty byte buffer</span>
+<span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">();</span>
+<span class="c1">// create a byte buffer from raw binary bytes</span>
+<span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">input</span><span class="p">,</span> <span class="s1">'raw'</span><span class="p">);</span>
+<span class="c1">// create a byte buffer from utf8 bytes</span>
+<span class="kd">var</span> <span class="nx">buffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">input</span><span class="p">,</span> <span class="s1">'utf8'</span><span class="p">);</span>
+
+<span class="c1">// get the length of the buffer in bytes</span>
+<span class="nx">buffer</span><span class="p">.</span><span class="nx">length</span><span class="p">();</span>
+<span class="c1">// put bytes into the buffer</span>
+<span class="nx">buffer</span><span class="p">.</span><span class="nx">putBytes</span><span class="p">(</span><span class="nx">bytes</span><span class="p">);</span>
+<span class="c1">// put a 32-bit integer into the buffer</span>
+<span class="nx">buffer</span><span class="p">.</span><span class="nx">putInt32</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+<span class="c1">// buffer to hex</span>
+<span class="nx">buffer</span><span class="p">.</span><span class="nx">toHex</span><span class="p">();</span>
+<span class="c1">// get a copy of the bytes in the buffer</span>
+<span class="nx">bytes</span><span class="p">.</span><span class="nx">bytes</span><span class="p">(</span><span class="cm">/* count */</span><span class="p">);</span>
+<span class="c1">// empty this buffer and get its contents</span>
+<span class="nx">bytes</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">(</span><span class="cm">/* count */</span><span class="p">);</span>
+
+<span class="c1">// convert a forge buffer into a node.js Buffer</span>
+<span class="c1">// make sure you specify the encoding as 'binary'</span>
+<span class="kd">var</span> <span class="nx">forgeBuffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">nodeBuffer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Buffer</span><span class="p">(</span><span class="nx">forgeBuffer</span><span class="p">.</span><span class="nx">getBytes</span><span class="p">(),</span> <span class="s1">'binary'</span><span class="p">);</span>
+
+<span class="c1">// convert a node.js Buffer into a forge buffer</span>
+<span class="c1">// make sure you specify the encoding as 'binary'</span>
+<span class="kd">var</span> <span class="nx">nodeBuffer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Buffer</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">forgeBuffer</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">createBuffer</span><span class="p">(</span><span class="nx">nodeBuffer</span><span class="p">.</span><span class="nx">toString</span><span class="p">(</span><span class="s1">'binary'</span><span class="p">));</span>
+
+<span class="c1">// parse a URL</span>
+<span class="kd">var</span> <span class="nx">parsed</span> <span class="o">=</span> <span class="nx">forge</span><span class="p">.</span><span class="nx">util</span><span class="p">.</span><span class="nx">parseUrl</span><span class="p">(</span><span class="s1">'http://example.com/foo?bar=baz'</span><span class="p">);</span>
+<span class="c1">// parsed.scheme, parsed.host, parsed.port, parsed.path, parsed.fullHost</span>
+</pre></div>
+
+<p><a name="log"></a></p>
+
+<h3>
+<a name="logging" class="anchor" href="#logging"><span class="octicon octicon-link"></span></a>Logging</h3>
+
+<p>Provides logging to a javascript console using various categories and
+levels of verbosity.</p>
+
+<p><strong>Examples</strong></p>
+
+<pre><code></code></pre>
+<p><a name="debug"></a></p>
+
+<h3>
+<a name="debugging" class="anchor" href="#debugging"><span class="octicon octicon-link"></span></a>Debugging</h3>
+
+<p>Provides storage of debugging information normally inaccessible in
+closures for viewing/investigation.</p>
+
+<p><strong>Examples</strong></p>
+
+<pre><code></code></pre>
+<p><a name="fsp"></a></p>
+
+<h3>
+<a name="flash-socket-policy-module" class="anchor" href="#flash-socket-policy-module"><span class="octicon octicon-link"></span></a>Flash Socket Policy Module</h3>
+
+<p>Provides an <a href="http://httpd.apache.org/">Apache</a> module "mod_fsp" that can serve up a Flash Socket
+Policy. See <code>mod_fsp/README</code> for more details. This module makes it easy to
+modify an <a href="http://httpd.apache.org/">Apache</a> server to allow cross domain requests to be made to it.</p>
+
+<h2>
+<a name="library-details" class="anchor" href="#library-details"><span class="octicon octicon-link"></span></a>Library Details</h2>
+
+<ul>
+<li><a href="http://digitalbazaar.com/2010/07/20/javascript-tls-1/">http://digitalbazaar.com/2010/07/20/javascript-tls-1/</a></li>
+<li><a href="http://digitalbazaar.com/2010/07/20/javascript-tls-2/">http://digitalbazaar.com/2010/07/20/javascript-tls-2/</a></li>
+</ul><h2>
+<a name="contact" class="anchor" href="#contact"><span class="octicon octicon-link"></span></a>Contact</h2>
+
+<ul>
+<li>Code: <a href="https://github.com/digitalbazaar/forge">https://github.com/digitalbazaar/forge</a>
+</li>
+<li>Bugs: <a href="https://github.com/digitalbazaar/forge/issues">https://github.com/digitalbazaar/forge/issues</a>
+</li>
+<li>Email: <a href="mailto:support@digitalbazaar.com">support@digitalbazaar.com</a>
+</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Forge maintained by <a href="https://github.com/digitalbazaar">digitalbazaar</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
