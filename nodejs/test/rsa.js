@@ -158,9 +158,9 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
 
       // remove dQ, dP, and qInv
-      delete privateKey.dQ;
-      delete privateKey.dP;
-      delete privateKey.qInv;
+      privateKey = RSA.setPrivateKey(
+        privateKey.n, privateKey.e, privateKey.d,
+        privateKey.p, privateKey.q);
 
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
@@ -169,17 +169,14 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
 
-    it('should sign and verify a private key containing only e, n, and d parameters', function() {
+    it('should sign and verify with a private key containing only e, n, and d parameters', function() {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
 
       // remove all CRT parameters from private key, so that it consists
       // only of e, n and d (which make a perfectly valid private key, but its
       // operations are slower)
-      delete privateKey.p;
-      delete privateKey.q;
-      delete privateKey.dP;
-      delete privateKey.dQ;
-      delete privateKey.qInv;
+      privateKey = RSA.setPrivateKey(
+        privateKey.n, privateKey.e, privateKey.d);
 
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
