@@ -1,0 +1,3 @@
+# ignore visual studio project files
+*.sln
+*.suo

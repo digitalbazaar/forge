@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>Forge - RSA</title>
+
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin-top: 60px;
+        }
+    </style>
+
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="../javascripts/forge/forge.min.0.6.12.js"></script>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <script>
+        rsa = {
+            o: forge.pki.rsa,
+            loading: null,
+            keypair: null,
+            startloading: function () {
+                // blank it before dotting
+                $("#duration").html("&nbsp;");
+
+                rsa.loading = setInterval(function () {
+                    $("#duration").append(".");
+                }, 500);
+            },
+            stoploading: function () {
+                clearInterval(rsa.loading);
+            },
+            generate: function () {
+                // start the loading indicator
+                rsa.startloading();
+
+                // get start time, and define parameters
+                var duration = -(new Date().getTime()),
+                    param = {
+                        bits: $("#keyStrength").val(),
+                        workers: -1,
+                        workerScript: '../javascripts/forge/prime.worker.js'
+                    };
+
+                // generate an RSA key pair asynchronously (uses web workers if available)
+                // use workers: -1 to run a fast core estimator to optimize # of workers
+                rsa.o.generateKeyPair(param, function (err, keypair) {
+                    // stop the loading indicator
+                    rsa.stoploading();
+
+                    // display duration
+                    duration += (new Date().getTime());
+                    $("#duration").html("Generated in " + duration + " ms");
+
+                    // set global
+                    rsa.keypair = keypair;
+
+                    //get strings
+                    var pemPublic = forge.pki.publicKeyToPem(rsa.keypair.publicKey),
+                        pemPrivate = forge.pki.privateKeyToPem(rsa.keypair.privateKey);
+
+                    // Display
+                    $("#privateKey").text(pemPrivate);
+                    $("#publicKey").text(pemPublic);
+                });
+            }
+        };
+        $(function () {
+            // generate one off the bat
+            rsa.generate();
+
+            // allow users to generate a new one
+            $("#Generate").click(function () {
+                rsa.generate();
+
+                $(this).blur();
+                return false;
+            });
+
+            //(defaults to RSAES PKCS#1 v1.5)
+
+            // allow users to generate a new one
+            $("#Encrypt").click(function () {
+                var duration = -(new Date().getTime()),
+                    encoded = rsa.keypair.publicKey.encrypt($("#clearText").val()),
+                    based = forge.util.encode64(encoded);
+
+                duration += (new Date().getTime());
+                $("#encryptedText").val(based);
+                $("#EncryptDuration").html("Encrypted in " + duration + " ms");
+
+                $(this).blur();
+                return false;
+            });
+
+            // allow users to generate a new one
+            $("#Decrypt").click(function () {
+                var duration = -(new Date().getTime()),
+                    debased = forge.util.decode64($("#encryptedText").val()),
+                    decoded = rsa.keypair.privateKey.decrypt(debased);
+
+                duration += (new Date().getTime());
+                $("#clearText").val(decoded);
+                $("#DecryptDuration").html("Decrypted in " + duration + " ms");
+
+                $(this).blur();
+                return false;
+            });
+        });
+    </script>
+
+</head>
+<body>
+
+    <!-- http://stackoverflow.com/questions/17685645/rsa-encryption-javascript -->
+
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">Forge</a>
+            </div>
+            <div class="collapse navbar-collapse">
+                <ul class="nav navbar-nav">
+                    <li><a href="/">Documentation</a></li>
+                    <li><a href="/demos/">Demos</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="https://github.com/digitalbazaar/forge" target="_github">Github</a></li>
+                </ul>
+            </div><!--/.nav-collapse -->
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>RSA</h2>
+        <div class="page-header">
+            <h3>Key Generation <small></small></h3>
+        </div>
+        <div class="row">
+            <div class="col-md-2">
+
+                <div class="form-group">
+                    <label for="exampleInputEmail1">Key Size</label>
+                    <select id="keyStrength" class="form-control">
+                        <option value="512">512</option>
+                        <option value="1024" selected="selected">1024</option>
+                        <option value="2048">2048</option>
+                        <option value="4096">4096</option>
+                    </select>
+                </div>
+
+
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox" checked="checked"> Async
+                    </label>
+                </div>
+                <a id="Generate" href="#" class="btn btn-primary btn-block">Generate</a>
+                <em class="small" id="duration"></em>
+
+            </div>
+            <div class="col-md-5">
+                <label for="exampleInputEmail1">Private Key</label>
+                <textarea id="privateKey" class="form-control" rows="5"></textarea>
+            </div>
+            <div class="col-md-5">
+                <label for="exampleInputEmail1">Public Key</label>
+                <textarea id="publicKey" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+
+
+        <div class="page-header">
+            <h3>Encryption <small></small></h3>
+        </div>
+        <div class="row">
+            <div class="col-md-5">
+                <label for="clearText">Clear Text</label>
+                <textarea id="clearText" class="form-control" rows="5">This is a test!</textarea>
+            </div>
+            <div class="col-md-2">
+                <label>&nbsp;</label>
+                <button id="Encrypt" type="submit" class="btn btn-primary btn-block">Encrypt <span class="glyphicon glyphicon-chevron-right"></span></button>
+                <em class="small" id="EncryptDuration">&nbsp;</em>
+                <button id="Decrypt" type="submit" class="btn btn-primary btn-block"><span class="glyphicon glyphicon-chevron-left"></span> Decrypt</button>
+                <em class="small" id="DecryptDuration">&nbsp;</em>
+            </div>
+            <div class="col-md-5">
+                <label for="encryptedText">Encrypted Text</label>
+                <textarea id="encryptedText" class="form-control" rows="5"></textarea>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
