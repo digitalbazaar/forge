@@ -22,113 +22,7 @@ function initModule(forge) {
 /* AES API */
 forge.aes = forge.aes || {};
 
-/**
- * Deprecated. Instead, use:
- *
- * var cipher = forge.cipher.createCipher('AES-<mode>', key);
- * cipher.start({iv: iv});
- *
- * Creates an AES cipher object to encrypt data using the given symmetric key.
- * The output will be stored in the 'output' member of the returned cipher.
- *
- * The key and iv may be given as a string of bytes, an array of bytes,
- * a byte buffer, or an array of 32-bit words.
- *
- * @param key the symmetric key to use.
- * @param iv the initialization vector to use.
- * @param output the buffer to write to, null to create one.
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.aes.startEncrypting = function(key, iv, output, mode) {
-  var cipher = _createCipher({
-    key: key,
-    output: output,
-    decrypt: false,
-    mode: mode
-  });
-  cipher.start(iv);
-  return cipher;
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var cipher = forge.cipher.createCipher('AES-<mode>', key);
- *
- * Creates an AES cipher object to encrypt data using the given symmetric key.
- *
- * The key may be given as a string of bytes, an array of bytes, a
- * byte buffer, or an array of 32-bit words.
- *
- * @param key the symmetric key to use.
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.aes.createEncryptionCipher = function(key, mode) {
-  return _createCipher({
-    key: key,
-    output: null,
-    decrypt: false,
-    mode: mode
-  });
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var decipher = forge.cipher.createDecipher('AES-<mode>', key);
- * decipher.start({iv: iv});
- *
- * Creates an AES cipher object to decrypt data using the given symmetric key.
- * The output will be stored in the 'output' member of the returned cipher.
- *
- * The key and iv may be given as a string of bytes, an array of bytes,
- * a byte buffer, or an array of 32-bit words.
- *
- * @param key the symmetric key to use.
- * @param iv the initialization vector to use.
- * @param output the buffer to write to, null to create one.
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.aes.startDecrypting = function(key, iv, output, mode) {
-  var cipher = _createCipher({
-    key: key,
-    output: output,
-    decrypt: true,
-    mode: mode
-  });
-  cipher.start(iv);
-  return cipher;
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var decipher = forge.cipher.createDecipher('AES-<mode>', key);
- *
- * Creates an AES cipher object to decrypt data using the given symmetric key.
- *
- * The key may be given as a string of bytes, an array of bytes, a
- * byte buffer, or an array of 32-bit words.
- *
- * @param key the symmetric key to use.
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.aes.createDecryptionCipher = function(key, mode) {
-  return _createCipher({
-    key: key,
-    output: null,
-    decrypt: true,
-    mode: mode
-  });
-};
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * Creates a new AES cipher algorithm object.
@@ -162,7 +56,7 @@ forge.aes.Algorithm = function(name, mode) {
  * Initializes this AES algorithm by expanding its key.
  *
  * @param options the options to use.
- *          key the key to use with this algorithm.
+ *          key the key, as a ByteBuffer, to use with this algorithm.
  *          decrypt true if the algorithm should be initialized for decryption,
  *            false for encryption.
  */
@@ -171,47 +65,24 @@ forge.aes.Algorithm.prototype.initialize = function(options) {
     return;
   }
 
-  var key = options.key;
-  var tmp;
-
-  /* Note: The key may be a string of bytes, an array of bytes, a byte
-    buffer, or an array of 32-bit integers. If the key is in bytes, then
-    it must be 16, 24, or 32 bytes in length. If it is in 32-bit
-    integers, it must be 4, 6, or 8 integers long. */
-
-  if(typeof key === 'string' &&
-    (key.length === 16 || key.length === 24 || key.length === 32)) {
-    // convert key string into byte buffer
-    key = forge.util.createBuffer(key);
-  } else if(forge.util.isArray(key) &&
-    (key.length === 16 || key.length === 24 || key.length === 32)) {
-    // convert key integer array into byte buffer
-    tmp = key;
-    key = forge.util.createBuffer();
-    for(var i = 0; i < tmp.length; ++i) {
-      key.putByte(tmp[i]);
-    }
+  if(!(options.key instanceof ByteBuffer)) {
+    throw new TypeError('options.key must be a ByteBuffer.');
   }
 
-  // convert key byte buffer into 32-bit integer array
-  if(!forge.util.isArray(key)) {
-    tmp = key;
-    key = [];
+  // convert key into 32-bit integer array
+  var key = [];
 
-    // key lengths of 16, 24, 32 bytes allowed
-    var len = tmp.length();
-    if(len === 16 || len === 24 || len === 32) {
-      len = len >>> 2;
-      for(var i = 0; i < len; ++i) {
-        key.push(tmp.getInt32());
-      }
-    }
+  // key lengths of 16, 24, 32 bytes allowed
+  var len = options.key.length();
+  if(len !== 16 && len !== 24 && len !== 32) {
+    throw new Error(
+      'options.key length must be 16 (AES-128), 24 (AES-192), ' +
+      'or 32 (AES-256) bytes, got ' + len + ' bytes.');
   }
-
-  // key must be an array of 32-bit integers by now
-  if(!forge.util.isArray(key) ||
-    !(key.length === 4 || key.length === 6 || key.length === 8)) {
-    throw new Error('Invalid key parameter.');
+  var buf = options.key.copy();
+  len = len >>> 2;
+  for(var i = 0; i < len; ++i) {
+    key.push(buf.getInt32());
   }
 
   // encryption operation is always used for these modes
@@ -1038,56 +909,6 @@ function _updateBlock(w, input, output, decrypt) {
     (sub[a >>> 16 & 255] << 16) ^
     (sub[b >>> 8 & 255] << 8) ^
     (sub[c & 255]) ^ w[++i];
-}
-
-/**
- * Deprecated. Instead, use:
- *
- * forge.cipher.createCipher('AES-<mode>', key);
- * forge.cipher.createDecipher('AES-<mode>', key);
- *
- * Creates a deprecated AES cipher object. This object's mode will default to
- * CBC (cipher-block-chaining).
- *
- * The key and iv may be given as a string of bytes, an array of bytes, a
- * byte buffer, or an array of 32-bit words.
- *
- * @param options the options to use.
- *          key the symmetric key to use.
- *          output the buffer to write to.
- *          decrypt true for decryption, false for encryption.
- *          mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-function _createCipher(options) {
-  options = options || {};
-  var mode = (options.mode || 'CBC').toUpperCase();
-  var algorithm = 'AES-' + mode;
-
-  var cipher;
-  if(options.decrypt) {
-    cipher = forge.cipher.createDecipher(algorithm, options.key);
-  } else {
-    cipher = forge.cipher.createCipher(algorithm, options.key);
-  }
-
-  // backwards compatible start API
-  var start = cipher.start;
-  cipher.start = function(iv, options) {
-    // backwards compatibility: support second arg as output buffer
-    var output = null;
-    if(options instanceof forge.util.ByteBuffer) {
-      output = options;
-      options = {};
-    }
-    options = options || {};
-    options.output = output;
-    options.iv = iv;
-    start.call(cipher, options);
-  };
-
-  return cipher;
 }
 
 } // end module implementation

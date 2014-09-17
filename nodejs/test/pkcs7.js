@@ -1,6 +1,8 @@
 (function() {
 
-function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
+function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
+  var ByteBuffer = UTIL.ByteBuffer;
+
   var _pem = {
     p7: '-----BEGIN PKCS7-----\r\n' +
       'MIICTgYJKoZIhvcNAQcDoIICPzCCAjsCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
@@ -236,8 +238,8 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
 
       // decryption of sym. encrypted data should reveal the content
-      var ciph = AES.createDecryptionCipher(decryptedKey);
-      ciph.start(p7.encryptedContent.parameter);
+      var ciph = CIPHER.createDecipher('AES-CBC', new ByteBuffer(decryptedKey));
+      ciph.start({iv: p7.encryptedContent.parameter});
       ciph.update(p7.encryptedContent.content);
       ciph.finish();
       ASSERT.equal(ciph.output, 'Just a little test');
@@ -277,8 +279,9 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
 
       // decryption of sym. encrypted data should reveal the content
-      var ciph = DES.createDecryptionCipher(decryptedKey);
-      ciph.start(p7.encryptedContent.parameter);
+      var ciph = CIPHER.createDecipher(
+        '3DES-CBC', new ByteBuffer(decryptedKey));
+      ciph.start({iv: p7.encryptedContent.parameter});
       ciph.update(p7.encryptedContent.content);
       ciph.finish();
       ASSERT.equal(ciph.output, 'Just a little test');
@@ -318,33 +321,37 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/pkcs7',
     'forge/pki',
     'forge/aes',
     'forge/des',
+    'forge/cipher',
     'forge/util'
-  ], function(PKCS7, PKI, AES, DES, UTIL) {
+  ], function(PKCS7, PKI, AES, DES, CIPHER, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKCS7(),
-      PKI(),
-      AES(),
-      DES(),
-      UTIL()
+      PKCS7(forge),
+      PKI(forge),
+      AES(forge),
+      DES(forge),
+      CIPHER(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pkcs7')(),
-    require('../../js/pki')(),
-    require('../../js/aes')(),
-    require('../../js/des')(),
-    require('../../js/util')());
+    require('../../js/pkcs7')(forge),
+    require('../../js/pki')(forge),
+    require('../../js/aes')(forge),
+    require('../../js/des')(forge),
+    require('../../js/cipher')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

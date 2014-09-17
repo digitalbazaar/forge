@@ -7,6 +7,9 @@
  */
 jQuery(function($)
 {
+  // FIXME: remove entirely? check to see if coverage is in other newer
+  // test suite; if so, remove this
+
    // logging category
    var cat = 'forge.tests.common';
 
@@ -664,7 +667,7 @@ jQuery(function($)
       var expect = '0c60c80f961f0e71f3a9b524af6012062fe037a6';
       var dk = forge.pkcs5.pbkdf2('password', 'salt', 1, 20);
       test.expect.html(expect);
-      test.result.html(forge.util.bytesToHex(dk));
+      test.result.html(dk.toHex());
       test.check();
    });
 
@@ -673,7 +676,7 @@ jQuery(function($)
       var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
       var dk = forge.pkcs5.pbkdf2('password', 'salt', 2, 20);
       test.expect.html(expect);
-      test.result.html(forge.util.bytesToHex(dk));
+      test.result.html(dk.toHex());
       test.check();
    });
 
@@ -682,7 +685,7 @@ jQuery(function($)
       var expect = 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957';
       var dk = forge.pkcs5.pbkdf2('password', 'salt', 2, 20);
       test.expect.html(expect);
-      test.result.html(forge.util.bytesToHex(dk));
+      test.result.html(dk.toHex());
       test.check();
    });
 
@@ -692,7 +695,7 @@ jQuery(function($)
       var salt = forge.util.hexToBytes('1234567878563412');
       var dk = forge.pkcs5.pbkdf2('password', salt, 5, 8);
       test.expect.html(expect);
-      test.result.html(forge.util.bytesToHex(dk));
+      test.result.html(dk.toHex());
       test.check();
    });
 
@@ -704,7 +707,7 @@ jQuery(function($)
          var expect = '4b007901b765489abead49d926f721d065a429c1';
          var dk = forge.pkcs5.pbkdf2('password', 'salt', 4096, 20);
          test.expect.html(expect);
-         test.result.html(forge.util.bytesToHex(dk));
+         test.result.html(dk.toHex());
          test.check();
       });
    }
@@ -715,7 +718,7 @@ jQuery(function($)
       var expect = 'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984';
       var dk = forge.pkcs5.pbkdf2('password', 'salt', 16777216, 20);
       test.expect.html(expect);
-      test.result.html(forge.util.bytesToHex(dk));
+      test.result.html(dk.toHex());
       test.check();
    });*/
 

@@ -35,113 +35,7 @@ function initModule(forge) {
 /* DES API */
 forge.des = forge.des || {};
 
-/**
- * Deprecated. Instead, use:
- *
- * var cipher = forge.cipher.createCipher('DES-<mode>', key);
- * cipher.start({iv: iv});
- *
- * Creates an DES cipher object to encrypt data using the given symmetric key.
- * The output will be stored in the 'output' member of the returned cipher.
- *
- * The key and iv may be given as binary-encoded strings of bytes or
- * byte buffers.
- *
- * @param key the symmetric key to use (64 or 192 bits).
- * @param iv the initialization vector to use.
- * @param output the buffer to write to, null to create one.
- * @param mode the cipher mode to use (default: 'CBC' if IV is
- *          given, 'ECB' if null).
- *
- * @return the cipher.
- */
-forge.des.startEncrypting = function(key, iv, output, mode) {
-  var cipher = _createCipher({
-    key: key,
-    output: output,
-    decrypt: false,
-    mode: mode || (iv === null ? 'ECB' : 'CBC')
-  });
-  cipher.start(iv);
-  return cipher;
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var cipher = forge.cipher.createCipher('DES-<mode>', key);
- *
- * Creates an DES cipher object to encrypt data using the given symmetric key.
- *
- * The key may be given as a binary-encoded string of bytes or a byte buffer.
- *
- * @param key the symmetric key to use (64 or 192 bits).
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.des.createEncryptionCipher = function(key, mode) {
-  return _createCipher({
-    key: key,
-    output: null,
-    decrypt: false,
-    mode: mode
-  });
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var decipher = forge.cipher.createDecipher('DES-<mode>', key);
- * decipher.start({iv: iv});
- *
- * Creates an DES cipher object to decrypt data using the given symmetric key.
- * The output will be stored in the 'output' member of the returned cipher.
- *
- * The key and iv may be given as binary-encoded strings of bytes or
- * byte buffers.
- *
- * @param key the symmetric key to use (64 or 192 bits).
- * @param iv the initialization vector to use.
- * @param output the buffer to write to, null to create one.
- * @param mode the cipher mode to use (default: 'CBC' if IV is
- *          given, 'ECB' if null).
- *
- * @return the cipher.
- */
-forge.des.startDecrypting = function(key, iv, output, mode) {
-  var cipher = _createCipher({
-    key: key,
-    output: output,
-    decrypt: true,
-    mode: mode || (iv === null ? 'ECB' : 'CBC')
-  });
-  cipher.start(iv);
-  return cipher;
-};
-
-/**
- * Deprecated. Instead, use:
- *
- * var decipher = forge.cipher.createDecipher('DES-<mode>', key);
- *
- * Creates an DES cipher object to decrypt data using the given symmetric key.
- *
- * The key may be given as a binary-encoded string of bytes or a byte buffer.
- *
- * @param key the symmetric key to use (64 or 192 bits).
- * @param mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-forge.des.createDecryptionCipher = function(key, mode) {
-  return _createCipher({
-    key: key,
-    output: null,
-    decrypt: true,
-    mode: mode
-  });
-};
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * Creates a new DES cipher algorithm object.
@@ -172,7 +66,7 @@ forge.des.Algorithm = function(name, mode) {
  * Initializes this DES algorithm by expanding its key.
  *
  * @param options the options to use.
- *          key the key to use with this algorithm.
+ *          key the key, as a ByteBuffer, to use with this algorithm.
  *          decrypt true if the algorithm should be initialized for decryption,
  *            false for encryption.
  */
@@ -181,15 +75,20 @@ forge.des.Algorithm.prototype.initialize = function(options) {
     return;
   }
 
-  var key = forge.util.createBuffer(options.key);
-  if(this.name.indexOf('3DES') === 0) {
-    if(key.length() !== 24) {
-      throw new Error('Invalid Triple-DES key size: ' + key.length() * 8);
-    }
+  if(!(options.key instanceof ByteBuffer)) {
+    throw new TypeError('options.key must be a ByteBuffer.');
+  }
+
+  // convert key into 32-bit integer array
+  var key = options.key;
+  if(this.name.indexOf('3DES') === 0 && key.length() !== 24) {
+    throw new Error(
+      'Triple-DES key size must be 192 bits (24 bytes), got ' +
+      key.length() * 8 + ' bits.');
   }
 
   // do key expansion to 16 or 48 subkeys (single or triple DES)
-  this._keys = _createKeys(key);
+  this._keys = _createKeys(key.copy());
   this._init = true;
 };
 
@@ -445,56 +344,6 @@ function _updateBlock(keys, input, output, decrypt) {
   output[0] = left;
   output[1] = right;
 }
-
-/**
- * Deprecated. Instead, use:
- *
- * forge.cipher.createCipher('DES-<mode>', key);
- * forge.cipher.createDecipher('DES-<mode>', key);
- *
- * Creates a deprecated DES cipher object. This object's mode will default to
- * CBC (cipher-block-chaining).
- *
- * The key may be given as a binary-encoded string of bytes or a byte buffer.
- *
- * @param options the options to use.
- *          key the symmetric key to use (64 or 192 bits).
- *          output the buffer to write to.
- *          decrypt true for decryption, false for encryption.
- *          mode the cipher mode to use (default: 'CBC').
- *
- * @return the cipher.
- */
-function _createCipher(options) {
-  options = options || {};
-  var mode = (options.mode || 'CBC').toUpperCase();
-  var algorithm = 'DES-' + mode;
-
-  var cipher;
-  if(options.decrypt) {
-    cipher = forge.cipher.createDecipher(algorithm, options.key);
-  } else {
-    cipher = forge.cipher.createCipher(algorithm, options.key);
-  }
-
-  // backwards compatible start API
-  var start = cipher.start;
-  cipher.start = function(iv, options) {
-    // backwards compatibility: support second arg as output buffer
-    var output = null;
-    if(options instanceof forge.util.ByteBuffer) {
-      output = options;
-      options = {};
-    }
-    options = options || {};
-    options.output = output;
-    options.iv = iv;
-    start.call(cipher, options);
-  };
-
-  return cipher;
-}
-
 
 } // end module implementation
 

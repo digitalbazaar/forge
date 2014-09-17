@@ -90,14 +90,20 @@ util.ByteBuffer = ByteStringBuffer;
 
 /** Buffer w/BinaryString backing */
 
+// FIXME: add method to convert an array of integers to a buffer
+
 /**
  * Constructor for a binary string backed byte buffer.
  *
  * @param [b] the bytes to wrap (either encoded as string, one byte per
  *          character, or as an ArrayBuffer or Typed Array).
+ * @param options the options to use:
+ *          [encoding] the encoding ('binary', 'utf8', 'utf16', 'hex') for the
+ *            first parameter, if it is a string (default: 'binary').
  */
-function ByteStringBuffer(b) {
+function ByteStringBuffer(b, options) {
   // TODO: update to match DataBuffer API
+  options = options || {};
 
   // the data in this buffer
   this.data = '';
@@ -105,6 +111,12 @@ function ByteStringBuffer(b) {
   this.read = 0;
 
   if(typeof b === 'string') {
+    // FIXME: copy implementation from DataBuffer
+    if(options.encoding === 'utf8') {
+      b = util.encodeUtf8(b);
+    } else if(options.encoding === 'hex') {
+      b = util.hexToBytes(b);
+    }
     this.data = b;
   } else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
     // convert native buffer to forge buffer
@@ -116,6 +128,11 @@ function ByteStringBuffer(b) {
       for(var i = 0; i < arr.length; ++i) {
         this.putByte(arr[i]);
       }
+    }
+  } else if(util.isArray(b)) {
+    // assume 'b' is an array of integers
+    for(var i = 0; i < b.length; ++i) {
+      this.putByte(b[i]);
     }
   } else if(b instanceof ByteStringBuffer ||
     (typeof b === 'object' && typeof b.data === 'string' &&
@@ -655,6 +672,8 @@ util.ByteStringBuffer.prototype.toString = function() {
  *            first parameter, if it is a string (default: 'binary').
  */
 function DataBuffer(b, options) {
+  // FIXME: support 'b' as an array of integers representing byte values
+
   // default options
   options = options || {};
 
@@ -1311,6 +1330,8 @@ util.DataBuffer.prototype.toString = function(encoding) {
 
 
 /**
+ * Deprecated. Use new ByteBuffer() instead.
+ *
  * Creates a buffer that stores bytes. A value may be given to put into the
  * buffer that is either a string of bytes or a UTF-16 string that will
  * be encoded using UTF-8 (to do the latter, specify 'utf8' as the encoding).
@@ -1320,10 +1341,14 @@ util.DataBuffer.prototype.toString = function(encoding) {
  * @param [encoding] (default: 'raw', other: 'utf8').
  */
 util.createBuffer = function(input, encoding) {
-  // TODO: deprecate, use new ByteBuffer() instead
+  if(input === undefined) {
+    return new util.ByteBuffer();
+  }
   encoding = encoding || 'raw';
-  if(input !== undefined && encoding === 'utf8') {
+  if(encoding === 'utf8') {
     input = util.encodeUtf8(input);
+  } else if(encoding === 'hex') {
+    input = util.hexToBytes(input);
   }
   return new util.ByteBuffer(input);
 };

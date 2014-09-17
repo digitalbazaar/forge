@@ -48,6 +48,18 @@ function Tests(ASSERT, UTIL) {
       ASSERT.equal(b.toHex(), hex);
     });
 
+    it('should put bytes from hex into buffer', function() {
+      var hex = '0102030400000004010203ffffffff';
+      var b = UTIL.createBuffer(hex, 'hex');
+      ASSERT.equal(b.toHex(), hex);
+    });
+
+    it('should put bytes from hex into buffer', function() {
+      var hex = '1234567878563412';
+      var b = new UTIL.ByteBuffer(hex, {encoding: 'hex'});
+      ASSERT.equal(b.toHex(), hex);
+    });
+
     it('should put 0 into a buffer using two\'s complement', function() {
       var b = UTIL.createBuffer();
       b.putSignedInt(0, 8);

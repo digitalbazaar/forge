@@ -14,6 +14,7 @@ forge.cipher = forge.cipher || {};
 // supported cipher modes
 var modes = forge.cipher.modes = forge.cipher.modes || {};
 
+var ByteBuffer = forge.util.ByteBuffer;
 
 /** Electronic codebook (ECB) (Don't use this; it's not secure) **/
 
@@ -108,12 +109,12 @@ modes.cbc.prototype.start = function(options) {
       throw new Error('Invalid IV parameter.');
     }
     this._iv = this._prev.slice(0);
-  } else if(!('iv' in options)) {
-    throw new Error('Invalid IV parameter.');
-  } else {
+  } else if('iv' in options) {
     // save IV as "previous" block
-    this._iv = transformIV(options.iv);
+    this._iv = transformIV(options.iv, this.blockSize);
     this._prev = this._iv.slice(0);
+  } else {
+    throw new Error('Invalid IV parameter.');
   }
 };
 
@@ -193,10 +194,10 @@ modes.cfb = function(options) {
 
 modes.cfb.prototype.start = function(options) {
   if(!('iv' in options)) {
-    throw new Error('Invalid IV parameter.');
+    throw new TypeError('options.iv must be a ByteBuffer.');
   }
   // use IV as first input
-  this._iv = transformIV(options.iv);
+  this._iv = transformIV(options.iv, this.blockSize);
   this._inBlock = this._iv.slice(0);
 };
 
@@ -244,10 +245,10 @@ modes.ofb = function(options) {
 
 modes.ofb.prototype.start = function(options) {
   if(!('iv' in options)) {
-    throw new Error('Invalid IV parameter.');
+    throw new TypeError('options.iv must be a ByteBuffer.');
   }
   // use IV as first input
-  this._iv = transformIV(options.iv);
+  this._iv = transformIV(options.iv, this.blockSize);
   this._inBlock = this._iv.slice(0);
 };
 
@@ -287,10 +288,10 @@ modes.ctr = function(options) {
 
 modes.ctr.prototype.start = function(options) {
   if(!('iv' in options)) {
-    throw new Error('Invalid IV parameter.');
+    throw new TypeError('options.iv must be a ByteBuffer.');
   }
   // use IV as first input
-  this._iv = transformIV(options.iv);
+  this._iv = transformIV(options.iv, this.blockSize);
   this._inBlock = this._iv.slice(0);
 };
 
@@ -336,21 +337,18 @@ modes.gcm = function(options) {
 };
 
 modes.gcm.prototype.start = function(options) {
-  if(!('iv' in options)) {
-    throw new Error('Invalid IV parameter.');
+  if(!('iv' in options) || !(options.iv instanceof ByteBuffer)) {
+    throw new TypeError('options.iv must be a ByteBuffer.');
   }
-  // ensure IV is a byte buffer
-  var iv = forge.util.createBuffer(options.iv);
+  var iv = options.iv.copy();
 
   // no ciphered data processed yet
   this._cipherLength = 0;
 
   // default additional data is none
-  var additionalData;
-  if('additionalData' in options) {
-    additionalData = forge.util.createBuffer(options.additionalData);
-  } else {
-    additionalData = forge.util.createBuffer();
+  var additionalData = options.additionalData || new ByteBuffer();
+  if(!(additionalData instanceof ByteBuffer)) {
+    throw new TypeError('options.additionalData must be a ByteBuffer.');
   }
 
   // default tag length is 128 bits
@@ -363,9 +361,13 @@ modes.gcm.prototype.start = function(options) {
   // if tag is given, ensure tag matches tag length
   this._tag = null;
   if(options.decrypt) {
+    var tag = options.tag || new ByteBuffer();
+    if(!(tag instanceof ByteBuffer)) {
+      throw new TypeError('options.tag must be a ByteBuffer.');
+    }
     // save tag to check later
-    this._tag = forge.util.createBuffer(options.tag).getBytes();
-    if(this._tag.length !== (this._tagLength / 8)) {
+    this._tag = tag.copy();
+    if(this._tag.length() !== (this._tagLength / 8)) {
       throw new Error('Authentication tag does not match tag length.');
     }
   }
@@ -411,8 +413,8 @@ modes.gcm.prototype.start = function(options) {
   this._inBlock = this._j0.slice(0);
   inc32(this._inBlock);
 
-  // consume authentication data
-  additionalData = forge.util.createBuffer(additionalData);
+  // consume copy of authentication data
+  additionalData = additionalData.copy();
   // save additional data length as a BE 64-bit number
   this._aDataLength = from64To32(additionalData.length() * 8);
   // pad additional data to 128 bit (16 byte) block size
@@ -453,7 +455,7 @@ modes.gcm.prototype.encrypt = function(input, output) {
     this._cipherLength += overflow;
 
     // truncate for hash function
-    var tmp = forge.util.createBuffer();
+    var tmp = new ByteBuffer();
     tmp.putInt32(this._outBlock[0]);
     tmp.putInt32(this._outBlock[1]);
     tmp.putInt32(this._outBlock[2]);
@@ -514,7 +516,7 @@ modes.gcm.prototype.afterFinish = function(output, options) {
   }
 
   // handle authentication tag
-  this.tag = forge.util.createBuffer();
+  this.tag = new ByteBuffer();
 
   // concatenate additional data length with cipher length
   var lengths = this._aDataLength.concat(from64To32(this._cipherLength * 8));
@@ -532,8 +534,9 @@ modes.gcm.prototype.afterFinish = function(output, options) {
   // trim tag to length
   this.tag.truncate(this.tag.length() % (this._tagLength / 8));
 
+  // FIXME: use ByteBuffer.equals?
   // check authentication tag
-  if(options.decrypt && this.tag.bytes() !== this._tag) {
+  if(options.decrypt && this.tag.bytes() !== this._tag.bytes()) {
     rval = false;
   }
 
@@ -729,26 +732,22 @@ modes.gcm.prototype.generateSubHashTable = function(mid, bits) {
 
 /** Utility functions */
 
-function transformIV(iv) {
-  if(typeof iv === 'string') {
-    // convert iv string into byte buffer
-    iv = forge.util.createBuffer(iv);
+function transformIV(iv, blockSize) {
+  if(!(iv instanceof ByteBuffer)) {
+    throw new TypeError('iv must be a ByteBuffer.');
   }
-
-  if(forge.util.isArray(iv) && iv.length > 4) {
-    // convert iv byte array into byte buffer
-    var tmp = iv;
-    iv = forge.util.createBuffer();
-    for(var i = 0; i < iv.length; ++i) {
-      iv.putByte(tmp[i]);
-    }
+  if(iv.length() < blockSize) {
+    throw new Error(
+      'iv must contain at least ' + blockSize + ' bytes, got ' +
+      iv.length() + '.');
   }
-  if(!forge.util.isArray(iv)) {
-    // convert iv byte buffer into 32-bit integer array
-    iv = [iv.getInt32(), iv.getInt32(), iv.getInt32(), iv.getInt32()];
+  // convert iv byte buffer into 32-bit integer array
+  iv = iv.copy();
+  var rval = [];
+  for(var i = 0; i < blockSize; i += 4) {
+    rval.push(iv.getInt32());
   }
-
-  return iv;
+  return rval;
 }
 
 function inc32(block) {

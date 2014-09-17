@@ -74,8 +74,8 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
 
     // encrypt some bytes using CBC mode
     // key is 40 bytes, so truncate *by* 8 bytes
-    var cipher = forge.aes.createEncryptionCipher(aeskey.truncate(8), 'CBC');
-    cipher.start(forge.util.createBuffer().fillWithByte(0, 16));
+    var cipher = forge.cipher.createCipher('AES-CBC', aeskey.truncate(8));
+    cipher.start({iv: forge.util.createBuffer().fillWithByte(0, 16)});
     cipher.update(privbuffer.copy());
     cipher.finish();
     var encrypted = cipher.output;

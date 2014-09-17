@@ -12,6 +12,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 var piTable = [
   0xd9, 0x78, 0xf9, 0xc4, 0x19, 0xdd, 0xb5, 0xed, 0x28, 0xe9, 0xfd, 0x79, 0x4a, 0xa0, 0xd8, 0x9d,
   0xc6, 0x7e, 0x37, 0x83, 0x2b, 0x76, 0x53, 0x8e, 0x62, 0x4c, 0x64, 0x88, 0x44, 0x8b, 0xfb, 0xa2,
@@ -245,27 +247,35 @@ var createCipher = function(key, bits, encrypt) {
      *
      * @param iv the initialization vector to use, null for ECB mode.
      * @param output the output the buffer to write to, null to create one.
+     *
+     * @return this cipher for chaining.
      */
     start: function(iv, output) {
       if(iv) {
         /* CBC mode */
         if(typeof iv === 'string') {
-          iv = forge.util.createBuffer(iv);
+          iv = new ByteBuffer(iv, {encoding: 'binary'});
+        } else {
+          iv = iv.copy();
         }
       }
 
       _finish = false;
-      _input = forge.util.createBuffer();
-      _output = output || new forge.util.createBuffer();
+      _input = new ByteBuffer();
+      _output = output || new ByteBuffer();
       _iv = iv;
 
       cipher.output = _output;
+
+      return cipher;
     },
 
     /**
      * Updates the next block.
      *
      * @param input the buffer to read from.
+     *
+     * @return this cipher for chaining.
      */
     update: function(input) {
       if(!_finish) {
@@ -282,6 +292,8 @@ var createCipher = function(key, bits, encrypt) {
             [ 5, mixRound ]
           ]);
       }
+
+      return cipher;
     },
 
     /**

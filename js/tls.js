@@ -234,6 +234,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 /**
  * Generates pseudo random bytes by mixing the result of two hash functions,
  * MD5 and SHA-1.
@@ -358,7 +360,7 @@ var prf_sha256 = function(secret, label, seed, length) {
 /**
  * Gets a MAC for a record using the SHA-1 hash algorithm.
  *
- * @param key the mac key.
+ * @param key the mac key as a ByteBuffer.
  * @param state the sequence number (array of two 32-bit integers).
  * @param record the record.
  *
@@ -1081,7 +1083,7 @@ tls.handleClientHello = function(c, record, length) {
   } else {
     // use highest compatible minor version
     var version;
-    for(var i = 1; i < tls.SupportedVersions.length; ++i) {
+    for(var i = 0; i < tls.SupportedVersions.length; ++i) {
       version = tls.SupportedVersions[i];
       if(version.minor <= msg.version.minor) {
         break;
@@ -1864,12 +1866,12 @@ tls.handleFinished = function(c, record, length) {
   c.peerCertificate = client ?
     c.session.serverCertificate : c.session.clientCertificate;
 
-  // send records
-  tls.flush(c);
-
   // now connected
   c.isConnected = true;
   c.connected(c);
+
+  // send records
+  tls.flush(c);
 
   // continue
   c.process();
@@ -2394,16 +2396,22 @@ tls.generateKeys = function(c, sp) {
 
   // split the key material into the MAC and encryption keys
   var rval = {
-    client_write_MAC_key: km.getBytes(sp.mac_key_length),
-    server_write_MAC_key: km.getBytes(sp.mac_key_length),
-    client_write_key: km.getBytes(sp.enc_key_length),
-    server_write_key: km.getBytes(sp.enc_key_length)
+    client_write_MAC_key: new ByteBuffer(
+      km.getBytes(sp.mac_key_length), {encoding: 'binary'}),
+    server_write_MAC_key: new ByteBuffer(
+      km.getBytes(sp.mac_key_length), {encoding: 'binary'}),
+    client_write_key: new ByteBuffer(
+      km.getBytes(sp.enc_key_length), {encoding: 'binary'}),
+    server_write_key: new ByteBuffer(
+      km.getBytes(sp.enc_key_length), {encoding: 'binary'})
   };
 
   // include TLS 1.0 IVs
   if(tls10) {
-    rval.client_write_IV = km.getBytes(sp.fixed_iv_length);
-    rval.server_write_IV = km.getBytes(sp.fixed_iv_length);
+    rval.client_write_IV = new ByteBuffer(
+      km.getBytes(sp.fixed_iv_length, {encoding: 'binary'}));
+    rval.server_write_IV = new ByteBuffer(
+      km.getBytes(sp.fixed_iv_length, {encoding: 'binary'}));
   }
 
   return rval;

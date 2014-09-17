@@ -584,20 +584,20 @@ function _decryptSafeContents(data, password) {
     throw error;
   }
 
-  // get cipher
+  // get decipher
   oid = asn1.derToOid(capture.encAlgorithm);
-  var cipher = pki.pbe.getCipher(oid, capture.encParameter, password);
+  var decipher = pki.pbe.getDecipher(oid, capture.encParameter, password);
 
   // get encrypted data
   var encryptedContentAsn1 = _decodePkcs7Data(capture.encryptedContentAsn1);
   var encrypted = forge.util.createBuffer(encryptedContentAsn1.value);
 
-  cipher.update(encrypted);
-  if(!cipher.finish()) {
+  decipher.update(encrypted);
+  if(!decipher.finish()) {
     throw new Error('Failed to decrypt PKCS#12 SafeContents.');
   }
 
-  return cipher.output.getBytes();
+  return decipher.output.getBytes();
 }
 
 /**

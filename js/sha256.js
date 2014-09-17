@@ -77,7 +77,7 @@ sha256.create = function() {
    * 'utf8' maybe given to encode the input using UTF-8.
    *
    * @param msg the message input to update with.
-   * @param encoding the encoding to use (default: 'raw', other: 'utf8').
+   * @param encoding the encoding to use (default: 'binary', other: 'utf8').
    *
    * @return this digest object.
    */

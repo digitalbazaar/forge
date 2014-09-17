@@ -12,6 +12,8 @@ function initModule(forge) {
 
 var tls = forge.tls;
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 /**
  * Supported cipher suites.
  */
@@ -96,7 +98,7 @@ function encrypt_aes_cbc_sha1(record, s) {
     // the residue from the previous encryption
     iv = s.cipherState.init ? null : s.cipherState.iv;
   } else {
-    iv = forge.random.getBytesSync(16);
+    iv = new ByteBuffer(forge.random.getBytesSync(16));
   }
 
   s.cipherState.init = true;
@@ -107,7 +109,7 @@ function encrypt_aes_cbc_sha1(record, s) {
 
   // TLS 1.1+ write IV into output
   if(record.version.minor >= tls.Versions.TLS_1_1.minor) {
-    cipher.output.putBytes(iv);
+    cipher.output.putBytes(iv.bytes());
   }
 
   // do encryption (default padding is appropriate)
@@ -212,7 +214,7 @@ function decrypt_aes_cbc_sha1(record, s) {
   } else {
     // TLS 1.1+ use an explicit IV every time to protect against CBC attacks
     // that is appended to the record fragment
-    iv = record.fragment.getBytes(16);
+    iv = new ByteBuffer(record.fragment.getBytes(16));
   }
 
   s.cipherState.init = true;
@@ -306,7 +308,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './aes', './tls'], function() {
+define(['require', 'module', './aes', './util', './tls'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

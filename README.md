@@ -316,6 +316,9 @@ var client = forge.tls.createConnection({
   }
 });
 
+// optionally force TLS 1.0 (or another supported version)
+// client.version = {major: 3, minor: 1};
+
 // start the handshake process
 client.handshake();
 

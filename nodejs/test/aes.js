@@ -152,10 +152,10 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
           var input = (i & 1) ? UTIL.hexToBytes(inputs[i]) : inputs[i];
-          var output = UTIL.hexToBytes(outputs[i]);
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-cbc encrypt: ' + inputs[i], function() {
             // encrypt w/no padding
@@ -170,7 +170,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt w/no padding
             var cipher = CIPHER.createDecipher('AES-CBC', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish(function(){return true;});
             var out = (i & 1) ? cipher.output.toHex() : cipher.output.bytes();
             ASSERT.equal(out, inputs[i]);
@@ -211,16 +211,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-192-cbc encrypt: ' + inputs[i], function() {
             // encrypt w/no padding
             var cipher = CIPHER.createCipher('AES-CBC', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish(function(){return true;});
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -229,7 +229,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt w/no padding
             var cipher = CIPHER.createDecipher('AES-CBC', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish(function(){return true;});
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -270,16 +270,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-256-cbc encrypt: ' + inputs[i], function() {
             // encrypt w/no padding
             var cipher = CIPHER.createCipher('AES-CBC', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish(function(){return true;});
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -288,7 +288,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt w/no padding
             var cipher = CIPHER.createDecipher('AES-CBC', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish(function(){return true;});
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -339,10 +339,10 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
           var input = (i !== 5) ? UTIL.hexToBytes(inputs[i]) : inputs[i];
-          var output = UTIL.hexToBytes(outputs[i]);
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-cfb encrypt: ' + inputs[i], function() {
             // encrypt
@@ -357,7 +357,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = (i !== 5) ?
               cipher.output.toHex() : cipher.output.getBytes();
@@ -399,16 +399,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-192-cfb encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-CFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -417,7 +417,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -446,16 +446,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = inputs[i];
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i]);
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-256-cfb encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-CFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -464,7 +464,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.getBytes();
             ASSERT.equal(out, inputs[i]);
@@ -499,10 +499,10 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
           var input = (i !== 1) ? UTIL.hexToBytes(inputs[i]) : inputs[i];
-          var output = UTIL.hexToBytes(outputs[i]);
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-ofb encrypt: ' + inputs[i], function() {
             // encrypt
@@ -517,7 +517,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-OFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = (i !== 1) ?
               cipher.output.toHex() : cipher.output.getBytes();
@@ -559,16 +559,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-192-ofb encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-OFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -577,7 +577,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-OFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -618,16 +618,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-256-ofb encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-OFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -636,7 +636,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-OFB', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -671,10 +671,10 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
           var input = (i !== 1) ? UTIL.hexToBytes(inputs[i]) : inputs[i];
-          var output = UTIL.hexToBytes(outputs[i]);
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-ctr encrypt: ' + inputs[i], function() {
             // encrypt
@@ -689,7 +689,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CTR', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = (i !== 1) ?
               cipher.output.toHex() : cipher.output.getBytes();
@@ -725,16 +725,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-192-ctr encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-CTR', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -743,7 +743,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CTR', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -778,16 +778,16 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-256-ctr encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-CTR', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
           });
@@ -796,7 +796,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CTR', key);
             cipher.start({iv: iv});
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             cipher.finish();
             var out = cipher.output.toHex();
             ASSERT.equal(out, inputs[i]);
@@ -893,17 +893,17 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var adata = UTIL.hexToBytes(adatas[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var adata = UTIL.createBuffer(adatas[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-gcm encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-GCM', key);
             cipher.start({iv: iv, additionalData: adata});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
@@ -915,9 +915,9 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             cipher.start({
               iv: iv,
               additionalData: adata,
-              tag: UTIL.hexToBytes(tags[i])
+              tag: UTIL.createBuffer(tags[i], 'hex')
             });
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             var pass = cipher.finish();
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
             ASSERT.equal(pass, true);
@@ -1021,17 +1021,17 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var adata = UTIL.hexToBytes(adatas[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var adata = UTIL.createBuffer(adatas[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-gcm encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-GCM', key);
             cipher.start({iv: iv, additionalData: adata});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
@@ -1043,9 +1043,9 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             cipher.start({
               iv: iv,
               additionalData: adata,
-              tag: UTIL.hexToBytes(tags[i])
+              tag: UTIL.createBuffer(tags[i], 'hex')
             });
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             var pass = cipher.finish();
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
             ASSERT.equal(pass, true);
@@ -1149,17 +1149,17 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 
       for(var i = 0; i < keys.length; ++i) {
         (function(i) {
-          var key = UTIL.hexToBytes(keys[i]);
-          var iv = UTIL.hexToBytes(ivs[i]);
-          var adata = UTIL.hexToBytes(adatas[i]);
-          var input = UTIL.hexToBytes(inputs[i]);
-          var output = UTIL.hexToBytes(outputs[i]);
+          var key = UTIL.createBuffer(keys[i], 'hex');
+          var iv = UTIL.createBuffer(ivs[i], 'hex');
+          var adata = UTIL.createBuffer(adatas[i], 'hex');
+          var input = UTIL.createBuffer(inputs[i], 'hex');
+          var output = UTIL.createBuffer(outputs[i], 'hex');
 
           it('should aes-128-gcm encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-GCM', key);
             cipher.start({iv: iv, additionalData: adata});
-            cipher.update(UTIL.createBuffer(input));
+            cipher.update(input);
             cipher.finish();
             ASSERT.equal(cipher.output.toHex(), outputs[i]);
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
@@ -1171,9 +1171,9 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             cipher.start({
               iv: iv,
               additionalData: adata,
-              tag: UTIL.hexToBytes(tags[i])
+              tag: UTIL.createBuffer(tags[i], 'hex')
             });
-            cipher.update(UTIL.createBuffer(output));
+            cipher.update(output);
             var pass = cipher.finish();
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
             ASSERT.equal(pass, true);

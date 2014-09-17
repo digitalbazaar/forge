@@ -14,6 +14,8 @@ forge.cipher = forge.cipher || {};
 // registered algorithms
 forge.cipher.algorithms = forge.cipher.algorithms || {};
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 /**
  * Creates a cipher object that can be used to encrypt data using the given
  * algorithm and key. The algorithm may be provided as a string value for a
@@ -22,8 +24,7 @@ forge.cipher.algorithms = forge.cipher.algorithms || {};
  *
  * @param algorithm the algorithm to use, either a string or an algorithm API
  *          object.
- * @param key the key to use, as a binary-encoded string of bytes or a
- *          byte buffer.
+ * @param key the key to use, as a ByteBuffer.
  *
  * @return the cipher.
  */
@@ -37,6 +38,10 @@ forge.cipher.createCipher = function(algorithm, key) {
   }
   if(!api) {
     throw new Error('Unsupported algorithm: ' + algorithm);
+  }
+
+  if(!(key instanceof ByteBuffer)) {
+    throw new TypeError('key must be a ByteBuffer.');
   }
 
   // assume block cipher
@@ -55,8 +60,7 @@ forge.cipher.createCipher = function(algorithm, key) {
  *
  * @param algorithm the algorithm to use, either a string or an algorithm API
  *          object.
- * @param key the key to use, as a binary-encoded string of bytes or a
- *          byte buffer.
+ * @param key the key to use, as a ByteBuffer.
  *
  * @return the cipher.
  */
@@ -70,6 +74,10 @@ forge.cipher.createDecipher = function(algorithm, key) {
   }
   if(!api) {
     throw new Error('Unsupported algorithm: ' + algorithm);
+  }
+
+  if(!(key instanceof ByteBuffer)) {
+    throw new TypeError('key must be a ByteBuffer.');
   }
 
   // assume block cipher
@@ -123,26 +131,25 @@ var BlockCipher = forge.cipher.BlockCipher = function(options) {
  * Starts or restarts the encryption or decryption process, whichever
  * was previously configured.
  *
- * For non-GCM mode, the IV may be a binary-encoded string of bytes, an array
- * of bytes, a byte buffer, or an array of 32-bit integers. If the IV is in
- * bytes, then it must be Nb (16) bytes in length. If the IV is given in as
- * 32-bit integers, then it must be 4 integers long.
+ * For non-GCM mode, the IV must be a ByteBuffer with at least 16 bytes.
  *
- * For GCM-mode, the IV must be given as a binary-encoded string of bytes or
- * a byte buffer. The number of bytes should be 12 (96 bits) as recommended
- * by NIST SP-800-38D but another length may be given.
+ * For GCM-mode, the IV must be a ByteBuffer with at least 12 bytes (96 bits)
+ * as recommended by NIST SP-800-38D but another length may be given.
  *
  * @param options the options to use:
- *          iv the initialization vector to use as a binary-encoded string of
- *            bytes, null to reuse the last ciphered block from a previous
- *            update() (this "residue" method is for legacy support only).
- *          additionalData additional authentication data as a binary-encoded
- *            string of bytes, for 'GCM' mode, (default: none).
+ *          iv the initialization vector to use as a ByteBuffer, null to reuse
+ *            the last ciphered block from a previous update() (this
+ *            "residue" method is for legacy support only and is considered
+ *            insecure).
+ *          additionalData additional authentication data as a ByteBuffer,
+ *            for 'GCM' mode, (default: none).
  *          tagLength desired length of authentication tag, in bits, for
  *            'GCM' mode (0-128, default: 128).
  *          tag the authentication tag to check if decrypting, as a
- *             binary-encoded string of bytes.
- *          output the output the buffer to write to, null to create one.
+ *             ByteBuffer.
+ *          output the output ByteBuffer to write to, null to create one.
+ *
+ * @return this cipher for chaining.
  */
 BlockCipher.prototype.start = function(options) {
   options = options || {};
@@ -150,17 +157,31 @@ BlockCipher.prototype.start = function(options) {
   for(var key in options) {
     opts[key] = options[key];
   }
+  if(opts.iv && !(opts.iv instanceof ByteBuffer)) {
+    throw new TypeError('options.iv must be a ByteBuffer.');
+  }
+  if(opts.additionalData && !(opts.additionalData instanceof ByteBuffer)) {
+    throw new TypeError('options.additionalData must be a ByteBuffer.');
+  }
+  if(opts.tag && !(opts.tag instanceof ByteBuffer)) {
+    throw new TypeError('options.tag must be a ByteBuffer.');
+  }
+
   opts.decrypt = this._decrypt;
   this._finish = false;
-  this._input = forge.util.createBuffer();
-  this.output = options.output || forge.util.createBuffer();
+  this._input = new ByteBuffer();
+  this.output = options.output || new ByteBuffer();
   this.mode.start(opts);
+
+  return this;
 };
 
 /**
  * Updates the next block according to the cipher mode.
  *
- * @param input the buffer to read from.
+ * @param input the ByteBuffer to read from.
+ *
+ * @return this cipher for chaining.
  */
 BlockCipher.prototype.update = function(input) {
   if(!this._finish) {
@@ -176,6 +197,8 @@ BlockCipher.prototype.update = function(input) {
 
   // free consumed memory from input buffer
   this._input.compact();
+
+  return this;
 };
 
 /**

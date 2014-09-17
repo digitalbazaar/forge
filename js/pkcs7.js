@@ -3,8 +3,10 @@
  * PKCS#7 are implemented, especially the enveloped-data content type.
  *
  * @author Stefan Siegl
+ * @author Dave Longley
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2012-2014 Digital Bazaar, Inc.
  *
  * Currently this implementation only supports ContentType of either
  * EnvelopedData or EncryptedData on root level.  The top level elements may
@@ -24,6 +26,8 @@ var asn1 = forge.asn1;
 
 // shortcut for PKCS#7 API
 var p7 = forge.pkcs7 = forge.pkcs7 || {};
+
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * Converts a PKCS#7 message from PEM format.
@@ -322,38 +326,44 @@ var _fromAsn1 = function(msg, obj, validator) {
  *
  * @param The PKCS#7 message object.
  */
-var _decryptContent = function (msg) {
+var _decryptContent = function(msg) {
   if(msg.encryptedContent.key === undefined) {
     throw new Error('Symmetric key not available.');
   }
 
   if(msg.content === undefined) {
-    var ciph;
-
+    var algorithm;
     switch(msg.encryptedContent.algorithm) {
-      case forge.pki.oids['aes128-CBC']:
-      case forge.pki.oids['aes192-CBC']:
-      case forge.pki.oids['aes256-CBC']:
-        ciph = forge.aes.createDecryptionCipher(msg.encryptedContent.key);
-        break;
+    case forge.pki.oids['aes128-CBC']:
+    case forge.pki.oids['aes192-CBC']:
+    case forge.pki.oids['aes256-CBC']:
+      algorithm = 'AES-CBC';
+      break;
 
-      case forge.pki.oids['desCBC']:
-      case forge.pki.oids['des-EDE3-CBC']:
-        ciph = forge.des.createDecryptionCipher(msg.encryptedContent.key);
-        break;
+    case forge.pki.oids['desCBC']:
+      algorithm = 'DES-CBC';
+      break;
+    case forge.pki.oids['des-EDE3-CBC']:
+      algorithm = '3DES-CBC';
+      break;
 
-      default:
-        throw new Error('Unsupported symmetric cipher, OID ' +
-          msg.encryptedContent.algorithm);
+    default:
+      throw new Error('Unsupported symmetric cipher, OID ' +
+        msg.encryptedContent.algorithm);
     }
-    ciph.start(msg.encryptedContent.parameter);
-    ciph.update(msg.encryptedContent.content);
 
-    if(!ciph.finish()) {
+    var key = new ByteBuffer(msg.encryptedContent.key, {encoding: 'binary'});
+    var iv = new ByteBuffer(
+      msg.encryptedContent.parameter, {encoding: 'binary'});
+    var decipher = forge.cipher.createDecipher(algorithm, key);
+    decipher.start({iv: iv});
+    decipher.update(msg.encryptedContent.content);
+
+    if(!decipher.finish()) {
       throw new Error('Symmetric decryption failed.');
     }
 
-    msg.content = ciph.output;
+    msg.content = decipher.output;
   }
 };
 
@@ -684,46 +694,47 @@ p7.createEnvelopedData = function() {
      * automatically.
      *
      * @param [key] The key to be used for symmetric encryption.
-     * @param [cipher] The OID of the symmetric cipher to use.
+     * @param [algOid] The OID of the symmetric cipher to use.
      */
-    encrypt: function(key, cipher) {
+    encrypt: function(key, algOid) {
       // Part 1: Symmetric encryption
       if(msg.encryptedContent.content === undefined) {
-        cipher = cipher || msg.encryptedContent.algorithm;
+        algOid = algOid || msg.encryptedContent.algorithm;
         key = key || msg.encryptedContent.key;
 
-        var keyLen, ivLen, ciphFn;
-        switch(cipher) {
-          case forge.pki.oids['aes128-CBC']:
-            keyLen = 16;
-            ivLen = 16;
-            ciphFn = forge.aes.createEncryptionCipher;
-            break;
+        var keyLen, ivLen, algorithm;
+        switch(algOid) {
+        case forge.pki.oids['aes128-CBC']:
+          keyLen = 16;
+          ivLen = 16;
+          algorithm = 'AES-CBC';
+          break;
 
-          case forge.pki.oids['aes192-CBC']:
-            keyLen = 24;
-            ivLen = 16;
-            ciphFn = forge.aes.createEncryptionCipher;
-            break;
+        case forge.pki.oids['aes192-CBC']:
+          keyLen = 24;
+          ivLen = 16;
+          algorithm = 'AES-CBC';
+          break;
 
-          case forge.pki.oids['aes256-CBC']:
-            keyLen = 32;
-            ivLen = 16;
-            ciphFn = forge.aes.createEncryptionCipher;
-            break;
+        case forge.pki.oids['aes256-CBC']:
+          keyLen = 32;
+          ivLen = 16;
+          algorithm = 'AES-CBC';
+          break;
 
-          case forge.pki.oids['des-EDE3-CBC']:
-            keyLen = 24;
-            ivLen = 8;
-            ciphFn = forge.des.createEncryptionCipher;
-            break;
+        case forge.pki.oids['des-EDE3-CBC']:
+          keyLen = 24;
+          ivLen = 8;
+          algorithm = '3DES-CBC';
+          break;
 
-          default:
-            throw new Error('Unsupported symmetric cipher, OID ' + cipher);
+        default:
+          throw new Error(
+            'Unsupported symmetric cipher algorithm, OID ' + algOid);
         }
 
         if(key === undefined) {
-          key = forge.util.createBuffer(forge.random.getBytes(keyLen));
+          key = new ByteBuffer(forge.random.getBytes(keyLen));
         } else if(key.length() != keyLen) {
           throw new Error('Symmetric key has wrong length; ' +
             'got ' + key.length() + ' bytes, expected ' + keyLen + '.');
@@ -731,22 +742,22 @@ p7.createEnvelopedData = function() {
 
         // Keep a copy of the key & IV in the object, so the caller can
         // use it for whatever reason.
-        msg.encryptedContent.algorithm = cipher;
+        msg.encryptedContent.algorithm = algOid;
         msg.encryptedContent.key = key;
-        msg.encryptedContent.parameter = forge.util.createBuffer(
+        msg.encryptedContent.parameter = new ByteBuffer(
           forge.random.getBytes(ivLen));
 
-        var ciph = ciphFn(key);
-        ciph.start(msg.encryptedContent.parameter.copy());
-        ciph.update(msg.content);
+        var cipher = forge.cipher.createCipher(algorithm, key);
+        cipher.start({iv: msg.encryptedContent.parameter});
+        cipher.update(msg.content);
 
         // The finish function does PKCS#7 padding by default, therefore
         // no action required by us.
-        if(!ciph.finish()) {
+        if(!cipher.finish()) {
           throw new Error('Symmetric encryption failed.');
         }
 
-        msg.encryptedContent.content = ciph.output;
+        msg.encryptedContent.content = cipher.output;
       }
 
       // Part 2: asymmetric encryption for each recipient

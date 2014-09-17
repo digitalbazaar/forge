@@ -13,19 +13,27 @@ function initModule(forge) {
 
 var pkcs5 = forge.pkcs5 = forge.pkcs5 || {};
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 /**
  * Derives a key from a password.
  *
- * @param p the password as a string of bytes.
- * @param s the salt as a string of bytes.
+ * @param p the password as a string of characters.
+ * @param s the salt as a ByteBuffer.
  * @param c the iteration count, a positive integer.
  * @param dkLen the intended length, in bytes, of the derived key,
  *          (max: 2^32 - 1) * hash length of the PRF.
  * @param md the message digest to use in the PRF, defaults to SHA-1.
  *
- * @return the derived key, as a string of bytes.
+ * @return the derived key, as a ByteBuffer.
  */
 forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
+  if(!(s instanceof ByteBuffer)) {
+    throw new TypeError('salt must be a ByteBuffer.');
+  }
+  // FIXME: change to s.copy() after md accepts ByteBuffer input
+  s = s.bytes();
+
   // default prf to SHA-1
   if(typeof md === 'undefined' || md === null) {
     md = forge.md.sha1.create();
@@ -102,7 +110,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   }
 
   /* 5. Output the derived key DK. */
-  return dk;
+  return new ByteBuffer(dk, 'binary');
 };
 
 } // end module implementation
