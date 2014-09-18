@@ -630,13 +630,39 @@ util.ByteStringBuffer.prototype.toHex = function() {
 };
 
 /**
- * Converts this buffer to a UTF-16 string (standard JavaScript string).
+ * Converts this buffer to a string, using the given encoding. If no
+ * encoding is given, 'utf8' (UTF-8) is used.
  *
- * @return a UTF-16 string.
+ * @param [encoding] the encoding to use: 'binary', 'utf8', 'utf16', 'hex',
+ *          'base64' (default: 'utf8').
+ *
+ * @return a string representation of the bytes in this buffer.
  */
-util.ByteStringBuffer.prototype.toString = function() {
-  return util.decodeUtf8(this.bytes());
+util.ByteStringBuffer.prototype.toString = function(encoding) {
+  encoding = encoding || 'utf8';
+
+  // encode to string
+  if(encoding === 'binary' || encoding === 'raw') {
+    return this.bytes();
+  }
+  if(encoding === 'hex') {
+    return this.toHex();
+  }
+  if(encoding === 'base64') {
+    return util.encode64(this.bytes());
+  }
+
+  // decode to text
+  if(encoding === 'utf8') {
+    return util.decodeUtf8(this.bytes());
+  }
+  if(encoding === 'utf16') {
+    throw new Error('Not implemented.');
+  }
+
+  throw new Error('Invalid encoding: ' + encoding);
 };
+
 
 /** End Buffer w/BinaryString backing */
 
