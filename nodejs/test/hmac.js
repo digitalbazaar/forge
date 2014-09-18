@@ -62,6 +62,7 @@ function Tests(ASSERT, HMAC, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/hmac',
@@ -70,16 +71,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      HMAC(),
-      UTIL()
+      HMAC(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/hmac')(),
-    require('../../js/util')());
+    require('../../js/hmac')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

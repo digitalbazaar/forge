@@ -13,6 +13,7 @@ function Tests(ASSERT, MGF, MD, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/mgf',
@@ -22,18 +23,18 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      MGF(),
-      MD(),
-      UTIL()
+      MGF(forge),
+      MD(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/mgf')(),
-    require('../../js/md')(),
-    require('../../js/util')());
+    require('../../js/mgf')(forge),
+    require('../../js/md')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

@@ -94,6 +94,7 @@ function Tests(ASSERT, MD5, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/md5',
@@ -102,16 +103,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      MD5(),
-      UTIL()
+      MD5(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/md5')(),
-    require('../../js/util')());
+    require('../../js/md5')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

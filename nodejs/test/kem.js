@@ -163,6 +163,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/kem',
@@ -175,24 +176,24 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      KEM(),
-      MD(),
-      RSA(),
-      UTIL(),
-      JSBN(),
-      RANDOM()
+      KEM(forge),
+      MD(forge),
+      RSA(forge),
+      UTIL(forge),
+      JSBN(forge),
+      RANDOM(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/kem')(),
-    require('../../js/md')(),
-    require('../../js/rsa')(),
-    require('../../js/util')(),
-    require('../../js/jsbn')(),
-    require('../../js/random')());
+    require('../../js/kem')(forge),
+    require('../../js/md')(forge),
+    require('../../js/rsa')(forge),
+    require('../../js/util')(forge),
+    require('../../js/jsbn')(forge),
+    require('../../js/random')(forge));
 }
 
 })();
