@@ -344,6 +344,7 @@ function Tests(ASSERT, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/util'
@@ -351,14 +352,14 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      UTIL()
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/util')());
+    require('../../js/util')(forge));
 }
 
 })();

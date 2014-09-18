@@ -1,6 +1,8 @@
 (function() {
 
 function Tests(ASSERT, ASN1, UTIL) {
+  var ByteBuffer = UTIL.ByteBuffer;
+
   describe('asn1', function() {
     // TODO: add more ASN.1 coverage
 
@@ -9,7 +11,7 @@ function Tests(ASSERT, ASN1, UTIL) {
     });
 
     it('should convert an OID from DER', function() {
-      var der = UTIL.hexToBytes('2a864886f70d');
+      var der = new ByteBuffer('2a864886f70d', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToOid(der), '1.2.840.113549');
     });
 
@@ -74,77 +76,77 @@ function Tests(ASSERT, ASN1, UTIL) {
     });
 
     it('should convert INTEGER 0 from DER', function() {
-      var der = UTIL.hexToBytes('00');
+      var der = new ByteBuffer('00', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 0);
     });
 
     it('should convert INTEGER 1 from DER', function() {
-      var der = UTIL.hexToBytes('01');
+      var der = new ByteBuffer('01', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 1);
     });
 
     it('should convert INTEGER 127 from DER', function() {
-      var der = UTIL.hexToBytes('7f');
+      var der = new ByteBuffer('7f', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 127);
     });
 
     it('should convert INTEGER 128 from DER', function() {
-      var der = UTIL.hexToBytes('0080');
+      var der = new ByteBuffer('0080', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 128);
     });
 
     it('should convert INTEGER 256 from DER', function() {
-      var der = UTIL.hexToBytes('0100');
+      var der = new ByteBuffer('0100', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 256);
     });
 
     it('should convert INTEGER -128 from DER', function() {
-      var der = UTIL.hexToBytes('80');
+      var der = new ByteBuffer('80', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -128);
     });
 
     it('should convert INTEGER -129 from DER', function() {
-      var der = UTIL.hexToBytes('ff7f');
+      var der = new ByteBuffer('ff7f', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -129);
     });
 
     it('should convert INTEGER 32768 from DER', function() {
-      var der = UTIL.hexToBytes('008000');
+      var der = new ByteBuffer('008000', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 32768);
     });
 
     it('should convert INTEGER -32768 from DER', function() {
-      var der = UTIL.hexToBytes('8000');
+      var der = new ByteBuffer('8000', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -32768);
     });
 
     it('should convert INTEGER -32769 from DER', function() {
-      var der = UTIL.hexToBytes('ff7fff');
+      var der = new ByteBuffer('ff7fff', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -32769);
     });
 
     it('should convert INTEGER 8388608 from DER', function() {
-      var der = UTIL.hexToBytes('00800000');
+      var der = new ByteBuffer('00800000', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 8388608);
     });
 
     it('should convert INTEGER -8388608 from DER', function() {
-      var der = UTIL.hexToBytes('800000');
+      var der = new ByteBuffer('800000', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -8388608);
     });
 
     it('should convert INTEGER -8388609 from DER', function() {
-      var der = UTIL.hexToBytes('ff7fffff');
+      var der = new ByteBuffer('ff7fffff', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -8388609);
     });
 
     it('should convert INTEGER 2147483647 from DER', function() {
-      var der = UTIL.hexToBytes('7fffffff');
+      var der = new ByteBuffer('7fffffff', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), 2147483647);
     });
 
     it('should convert INTEGER -2147483648 from DER', function() {
-      var der = UTIL.hexToBytes('80000000');
+      var der = new ByteBuffer('80000000', {encoding: 'hex'});
       ASSERT.equal(ASN1.derToInteger(der), -2147483648);
     });
 
@@ -239,6 +241,7 @@ function Tests(ASSERT, ASN1, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/asn1',
@@ -247,16 +250,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      ASN1(),
-      UTIL()
+      ASN1(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/asn1')(),
-    require('../../js/util')());
+    require('../../js/asn1')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

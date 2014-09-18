@@ -137,6 +137,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+// TODO: Better abstract ASN.1 away from its serialization (DER) and support BER
+
 /* ASN.1 API */
 var asn1 = forge.asn1 = forge.asn1 || {};
 
@@ -177,6 +179,8 @@ asn1.Type = {
   GENERALIZEDTIME: 24,
   BMPSTRING:       30
 };
+
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * Creates a new asn1 object.
@@ -220,7 +224,7 @@ asn1.create = function(tagClass, type, constructed, value) {
  *
  * In case the length is not specified, undefined is returned.
  *
- * @param b the ASN.1 byte buffer.
+ * @param b the ASN.1 ByteBuffer.
  *
  * @return the length of the ASN.1 value.
  */
@@ -245,33 +249,32 @@ var _getValueLength = function(b) {
 };
 
 /**
- * Parses an asn1 object from a byte buffer in DER format.
+ * Parses an asn1 object from a ByteBuffer with DER-formatted data.
  *
- * @param bytes the byte buffer to parse from.
+ * @param der the ByteBuffer to parse from.
  * @param strict true to be strict when checking value lengths, false to
  *          allow truncated values (default: true).
  *
  * @return the parsed asn1 object.
  */
-asn1.fromDer = function(bytes, strict) {
+asn1.fromDer = function(der, strict) {
+  if(!(der instanceof ByteBuffer)) {
+    throw new TypeError('der must be a ByteBuffer.');
+  }
+
   if(strict === undefined) {
     strict = true;
   }
 
-  // wrap in buffer if needed
-  if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
-  }
-
   // minimum length for ASN.1 DER structure is 2
-  if(bytes.length() < 2) {
+  if(der.length() < 2) {
     var error = new Error('Too few bytes to parse DER.');
-    error.bytes = bytes.length();
+    error.bytes = der.length();
     throw error;
   }
 
   // get the first byte
-  var b1 = bytes.getByte();
+  var b1 = der.getByte();
 
   // get the tag class
   var tagClass = (b1 & 0xC0);
@@ -280,17 +283,17 @@ asn1.fromDer = function(bytes, strict) {
   var type = b1 & 0x1F;
 
   // get the value length
-  var length = _getValueLength(bytes);
+  var length = _getValueLength(der);
 
   // ensure there are enough bytes to get the value
-  if(bytes.length() < length) {
+  if(der.length() < length) {
     if(strict) {
       var error = new Error('Too few bytes to read ASN.1 value.');
-      error.detail = bytes.length() + ' < ' + length;
+      error.detail = der.length() + ' < ' + length;
       throw error;
     }
     // Note: be lenient with truncated values
-    length = bytes.length();
+    length = der.length();
   }
 
   // prepare to get value
@@ -311,17 +314,17 @@ asn1.fromDer = function(bytes, strict) {
       The second and following octets give the value of the bit string
       converted to an octet string. */
     // if there are no unused bits, maybe the bitstring holds ASN.1 objs
-    var read = bytes.read;
-    var unused = bytes.getByte();
+    var read = der.read;
+    var unused = der.getByte();
     if(unused === 0) {
       // if the first byte indicates UNIVERSAL or CONTEXT_SPECIFIC,
       // and the length is valid, assume we've got an ASN.1 object
-      b1 = bytes.getByte();
+      b1 = der.getByte();
       var tc = (b1 & 0xC0);
       if(tc === asn1.Class.UNIVERSAL || tc === asn1.Class.CONTEXT_SPECIFIC) {
         try {
-          var len = _getValueLength(bytes);
-          composed = (len === length - (bytes.read - read));
+          var len = _getValueLength(der);
+          composed = (len === length - (der.read - read));
           if(composed) {
             // adjust read/length to account for unused bits byte
             ++read;
@@ -331,7 +334,7 @@ asn1.fromDer = function(bytes, strict) {
       }
     }
     // restore read pointer
-    bytes.read = read;
+    der.read = read;
   }
 
   if(composed) {
@@ -340,19 +343,19 @@ asn1.fromDer = function(bytes, strict) {
     if(length === undefined) {
       // asn1 object of indefinite length, read until end tag
       for(;;) {
-        if(bytes.bytes(2) === String.fromCharCode(0, 0)) {
-          bytes.getBytes(2);
+        if(der.bytes(2) === String.fromCharCode(0, 0)) {
+          der.getBytes(2);
           break;
         }
-        value.push(asn1.fromDer(bytes, strict));
+        value.push(asn1.fromDer(der, strict));
       }
     } else {
       // parsing asn1 object of definite length
-      var start = bytes.length();
+      var start = der.length();
       while(length > 0) {
-        value.push(asn1.fromDer(bytes, strict));
-        length -= start - bytes.length();
-        start = bytes.length();
+        value.push(asn1.fromDer(der, strict));
+        length -= start - der.length();
+        start = der.length();
       }
     }
   } else {
@@ -364,16 +367,16 @@ asn1.fromDer = function(bytes, strict) {
         throw new Error('Non-constructed ASN.1 object of indefinite length.');
       }
       // be lenient and use remaining bytes
-      length = bytes.length();
+      length = der.length();
     }
 
     if(type === asn1.Type.BMPSTRING) {
       value = '';
       for(var i = 0; i < length; i += 2) {
-        value += String.fromCharCode(bytes.getInt16());
+        value += String.fromCharCode(der.getInt16());
       }
     } else {
-      value = bytes.getBytes(length);
+      value = der.getBytes(length);
     }
   }
 
@@ -382,14 +385,14 @@ asn1.fromDer = function(bytes, strict) {
 };
 
 /**
- * Converts the given asn1 object to a buffer of bytes in DER format.
+ * Converts the given asn1 object to a ByteBuffer with DER-formatted data.
  *
  * @param asn1 the asn1 object to convert to bytes.
  *
- * @return the buffer of bytes.
+ * @return the ByteBuffer.
  */
 asn1.toDer = function(obj) {
-  var bytes = forge.util.createBuffer();
+  var der = new ByteBuffer();
 
   // build the first byte
   var b1 = obj.tagClass | obj.type;
@@ -426,13 +429,13 @@ asn1.toDer = function(obj) {
   }
 
   // add tag byte
-  bytes.putByte(b1);
+  der.putByte(b1);
 
   // use "short form" encoding
   if(value.length() <= 127) {
     // one byte describes the length
     // bit 8 = 0 and bits 7-1 = length
-    bytes.putByte(value.length() & 0x7F);
+    der.putByte(value.length() & 0x7F);
   } else {
     // use "long form" encoding
     // 2 to 127 bytes describe the length
@@ -447,35 +450,39 @@ asn1.toDer = function(obj) {
 
     // set first byte to # bytes used to store the length and turn on
     // bit 8 to indicate long-form length is used
-    bytes.putByte(lenBytes.length | 0x80);
+    der.putByte(lenBytes.length | 0x80);
 
     // concatenate length bytes in reverse since they were generated
     // little endian and we need big endian
     for(var i = lenBytes.length - 1; i >= 0; --i) {
-      bytes.putByte(lenBytes.charCodeAt(i));
+      der.putByte(lenBytes.charCodeAt(i));
     }
   }
 
   // concatenate value bytes
-  bytes.putBuffer(value);
-  return bytes;
+  der.putBuffer(value);
+  return der;
 };
 
 /**
- * Converts an OID dot-separated string to a byte buffer. The byte buffer
+ * Converts an OID dot-separated string to a ByteBuffer. The ByteBuffer
  * contains only the DER-encoded value, not any tag or length bytes.
  *
  * @param oid the OID dot-separated string.
  *
- * @return the byte buffer.
+ * @return the ByteBuffer.
  */
 asn1.oidToDer = function(oid) {
+  if(typeof oid !== 'string') {
+    throw new TypeError('oid must be a string.');
+  }
+
   // split OID into individual values
   var values = oid.split('.');
-  var bytes = forge.util.createBuffer();
+  var der = new ByteBuffer();
 
   // first byte is 40 * value1 + value2
-  bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
+  der.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
   // other bytes are each value in base 128 with 8th bit set except for
   // the last byte for each value
   var last, valueBytes, value, b;
@@ -498,39 +505,38 @@ asn1.oidToDer = function(oid) {
 
     // add value bytes in reverse (needs to be in big endian)
     for(var n = valueBytes.length - 1; n >= 0; --n) {
-      bytes.putByte(valueBytes[n]);
+      der.putByte(valueBytes[n]);
     }
   }
 
-  return bytes;
+  return der;
 };
 
 /**
- * Converts a DER-encoded byte buffer to an OID dot-separated string. The
- * byte buffer should contain only the DER-encoded value, not any tag or
+ * Converts a DER-encoded ByteBuffer to an OID dot-separated string. The
+ * ByteBuffer should contain only the DER-encoded value, not any tag or
  * length bytes.
  *
- * @param bytes the byte buffer.
+ * @param der the ByteBuffer.
  *
  * @return the OID dot-separated string.
  */
-asn1.derToOid = function(bytes) {
-  var oid;
-
-  // wrap in buffer if needed
-  if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
+asn1.derToOid = function(der) {
+  if(!(der instanceof ByteBuffer)) {
+    throw new TypeError('der must be a ByteBuffer.');
   }
 
+  var oid;
+
   // first byte is 40 * value1 + value2
-  var b = bytes.getByte();
+  var b = der.getByte();
   oid = Math.floor(b / 40) + '.' + (b % 40);
 
   // other bytes are each value in base 128 with 8th bit set except for
   // the last byte for each value
   var value = 0;
-  while(bytes.length() > 0) {
-    b = bytes.getByte();
+  while(der.length() > 0) {
+    b = der.getByte();
     value = value << 7;
     // not the last byte for the value
     if(b & 0x80) {
@@ -556,6 +562,10 @@ asn1.derToOid = function(bytes) {
  * @return the date.
  */
 asn1.utcTimeToDate = function(utc) {
+  if(typeof utc !== 'string') {
+    throw new TypeError('utc must be a string.');
+  }
+
   /* The following formats can be used:
 
     YYMMDDhhmmZ
@@ -638,6 +648,10 @@ asn1.utcTimeToDate = function(utc) {
  * @return the date.
  */
 asn1.generalizedTimeToDate = function(gentime) {
+  if(typeof gentime !== 'string') {
+    throw new TypeError('generalized time must be a string.');
+  }
+
   /* The following formats can be used:
 
     YYYYMMDDHHMMSS
@@ -752,15 +766,15 @@ asn1.dateToUtcTime = function(date) {
 };
 
 /**
- * Converts a javascript integer to a DER-encoded byte buffer to be used
+ * Converts a JavaScript integer to a DER-encoded ByteBuffer to be used
  * as the value for an INTEGER type.
  *
  * @param x the integer.
  *
- * @return the byte buffer.
+ * @return the ByteBuffer.
  */
 asn1.integerToDer = function(x) {
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   if(x >= -0x80 && x < 0x80) {
     return rval.putSignedInt(x, 8);
   }
@@ -779,24 +793,23 @@ asn1.integerToDer = function(x) {
 };
 
 /**
- * Converts a DER-encoded byte buffer to a javascript integer. This is
+ * Converts a DER-encoded ByteBuffer to a JavaScript integer. This is
  * typically used to decode the value of an INTEGER type.
  *
- * @param bytes the byte buffer.
+ * @param der the ByteBuffer.
  *
  * @return the integer.
  */
-asn1.derToInteger = function(bytes) {
-  // wrap in buffer if needed
-  if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
+asn1.derToInteger = function(der) {
+  if(!(der instanceof ByteBuffer)) {
+    throw new TypeError('der must be a ByteBuffer.');
   }
 
-  var n = bytes.length() * 8;
+  var n = der.length() * 8;
   if(n > 32) {
     throw new Error('Integer too large; max is 32-bits.');
   }
-  return bytes.getSignedInt(n);
+  return der.getSignedInt(n);
 };
 
 /**

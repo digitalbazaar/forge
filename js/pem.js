@@ -24,7 +24,7 @@
  * headers: contains all other PEM encapsulated headers -- where order is
  *   significant (for pairing data like recipient ID + key info).
  *
- * body: the binary-encoded body.
+ * body: the body stored in a ByteBuffer.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -32,6 +32,8 @@ function initModule(forge) {
 
 // shortcut for pem API
 var pem = forge.pem = forge.pem || {};
+
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * Encodes (serializes) the given PEM object.
@@ -44,6 +46,8 @@ var pem = forge.pem = forge.pem || {};
  */
 pem.encode = function(msg, options) {
   options = options || {};
+  var maxline = options.maxline || 64;
+
   var rval = '-----BEGIN ' + msg.type + '-----\r\n';
 
   // encode special headers
@@ -80,7 +84,7 @@ pem.encode = function(msg, options) {
   }
 
   // add body
-  rval += forge.util.encode64(msg.body, options.maxline || 64) + '\r\n';
+  rval += msg.body.toString('base64', {maxline: maxline}) + '\r\n';
 
   rval += '-----END ' + msg.type + '-----\r\n';
   return rval;
@@ -113,7 +117,7 @@ pem.decode = function(str) {
       contentDomain: null,
       dekInfo: null,
       headers: [],
-      body: forge.util.decode64(match[3])
+      body: new ByteBuffer(match[3], {encoding: 'base64'})
     };
     rval.push(msg);
 

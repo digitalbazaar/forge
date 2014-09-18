@@ -138,6 +138,9 @@ function Tests(ASSERT, PKI, MD, UTIL) {
         ASSERT.ok(cert.verifySubjectKeyIdentifier());
         return true;
       });
+
+      // convert back to pem
+      ASSERT.equal(PKI.certificateToPem(cert), pem);
     });
 
     it('should verify certificate with sha1WithRSAEncryption signature', function() {
@@ -453,6 +456,7 @@ function Tests(ASSERT, PKI, MD, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/pki',
@@ -462,18 +466,18 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI(),
-      MD(),
-      UTIL()
+      PKI(forge),
+      MD(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki')(),
-    require('../../js/md')(),
-    require('../../js/util')());
+    require('../../js/pki')(forge),
+    require('../../js/md')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

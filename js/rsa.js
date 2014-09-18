@@ -69,6 +69,8 @@ if(typeof BigInteger === 'undefined') {
   var BigInteger = forge.jsbn.BigInteger;
 }
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 // shortcut for asn.1 API
 var asn1 = forge.asn1;
 
@@ -549,7 +551,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
   // prepend zero bytes to fill up eb
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var xhex = x.toString(16);
-  var eb = forge.util.createBuffer();
+  var eb = new ByteBuffer();
   var zeros = k - Math.ceil(xhex.length / 2);
   while(zeros > 0) {
     eb.putByte(0x00);
@@ -559,7 +561,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
 
   if(ml !== false) {
     // legacy, default to PKCS#1 v1.5 padding
-    return _decodePkcs1_v1_5(eb.getBytes(), key, pub);
+    return _decodePkcs1_v1_5(eb, key, pub);
   }
 
   // return message
@@ -999,13 +1001,16 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
          verify: function(digest, d) {
            // remove padding
            d = _decodePkcs1_v1_5(d, key, true);
-           return digest === d;
+           // FIXME: digest to become a ByteBuffer, use ByteBuffer.equals?
+           return digest === d.getBytes();
          }
        };
      }
 
      // do rsa decryption w/o any decoding, then verify -- which does decoding
-     var d = pki.rsa.decrypt(signature, key, true, false);
+     // FIXME: d will change to a ByteBuffer
+     var d = new ByteBuffer(
+       pki.rsa.decrypt(signature, key, true, false), {encoding: 'binary'});
      return scheme.verify(digest, d, key.n.bitLength());
   };
 
@@ -1064,21 +1069,24 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     var d = pki.rsa.decrypt(data, key, false, false);
 
     if(scheme === 'RSAES-PKCS1-V1_5') {
-      scheme = { decode: _decodePkcs1_v1_5 };
+      scheme = {decode: _decodePkcs1_v1_5};
     } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
         decode: function(d, key) {
-          return forge.pkcs1.decode_rsa_oaep(key, d, schemeOptions);
+          return new ByteBuffer(
+            forge.pkcs1.decode_rsa_oaep(key, d.bytes(), schemeOptions),
+            {encoding: 'binary'});
         }
       };
     } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
-      scheme = { decode: function(d) { return d; } };
+      scheme = {decode: function(d) {return d;}};
     } else {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
 
     // decode according to scheme
-    return scheme.decode(d, key, false);
+    return scheme.decode(
+      new ByteBuffer(d, {encoding: 'binary'}), key, false).getBytes();
   };
 
   /**
@@ -1168,7 +1176,8 @@ pki.privateKeyFromAsn1 = function(obj) {
   var capture = {};
   var errors = [];
   if(asn1.validate(obj, privateKeyValidator, capture, errors)) {
-    obj = asn1.fromDer(forge.util.createBuffer(capture.privateKey));
+    obj = asn1.fromDer(
+      new ByteBuffer(capture.privateKey, {encoding: 'binary'}));
   }
 
   // get RSAPrivateKey
@@ -1259,7 +1268,8 @@ pki.publicKeyFromAsn1 = function(obj) {
   var errors = [];
   if(asn1.validate(obj, publicKeyValidator, capture, errors)) {
     // get oid
-    var oid = asn1.derToOid(capture.publicKeyOid);
+    var oid = asn1.derToOid(
+      new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
     if(oid !== pki.oids.rsaEncryption) {
       var error = new Error('Cannot read public key. Unknown OID.');
       error.oid = oid;
@@ -1417,7 +1427,7 @@ function _encodePkcs1_v1_5(m, key, bt) {
  * @param pub true if the key is a public key, false if it is private.
  * @param ml the message length, if specified.
  *
- * @return the decoded bytes.
+ * @return the decoded bytes in a ByteBuffer.
  */
 function _decodePkcs1_v1_5(em, key, pub, ml) {
   // get the length of the modulus in bytes
@@ -1434,7 +1444,7 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
    */
 
   // parse the encryption block
-  var eb = forge.util.createBuffer(em);
+  var eb = em.copy();
   var first = eb.getByte();
   var bt = eb.getByte();
   if(first !== 0x00 ||
@@ -1481,7 +1491,8 @@ function _decodePkcs1_v1_5(em, key, pub, ml) {
     throw new Error('Encryption block is invalid.');
   }
 
-  return eb.getBytes();
+  // FIXME: get ByteBuffer.slice?
+  return new ByteBuffer().putBuffer(eb);
 }
 
 /**

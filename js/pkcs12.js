@@ -97,6 +97,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 // shortcut for asn.1 & PKI API
 var asn1 = forge.asn1;
 var pki = forge.pki;
@@ -409,7 +411,8 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     throw error;
   }
 
-  if(asn1.derToOid(capture.contentType) !== pki.oids.data) {
+  if(asn1.derToOid(new ByteBuffer(
+    capture.contentType, {encoding: 'binary'})) !== pki.oids.data) {
     var error = new Error('Only PKCS#12 PFX in password integrity mode supported.');
     error.oid = asn1.derToOid(capture.contentType);
     throw error;
@@ -426,7 +429,8 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
   if(capture.mac) {
     var md = null;
     var macKeyBytes = 0;
-    var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
+    var macAlgorithm = asn1.derToOid(
+      new ByteBuffer(capture.macAlgorithm, {encoding: 'binary'}));
     switch(macAlgorithm) {
     case pki.oids.sha1:
       md = forge.md.sha1.create();
@@ -509,7 +513,9 @@ function _decodePkcs7Data(data) {
  * @param {String} password Password to decrypt with (optional).
  */
 function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
-  authSafe = asn1.fromDer(authSafe, strict);  /* actually it's BER encoded */
+  /* actually it's BER encoded */
+  authSafe = asn1.fromDer(
+    new ByteBuffer(authSafe, {encoding: 'binary'}), strict);
 
   if(authSafe.tagClass !== asn1.Class.UNIVERSAL ||
      authSafe.type !== asn1.Type.SEQUENCE ||
@@ -535,7 +541,8 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
     };
     var safeContents = null;
     var data = capture.content.value[0];
-    switch(asn1.derToOid(capture.contentType)) {
+    switch(asn1.derToOid(
+      new ByteBuffer(capture.contentType, {encoding: 'binary'}))) {
     case pki.oids.data:
       if(data.tagClass !== asn1.Class.UNIVERSAL ||
          data.type !== asn1.Type.OCTETSTRING) {
@@ -576,7 +583,8 @@ function _decryptSafeContents(data, password) {
     throw error;
   }
 
-  var oid = asn1.derToOid(capture.contentType);
+  var oid = asn1.derToOid(
+    new ByteBuffer(capture.contentType, {encoding: 'binary'}));
   if(oid !== pki.oids.data) {
     var error = new Error(
       'PKCS#12 EncryptedContentInfo ContentType is not Data.');
@@ -585,7 +593,8 @@ function _decryptSafeContents(data, password) {
   }
 
   // get decipher
-  oid = asn1.derToOid(capture.encAlgorithm);
+  oid = asn1.derToOid(
+    new ByteBuffer(capture.encAlgorithm, {encoding: 'binary'}));
   var decipher = pki.pbe.getDecipher(oid, capture.encParameter, password);
 
   // get encrypted data
@@ -618,7 +627,8 @@ function _decodeSafeContents(safeContents, strict, password) {
   }
 
   // actually it's BER-encoded
-  safeContents = asn1.fromDer(safeContents, strict);
+  safeContents = asn1.fromDer(
+    new ByteBuffer(safeContents, {encoding: 'binary'}), strict);
 
   if(safeContents.tagClass !== asn1.Class.UNIVERSAL ||
     safeContents.type !== asn1.Type.SEQUENCE ||
@@ -642,7 +652,7 @@ function _decodeSafeContents(safeContents, strict, password) {
 
     /* Create bag object and push to result array. */
     var bag = {
-      type: asn1.derToOid(capture.bagId),
+      type: asn1.derToOid(new ByteBuffer(capture.bagId, {encoding: 'binary'})),
       attributes: _decodeBagAttributes(capture.bagAttributes)
     };
     res.push(bag);
@@ -674,7 +684,9 @@ function _decodeSafeContents(safeContents, strict, password) {
            capture the fields.  Afterwards check & store the results. */
         validator = certBagValidator;
         decoder = function() {
-          if(asn1.derToOid(capture.certId) !== pki.oids.x509Certificate) {
+          if(asn1.derToOid(new ByteBuffer(
+            capture.certId, {encoding: 'binary'})) !==
+            pki.oids.x509Certificate) {
             var error = new Error(
               'Unsupported certificate type, only X.509 supported.');
             error.oid = asn1.derToOid(capture.certId);
@@ -682,8 +694,8 @@ function _decodeSafeContents(safeContents, strict, password) {
           }
 
           // true=produce cert hash
-          bag.cert = pki.certificateFromAsn1(
-            asn1.fromDer(capture.cert, strict), true);
+          bag.cert = pki.certificateFromAsn1(asn1.fromDer(
+            new ByteBuffer(capture.cert, {encoding: 'binary'}), strict), true);
         };
         break;
 
@@ -728,7 +740,8 @@ function _decodeBagAttributes(attributes) {
         throw error;
       }
 
-      var oid = asn1.derToOid(capture.oid);
+      var oid = asn1.derToOid(
+        new ByteBuffer(capture.oid, {encoding: 'binary'}));
       if(pki.oids[oid] === undefined) {
         // unsupported attribute type, ignore.
         continue;

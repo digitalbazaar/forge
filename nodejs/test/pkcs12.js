@@ -6,6 +6,7 @@ function Tests(ASSERT, FORGE) {
   var ASN1 = forge.asn1;
   var PKI = forge.pki;
   var UTIL = forge.util;
+  var ByteBuffer = UTIL.ByteBuffer;
 
   var _data;
   describe('pkcs12', function() {
@@ -58,7 +59,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should import certificate-only p12', function() {
-      var p12Der = UTIL.decode64(_data.p12certonly);
+      var p12Der = new ByteBuffer(_data.p12certonly, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1);
       ASSERT.equal(p12.version, 3);
@@ -78,7 +79,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should import key-only p12', function() {
-      var p12Der = UTIL.decode64(_data.p12keyonly);
+      var p12Der = new ByteBuffer(_data.p12keyonly, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1);
       ASSERT.equal(p12.version, 3);
@@ -98,7 +99,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should import encrypted-key-only p12', function() {
-      var p12Der = UTIL.decode64(_data.p12enckeyonly);
+      var p12Der = new ByteBuffer(_data.p12enckeyonly, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, 'nopass');
       ASSERT.equal(p12.version, 3);
@@ -120,7 +121,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should import an encrypted-key-only p12', function() {
-      var p12Der = UTIL.decode64(_data.p12enckeyonly);
+      var p12Der = new ByteBuffer(_data.p12enckeyonly, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, 'nopass');
       ASSERT.equal(p12.version, 3);
@@ -142,7 +143,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should import an encrypted p12 with keys and certificates', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       ASSERT.equal(p12.version, 3);
@@ -199,7 +200,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should get bags by friendly name', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({friendlyName: 'signaturekey'});
@@ -209,7 +210,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should get cert bags by friendly name', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
@@ -222,7 +223,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should get all cert bags', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
@@ -236,7 +237,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should get bags by local key ID', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({localKeyId: 'Time 1311855238863'});
@@ -247,7 +248,7 @@ function Tests(ASSERT, FORGE) {
     });
 
     it('should get cert bags by local key ID', function() {
-      var p12Der = UTIL.decode64(_data.p12encmixed);
+      var p12Der = new ByteBuffer(_data.p12encmixed, {encoding: 'base64'});
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
@@ -262,7 +263,7 @@ function Tests(ASSERT, FORGE) {
 
     it('should generate a PKCS#12 mac key', function() {
       var salt = 'A15D6AA8F8DAFC352F9EE1C192F09966EB85D17B';
-      salt = UTIL.createBuffer(UTIL.hexToBytes(salt));
+      salt = new ByteBuffer(salt, {encoding: 'hex'});
       var expected = '03e46727268575c6ebd6bff828d0d09b0c914201263ca543';
       var key = PKCS12.generateKey('123456', salt, 1, 1024, 24);
       ASSERT.equal(key.toHex(), expected);

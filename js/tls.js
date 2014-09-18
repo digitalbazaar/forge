@@ -2880,7 +2880,7 @@ tls.createCertificate = function(c) {
   }
 
   // buffer to hold certificate list
-  var certList = forge.util.createBuffer();
+  var certList = new ByteBuffer();
   if(cert !== null) {
     try {
       // normalize cert to a chain of certificates
@@ -2893,23 +2893,24 @@ tls.createCertificate = function(c) {
         if(msg.type !== 'CERTIFICATE' &&
           msg.type !== 'X509 CERTIFICATE' &&
           msg.type !== 'TRUSTED CERTIFICATE') {
-          var error = new Error('Could not convert certificate from PEM; PEM ' +
-            'header type is not "CERTIFICATE", "X509 CERTIFICATE", or ' +
-            '"TRUSTED CERTIFICATE".');
+          var error = new Error(
+            'Could not convert certificate from PEM; PEM header type is not ' +
+            '"CERTIFICATE", "X509 CERTIFICATE", or "TRUSTED CERTIFICATE".');
           error.headerType = msg.type;
           throw error;
         }
         if(msg.procType && msg.procType.type === 'ENCRYPTED') {
-          throw new Error('Could not convert certificate from PEM; PEM is encrypted.');
+          throw new Error(
+            'Could not convert certificate from PEM; PEM is encrypted.');
         }
 
-        var der = forge.util.createBuffer(msg.body);
+        var der = msg.body;
         if(asn1 === null) {
-          asn1 = forge.asn1.fromDer(der.bytes(), false);
+          asn1 = forge.asn1.fromDer(der.copy(), false);
         }
 
         // certificate entry is itself a vector with 3 length bytes
-        var certBuffer = forge.util.createBuffer();
+        var certBuffer = new ByteBuffer();
         writeVector(certBuffer, 3, der);
 
         // add cert vector to cert list vector

@@ -151,8 +151,7 @@ pss.create = function(options) {
    *
    * @param mHash the message digest hash, as a binary-encoded string, to
    *         compare against the signature.
-   * @param em the encoded message, as a binary-encoded string
-   *          (RSA decryption result).
+   * @param em the encoded message, as a ByteBuffer (RSA decryption result).
    * @param modsBits the length of the RSA modulus in bits.
    *
    * @return true if the signature was verified, false if not.
@@ -161,6 +160,7 @@ pss.create = function(options) {
     var i;
     var emBits = modBits - 1;
     var emLen = Math.ceil(emBits / 8);
+    em = em.bytes();
 
     /* c. Convert the message representative m to an encoded message EM
      *    of length emLen = ceil((modBits - 1) / 8) octets, where modBits

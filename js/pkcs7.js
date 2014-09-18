@@ -67,7 +67,7 @@ p7.messageToPem = function(msg, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var pemObj = {
     type: 'PKCS7',
-    body: asn1.toDer(msg.toAsn1()).getBytes()
+    body: asn1.toDer(msg.toAsn1())
   };
   return forge.pem.encode(pemObj, {maxline: maxline});
 };
@@ -91,7 +91,8 @@ p7.messageFromAsn1 = function(obj) {
     throw error;
   }
 
-  var contentType = asn1.derToOid(capture.contentType);
+  var contentType = asn1.derToOid(
+    new ByteBuffer(capture.contentType, {encoding: 'binary'}));
   var msg;
 
   switch(contentType) {
@@ -138,9 +139,10 @@ var _recipientInfoFromAsn1 = function(obj) {
   return {
     version: capture.version.charCodeAt(0),
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
-    serialNumber: forge.util.createBuffer(capture.serial).toHex(),
+    serialNumber: new ByteBuffer(capture.serial, {encoding: 'binary'}).toHex(),
     encryptedContent: {
-      algorithm: asn1.derToOid(capture.encAlgorithm),
+      algorithm: asn1.derToOid(
+        new ByteBuffer(capture.encAlgorithm, {encoding: 'binary'})),
       parameter: capture.encParameter.value,
       content: capture.encKey
     }
@@ -268,7 +270,8 @@ var _fromAsn1 = function(msg, obj, validator) {
   }
 
   // Check contentType, so far we only support (raw) Data.
-  var contentType = asn1.derToOid(capture.contentType);
+  var contentType = asn1.derToOid(
+    new ByteBuffer(capture.contentType, {encoding: 'binary'}));
   if(contentType !== forge.pki.oids.data) {
     throw new Error('Unsupported PKCS#7 message. ' +
       'Only wrapped ContentType Data supported.');
@@ -288,9 +291,11 @@ var _fromAsn1 = function(msg, obj, validator) {
       content = capture.encryptedContent;
     }
     msg.encryptedContent = {
-      algorithm: asn1.derToOid(capture.encAlgorithm),
-      parameter: forge.util.createBuffer(capture.encParameter.value),
-      content: forge.util.createBuffer(content)
+      algorithm: asn1.derToOid(
+        new ByteBuffer(capture.encAlgorithm, {encoding: 'binary'})),
+      parameter: new ByteBuffer(
+        capture.encParameter.value, {encoding: 'binary'}),
+      content: new ByteBuffer(content, {encoding: 'binary'})
     };
   }
 
@@ -307,7 +312,7 @@ var _fromAsn1 = function(msg, obj, validator) {
     } else {
       content = capture.content;
     }
-    msg.content = forge.util.createBuffer(content);
+    msg.content = new ByteBuffer(content, {encoding: 'binary'});
   }
 
   msg.version = capture.version.charCodeAt(0);

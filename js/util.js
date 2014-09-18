@@ -97,11 +97,14 @@ util.ByteBuffer = ByteStringBuffer;
  *
  * @param [b] the bytes to wrap (either encoded as string, one byte per
  *          character, or as an ArrayBuffer or Typed Array).
- * @param options the options to use:
+ * @param [options] the options to use:
  *          [encoding] the encoding ('binary', 'utf8', 'utf16', 'hex') for the
  *            first parameter, if it is a string (default: 'binary').
  */
 function ByteStringBuffer(b, options) {
+  // FIXME: support 'options' as a string -- it can just be the encoding
+  // for 'b'
+  // FIXME: if a string is given, force an encoding to be given as well
   // TODO: update to match DataBuffer API
   options = options || {};
 
@@ -116,6 +119,8 @@ function ByteStringBuffer(b, options) {
       b = util.encodeUtf8(b);
     } else if(options.encoding === 'hex') {
       b = util.hexToBytes(b);
+    } else if(options.encoding === 'base64') {
+      b = util.decode64(b);
     }
     this.data = b;
   } else if(util.isArrayBuffer(b) || util.isArrayBufferView(b)) {
@@ -635,11 +640,14 @@ util.ByteStringBuffer.prototype.toHex = function() {
  *
  * @param [encoding] the encoding to use: 'binary', 'utf8', 'utf16', 'hex',
  *          'base64' (default: 'utf8').
+ * @param [options] any special options supported by a particular encoding,
+ *          (eg: for base64, {maxline: 64}).
  *
  * @return a string representation of the bytes in this buffer.
  */
-util.ByteStringBuffer.prototype.toString = function(encoding) {
+util.ByteStringBuffer.prototype.toString = function(encoding, options) {
   encoding = encoding || 'utf8';
+  options = options || {};
 
   // encode to string
   if(encoding === 'binary' || encoding === 'raw') {
@@ -649,7 +657,11 @@ util.ByteStringBuffer.prototype.toString = function(encoding) {
     return this.toHex();
   }
   if(encoding === 'base64') {
-    return util.encode64(this.bytes());
+    if(options.maxline) {
+      return util.encode64(this.bytes(), options.maxline);
+    } else {
+      return util.encode64(this.bytes());
+    }
   }
 
   // decode to text
@@ -688,7 +700,7 @@ util.ByteStringBuffer.prototype.toString = function(encoding) {
  * given as options.
  *
  * @param [b] the initial bytes for this buffer.
- * @param options the options to use:
+ * @param [options] the options to use:
  *          [readOffset] the starting read offset to use (default: 0).
  *          [writeOffset] the starting write offset to use (default: the
  *            length of the first parameter).
@@ -698,7 +710,10 @@ util.ByteStringBuffer.prototype.toString = function(encoding) {
  *            first parameter, if it is a string (default: 'binary').
  */
 function DataBuffer(b, options) {
+  // FIXME: support 'options' as a string -- it can just be the encoding
+  // for 'b'
   // FIXME: support 'b' as an array of integers representing byte values
+  // FIXME: if a string is given, force an encoding to be given as well
 
   // default options
   options = options || {};
@@ -1323,12 +1338,16 @@ util.DataBuffer.prototype.toHex = function() {
  *
  * @param [encoding] the encoding to use: 'binary', 'utf8', 'utf16', 'hex',
  *          'base64' (default: 'utf8').
+ * @param [options] any special options supported by a particular encoding,
+ *          (eg: for base64, {maxline: 64}).
  *
  * @return a string representation of the bytes in this buffer.
  */
-util.DataBuffer.prototype.toString = function(encoding) {
-  var view = new Uint8Array(this.data, this.read, this.length());
+util.DataBuffer.prototype.toString = function(encoding, options) {
   encoding = encoding || 'utf8';
+  options = options || {};
+
+  var view = new Uint8Array(this.data, this.read, this.length());
 
   // encode to string
   if(encoding === 'binary' || encoding === 'raw') {
@@ -1338,7 +1357,7 @@ util.DataBuffer.prototype.toString = function(encoding) {
     return util.binary.hex.encode(view);
   }
   if(encoding === 'base64') {
-    return util.binary.base64.encode(view);
+    return util.binary.base64.encode(view, options);
   }
 
   // decode to text
@@ -1703,12 +1722,16 @@ util.binary.hex.decode = function(hex, output, offset) {
  * Base64-encodes a Uint8Array.
  *
  * @param input the Uint8Array to encode.
- * @param maxline the maximum number of encoded characters per line to use,
- *          defaults to none.
+ * @param [options] the options to use:
+ *          [maxline] the maximum number of encoded characters per line to use,
+ *            defaults to none.
  *
  * @return the base64-encoded output string.
  */
-util.binary.base64.encode = function(input, maxline) {
+util.binary.base64.encode = function(input, options) {
+  options = options || {};
+  var maxline = options.maxline;
+
   var line = '';
   var output = '';
   var chr1, chr2, chr3;

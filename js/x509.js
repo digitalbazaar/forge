@@ -111,6 +111,8 @@
 /* ########## Begin module implementation ########## */
 function initModule(forge) {
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 // shortcut for asn.1 API
 var asn1 = forge.asn1;
 
@@ -504,7 +506,8 @@ pki.RDNAttributesAsArray = function(rdn, md) {
     for(var i = 0; i < set.value.length; ++i) {
       obj = {};
       attr = set.value[i];
-      obj.type = asn1.derToOid(attr.value[0].value);
+      obj.type = asn1.derToOid(
+        new ByteBuffer(attr.value[0].value, {encoding: 'binary'}));
       obj.value = attr.value[1].value;
       obj.valueTagClass = attr.value[1].type;
       // if the OID is known, get its name and short name
@@ -541,7 +544,8 @@ pki.CRIAttributesAsArray = function(attributes) {
 
     // each value in the SEQUENCE containing first a type (an OID) and
     // second a set of values (defined by the OID)
-    var type = asn1.derToOid(seq.value[0].value);
+    var type = asn1.derToOid(
+      new ByteBuffer(seq.value[0].value, {encoding: 'binary'}));
     var values = seq.value[1].value;
     for(var vi = 0; vi < values.length; ++vi) {
       var obj = {};
@@ -662,7 +666,8 @@ var _parseExtensions = function(exts) {
       // [2] extnValue   OCTET STRING
       ext = extseq.value[ei];
       e = {};
-      e.id = asn1.derToOid(ext.value[0].value);
+      e.id = asn1.derToOid(
+        new ByteBuffer(ext.value[0].value, {encoding: 'binary'}));
       e.critical = false;
       if(ext.value[1].type === asn1.Type.BOOLEAN) {
         e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
@@ -677,7 +682,8 @@ var _parseExtensions = function(exts) {
         // handle key usage
         if(e.name === 'keyUsage') {
           // get value as BIT STRING
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(
+            new ByteBuffer(e.value, {encoding: 'binary'}));
           var b2 = 0x00;
           var b3 = 0x00;
           if(ev.value.length > 1) {
@@ -700,7 +706,7 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'basicConstraints') {
           // handle basic constraints
           // get value as SEQUENCE
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
           // get cA BOOLEAN flag (defaults to false)
           if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
             e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
@@ -715,14 +721,16 @@ var _parseExtensions = function(exts) {
             value = ev.value[1].value;
           }
           if(value !== null) {
-            e.pathLenConstraint = asn1.derToInteger(value);
+            e.pathLenConstraint = asn1.derToInteger(
+              new ByteBuffer(value, {encoding: 'binary'}));
           }
         } else if(e.name === 'extKeyUsage') {
           // handle extKeyUsage
           // value is a SEQUENCE of OIDs
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
           for(var vi = 0; vi < ev.value.length; ++vi) {
-            var oid = asn1.derToOid(ev.value[vi].value);
+            var oid = asn1.derToOid(
+              new ByteBuffer(ev.value[vi].value, {encoding: 'binary'}));
             if(oid in oids) {
               e[oids[oid]] = true;
             } else {
@@ -732,7 +740,7 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'nsCertType') {
           // handle nsCertType
           // get value as BIT STRING
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
           var b2 = 0x00;
           if(ev.value.length > 1) {
             // skip first byte, just indicates unused bits which
@@ -757,7 +765,7 @@ var _parseExtensions = function(exts) {
 
           // ev is a SYNTAX SEQUENCE
           var gn;
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
           for(var n = 0; n < ev.value.length; ++n) {
             // get GeneralName
             gn = ev.value[n];
@@ -784,7 +792,8 @@ var _parseExtensions = function(exts) {
               break;
             // registeredID
             case 8:
-              altName.oid = asn1.derToOid(gn.value);
+              altName.oid = asn1.derToOid(
+                new ByteBuffer(gn.value, {encoding: 'binary'}));
               break;
             default:
               // unsupported
@@ -793,7 +802,7 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'subjectKeyIdentifier') {
           // value is an OCTETSTRING w/the hash of the key-type specific
           // public key structure (eg: RSAPublicKey)
-          var ev = asn1.fromDer(e.value);
+          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
           e.subjectKeyIdentifier = forge.util.bytesToHex(ev.value);
         }
       }
@@ -865,14 +874,17 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
 
   if(capture.hashOid !== undefined) {
     params.hash = params.hash || {};
-    params.hash.algorithmOid = asn1.derToOid(capture.hashOid);
+    params.hash.algorithmOid = asn1.derToOid(
+      new ByteBuffer(capture.hashOid, {encoding: 'binary'}));
   }
 
   if(capture.maskGenOid !== undefined) {
     params.mgf = params.mgf || {};
-    params.mgf.algorithmOid = asn1.derToOid(capture.maskGenOid);
+    params.mgf.algorithmOid = asn1.derToOid(
+      new ByteBuffer(capture.maskGenOid, {encoding: 'binary'}));
     params.mgf.hash = params.mgf.hash || {};
-    params.mgf.hash.algorithmOid = asn1.derToOid(capture.maskGenHashOid);
+    params.mgf.hash.algorithmOid = asn1.derToOid(
+      new ByteBuffer(capture.maskGenHashOid, {encoding: 'binary'}));
   }
 
   if(capture.saltLength !== undefined) {
@@ -930,7 +942,7 @@ pki.certificateToPem = function(cert, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'CERTIFICATE',
-    body: asn1.toDer(pki.certificateToAsn1(cert)).getBytes()
+    body: asn1.toDer(pki.certificateToAsn1(cert))
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -973,7 +985,7 @@ pki.publicKeyToPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'PUBLIC KEY',
-    body: asn1.toDer(pki.publicKeyToAsn1(key)).getBytes()
+    body: asn1.toDer(pki.publicKeyToAsn1(key))
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -990,7 +1002,7 @@ pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'RSA PUBLIC KEY',
-    body: asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes()
+    body: asn1.toDer(pki.publicKeyToRSAPublicKey(key))
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -1091,7 +1103,7 @@ pki.certificationRequestToPem = function(csr, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'CERTIFICATE REQUEST',
-    body: asn1.toDer(pki.certificationRequestToAsn1(csr)).getBytes()
+    body: asn1.toDer(pki.certificationRequestToAsn1(csr))
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -1676,25 +1688,27 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   }
 
   // get oid
-  var oid = asn1.derToOid(capture.publicKeyOid);
+  var oid = asn1.derToOid(
+    new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
   if(oid !== pki.oids['rsaEncryption']) {
     throw new Error('Cannot read public key. OID is not RSA.');
   }
 
   // create certificate
   var cert = pki.createCertificate();
-  cert.version = capture.certVersion ?
-    capture.certVersion.charCodeAt(0) : 0;
-  var serial = forge.util.createBuffer(capture.certSerialNumber);
+  cert.version = capture.certVersion ? capture.certVersion.charCodeAt(0) : 0;
+  var serial = new ByteBuffer(capture.certSerialNumber, {encoding: 'binary'});
   cert.serialNumber = serial.toHex();
-  cert.signatureOid = forge.asn1.derToOid(capture.certSignatureOid);
+  cert.signatureOid = forge.asn1.derToOid(
+    new ByteBuffer(capture.certSignatureOid, {encoding: 'binary'}));
   cert.signatureParameters = _readSignatureParameters(
     cert.signatureOid, capture.certSignatureParams, true);
-  cert.siginfo.algorithmOid = forge.asn1.derToOid(capture.certinfoSignatureOid);
+  cert.siginfo.algorithmOid = forge.asn1.derToOid(
+    new ByteBuffer(capture.certinfoSignatureOid, {encoding: 'binary'}));
   cert.siginfo.parameters = _readSignatureParameters(cert.siginfo.algorithmOid,
     capture.certinfoSignatureParams, false);
   // skip "unused bits" in signature value BITSTRING
-  var signature = forge.util.createBuffer(capture.certSignature);
+  var signature = new ByteBuffer(capture.certSignature, {encoding: 'binary'});
   ++signature.read;
   cert.signature = signature.getBytes();
 
@@ -1836,7 +1850,8 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   }
 
   // get oid
-  var oid = asn1.derToOid(capture.publicKeyOid);
+  var oid = asn1.derToOid(
+    new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
   if(oid !== pki.oids.rsaEncryption) {
     throw new Error('Cannot read public key. OID is not RSA.');
   }
@@ -1844,14 +1859,16 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   // create certification request
   var csr = pki.createCertificationRequest();
   csr.version = capture.csrVersion ? capture.csrVersion.charCodeAt(0) : 0;
-  csr.signatureOid = forge.asn1.derToOid(capture.csrSignatureOid);
+  csr.signatureOid = forge.asn1.derToOid(
+    new ByteBuffer(capture.csrSignatureOid, {encoding: 'binary'}));
   csr.signatureParameters = _readSignatureParameters(
     csr.signatureOid, capture.csrSignatureParams, true);
-  csr.siginfo.algorithmOid = forge.asn1.derToOid(capture.csrSignatureOid);
+  csr.siginfo.algorithmOid = forge.asn1.derToOid(
+    new ByteBuffer(capture.csrSignatureOid, {encoding: 'binary'}));
   csr.siginfo.parameters = _readSignatureParameters(
     csr.siginfo.algorithmOid, capture.csrSignatureParams, false);
   // skip "unused bits" in signature value BITSTRING
-  var signature = forge.util.createBuffer(capture.csrSignature);
+  var signature = new ByteBuffer(capture.csrSignature, {encoding: 'binary'});
   ++signature.read;
   csr.signature = signature.getBytes();
 

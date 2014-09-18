@@ -338,11 +338,12 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
   }
 
   // get cipher
-  var oid = asn1.derToOid(capture.encryptionOid);
+  var oid = asn1.derToOid(
+    new ByteBuffer(capture.encryptionOid, {encoding: 'binary'}));
   var cipher = pki.pbe.getDecipher(oid, capture.encryptionParams, password);
 
   // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encryptedData);
+  var encrypted = new ByteBuffer(capture.encryptedData, {encoding: 'binary'});
 
   cipher.update(encrypted);
   if(cipher.finish()) {
@@ -364,7 +365,7 @@ pki.encryptedPrivateKeyToPem = function(epki, maxline) {
   // convert to DER, then PEM-encode
   var msg = {
     type: 'ENCRYPTED PRIVATE KEY',
-    body: asn1.toDer(epki).getBytes()
+    body: asn1.toDer(epki)
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -485,7 +486,7 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
       algorithm: algorithm,
       parameters: forge.util.bytesToHex(iv).toUpperCase()
     },
-    body: cipher.output.getBytes()
+    body: cipher.output
   };
   return forge.pem.encode(msg);
 };
@@ -578,7 +579,7 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     var decipher = decipherFn(dk, iv);
     decipher.update(forge.util.createBuffer(msg.body));
     if(decipher.finish()) {
-      rval = decipher.output.getBytes();
+      rval = decipher.output;
     } else {
       return rval;
     }
@@ -772,7 +773,7 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
   }
 
   // check oids
-  oid = asn1.derToOid(capture.kdfOid);
+  oid = asn1.derToOid(new ByteBuffer(capture.kdfOid, {encoding: 'binary'}));
   if(oid !== pki.oids['pkcs5PBKDF2']) {
     var error = new Error('Cannot read encrypted private key. ' +
       'Unsupported key derivation function OID.');
@@ -780,7 +781,7 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
     error.supportedOids = ['pkcs5PBKDF2'];
     throw error;
   }
-  oid = asn1.derToOid(capture.encOid);
+  oid = asn1.derToOid(new ByteBuffer(capture.encOid, {encoding: 'binary'}));
   if(oid !== pki.oids['aes128-CBC'] &&
     oid !== pki.oids['aes192-CBC'] &&
     oid !== pki.oids['aes256-CBC'] &&

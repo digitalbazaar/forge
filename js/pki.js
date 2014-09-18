@@ -30,7 +30,7 @@ pki.pemToDer = function(pem) {
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
     throw new Error('Could not convert PEM to DER; PEM is encrypted.');
   }
-  return forge.util.createBuffer(msg.body);
+  return msg.body;
 };
 
 /**
@@ -71,7 +71,7 @@ pki.privateKeyToPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'RSA PRIVATE KEY',
-    body: asn1.toDer(pki.privateKeyToAsn1(key)).getBytes()
+    body: asn1.toDer(pki.privateKeyToAsn1(key))
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
@@ -88,7 +88,7 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
   // convert to DER, then PEM-encode
   var msg = {
     type: 'PRIVATE KEY',
-    body: asn1.toDer(pki).getBytes()
+    body: asn1.toDer(pki)
   };
   return forge.pem.encode(msg, {maxline: maxline});
 };
