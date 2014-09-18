@@ -86,6 +86,7 @@ function Tests(ASSERT, RC2, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/rc2',
@@ -94,16 +95,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      RC2(),
-      UTIL()
+      RC2(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/rc2')(),
-    require('../../js/util')());
+    require('../../js/rc2')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

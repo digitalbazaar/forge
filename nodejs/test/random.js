@@ -1,7 +1,7 @@
 (function() {
 
 function Tests(ASSERT, RANDOM, UTIL) {
-  var random = RANDOM();
+  var random = RANDOM.createInstance();
 
   describe('random', function() {
     it('should generate 10 random bytes', function() {
@@ -14,7 +14,7 @@ function Tests(ASSERT, RANDOM, UTIL) {
     });
 
     it('should use a synchronous seed file', function() {
-      var rand = RANDOM();
+      var rand = RANDOM.createInstance();
       rand.seedFileSync = function(needed) {
         return UTIL.fillString('a', needed);
       };
@@ -23,7 +23,7 @@ function Tests(ASSERT, RANDOM, UTIL) {
     });
 
     it('should use an asynchronous seed file', function(done) {
-      var rand = RANDOM();
+      var rand = RANDOM.createInstance();
       rand.seedFile = function(needed, callback) {
         callback(null, UTIL.fillString('a', needed));
       };
@@ -35,7 +35,7 @@ function Tests(ASSERT, RANDOM, UTIL) {
     });
 
     it('should collect some random bytes', function() {
-      var rand = RANDOM();
+      var rand = RANDOM.createInstance();
       rand.seedFileSync = function(needed) {
         return UTIL.fillString('a', needed);
       };
@@ -47,6 +47,7 @@ function Tests(ASSERT, RANDOM, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/random',
@@ -55,16 +56,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      RANDOM,
-      UTIL()
+      RANDOM(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/random'),
-    require('../../js/util')());
+    require('../../js/random')(forge),
+    require('../../js/util')(forge));
 }
 
 })();

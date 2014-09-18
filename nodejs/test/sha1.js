@@ -52,6 +52,7 @@ function Tests(ASSERT, SHA1, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/sha1',
@@ -60,16 +61,16 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      SHA1(),
-      UTIL()
+      SHA1(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/sha1')(),
-    require('../../js/util')());
+    require('../../js/sha1')(forge),
+    require('../../js/util')(forge));
 }
 
 })();
