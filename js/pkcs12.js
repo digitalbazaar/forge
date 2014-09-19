@@ -294,7 +294,9 @@ var certBagValidator = {
  */
 function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
   var result = [];
-
+  if(attrValue instanceof ByteBuffer) {
+    attrValue = attrValue.bytes();
+  }
   for(var i = 0; i < safeContents.length; i ++) {
     for(var j = 0; j < safeContents[i].safeBags.length; j ++) {
       var bag = safeContents[i].safeBags[j];
@@ -306,9 +308,20 @@ function _getBagsByAttribute(safeContents, attrName, attrValue, bagType) {
         result.push(bag);
         continue;
       }
-      if(bag.attributes[attrName] !== undefined &&
-        bag.attributes[attrName].indexOf(attrValue) >= 0) {
-        result.push(bag);
+      if(bag.attributes[attrName] !== undefined) {
+        var attrs = bag.attributes[attrName];
+        for(var k = 0; k < attrs.length; ++k) {
+          var value = attrs[k];
+          if(value instanceof ByteBuffer) {
+            if(value.bytes() === attrValue) {
+              result.push(bag);
+              break;
+            }
+          } else if(value === attrValue) {
+            result.push(bag);
+            break;
+          }
+        }
       }
     }
   }
