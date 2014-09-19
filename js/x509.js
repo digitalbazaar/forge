@@ -783,8 +783,9 @@ var _parseExtensions = function(exts) {
           } else if(ev.value.length > 1) {
             value = ev.value[1].value;
           }
-          if(value !== null) {
-            e.pathLenConstraint = asn1.derToInteger(value);
+          // if pathLenConstraint is set and not larger than 32-bits, use it
+          if(value !== null && !(value instanceof ByteBuffer)) {
+            e.pathLenConstraint = value;
           }
         } else if(e.name === 'extKeyUsage') {
           // handle extKeyUsage

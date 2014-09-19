@@ -480,7 +480,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       password, macSalt, 3, macIterations, macKeyBytes, md);
     var mac = forge.hmac.create();
     mac.start(md, macKey);
-    mac.update(data.value.copy());
+    mac.update(data.value.bytes());
     var macValue = mac.getMac();
     if(macValue.getBytes() !== capture.macDigest.bytes()) {
       throw new Error('PKCS#12 MAC could not be verified. Invalid password?');
