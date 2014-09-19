@@ -183,12 +183,24 @@ asn1.Type = {
 var ByteBuffer = forge.util.ByteBuffer;
 
 /**
- * Creates a new asn1 object.
+ * Creates a new asn1 object. The given value must be compatible with the
+ * given type.
  *
  * @param tagClass the tag class for the object.
  * @param type the data type (tag number) for the object.
  * @param constructed true if the asn1 object is in constructed form.
- * @param value the value for the object, if it is not constructed.
+ * @param value the value for the object as a JavaScript primitive or
+ *          a ByteBuffer, if it is not constructed, otherwise an array of
+ *          other asn1 objects.
+ *
+ * Required value types based on asn1.Types:
+ *
+ * OID: string (in dotted format)
+ * BOOLEAN: boolean or ByteBuffer
+ * INTEGER: number (if < 32 bit) or ByteBuffer
+ * NULL: null
+ * UTF8, PRINTABLESTRING, IA5STRING, BMPSTRING: string
+ * UTCTIME, GENERALIZEDTIME: Date or string
  *
  * @return the asn1 object.
  */
@@ -196,11 +208,13 @@ asn1.create = function(tagClass, type, constructed, value) {
   /* An asn1 object has a tagClass, a type, a constructed flag, and a
     value. The value's type depends on the constructed flag. If
     constructed, it will contain a list of other asn1 objects. If not,
-    it will contain the ASN.1 value as an array of bytes formatted
-    according to the ASN.1 data type. */
+    it will contain the ASN.1 value in an appropriate native representation
+    or as a ByteBuffer containing bytes formatted according to the ASN.1
+    data type. */
 
   // remove undefined values
-  if(forge.util.isArray(value)) {
+  var isArray = forge.util.isArray(value);
+  if(isArray) {
     var tmp = [];
     for(var i = 0; i < value.length; ++i) {
       if(value[i] !== undefined) {
@@ -208,44 +222,76 @@ asn1.create = function(tagClass, type, constructed, value) {
       }
     }
     value = tmp;
+  } else {
+    // validate value type
+    switch(type) {
+    case asn1.Type.OID:
+      if(typeof value !== 'string') {
+        throw new TypeError('value must be a string for type OID.');
+      }
+      break;
+    case asn1.Type.BOOLEAN:
+      if(typeof value !== 'boolean' && !(value instanceof ByteBuffer)) {
+        throw new TypeError(
+          'value must be a boolean or a ByteBuffer for type BOOLEAN.');
+      }
+      break;
+    case asn1.Type.INTEGER:
+      if(typeof value !== 'number' && !(value instanceof ByteBuffer)) {
+        throw new TypeError(
+          'value must be a number or a ByteBuffer for type INTEGER.');
+      }
+      break;
+    case asn1.Type.NULL:
+      if(value !== null) {
+        throw new TypeError('value must be null for type NULL.');
+      }
+      break;
+    case asn1.Type.UTF8:
+      if(typeof value !== 'string') {
+        throw new TypeError('value must be a string for type UTF8.');
+      }
+      break;
+    case asn1.Type.PRINTABLESTRING:
+      if(typeof value !== 'string') {
+        throw new TypeError('value must be a string for type PRINTABLESTRING.');
+      }
+      break;
+    case asn1.Type.IA5STRING:
+      if(typeof value !== 'string') {
+        throw new TypeError('value must be a string for type IA5STRING.');
+      }
+      break;
+    case asn1.Type.UTCTIME:
+      if(typeof value !== 'string' && !(value instanceof Date)) {
+        throw new TypeError('value must be a string or Date for type UTCTIME.');
+      }
+      break;
+    case asn1.Type.GENERALIZEDTIME:
+      if(typeof value !== 'string' && !(value instanceof Date)) {
+        throw new TypeError(
+          'value must be a string or Date for type GENERALIZEDTIME.');
+      }
+      break;
+    case asn1.Type.BMPSTRING:
+      if(typeof value !== 'string') {
+        throw new TypeError('value must be a string for type BMPSTRING.');
+      }
+      break;
+    default:
+      if(!(value instanceof ByteBuffer)) {
+        throw new TypeError('value must be a ByteBuffer.');
+      }
+    }
   }
 
   return {
     tagClass: tagClass,
     type: type,
     constructed: constructed,
-    composed: constructed || forge.util.isArray(value),
+    composed: constructed || isArray,
     value: value
   };
-};
-
-/**
- * Gets the length of an ASN.1 value.
- *
- * In case the length is not specified, undefined is returned.
- *
- * @param b the ASN.1 ByteBuffer.
- *
- * @return the length of the ASN.1 value.
- */
-var _getValueLength = function(b) {
-  var b2 = b.getByte();
-  if(b2 === 0x80) {
-    return undefined;
-  }
-
-  // see if the length is "short form" or "long form" (bit 8 set)
-  var length;
-  var longForm = b2 & 0x80;
-  if(!longForm) {
-    // length is just the first byte
-    length = b2;
-  } else {
-    // the number of bytes the length is specified in bits 7 through 1
-    // and each length byte is in big-endian base-256
-    length = b.getInt((b2 & 0x7F) << 3);
-  }
-  return length;
 };
 
 /**
@@ -360,8 +406,6 @@ asn1.fromDer = function(der, strict) {
     }
   } else {
     // asn1 not composed, get raw value
-    // TODO: do DER to OID conversion and vice-versa in .toDer?
-
     if(length === undefined) {
       if(strict) {
         throw new Error('Non-constructed ASN.1 object of indefinite length.');
@@ -370,14 +414,9 @@ asn1.fromDer = function(der, strict) {
       length = der.length();
     }
 
-    if(type === asn1.Type.BMPSTRING) {
-      value = '';
-      for(var i = 0; i < length; i += 2) {
-        value += String.fromCharCode(der.getInt16());
-      }
-    } else {
-      value = der.getBytes(length);
-    }
+    value = new ByteBuffer();
+    value.putBytes(der.getBytes(length));
+    value = asn1.derToNative(value, type);
   }
 
   // create and return asn1 object
@@ -387,7 +426,7 @@ asn1.fromDer = function(der, strict) {
 /**
  * Converts the given asn1 object to a ByteBuffer with DER-formatted data.
  *
- * @param asn1 the asn1 object to convert to bytes.
+ * @param asn1 the asn1 object to DER-encode.
  *
  * @return the ByteBuffer.
  */
@@ -398,7 +437,7 @@ asn1.toDer = function(obj) {
   var b1 = obj.tagClass | obj.type;
 
   // for storing the ASN.1 value
-  var value = forge.util.createBuffer();
+  var value = new ByteBuffer();
 
   // if composed, use each child asn1 object's DER bytes as value
   if(obj.composed) {
@@ -418,14 +457,8 @@ asn1.toDer = function(obj) {
       }
     }
   } else {
-    // use asn1.value directly
-    if(obj.type === asn1.Type.BMPSTRING) {
-      for(var i = 0; i < obj.value.length; ++i) {
-        value.putInt16(obj.value.charCodeAt(i));
-      }
-    } else {
-      value.putBytes(obj.value);
-    }
+    // convert non-composed from native representation
+    value.putBuffer(asn1.nativeToDer(obj.value, obj.type));
   }
 
   // add tag byte
@@ -441,6 +474,7 @@ asn1.toDer = function(obj) {
     // 2 to 127 bytes describe the length
     // first byte: bit 8 = 1 and bits 7-1 = # of additional bytes
     // other bytes: length in base 256, big-endian
+    // FIXME: use ByteBuffer for lenBytes
     var len = value.length();
     var lenBytes = '';
     do {
@@ -460,8 +494,155 @@ asn1.toDer = function(obj) {
   }
 
   // concatenate value bytes
-  der.putBuffer(value);
+  return der.putBuffer(value);
+};
+
+/**
+ * Converts the given asn1 value to a native representation based on the
+ * given type. If no conversion can be performed, the value is
+ * returned as-is, namely, as a ByteBuffer.
+ *
+ * Conversions for asn1.Types:
+ *
+ * OID => string (in dotted format)
+ * BOOLEAN => ByteBuffer (not converted to avoid losing non-zero value)
+ * INTEGER => number or ByteBuffer if > 32 bit
+ * NULL => null
+ * UTF8, PRINTABLESTRING, IA5STRING, BMPSTRING => string
+ * UTCTIME, GENERALIZEDTIME => string (not converted to Date to preserve format)
+ *
+ * @param der the ByteBuffer with DER-encoded bytes.
+ * @param type the ASN.1 type to convert to a native form.
+ *
+ * @return the native representation or a ByteBuffer.
+ */
+asn1.derToNative = function(der, type) {
+  switch(type) {
+  case asn1.Type.OID:
+    return asn1.derToOid(der);
+  case asn1.Type.BOOLEAN:
+    /* Don't convert to boolean because non-zero value is lost */
+    break;
+  case asn1.Type.INTEGER:
+    try {
+      return asn1.derToInteger(der);
+    } catch(e) {
+      return der;
+    }
+    break;
+  case asn1.Type.NULL:
+    return null;
+  case asn1.Type.UTF8:
+    return der.toString('utf8');
+  case asn1.Type.PRINTABLESTRING:
+  case asn1.Type.IA5STRING:
+  /* Don't convert to Date object because format information is lost */
+  case asn1.Type.UTCTIME:
+  case asn1.Type.GENERALIZEDTIME:
+    return der.toString('binary');
+  case asn1.Type.BMPSTRING:
+    var value = '';
+    var bmp = der.copy();
+    while(bmp.length() > 0) {
+      value += String.fromCharCode(bmp.getInt16());
+    }
+    return value;
+  }
   return der;
+};
+
+/**
+ * Converts the given native representation of a value to a DER-encoded
+ * ByteBuffer based on the given ASN.1 type.
+ *
+ * Valid conversions for asn1.Types:
+ *
+ * string (in dotted format) (OID)
+ * boolean or ByteBuffer (BOOLEAN)
+ * number or ByteBuffer (INTEGER)
+ * null (NULL)
+ * string (UTF8, PRINTABLESTRING, IA5STRING, BMPSTRING)
+ * string or Date (UTCTIME, GENERALIZEDTIME)
+ *
+ * @param value the native value to convert.
+ * @param type the ASN.1 type to use to convert.
+ *
+ * @return the ByteBuffer.
+ */
+asn1.nativeToDer = function(value, type) {
+  switch(type) {
+  case asn1.Type.OID:
+    if(typeof value !== 'string') {
+      throw new TypeError('value must be a string for type OID.');
+    }
+    return asn1.oidToDer(value);
+  case asn1.Type.BOOLEAN:
+    if(typeof value !== 'boolean' && !(value instanceof ByteBuffer)) {
+      throw new TypeError(
+        'value must be a boolean or a ByteBuffer for type BOOLEAN.');
+    }
+    if(value instanceof ByteBuffer) {
+      return value.copy();
+    } else {
+      return asn1.booleanToDer(value);
+    }
+    break;
+  case asn1.Type.INTEGER:
+    if(typeof value !== 'number' && !(value instanceof ByteBuffer)) {
+      throw new TypeError(
+        'value must be a number or a ByteBuffer for type INTEGER.');
+    }
+    if(value instanceof ByteBuffer) {
+      return value.copy();
+    } else {
+      return asn1.integerToDer(value);
+    }
+    break;
+  case asn1.Type.NULL:
+    if(value !== null) {
+      throw new TypeError('value must be null for type NULL.');
+    }
+    // return empty buffer
+    return new ByteBuffer();
+  case asn1.Type.UTF8:
+    if(typeof value !== 'string') {
+      throw new TypeError('value must be a string for type UTF8.');
+    }
+    return new ByteBuffer(value, {encoding: 'utf8'});
+  case asn1.Type.PRINTABLESTRING:
+    if(typeof value !== 'string') {
+      throw new TypeError('value must be a string for type PRINTABLESTRING.');
+    }
+    /* falls through */
+  case asn1.Type.IA5STRING:
+    if(typeof value !== 'string') {
+      throw new TypeError('value must be a string for type IA5STRING.');
+    }
+    return new ByteBuffer(value, {encoding: 'binary'});
+  case asn1.Type.UTCTIME:
+    if(typeof value !== 'string' && !(value instanceof Date)) {
+      throw new TypeError('value must be a string or Date for type UTCTIME.');
+    }
+    return asn1.utcTimeToDer(value);
+  case asn1.Type.GENERALIZEDTIME:
+    if(typeof value !== 'string' && !(value instanceof Date)) {
+      throw new TypeError(
+        'value must be a string or Date for type GENERALIZEDTIME.');
+    }
+    return asn1.generalizedTimeToDer(value);
+  case asn1.Type.BMPSTRING:
+    if(typeof value !== 'string') {
+      throw new TypeError('value must be a string for type BMPSTRING.');
+    }
+    return asn1.bmpStringToDer(value);
+  default:
+    if(value instanceof ByteBuffer) {
+      return value.copy();
+    }
+    throw new Error(
+      'Could not convert native value to DER-encoded ByteBuffer; ' +
+      'native type: "' + typeof value + '", ASN.1 type: "' + type + '".');
+  }
 };
 
 /**
@@ -527,6 +708,7 @@ asn1.derToOid = function(der) {
   }
 
   var oid;
+  der = der.copy();
 
   // first byte is 40 * value1 + value2
   var b = der.getByte();
@@ -554,16 +736,13 @@ asn1.derToOid = function(der) {
 /**
  * Converts a UTCTime value to a date.
  *
- * Note: GeneralizedTime has 4 digits for the year and is used for X.509
- * dates passed 2049. Parsing that structure hasn't been implemented yet.
- *
- * @param utc the UTCTime value to convert.
+ * @param utc the UTCTime value (string or ByteBuffer) to convert.
  *
  * @return the date.
  */
 asn1.utcTimeToDate = function(utc) {
-  if(typeof utc !== 'string') {
-    throw new TypeError('utc must be a string.');
+  if(typeof utc !== 'string' && !(utc instanceof ByteBuffer)) {
+    throw new TypeError('utc must be a string or ByteBuffer.');
   }
 
   /* The following formats can be used:
@@ -588,6 +767,9 @@ asn1.utcTimeToDate = function(utc) {
     hh' is the absolute value of the offset from GMT in hours
     mm' is the absolute value of the offset from GMT in minutes */
   var date = new Date();
+  if(utc instanceof ByteBuffer) {
+    utc = utc.toString('binary');
+  }
 
   // if YY >= 50 use 19xx, if YY < 50 use 20xx
   var year = parseInt(utc.substr(0, 2), 10);
@@ -597,12 +779,14 @@ asn1.utcTimeToDate = function(utc) {
   var hh = parseInt(utc.substr(6, 2), 10);
   var mm = parseInt(utc.substr(8, 2), 10);
   var ss = 0;
+  var end;
+  var c;
 
   // not just YYMMDDhhmmZ
   if(utc.length > 11) {
     // get character after minutes
-    var c = utc.charAt(10);
-    var end = 10;
+    c = utc.charAt(10);
+    end = 10;
 
     // see if seconds are present
     if(c !== '+' && c !== '-') {
@@ -643,13 +827,13 @@ asn1.utcTimeToDate = function(utc) {
 /**
  * Converts a GeneralizedTime value to a date.
  *
- * @param gentime the GeneralizedTime value to convert.
+ * @param gentime the GeneralizedTime value (string or ByteBuffer) to convert.
  *
  * @return the date.
  */
 asn1.generalizedTimeToDate = function(gentime) {
-  if(typeof gentime !== 'string') {
-    throw new TypeError('generalized time must be a string.');
+  if(typeof gentime !== 'string' && !(gentime instanceof ByteBuffer)) {
+    throw new TypeError('generalized time must be a string or ByteBuffer.');
   }
 
   /* The following formats can be used:
@@ -677,6 +861,9 @@ asn1.generalizedTimeToDate = function(gentime) {
     hh' is the absolute value of the offset from GMT in hours
     mm' is the absolute value of the offset from GMT in minutes */
   var date = new Date();
+  if(gentime instanceof ByteBuffer) {
+    gentime = gentime.toString('binary');
+  }
 
   var YYYY = parseInt(gentime.substr(0, 4), 10);
   var MM = parseInt(gentime.substr(4, 2), 10) - 1; // use 0-11 for month
@@ -692,7 +879,8 @@ asn1.generalizedTimeToDate = function(gentime) {
     isUTC = true;
   }
 
-  var end = gentime.length - 5, c = gentime.charAt(end);
+  var end = gentime.length - 5;
+  var c = gentime.charAt(end);
   if(c === '+' || c === '-') {
     // get hours+minutes offset
     var hhoffset = parseInt(gentime.substr(end + 1, 2), 10);
@@ -729,19 +917,19 @@ asn1.generalizedTimeToDate = function(gentime) {
   return date;
 };
 
-
 /**
  * Converts a date to a UTCTime value.
  *
- * Note: GeneralizedTime has 4 digits for the year and is used for X.509
- * dates passed 2049. Converting to a GeneralizedTime hasn't been
- * implemented yet.
- *
  * @param date the date to convert.
  *
- * @return the UTCTime value.
+ * @return the UTCTime value as a string.
  */
 asn1.dateToUtcTime = function(date) {
+  // FIXME: assumes proper format
+  if(typeof date === 'string') {
+    return date;
+  }
+
   var rval = '';
 
   // create format YYMMDDhhmmssZ
@@ -766,6 +954,102 @@ asn1.dateToUtcTime = function(date) {
 };
 
 /**
+ * Converts a date to a GeneralizedTime value.
+ *
+ * @param date the date to convert.
+ *
+ * @return the GeneralizedTime value as a string.
+ */
+asn1.dateToGeneralizedTime = function(date) {
+  // FIXME: assumes proper format
+  if(typeof date === 'string') {
+    return date;
+  }
+
+  var rval = '';
+
+  // create format YYYYMMDDHHMMSSZ
+  var format = [];
+  format.push(('' + date.getUTCFullYear()).substr(2));
+  format.push('' + (date.getUTCMonth() + 1));
+  format.push('' + date.getUTCDate());
+  format.push('' + date.getUTCHours());
+  format.push('' + date.getUTCMinutes());
+  format.push('' + date.getUTCSeconds());
+
+  // ensure 2 digits are used for each format entry
+  for(var i = 0; i < format.length; ++i) {
+    if(format[i].length < 2) {
+      rval += '0';
+    }
+    rval += format[i];
+  }
+  rval += 'Z';
+
+  return rval;
+};
+
+/**
+ * Converts a date to a DER-encoded UTCTime value.
+ *
+ * @param date the date to convert.
+ *
+ * @return the UTCTime value as a ByteBuffer.
+ */
+asn1.utcTimeToDer = function(date) {
+  return new ByteBuffer(asn1.dateToUtcTime(date), {encoding: 'binary'});
+};
+
+/**
+ * Converts a date to a DER-encoded GeneralizedTime value.
+ *
+ * @param date the date to convert.
+ *
+ * @return the GeneralizedTime value as a ByteBuffer.
+ */
+asn1.generalizedTimeToDer = function(date) {
+  return new ByteBuffer(asn1.dateToGeneralizedTime(date), {encoding: 'binary'});
+};
+
+/**
+ * Converts a JavaScript boolean to a DER-encoded ByteBuffer to be used
+ * as the value for an BOOLEAN type.
+ *
+ * @param x the boolean.
+ *
+ * @return the ByteBuffer.
+ */
+asn1.booleanToDer = function(x) {
+  // assume already in DER format
+  if(x instanceof ByteBuffer) {
+    return x.copy();
+  }
+
+  var rval = new ByteBuffer();
+  if(x) {
+    rval.putByte(0xFF);
+  } else {
+    rval.putByte(0x00);
+  }
+  return rval;
+};
+
+/**
+ * Converts a DER-encoded ByteBuffer to a JavaScript boolean. This is
+ * typically used to decode the value of an BOOLEAN type.
+ *
+ * @param der the ByteBuffer.
+ *
+ * @return the boolean.
+ */
+asn1.derToBoolean = function(der) {
+  if(!(der instanceof ByteBuffer)) {
+    throw new TypeError('der must be a ByteBuffer.');
+  }
+  return der.at(0) !== 0x00;
+};
+
+/**
  * Converts a JavaScript integer to a DER-encoded ByteBuffer to be used
  * as the value for an INTEGER type.
  *
@@ -774,6 +1058,11 @@ asn1.dateToUtcTime = function(date) {
  * @return the ByteBuffer.
  */
 asn1.integerToDer = function(x) {
+  // assume already in DER format
+  if(x instanceof ByteBuffer) {
+    return x.copy();
+  }
+
   var rval = new ByteBuffer();
   if(x >= -0x80 && x < 0x80) {
     return rval.putSignedInt(x, 8);
@@ -805,6 +1094,7 @@ asn1.derToInteger = function(der) {
     throw new TypeError('der must be a ByteBuffer.');
   }
 
+  der = der.copy();
   var n = der.length() * 8;
   if(n > 32) {
     throw new Error('Integer too large; max is 32-bits.');
@@ -813,17 +1103,93 @@ asn1.derToInteger = function(der) {
 };
 
 /**
+ * Converts a BMPSTRING string to a ByteBuffer.
+ *
+ * @param value the BMPSTRING string.
+ *
+ * @return the ByteBuffer.
+ */
+asn1.bmpStringToDer = function(value) {
+  if(typeof value !== 'string') {
+    throw new TypeError('value must be a string.');
+  }
+  var rval = new ByteBuffer();
+  for(var i = 0; i < value.length; ++i) {
+    rval.putInt16(value.charCodeAt(i));
+  }
+  return rval;
+};
+
+/**
+ * Converts a DER-encoded ByteBuffer to a BMPSTRING string. The
+ * ByteBuffer should contain only the DER-encoded value, not any tag or
+ * length bytes.
+ *
+ * @param der the ByteBuffer.
+ *
+ * @return the BMPSTRING string.
+ */
+asn1.derToBmpString = function(der) {
+  if(!(der instanceof ByteBuffer)) {
+    throw new TypeError('der must be a ByteBuffer.');
+  }
+  var value = '';
+  der = der.copy();
+  while(der.length() > 0) {
+    value += String.fromCharCode(der.getInt16());
+  }
+  return value;
+};
+
+/**
  * Validates the that given ASN.1 object is at least a super set of the
  * given ASN.1 structure. Only tag classes and types are checked. An
  * optional map may also be provided to capture ASN.1 values while the
  * structure is checked.
  *
- * To capture an ASN.1 value, set an object in the validator's 'capture'
- * parameter to the key to use in the capture map. To capture the full
- * ASN.1 object, specify 'captureAsn1'.
+ * To capture an ASN.1 value, set an object in the validator's capture
+ * parameter to the key to use in the capture map. For example:
  *
- * Objects in the validator may set a field 'optional' to true to indicate
- * that it isn't necessary to pass validation.
+ * {capture: 'foo'} will cause captureMap.foo to reference the ASN.1 value.
+ *
+ * To capture an auto-formatted ASN.1 value, set an object in the validator's
+ * 'capture' to an object with the key 'name' referring to the name to use
+ * in the capture map and the key 'format' referring to the type of format
+ * to use. Valid formats are:
+ *
+ * asn1, boolean, number, hex, buffer, date
+ *
+ * Unknown formats will be ignored.
+ *
+ * The format 'asn1' will cause the full ASN.1 object to be captured. For
+ * example:
+ *
+ * {capture: {name: 'foo', format: 'asn1'}} will cause captureMap.foo to
+ *   be the full ASN.1 object.
+ *
+ * If the ASN.1 type is BOOLEAN the format 'boolean' will cause
+ * a BOOLEAN value to be represented with a native boolean.
+ *
+ * If the ASN.1 type is INTEGER, the format 'number' will cause
+ * an INTEGER value to be represented with a native number unless it is
+ * greater than 32 bits in which case the validator will fail. The format
+ * 'hex' will cause INTEGERs to be captured in hex. The format 'buffer' will
+ * cause the INTEGER value to remain as a DER-encoded buffer.
+ *
+ * If the ASN.1 type is BITSTRING, the value may be auto-interpreted as a
+ * composed ASN.1 structure. To avoid this in the captured value, a format
+ * of 'buffer' maybe specified. This will ensure that a ByteBuffer containing
+ * the BITSTRING is captured instead of an assumed ASN.1 value.
+ *
+ * If the ASN.1 type is a UTCTIME or GENERALIZEDTIME, then a format of 'date'
+ * will cause the captured value to be a Date object.
+ *
+ * ASN.1 values that are ByteBuffers will be copied to allow their contents
+ * to be manipulated without affecting the original ASN.1 object. This copy
+ * can be avoided by capturing the entire ASN.1 object via format: 'asn1'.
+ *
+ * Objects in the validator may set a field 'optional' to true to indicate that
+ * it isn't necessary to pass validation.
  *
  * @param obj the ASN.1 object to validate.
  * @param v the ASN.1 structure validator.
@@ -869,10 +1235,67 @@ asn1.validate = function(obj, v, capture, errors) {
 
       if(rval && capture) {
         if(v.capture) {
-          capture[v.capture] = obj.value;
-        }
-        if(v.captureAsn1) {
-          capture[v.captureAsn1] = obj;
+          var captures = (forge.util.isArray(v.capture) ?
+            v.capture : [v.capture]);
+          for(var i = 0; i < captures.length; ++i) {
+            var params = captures[i];
+            var name;
+            var value;
+            if(typeof params !== 'object') {
+              name = params;
+            } else {
+              // {capture: {name: 'foo', format: 'asn1|number|...'}}
+              name = params.name;
+
+              if(params.format === 'asn1') {
+                value = obj;
+              } else if(v.type === asn1.Type.BOOLEAN) {
+                value = obj.value;
+                if(params.format === 'boolean') {
+                  value = asn1.derToBoolean(value);
+                }
+              } else if(v.type === asn1.Type.INTEGER) {
+                // handle INTEGER formats
+                value = obj.value;
+                if(params.format === 'hex') {
+                  if(!(value instanceof ByteBuffer)) {
+                    value = asn1.integerToDer(value);
+                  }
+                  value = value.toString('hex');
+                } else if(params.format === 'number' &&
+                  typeof value !== 'number') {
+                  errors.push(
+                    '[' + v.name + '] ' +
+                    'INTEGER too large to convert to native number.');
+                } else if(params.format === 'buffer' &&
+                  !(value instanceof ByteBuffer)) {
+                  value = asn1.integerToDer(value);
+                }
+              } else if(v.type === asn1.Type.BITSTRING) {
+                // handle BITSTRING formats
+                if(!v.composed) {
+                  value = obj.value;
+                } else {
+                  value = new ByteBuffer().putByte(0);
+                  for(var i = 0; i < obj.value.length; ++i) {
+                    value.putBuffer(asn1.toDer(value[i]));
+                  }
+                }
+              } else if(v.type === asn1.Type.UTCTIME) {
+                value = asn1.utcTimeToDate(obj.value);
+              } else if(v.type === asn1.Type.GENERALIZEDTIME) {
+                value = asn1.utcTimeToDate(obj.value);
+              }
+            }
+            if(value === undefined) {
+              if(obj.value instanceof ByteBuffer) {
+                value = obj.value.copy();
+              } else {
+                value = obj.value;
+              }
+            }
+            capture[name] = value;
+          }
         }
       }
     } else if(errors) {
@@ -944,77 +1367,10 @@ asn1.prettyPrint = function(obj, level, indentation) {
     break;
   }
 
+  rval += obj.type;
   if(obj.tagClass === asn1.Class.UNIVERSAL) {
-    rval += obj.type;
-
     // known types
-    switch(obj.type) {
-    case asn1.Type.NONE:
-      rval += ' (None)';
-      break;
-    case asn1.Type.BOOLEAN:
-      rval += ' (Boolean)';
-      break;
-    case asn1.Type.BITSTRING:
-      rval += ' (Bit string)';
-      break;
-    case asn1.Type.INTEGER:
-      rval += ' (Integer)';
-      break;
-    case asn1.Type.OCTETSTRING:
-      rval += ' (Octet string)';
-      break;
-    case asn1.Type.NULL:
-      rval += ' (Null)';
-      break;
-    case asn1.Type.OID:
-      rval += ' (Object Identifier)';
-      break;
-    case asn1.Type.ODESC:
-      rval += ' (Object Descriptor)';
-      break;
-    case asn1.Type.EXTERNAL:
-      rval += ' (External or Instance of)';
-      break;
-    case asn1.Type.REAL:
-      rval += ' (Real)';
-      break;
-    case asn1.Type.ENUMERATED:
-      rval += ' (Enumerated)';
-      break;
-    case asn1.Type.EMBEDDED:
-      rval += ' (Embedded PDV)';
-      break;
-    case asn1.Type.UTF8:
-      rval += ' (UTF8)';
-      break;
-    case asn1.Type.ROID:
-      rval += ' (Relative Object Identifier)';
-      break;
-    case asn1.Type.SEQUENCE:
-      rval += ' (Sequence)';
-      break;
-    case asn1.Type.SET:
-      rval += ' (Set)';
-      break;
-    case asn1.Type.PRINTABLESTRING:
-      rval += ' (Printable String)';
-      break;
-    case asn1.Type.IA5String:
-      rval += ' (IA5String (ASCII))';
-      break;
-    case asn1.Type.UTCTIME:
-      rval += ' (UTC time)';
-      break;
-    case asn1.Type.GENERALIZEDTIME:
-      rval += ' (Generalized time)';
-      break;
-    case asn1.Type.BMPSTRING:
-      rval += ' (BMP String)';
-      break;
-    }
-  } else {
-    rval += obj.type;
+    rval += ' (' + asn1.getTypeName(obj.type) + ')';
   }
 
   rval += '\n';
@@ -1036,34 +1392,36 @@ asn1.prettyPrint = function(obj, level, indentation) {
   } else {
     rval += indent + 'Value: ';
     if(obj.type === asn1.Type.OID) {
-      var oid = asn1.derToOid(obj.value);
-      rval += oid;
-      if(forge.pki && forge.pki.oids) {
-        if(oid in forge.pki.oids) {
-          rval += ' (' + forge.pki.oids[oid] + ') ';
-        }
+      if(forge.pki && forge.pki.oids && obj.value in forge.pki.oids) {
+        rval += '(' + forge.pki.oids[obj.value] + ') ';
       }
-    }
-    if(obj.type === asn1.Type.INTEGER) {
-      try {
-        rval += asn1.derToInteger(obj.value);
-      } catch(ex) {
-        rval += '0x' + forge.util.bytesToHex(obj.value);
-      }
-    } else if(obj.type === asn1.Type.OCTETSTRING) {
-      if(!_nonLatinRegex.test(obj.value)) {
-        rval += '(' + obj.value + ') ';
-      }
-      rval += '0x' + forge.util.bytesToHex(obj.value);
-    } else if(obj.type === asn1.Type.UTF8) {
-      rval += forge.util.decodeUtf8(obj.value);
-    } else if(obj.type === asn1.Type.PRINTABLESTRING ||
-      obj.type === asn1.Type.IA5String) {
       rval += obj.value;
-    } else if(_nonLatinRegex.test(obj.value)) {
-      rval += '0x' + forge.util.bytesToHex(obj.value);
-    } else if(obj.value.length === 0) {
+    } else if(obj.type === asn1.Type.BOOLEAN) {
+      if(typeof obj.value === 'boolean') {
+        rval += '(' + obj.value + ') ';
+        rval += '0x' + asn1.booleanToDer(obj.value).toString('hex');
+      } else {
+        rval += '(' + asn1.derToBoolean(obj.value) + ') ';
+        rval += '0x' + obj.value.toString('hex');
+      }
+    } else if(obj.type === asn1.Type.INTEGER) {
+      if(typeof obj.value === 'number') {
+        rval += obj.value;
+      } else {
+        rval += '0x' + obj.value.toString('hex');
+      }
+    } else if(obj.type === asn1.Type.NULL) {
       rval += '[null]';
+    } else if(obj.value instanceof ByteBuffer) {
+      if(obj.value.length() === 0) {
+        rval += '[null]';
+      } else {
+        var binary = obj.value.toString('binary');
+        if(!_nonLatinRegex.test(binary)) {
+          rval += '(' + binary + ') ';
+        }
+        rval += '0x' + obj.value.toString('hex');
+      }
     } else {
       rval += obj.value;
     }
@@ -1071,6 +1429,85 @@ asn1.prettyPrint = function(obj, level, indentation) {
 
   return rval;
 };
+
+asn1.getTypeName = function(type) {
+  // known types
+  switch(type) {
+  case asn1.Type.NONE:
+    return 'None';
+  case asn1.Type.BOOLEAN:
+    return 'Boolean';
+  case asn1.Type.BITSTRING:
+    return 'Bit String';
+  case asn1.Type.INTEGER:
+    return 'Integer';
+  case asn1.Type.OCTETSTRING:
+    return 'Octet String';
+  case asn1.Type.NULL:
+    return 'Null';
+  case asn1.Type.OID:
+    return 'Object Identifier';
+  case asn1.Type.ODESC:
+    return 'Object Descriptor';
+  case asn1.Type.EXTERNAL:
+    return 'External or Instance of';
+  case asn1.Type.REAL:
+    return 'Real';
+  case asn1.Type.ENUMERATED:
+    return 'Enumerated';
+  case asn1.Type.EMBEDDED:
+    return 'Embedded PDV';
+  case asn1.Type.UTF8:
+    return 'UTF8';
+  case asn1.Type.ROID:
+    return 'Relative Object Identifier';
+  case asn1.Type.SEQUENCE:
+    return 'Sequence';
+  case asn1.Type.SET:
+    return 'Set';
+  case asn1.Type.PRINTABLESTRING:
+    return 'Printable String';
+  case asn1.Type.IA5STRING:
+    return 'IA5 String';
+  case asn1.Type.UTCTIME:
+    return 'UTC Time';
+  case asn1.Type.GENERALIZEDTIME:
+    return 'Generalized Time';
+  case asn1.Type.BMPSTRING:
+    return 'BMP String';
+  default:
+    return '' + type;
+  }
+};
+
+/**
+ * Gets the length of an ASN.1 value.
+ *
+ * In case the length is not specified, undefined is returned.
+ *
+ * @param b the ASN.1 ByteBuffer.
+ *
+ * @return the length of the ASN.1 value.
+ */
+function _getValueLength(b) {
+  var b2 = b.getByte();
+  if(b2 === 0x80) {
+    return undefined;
+  }
+
+  // see if the length is "short form" or "long form" (bit 8 set)
+  var length;
+  var longForm = b2 & 0x80;
+  if(!longForm) {
+    // length is just the first byte
+    length = b2;
+  } else {
+    // the number of bytes the length is specified in bits 7 through 1
+    // and each length byte is in big-endian base-256
+    length = b.getInt((b2 & 0x7F) << 3);
+  }
+  return length;
+}
 
 } // end module implementation
 

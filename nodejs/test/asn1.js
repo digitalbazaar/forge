@@ -164,7 +164,8 @@ function Tests(ASSERT, ASN1, UTIL) {
       for(var i = 0; i < tests.length; ++i) {
         var test = tests[i];
         it('should convert local generalized time "' + test.in + '" to a Date', function() {
-          var d = ASN1.generalizedTimeToDate(test.in);
+          var der = new ByteBuffer(test.in, {encoding: 'binary'});
+          var d = ASN1.generalizedTimeToDate(der);
           var localOffset = d.getTimezoneOffset() * 60000;
           ASSERT.equal(d.getTime(), test.out + localOffset);
         });
@@ -203,7 +204,8 @@ function Tests(ASSERT, ASN1, UTIL) {
       for(var i = 0; i < tests.length; ++i) {
         var test = tests[i];
         it('should convert utc generalized time "' + test.in + '" to a Date', function() {
-          var d = ASN1.generalizedTimeToDate(test.in);
+          var der = new ByteBuffer(test.in, {encoding: 'binary'});
+          var d = ASN1.generalizedTimeToDate(der);
           ASSERT.equal(d.getTime(), test.out);
         });
       }
@@ -232,7 +234,8 @@ function Tests(ASSERT, ASN1, UTIL) {
       for(var i = 0; i < tests.length; ++i) {
         var test = tests[i];
         it('should convert utc time "' + test.in + '" to a Date', function() {
-          var d = ASN1.utcTimeToDate(test.in);
+          var der = new ByteBuffer(test.in, {encoding: 'binary'});
+          var d = ASN1.utcTimeToDate(der);
           ASSERT.equal(d.getTime(), test.out);
         });
       }

@@ -134,63 +134,90 @@ var rsaPrivateKeyValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyVersion'
+    capture: {
+      name: 'privateKeyVersion',
+      format: 'number'
+    }
   }, {
     // modulus (n)
     name: 'RSAPrivateKey.modulus',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyModulus'
+    capture: {
+      name: 'privateKeyModulus',
+      format: 'buffer'
+    }
   }, {
     // publicExponent (e)
     name: 'RSAPrivateKey.publicExponent',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyPublicExponent'
+    capture: {
+      name: 'privateKeyPublicExponent',
+      format: 'buffer'
+    }
   }, {
     // privateExponent (d)
     name: 'RSAPrivateKey.privateExponent',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyPrivateExponent'
+    capture: {
+      name: 'privateKeyPrivateExponent',
+      format: 'buffer'
+    }
   }, {
     // prime1 (p)
     name: 'RSAPrivateKey.prime1',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyPrime1'
+    capture: {
+      name: 'privateKeyPrime1',
+      format: 'buffer'
+    }
   }, {
     // prime2 (q)
     name: 'RSAPrivateKey.prime2',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyPrime2'
+    capture: {
+      name: 'privateKeyPrime2',
+      format: 'buffer'
+    }
   }, {
     // exponent1 (d mod (p-1))
     name: 'RSAPrivateKey.exponent1',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyExponent1'
+    capture: {
+      name: 'privateKeyExponent1',
+      format: 'buffer'
+    }
   }, {
     // exponent2 (d mod (q-1))
     name: 'RSAPrivateKey.exponent2',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyExponent2'
+    capture: {
+      name: 'privateKeyExponent2',
+      format: 'buffer'
+    }
   }, {
     // coefficient ((inverse of q) mod p)
     name: 'RSAPrivateKey.coefficient',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'privateKeyCoefficient'
+    capture: {
+      name: 'privateKeyCoefficient',
+      format: 'buffer'
+    }
   }]
 };
 
@@ -207,14 +234,20 @@ var rsaPublicKeyValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'publicKeyModulus'
+    capture: {
+      name: 'publicKeyModulus',
+      format: 'buffer'
+    }
   }, {
     // publicExponent (e)
     name: 'RSAPublicKey.exponent',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'publicKeyExponent'
+    capture: {
+      name: 'publicKeyExponent',
+      format: 'buffer'
+    }
   }]
 };
 
@@ -225,7 +258,10 @@ var publicKeyValidator = forge.pki.rsa.publicKeyValidator = {
   tagClass: asn1.Class.UNIVERSAL,
   type: asn1.Type.SEQUENCE,
   constructed: true,
-  captureAsn1: 'subjectPublicKeyInfo',
+  capture: {
+    name: 'subjectPublicKeyInfo',
+    format: 'asn1'
+  },
   value: [{
     name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
     tagClass: asn1.Class.UNIVERSAL,
@@ -251,7 +287,10 @@ var publicKeyValidator = forge.pki.rsa.publicKeyValidator = {
       type: asn1.Type.SEQUENCE,
       constructed: true,
       optional: true,
-      captureAsn1: 'rsaPublicKey'
+      capture: {
+        name: 'rsaPublicKey',
+        format: 'asn1'
+      }
     }]
   }]
 };
@@ -283,7 +322,6 @@ var emsaPkcs1v15encode = function(md) {
     error.algorithm = md.algorithm;
     throw error;
   }
-  var oidBytes = asn1.oidToDer(oid).getBytes();
 
   // create the digest info
   var digestInfo = asn1.create(
@@ -291,12 +329,11 @@ var emsaPkcs1v15encode = function(md) {
   var digestAlgorithm = asn1.create(
     asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
   digestAlgorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+    asn1.Class.UNIVERSAL, asn1.Type.OID, false, oid));
   digestAlgorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+    asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null));
   var digest = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
-    false, md.digest().getBytes());
+    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, md.digest());
   digestInfo.value.push(digestAlgorithm);
   digestInfo.value.push(digest);
 
@@ -479,8 +516,7 @@ pki.rsa.encrypt = function(m, key, bt) {
     pub = (bt === 0x02);
     eb = _encodePkcs1_v1_5(m, key, bt);
   } else {
-    eb = forge.util.createBuffer();
-    eb.putBytes(m);
+    eb = new ByteBuffer(m, {encoding: 'binary'});
   }
 
   // load encryption block as big integer 'x'
@@ -494,7 +530,7 @@ pki.rsa.encrypt = function(m, key, bt) {
   // bytes than k, then prepend zero bytes to fill up ed
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var yhex = y.toString(16);
-  var ed = forge.util.createBuffer();
+  var ed = new ByteBuffer();
   var zeros = k - Math.ceil(yhex.length / 2);
   while(zeros > 0) {
     ed.putByte(0x00);
@@ -536,7 +572,8 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
 
   // convert encrypted data into a big integer
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var y = new BigInteger(forge.util.createBuffer(ed).toHex(), 16);
+  var y = new BigInteger(
+    new ByteBuffer(ed, {encoding: 'binary'}).toString('hex'), 16);
 
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
@@ -993,7 +1030,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
            // d is ASN.1 BER-encoded DigestInfo
            var obj = asn1.fromDer(d);
            // compare the given digest to the decrypted one
-           return digest === obj.value[1].value;
+           return digest === obj.value[1].value.bytes();
          }
        };
      } else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
@@ -1148,18 +1185,16 @@ pki.wrapRsaPrivateKey = function(rsaKey) {
   // PrivateKeyInfo
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      asn1.integerToDer(0).getBytes()),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, 0),
     // privateKeyAlgorithm
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       asn1.create(
-        asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(pki.oids.rsaEncryption).getBytes()),
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+        asn1.Class.UNIVERSAL, asn1.Type.OID, false, pki.oids.rsaEncryption),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null)
     ]),
     // PrivateKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      asn1.toDer(rsaKey).getBytes())
+      asn1.toDer(rsaKey))
     ]);
 };
 
@@ -1176,8 +1211,7 @@ pki.privateKeyFromAsn1 = function(obj) {
   var capture = {};
   var errors = [];
   if(asn1.validate(obj, privateKeyValidator, capture, errors)) {
-    obj = asn1.fromDer(
-      new ByteBuffer(capture.privateKey, {encoding: 'binary'}));
+    obj = asn1.fromDer(capture.privateKey);
   }
 
   // get RSAPrivateKey
@@ -1194,14 +1228,14 @@ pki.privateKeyFromAsn1 = function(obj) {
   // capture.privateKeyVersion
   // FIXME: inefficient, get a BigInteger that uses byte strings
   var n, e, d, p, q, dP, dQ, qInv;
-  n = forge.util.createBuffer(capture.privateKeyModulus).toHex();
-  e = forge.util.createBuffer(capture.privateKeyPublicExponent).toHex();
-  d = forge.util.createBuffer(capture.privateKeyPrivateExponent).toHex();
-  p = forge.util.createBuffer(capture.privateKeyPrime1).toHex();
-  q = forge.util.createBuffer(capture.privateKeyPrime2).toHex();
-  dP = forge.util.createBuffer(capture.privateKeyExponent1).toHex();
-  dQ = forge.util.createBuffer(capture.privateKeyExponent2).toHex();
-  qInv = forge.util.createBuffer(capture.privateKeyCoefficient).toHex();
+  n = capture.privateKeyModulus.toString('hex');
+  e = capture.privateKeyPublicExponent.toString('hex');
+  d = capture.privateKeyPrivateExponent.toString('hex');
+  p = capture.privateKeyPrime1.toString('hex');
+  q = capture.privateKeyPrime2.toString('hex');
+  dP = capture.privateKeyExponent1.toString('hex');
+  dQ = capture.privateKeyExponent2.toString('hex');
+  qInv = capture.privateKeyCoefficient.toString('hex');
 
   // set private key
   return pki.setRsaPrivateKey(
@@ -1226,32 +1260,31 @@ pki.privateKeyToAsn1 = pki.privateKeyToRSAPrivateKey = function(key) {
   // RSAPrivateKey
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version (0 = only 2 primes, 1 multiple primes)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      asn1.integerToDer(0).getBytes()),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, 0),
     // modulus (n)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.n)),
+      _bnToBuffer(key.n)),
     // publicExponent (e)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.e)),
+      _bnToBuffer(key.e)),
     // privateExponent (d)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.d)),
+      _bnToBuffer(key.d)),
     // privateKeyPrime1 (p)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.p)),
+      _bnToBuffer(key.p)),
     // privateKeyPrime2 (q)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.q)),
+      _bnToBuffer(key.q)),
     // privateKeyExponent1 (dP)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.dP)),
+      _bnToBuffer(key.dP)),
     // privateKeyExponent2 (dQ)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.dQ)),
+      _bnToBuffer(key.dQ)),
     // coefficient (qInv)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.qInv))
+      _bnToBuffer(key.qInv))
   ]);
 };
 
@@ -1267,12 +1300,10 @@ pki.publicKeyFromAsn1 = function(obj) {
   var capture = {};
   var errors = [];
   if(asn1.validate(obj, publicKeyValidator, capture, errors)) {
-    // get oid
-    var oid = asn1.derToOid(
-      new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
-    if(oid !== pki.oids.rsaEncryption) {
+    // check oid
+    if(capture.publicKeyOid !== pki.oids.rsaEncryption) {
       var error = new Error('Cannot read public key. Unknown OID.');
-      error.oid = oid;
+      error.oid = capture.publicKeyOid;
       throw error;
     }
     obj = capture.rsaPublicKey;
@@ -1287,9 +1318,9 @@ pki.publicKeyFromAsn1 = function(obj) {
     throw error;
   }
 
-  // FIXME: inefficient, get a BigInteger that uses byte strings
-  var n = forge.util.createBuffer(capture.publicKeyModulus).toHex();
-  var e = forge.util.createBuffer(capture.publicKeyExponent).toHex();
+  // FIXME: inefficient, do a cleaner conversion to BigInteger
+  var n = capture.publicKeyModulus.toString('hex');
+  var e = capture.publicKeyExponent.toString('hex');
 
   // set public key
   return pki.setRsaPublicKey(
@@ -1311,9 +1342,9 @@ pki.publicKeyToAsn1 = pki.publicKeyToSubjectPublicKeyInfo = function(key) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(pki.oids.rsaEncryption).getBytes()),
+        pki.oids.rsaEncryption),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null)
     ]),
     // subjectPublicKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
@@ -1334,10 +1365,10 @@ pki.publicKeyToRSAPublicKey = function(key) {
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // modulus (n)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.n)),
+      _bnToBuffer(key.n)),
     // publicExponent (e)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      _bnToBytes(key.e))
+      _bnToBuffer(key.e))
   ]);
 };
 
@@ -1352,7 +1383,7 @@ pki.publicKeyToRSAPublicKey = function(key) {
  * @return the padded byte buffer.
  */
 function _encodePkcs1_v1_5(m, key, bt) {
-  var eb = forge.util.createBuffer();
+  var eb = new ByteBuffer();
 
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
@@ -1618,19 +1649,20 @@ function _generateKeyPair(state, options, callback) {
 }
 
 /**
- * Converts a positive BigInteger into 2's-complement big-endian bytes.
+ * Converts a positive BigInteger into 2's-complement big-endian bytes in
+ * a ByteBuffer.
  *
  * @param b the big integer to convert.
  *
- * @return the bytes.
+ * @return the ByteBuffer.
  */
-function _bnToBytes(b) {
+function _bnToBuffer(b) {
   // prepend 0x00 if first byte >= 0x80
   var hex = b.toString(16);
   if(hex[0] >= '8') {
     hex = '00' + hex;
   }
-  return forge.util.hexToBytes(hex);
+  return new ByteBuffer(hex, {encoding: 'hex'});
 }
 
 /**

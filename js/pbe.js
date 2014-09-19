@@ -58,7 +58,10 @@ var encryptedPrivateKeyValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
-      captureAsn1: 'encryptionParams'
+      capture: {
+        name: 'encryptionParams',
+        format: 'asn1'
+      }
     }]
   }, {
     // encryptedData
@@ -104,7 +107,10 @@ var PBES2AlgorithmsValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.INTEGER,
         onstructed: true,
-        capture: 'kdfIterationCount'
+        capture: {
+          name: 'kdfIterationCount',
+          format: 'number'
+        }
       }]
     }]
   }, {
@@ -144,7 +150,10 @@ var pkcs12PbeParamsValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'iterations'
+    capture: {
+      name: 'iterations',
+      format: 'number'
+    }
   }]
 };
 
@@ -196,7 +205,6 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   // generate PBE params
   var salt = new ByteBuffer(forge.random.getBytesSync(options.saltSize));
   var count = options.count;
-  var countBytes = asn1.integerToDer(count);
   var dkLen;
   var encryptionAlgorithm;
   var encryptedData;
@@ -242,34 +250,30 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
     cipher.start({iv: iv});
     cipher.update(asn1.toDer(obj));
     cipher.finish();
-    encryptedData = cipher.output.getBytes();
+    encryptedData = cipher.output;
 
     encryptionAlgorithm = asn1.create(
       asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(oids['pkcs5PBES2']).getBytes()),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, oids.pkcs5PBES2),
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // keyDerivationFunc
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(oids['pkcs5PBKDF2']).getBytes()),
+            oids.pkcs5PBKDF2),
           // PBKDF2-params
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // salt
             asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt.bytes()),
+              asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
             // iteration count
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              countBytes.getBytes())
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, count)
           ])
         ]),
         // encryptionScheme
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(encOid).getBytes()),
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, encOid),
           // iv
-          asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv.bytes())
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv)
         ])
       ])
     ]);
@@ -283,24 +287,24 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
     cipher.start({iv: iv});
     cipher.update(asn1.toDer(obj));
     cipher.finish();
-    encryptedData = cipher.output.getBytes();
+    encryptedData = cipher.output;
 
     encryptionAlgorithm = asn1.create(
       asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(oids['pbeWithSHAAnd3-KeyTripleDES-CBC']).getBytes()),
+        oids['pbeWithSHAAnd3-KeyTripleDES-CBC']),
       // pkcs-12PbeParams
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // salt
         asn1.create(
-          asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt.bytes()),
+          asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
         // iteration count
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-          countBytes.getBytes())
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, count)
       ])
     ]);
   } else {
-    var error = new Error('Cannot encrypt private key. Unknown encryption algorithm.');
+    var error = new Error(
+      'Cannot encrypt private key. Unknown encryption algorithm.');
     error.algorithm = options.algorithm;
     throw error;
   }
@@ -338,14 +342,11 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
   }
 
   // get cipher
-  var oid = asn1.derToOid(
-    new ByteBuffer(capture.encryptionOid, {encoding: 'binary'}));
-  var cipher = pki.pbe.getDecipher(oid, capture.encryptionParams, password);
+  var cipher = pki.pbe.getDecipher(
+    capture.encryptionOid, capture.encryptionParams, password);
 
   // get encrypted data
-  var encrypted = new ByteBuffer(capture.encryptedData, {encoding: 'binary'});
-
-  cipher.update(encrypted);
+  cipher.update(capture.encryptedData);
   if(cipher.finish()) {
     rval = asn1.fromDer(cipher.output);
   }
@@ -577,7 +578,7 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     var iv = new ByteBuffer(msg.dekInfo.parameters, {encoding: 'hex'});
     var dk = evpBytesToKey(password, iv.bytes().substr(0, 8), dkLen);
     var decipher = decipherFn(dk, iv);
-    decipher.update(forge.util.createBuffer(msg.body));
+    decipher.update(msg.body);
     if(decipher.finish()) {
       rval = decipher.output;
     } else {
@@ -627,10 +628,10 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
   var u = md.digestLength;
   var v = md.blockLength;
-  var result = new forge.util.ByteBuffer();
+  var result = new ByteBuffer();
 
   /* Convert password to Unicode byte buffer + trailing 0-byte. */
-  var passBuf = new forge.util.ByteBuffer();
+  var passBuf = new ByteBuffer();
   if(password !== null && password !== undefined) {
     for(l = 0; l < password.length; l++) {
       passBuf.putInt16(password.charCodeAt(l));
@@ -644,7 +645,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
   /* 1. Construct a string, D (the "diversifier"), by concatenating
         v copies of ID. */
-  var D = new forge.util.ByteBuffer();
+  var D = new ByteBuffer();
   D.fillWithByte(id, v);
 
   /* 2. Concatenate copies of the salt together to create a string S of length
@@ -652,7 +653,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
         to create S).
         Note that if the salt is the empty string, then so is S. */
   var Slen = v * Math.ceil(s / v);
-  var S = new forge.util.ByteBuffer();
+  var S = new ByteBuffer();
   for(l = 0; l < Slen; l ++) {
     S.putByte(salt.at(l % s));
   }
@@ -662,7 +663,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
         truncated to create P).
         Note that if the password is the empty string, then so is P. */
   var Plen = v * Math.ceil(p / v);
-  var P = new forge.util.ByteBuffer();
+  var P = new ByteBuffer();
   for(l = 0; l < Plen; l ++) {
     P.putByte(passBuf.at(l % p));
   }
@@ -677,7 +678,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
   /* 6. For i=1, 2, ..., c, do the following: */
   for(var i = 1; i <= c; i ++) {
     /* a) Set Ai=H^r(D||I). (l.e. the rth hash of D||I, H(H(H(...H(D||I)))) */
-    var buf = new forge.util.ByteBuffer();
+    var buf = new ByteBuffer();
     buf.putBytes(D.bytes());
     buf.putBytes(I.bytes());
     for(var round = 0; round < iter; round ++) {
@@ -688,7 +689,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
     /* b) Concatenate copies of Ai to create a string B of length v bytes (the
           final copy of Ai may be truncated to create B). */
-    var B = new forge.util.ByteBuffer();
+    var B = new ByteBuffer();
     for(l = 0; l < v; l ++) {
       B.putByte(buf.at(l % u));
     }
@@ -697,9 +698,9 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
           where k=ceil(s / v) + ceil(p / v), modify I by setting
           Ij=(Ij+B+1) mod 2v for each j.  */
     var k = Math.ceil(s / v) + Math.ceil(p / v);
-    var Inew = new forge.util.ByteBuffer();
+    var Inew = new ByteBuffer();
     for(j = 0; j < k; j ++) {
-      var chunk = new forge.util.ByteBuffer(I.getBytes(v));
+      var chunk = new ByteBuffer(I.getBytes(v));
       var x = 0x1ff;
       for(l = B.length() - 1; l >= 0; l --) {
         x = x >> 8;
@@ -773,7 +774,7 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
   }
 
   // check oids
-  oid = asn1.derToOid(new ByteBuffer(capture.kdfOid, {encoding: 'binary'}));
+  oid = capture.kdfOid;
   if(oid !== pki.oids['pkcs5PBKDF2']) {
     var error = new Error('Cannot read encrypted private key. ' +
       'Unsupported key derivation function OID.');
@@ -781,14 +782,14 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
     error.supportedOids = ['pkcs5PBKDF2'];
     throw error;
   }
-  oid = asn1.derToOid(new ByteBuffer(capture.encOid, {encoding: 'binary'}));
+  oid = capture.encOid;
   if(oid !== pki.oids['aes128-CBC'] &&
     oid !== pki.oids['aes192-CBC'] &&
     oid !== pki.oids['aes256-CBC'] &&
     oid !== pki.oids['des-EDE3-CBC'] &&
     oid !== pki.oids['desCBC']) {
-    var error = new Error('Cannot read encrypted private key. ' +
-      'Unsupported encryption scheme OID.');
+    var error = new Error(
+      'Cannot read encrypted private key. Unsupported encryption scheme OID.');
     error.oid = oid;
     error.supportedOids = [
       'aes128-CBC', 'aes192-CBC', 'aes256-CBC', 'des-EDE3-CBC', 'desCBC'];
@@ -796,9 +797,6 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
   }
 
   // set PBE params
-  var salt = new ByteBuffer(capture.kdfSalt, {encoding: 'binary'});
-  var count = new ByteBuffer(capture.kdfIterationCount, {encoding: 'binary'});
-  count = count.getInt(count.length() << 3);
   var dkLen;
   var algorithm;
   switch(pki.oids[oid]) {
@@ -825,10 +823,12 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
   }
 
   // decrypt private key using pbe SHA-1 and AES/DES
-  var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
-  var iv = new ByteBuffer(capture.encIv, {encoding: 'binary'});
+  var count = capture.kdfIterationCount;
+  // FIXME: fix count (is native int)
+  count = count.getInt(count.length() << 3);
+  var dk = forge.pkcs5.pbkdf2(password, capture.kdfSalt, count, dkLen);
   var cipher = forge.cipher.createDecipher(algorithm, dk);
-  return cipher.start({iv: iv});
+  return cipher.start({iv: capture.encIv});
 };
 
 /**
@@ -854,8 +854,8 @@ pki.pbe.getDecipherForPKCS12PBE = function(oid, params, password) {
     throw error;
   }
 
-  var salt = new ByteBuffer(capture.salt, {encoding: 'binary'});
-  var count = new ByteBuffer(capture.iterations, {encoding: 'binary'});
+  var salt = capture.salt;
+  var count = capture.iterations;
   count = count.getInt(count.length() << 3);
 
   var dkLen, dIvLen, decipherFn;

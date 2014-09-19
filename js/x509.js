@@ -152,7 +152,10 @@ var x509CertificateValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
     constructed: true,
-    captureAsn1: 'tbsCertificate',
+    capture: {
+      name: 'tbsCertificate',
+      format: 'asn1'
+    },
     value: [{
       name: 'Certificate.TBSCertificate.version',
       tagClass: asn1.Class.CONTEXT_SPECIFIC,
@@ -171,7 +174,10 @@ var x509CertificateValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.INTEGER,
       constructed: false,
-      capture: 'certSerialNumber'
+      capture: {
+        name: 'certSerialNumber',
+        format: 'hex'
+      }
     }, {
       name: 'Certificate.TBSCertificate.signature',
       tagClass: asn1.Class.UNIVERSAL,
@@ -187,14 +193,20 @@ var x509CertificateValidator = {
         name: 'Certificate.TBSCertificate.signature.parameters',
         tagClass: asn1.Class.UNIVERSAL,
         optional: true,
-        captureAsn1: 'certinfoSignatureParams'
+        capture: {
+          name: 'certinfoSignatureParams',
+          format: 'asn1'
+        }
       }]
     }, {
       name: 'Certificate.TBSCertificate.issuer',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
-      captureAsn1: 'certIssuer'
+      capture: {
+        name: 'certIssuer',
+        format: 'asn1'
+      }
     }, {
       name: 'Certificate.TBSCertificate.validity',
       tagClass: asn1.Class.UNIVERSAL,
@@ -203,7 +215,11 @@ var x509CertificateValidator = {
       // Note: UTC and generalized times may both appear so the capture
       // names are based on their detected order, the names used below
       // are only for the common case, which validity time really means
-      // "notBefore" and which means "notAfter" will be determined by order
+      // "notBefore" and which means "notAfter" will be determined by order,
+      // a less common case, for example, may have the first time as UTC and
+      // the second as generalized -- which would produce names with the
+      // suffixes ".notBefore(utc)" and ".notBefore (generalized)", here the
+      // latter would be the "notAfter" time
       value: [{
         // notBefore (Time) (UTC time case)
         name: 'Certificate.TBSCertificate.validity.notBefore (utc)',
@@ -211,7 +227,10 @@ var x509CertificateValidator = {
         type: asn1.Type.UTCTIME,
         constructed: false,
         optional: true,
-        capture: 'certValidity1UTCTime'
+        capture: {
+          name: 'certValidity1UTCTime',
+          format: 'date'
+        }
       }, {
         // notBefore (Time) (generalized time case)
         name: 'Certificate.TBSCertificate.validity.notBefore (generalized)',
@@ -219,7 +238,10 @@ var x509CertificateValidator = {
         type: asn1.Type.GENERALIZEDTIME,
         constructed: false,
         optional: true,
-        capture: 'certValidity2GeneralizedTime'
+        capture: {
+          name: 'certValidity2GeneralizedTime',
+          format: 'date'
+        }
       }, {
         // notAfter (Time) (only UTC time is supported)
         name: 'Certificate.TBSCertificate.validity.notAfter (utc)',
@@ -227,7 +249,10 @@ var x509CertificateValidator = {
         type: asn1.Type.UTCTIME,
         constructed: false,
         optional: true,
-        capture: 'certValidity3UTCTime'
+        capture: {
+          name: 'certValidity3UTCTime',
+          format: 'date'
+        }
       }, {
         // notAfter (Time) (only UTC time is supported)
         name: 'Certificate.TBSCertificate.validity.notAfter (generalized)',
@@ -235,7 +260,10 @@ var x509CertificateValidator = {
         type: asn1.Type.GENERALIZEDTIME,
         constructed: false,
         optional: true,
-        capture: 'certValidity4GeneralizedTime'
+        capture: {
+          name: 'certValidity4GeneralizedTime',
+          format: 'date'
+        }
       }]
     }, {
       // Name (subject) (RDNSequence)
@@ -243,7 +271,10 @@ var x509CertificateValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
-      captureAsn1: 'certSubject'
+      capture: {
+        name: 'certSubject',
+        format: 'asn1'
+      }
     },
       // SubjectPublicKeyInfo
       publicKeyValidator,
@@ -259,7 +290,10 @@ var x509CertificateValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.BITSTRING,
         constructed: false,
-        capture: 'certIssuerUniqueId'
+        capture: {
+          name: 'certIssuerUniqueId',
+          format: 'buffer'
+        }
       }]
     }, {
       // subjectUniqueID (optional)
@@ -273,7 +307,10 @@ var x509CertificateValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.BITSTRING,
         constructed: false,
-        capture: 'certSubjectUniqueId'
+        capture: {
+          name: 'certSubjectUniqueId',
+          format: 'buffer'
+        }
       }]
     }, {
       // Extensions (optional)
@@ -281,7 +318,10 @@ var x509CertificateValidator = {
       tagClass: asn1.Class.CONTEXT_SPECIFIC,
       type: 3,
       constructed: true,
-      captureAsn1: 'certExtensions',
+      capture: {
+        name: 'certExtensions',
+        format: 'asn1'
+      },
       optional: true
     }]
   }, {
@@ -301,7 +341,10 @@ var x509CertificateValidator = {
       name: 'Certificate.TBSCertificate.signature.parameters',
       tagClass: asn1.Class.UNIVERSAL,
       optional: true,
-      captureAsn1: 'certSignatureParams'
+      capture: {
+        name: 'certSignatureParams',
+        format: 'asn1'
+      }
     }]
   }, {
     // SignatureValue
@@ -309,7 +352,10 @@ var x509CertificateValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.BITSTRING,
     constructed: false,
-    capture: 'certSignature'
+    capture: {
+      name: 'certSignature',
+      format: 'buffer'
+    }
   }]
 };
 
@@ -380,7 +426,10 @@ var rsassaPssParameterValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Class.INTEGER,
       constructed: false,
-      capture: 'saltLength'
+      capture: {
+        name: 'saltLength',
+        format: 'number'
+      }
     }]
   }, {
     name: 'rsapss.trailerField',
@@ -392,7 +441,10 @@ var rsassaPssParameterValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Class.INTEGER,
       constructed: false,
-      capture: 'trailer'
+      capture: {
+        name: 'trailer',
+        format: 'number'
+      }
     }]
   }]
 };
@@ -403,7 +455,10 @@ var certificationRequestInfoValidator = {
   tagClass: asn1.Class.UNIVERSAL,
   type: asn1.Type.SEQUENCE,
   constructed: true,
-  captureAsn1: 'certificationRequestInfo',
+  capture: {
+    name: 'certificationRequestInfo',
+    format: 'asn1'
+  },
   value: [{
     name: 'CertificationRequestInfo.integer',
     tagClass: asn1.Class.UNIVERSAL,
@@ -416,7 +471,10 @@ var certificationRequestInfoValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
     constructed: true,
-    captureAsn1: 'certificationRequestInfoSubject'
+    capture: {
+      name: 'certificationRequestInfoSubject',
+      format: 'asn1'
+    }
   },
   // SubjectPublicKeyInfo
   publicKeyValidator,
@@ -453,7 +511,10 @@ var certificationRequestValidator = {
   tagClass: asn1.Class.UNIVERSAL,
   type: asn1.Type.SEQUENCE,
   constructed: true,
-  captureAsn1: 'csr',
+  capture: {
+    name: 'csr',
+    format: 'asn1',
+  },
   value: [
     certificationRequestInfoValidator, {
     // AlgorithmIdentifier (signature algorithm)
@@ -472,7 +533,10 @@ var certificationRequestValidator = {
       name: 'CertificationRequest.signatureAlgorithm.parameters',
       tagClass: asn1.Class.UNIVERSAL,
       optional: true,
-      captureAsn1: 'csrSignatureParams'
+      capture: {
+        name: 'csrSignatureParams',
+        format: 'asn1'
+      }
     }]
   }, {
     // signature
@@ -480,7 +544,10 @@ var certificationRequestValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.BITSTRING,
     constructed: false,
-    capture: 'csrSignature'
+    capture: {
+      name: 'csrSignature',
+      format: 'buffer'
+    }
   }]
 };
 
@@ -506,8 +573,7 @@ pki.RDNAttributesAsArray = function(rdn, md) {
     for(var i = 0; i < set.value.length; ++i) {
       obj = {};
       attr = set.value[i];
-      obj.type = asn1.derToOid(
-        new ByteBuffer(attr.value[0].value, {encoding: 'binary'}));
+      obj.type = attr.value[0].value;
       obj.value = attr.value[1].value;
       obj.valueTagClass = attr.value[1].type;
       // if the OID is known, get its name and short name
@@ -544,8 +610,7 @@ pki.CRIAttributesAsArray = function(attributes) {
 
     // each value in the SEQUENCE containing first a type (an OID) and
     // second a set of values (defined by the OID)
-    var type = asn1.derToOid(
-      new ByteBuffer(seq.value[0].value, {encoding: 'binary'}));
+    var type = seq.value[0].value;
     var values = seq.value[1].value;
     for(var vi = 0; vi < values.length; ++vi) {
       var obj = {};
@@ -666,11 +731,10 @@ var _parseExtensions = function(exts) {
       // [2] extnValue   OCTET STRING
       ext = extseq.value[ei];
       e = {};
-      e.id = asn1.derToOid(
-        new ByteBuffer(ext.value[0].value, {encoding: 'binary'}));
+      e.id = ext.value[0].value;
       e.critical = false;
       if(ext.value[1].type === asn1.Type.BOOLEAN) {
-        e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
+        e.critical = asn1.derToBoolean(ext.value[1].value);
         e.value = ext.value[2].value;
       } else {
         e.value = ext.value[1].value;
@@ -682,16 +746,15 @@ var _parseExtensions = function(exts) {
         // handle key usage
         if(e.name === 'keyUsage') {
           // get value as BIT STRING
-          var ev = asn1.fromDer(
-            new ByteBuffer(e.value, {encoding: 'binary'}));
+          var ev = asn1.fromDer(e.value);
           var b2 = 0x00;
           var b3 = 0x00;
           if(ev.value.length > 1) {
             // skip first byte, just indicates unused bits which
             // will be padded with 0s anyway
             // get bytes with flag bits
-            b2 = ev.value.charCodeAt(1);
-            b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
+            b2 = ev.value.at(1);
+            b3 = ev.value.length > 2 ? ev.value.at(2) : 0;
           }
           // set flags
           e.digitalSignature = (b2 & 0x80) === 0x80;
@@ -706,10 +769,10 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'basicConstraints') {
           // handle basic constraints
           // get value as SEQUENCE
-          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
+          var ev = asn1.fromDer(e.value);
           // get cA BOOLEAN flag (defaults to false)
           if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
-            e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
+            e.cA = asn1.derToBoolean(ev.value[0].value);
           } else {
             e.cA = false;
           }
@@ -721,16 +784,14 @@ var _parseExtensions = function(exts) {
             value = ev.value[1].value;
           }
           if(value !== null) {
-            e.pathLenConstraint = asn1.derToInteger(
-              new ByteBuffer(value, {encoding: 'binary'}));
+            e.pathLenConstraint = asn1.derToInteger(value);
           }
         } else if(e.name === 'extKeyUsage') {
           // handle extKeyUsage
           // value is a SEQUENCE of OIDs
-          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
+          var ev = asn1.fromDer(e.value);
           for(var vi = 0; vi < ev.value.length; ++vi) {
-            var oid = asn1.derToOid(
-              new ByteBuffer(ev.value[vi].value, {encoding: 'binary'}));
+            var oid = ev.value[vi].value;
             if(oid in oids) {
               e[oids[oid]] = true;
             } else {
@@ -740,13 +801,13 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'nsCertType') {
           // handle nsCertType
           // get value as BIT STRING
-          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
+          var ev = asn1.fromDer(e.value);
           var b2 = 0x00;
           if(ev.value.length > 1) {
             // skip first byte, just indicates unused bits which
             // will be padded with 0s anyway
             // get bytes with flag bits
-            b2 = ev.value.charCodeAt(1);
+            b2 = ev.value.at(1);
           }
           // set flags
           e.client = (b2 & 0x80) === 0x80;
@@ -765,7 +826,7 @@ var _parseExtensions = function(exts) {
 
           // ev is a SYNTAX SEQUENCE
           var gn;
-          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
+          var ev = asn1.fromDer(e.value);
           for(var n = 0; n < ev.value.length; ++n) {
             // get GeneralName
             gn = ev.value[n];
@@ -792,8 +853,7 @@ var _parseExtensions = function(exts) {
               break;
             // registeredID
             case 8:
-              altName.oid = asn1.derToOid(
-                new ByteBuffer(gn.value, {encoding: 'binary'}));
+              altName.oid = gn.value;
               break;
             default:
               // unsupported
@@ -802,8 +862,8 @@ var _parseExtensions = function(exts) {
         } else if(e.name === 'subjectKeyIdentifier') {
           // value is an OCTETSTRING w/the hash of the key-type specific
           // public key structure (eg: RSAPublicKey)
-          var ev = asn1.fromDer(new ByteBuffer(e.value, {encoding: 'binary'}));
-          e.subjectKeyIdentifier = forge.util.bytesToHex(ev.value);
+          var ev = asn1.fromDer(e.value);
+          e.subjectKeyIdentifier = ev.value.toString('hex');
         }
       }
       rval.push(e);
@@ -874,21 +934,18 @@ var _readSignatureParameters = function(oid, obj, fillDefaults) {
 
   if(capture.hashOid !== undefined) {
     params.hash = params.hash || {};
-    params.hash.algorithmOid = asn1.derToOid(
-      new ByteBuffer(capture.hashOid, {encoding: 'binary'}));
+    params.hash.algorithmOid = capture.hashOid;
   }
 
   if(capture.maskGenOid !== undefined) {
     params.mgf = params.mgf || {};
-    params.mgf.algorithmOid = asn1.derToOid(
-      new ByteBuffer(capture.maskGenOid, {encoding: 'binary'}));
+    params.mgf.algorithmOid = capture.maskGenOid;
     params.mgf.hash = params.mgf.hash || {};
-    params.mgf.hash.algorithmOid = asn1.derToOid(
-      new ByteBuffer(capture.maskGenHashOid, {encoding: 'binary'}));
+    params.mgf.hash.algorithmOid = capture.maskGenHashOid;
   }
 
   if(capture.saltLength !== undefined) {
-    params.saltLength = capture.saltLength.charCodeAt(0);
+    params.saltLength = capture.saltLength;
   }
 
   return params;
@@ -1015,11 +1072,11 @@ pki.publicKeyToRSAPublicKeyPem = function(key, maxline) {
  *          [type] the type of fingerprint, such as 'RSAPublicKey',
  *            'SubjectPublicKeyInfo' (defaults to 'RSAPublicKey').
  *          [encoding] an alternative output encoding, such as 'hex'
- *            (defaults to none, outputs a byte buffer).
+ *            (defaults to none, outputs a ByteBuffer).
  *          [delimiter] the delimiter to use between bytes for 'hex' encoded
  *            output, eg: ':' (defaults to none).
  *
- * @return the fingerprint as a byte buffer or other encoding based on options.
+ * @return the fingerprint as a ByteBuffer or other encoding based on options.
  */
 pki.getPublicKeyFingerprint = function(key, options) {
   options = options || {};
@@ -1259,11 +1316,11 @@ pki.createCertificate = function() {
           }
 
           // create bit string
-          var value = String.fromCharCode(unused);
+          var value = new ByteBuffer().putByte(unused);
           if(b3 !== 0) {
-            value += String.fromCharCode(b2) + String.fromCharCode(b3);
+            value.putByte(b2).putByte(b3);
           } else if(b2 !== 0) {
-            value += String.fromCharCode(b2);
+            value.putByte(b2);
           }
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
@@ -1274,13 +1331,12 @@ pki.createCertificate = function() {
           // cA BOOLEAN flag defaults to false
           if(e.cA) {
             e.value.value.push(asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-              String.fromCharCode(0xFF)));
+              asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false, true));
           }
           if('pathLenConstraint' in e) {
             e.value.value.push(asn1.create(
               asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              asn1.integerToDer(e.pathLenConstraint).getBytes()));
+              e.pathLenConstraint));
           }
         } else if(e.name === 'extKeyUsage') {
           // extKeyUsage is a SEQUENCE of OIDs
@@ -1293,12 +1349,12 @@ pki.createCertificate = function() {
             }
             // key is name in OID map
             if(key in oids) {
-              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
-                false, asn1.oidToDer(oids[key]).getBytes()));
+              seq.push(asn1.create(
+                asn1.Class.UNIVERSAL, asn1.Type.OID, false, oids[key]));
             } else if(key.indexOf('.') !== -1) {
               // assume key is an OID
-              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
-                false, asn1.oidToDer(key).getBytes()));
+              seq.push(asn1.create(
+                asn1.Class.UNIVERSAL, asn1.Type.OID, false, key));
             }
           }
         } else if(e.name === 'nsCertType') {
@@ -1341,9 +1397,9 @@ pki.createCertificate = function() {
           }
 
           // create bit string
-          var value = String.fromCharCode(unused);
+          var value = new ByteBuffer(unused);
           if(b2 !== 0) {
-            value += String.fromCharCode(b2);
+            value.putByte(b2);
           }
           e.value = asn1.create(
             asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
@@ -1360,30 +1416,29 @@ pki.createCertificate = function() {
             if(altName.type === 7 && altName.ip) {
               value = forge.util.bytesFromIP(altName.ip);
               if(value === null) {
-                var error = new Error('Extension "ip" value is not a valid IPv4 ' +
-                  'or IPv6 address.');
+                var error = new Error(
+                  'Extension "ip" value is not a valid IPv4 or IPv6 address.');
                 error.extension = e;
                 throw error;
               }
             } else if(altName.type === 8) {
               // handle OID
               if(altName.oid) {
-                value = asn1.oidToDer(asn1.oidToDer(altName.oid));
+                value = asn1.oidToDer(altName.oid);
               } else {
-                // deprecated ... convert value to OID
+                // deprecated; assume value is OID (backwards-compatibility)
                 value = asn1.oidToDer(value);
               }
             }
             e.value.value.push(asn1.create(
-              asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
-              value));
+              asn1.Class.CONTEXT_SPECIFIC, altName.type, false, value));
           }
         } else if(e.name === 'subjectKeyIdentifier') {
           var ski = cert.generateSubjectKeyIdentifier();
           e.subjectKeyIdentifier = ski.toHex();
           // OCTETSTRING w/digest
           e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski.getBytes());
+            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski);
         }
 
         // ensure value has been defined by now
@@ -1678,54 +1733,38 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     throw error;
   }
 
-  // ensure signature is not interpreted as an embedded ASN.1 object
-  if(typeof capture.certSignature !== 'string') {
-    var certSignature = '\x00';
-    for(var i = 0; i < capture.certSignature.length; ++i) {
-      certSignature += asn1.toDer(capture.certSignature[i]).getBytes();
-    }
-    capture.certSignature = certSignature;
-  }
-
-  // get oid
-  var oid = asn1.derToOid(
-    new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
-  if(oid !== pki.oids['rsaEncryption']) {
+  // check oid
+  if(capture.publicKeyOid !== pki.oids.rsaEncryption) {
     throw new Error('Cannot read public key. OID is not RSA.');
   }
 
   // create certificate
   var cert = pki.createCertificate();
-  cert.version = capture.certVersion ? capture.certVersion.charCodeAt(0) : 0;
-  var serial = new ByteBuffer(capture.certSerialNumber, {encoding: 'binary'});
-  cert.serialNumber = serial.toHex();
-  cert.signatureOid = forge.asn1.derToOid(
-    new ByteBuffer(capture.certSignatureOid, {encoding: 'binary'}));
+  cert.version = capture.certVersion || 0;
+  cert.serialNumber = capture.certSerialNumber;
+  cert.signatureOid = capture.certSignatureOid;
   cert.signatureParameters = _readSignatureParameters(
     cert.signatureOid, capture.certSignatureParams, true);
-  cert.siginfo.algorithmOid = forge.asn1.derToOid(
-    new ByteBuffer(capture.certinfoSignatureOid, {encoding: 'binary'}));
-  cert.siginfo.parameters = _readSignatureParameters(cert.siginfo.algorithmOid,
-    capture.certinfoSignatureParams, false);
+  cert.siginfo.algorithmOid = capture.certinfoSignatureOid;
+  cert.siginfo.parameters = _readSignatureParameters(
+    cert.siginfo.algorithmOid, capture.certinfoSignatureParams, false);
   // skip "unused bits" in signature value BITSTRING
-  var signature = new ByteBuffer(capture.certSignature, {encoding: 'binary'});
+  var signature = capture.certSignature;
   ++signature.read;
   cert.signature = signature.getBytes();
 
   var validity = [];
   if(capture.certValidity1UTCTime !== undefined) {
-    validity.push(asn1.utcTimeToDate(capture.certValidity1UTCTime));
+    validity.push(capture.certValidity1UTCTime);
   }
   if(capture.certValidity2GeneralizedTime !== undefined) {
-    validity.push(asn1.generalizedTimeToDate(
-      capture.certValidity2GeneralizedTime));
+    validity.push(capture.certValidity2GeneralizedTime);
   }
   if(capture.certValidity3UTCTime !== undefined) {
-    validity.push(asn1.utcTimeToDate(capture.certValidity3UTCTime));
+    validity.push(capture.certValidity3UTCTime);
   }
   if(capture.certValidity4GeneralizedTime !== undefined) {
-    validity.push(asn1.generalizedTimeToDate(
-      capture.certValidity4GeneralizedTime));
+    validity.push(capture.certValidity4GeneralizedTime);
   }
   if(validity.length > 2) {
     throw new Error('Cannot read notBefore/notAfter validity times; more ' +
@@ -1840,35 +1879,22 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
     throw error;
   }
 
-  // ensure signature is not interpreted as an embedded ASN.1 object
-  if(typeof capture.csrSignature !== 'string') {
-    var csrSignature = '\x00';
-    for(var i = 0; i < capture.csrSignature.length; ++i) {
-      csrSignature += asn1.toDer(capture.csrSignature[i]).getBytes();
-    }
-    capture.csrSignature = csrSignature;
-  }
-
-  // get oid
-  var oid = asn1.derToOid(
-    new ByteBuffer(capture.publicKeyOid, {encoding: 'binary'}));
-  if(oid !== pki.oids.rsaEncryption) {
+  // check oid
+  if(capture.publicKeyOid !== pki.oids.rsaEncryption) {
     throw new Error('Cannot read public key. OID is not RSA.');
   }
 
   // create certification request
   var csr = pki.createCertificationRequest();
-  csr.version = capture.csrVersion ? capture.csrVersion.charCodeAt(0) : 0;
-  csr.signatureOid = forge.asn1.derToOid(
-    new ByteBuffer(capture.csrSignatureOid, {encoding: 'binary'}));
+  csr.version = capture.csrVersion || 0;
+  csr.signatureOid = capture.csrSignatureOid;
   csr.signatureParameters = _readSignatureParameters(
     csr.signatureOid, capture.csrSignatureParams, true);
-  csr.siginfo.algorithmOid = forge.asn1.derToOid(
-    new ByteBuffer(capture.csrSignatureOid, {encoding: 'binary'}));
+  csr.siginfo.algorithmOid = capture.csrSignatureOid;
   csr.siginfo.parameters = _readSignatureParameters(
     csr.siginfo.algorithmOid, capture.csrSignatureParams, false);
   // skip "unused bits" in signature value BITSTRING
-  var signature = new ByteBuffer(capture.csrSignature, {encoding: 'binary'});
+  var signature = capture.csrSignature;
   ++signature.read;
   csr.signature = signature.getBytes();
 
@@ -2162,8 +2188,7 @@ function _dnToAsn1(obj) {
     set = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // AttributeType
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(attr.type).getBytes()),
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, attr.type),
         // AttributeValue
         asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
       ])
@@ -2199,15 +2224,13 @@ function _extensionsToAsn1(exts) {
 
     // extnID (OID)
     extseq.value.push(asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-      asn1.oidToDer(ext.id).getBytes()));
+      asn1.Class.UNIVERSAL, asn1.Type.OID, false, ext.id));
 
     // critical defaults to false
     if(ext.critical) {
       // critical BOOLEAN DEFAULT FALSE
       extseq.value.push(asn1.create(
-        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-        String.fromCharCode(0xFF)));
+        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false, true));
     }
 
     var value = ext.value;
@@ -2317,7 +2340,7 @@ function _signatureParametersToAsn1(oid, params) {
       parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(params.hash.algorithmOid).getBytes()),
+            params.hash.algorithmOid),
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
         ])
       ]));
@@ -2327,11 +2350,11 @@ function _signatureParametersToAsn1(oid, params) {
       parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(params.mgf.algorithmOid).getBytes()),
+            params.mgf.algorithmOid),
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(params.mgf.hash.algorithmOid).getBytes()),
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+              params.mgf.hash.algorithmOid),
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null)
           ])
         ])
       ]));
@@ -2340,14 +2363,14 @@ function _signatureParametersToAsn1(oid, params) {
     if(params.saltLength !== undefined) {
       parts.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-          asn1.integerToDer(params.saltLength).getBytes())
+          params.saltLength)
       ]));
     }
 
     return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, parts);
 
   default:
-    return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '');
+    return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null);
   }
 }
 
@@ -2379,18 +2402,13 @@ function _CRIAttributesToAsn1(csr) {
     if('valueTagClass' in attr) {
       valueTagClass = attr.valueTagClass;
     }
-    if(valueTagClass === asn1.Type.UTF8) {
-      value = forge.util.encodeUtf8(value);
-    }
-    // FIXME: handle more encodings
 
     // create a RelativeDistinguishedName set
     // each value in the set is an AttributeTypeAndValue first
     // containing the type (an OID) and second the value
     var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // AttributeType
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(attr.type).getBytes()),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, attr.type),
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
         // AttributeValue
         asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
@@ -2415,17 +2433,16 @@ pki.getTBSCertificate = function(cert) {
     // version
     asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
       // integer
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        asn1.integerToDer(cert.version).getBytes())
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, cert.version)
     ]),
     // serialNumber
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      forge.util.hexToBytes(cert.serialNumber)),
+      new ByteBuffer(cert.serialNumber, {encoding: 'hex'})),
     // signature
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(cert.siginfo.algorithmOid).getBytes()),
+        cert.siginfo.algorithmOid),
       // parameters
       _signatureParametersToAsn1(
         cert.siginfo.algorithmOid, cert.siginfo.parameters)
@@ -2436,10 +2453,10 @@ pki.getTBSCertificate = function(cert) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // notBefore
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
-        asn1.dateToUtcTime(cert.validity.notBefore)),
+        cert.validity.notBefore),
       // notAfter
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
-        asn1.dateToUtcTime(cert.validity.notAfter))
+        cert.validity.notAfter)
     ]),
     // subject
     _dnToAsn1(cert.subject),
@@ -2452,8 +2469,7 @@ pki.getTBSCertificate = function(cert) {
     tbs.value.push(
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-          String.fromCharCode(0x00) +
-          cert.issuer.uniqueId
+          new ByteBuffer().putByte(0x00).putBytes(cert.issuer.uniqueId)
         )
       ])
     );
@@ -2463,8 +2479,7 @@ pki.getTBSCertificate = function(cert) {
     tbs.value.push(
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-          String.fromCharCode(0x00) +
-          cert.subject.uniqueId
+          new ByteBuffer().putByte(0x00).putBytes(cert.subject.uniqueId)
         )
       ])
     );
@@ -2490,8 +2505,7 @@ pki.getCertificationRequestInfo = function(csr) {
   // CertificationRequestInfo
   var cri = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // version
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      asn1.integerToDer(csr.version).getBytes()),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, csr.version),
     // subject
     _dnToAsn1(csr.subject),
     // SubjectPublicKeyInfo
@@ -2533,13 +2547,13 @@ pki.certificateToAsn1 = function(cert) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(cert.signatureOid).getBytes()),
+        cert.signatureOid),
       // parameters
       _signatureParametersToAsn1(cert.signatureOid, cert.signatureParameters)
     ]),
     // SignatureValue
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-      String.fromCharCode(0x00) + cert.signature)
+      new ByteBuffer().putByte(0x00).putBytes(cert.signature))
   ]);
 };
 
@@ -2562,14 +2576,13 @@ pki.certificationRequestToAsn1 = function(csr) {
     // AlgorithmIdentifier (signature algorithm)
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(csr.signatureOid).getBytes()),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, csr.signatureOid),
       // parameters
       _signatureParametersToAsn1(csr.signatureOid, csr.signatureParameters)
     ]),
     // signature
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-      String.fromCharCode(0x00) + csr.signature)
+      new ByteBuffer().putByte(0x00).putBytes(csr.signature))
   ]);
 };
 

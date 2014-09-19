@@ -100,7 +100,10 @@ var contentInfoValidator = {
     type: 0,
     constructed: true,
     optional: true,
-    captureAsn1: 'content'
+    capture: {
+      name: 'content',
+      format: 'asn1'
+    }
   }]
 };
 p7v.contentInfoValidator = contentInfoValidator;
@@ -130,7 +133,10 @@ var encryptedContentInfoValidator = {
     }, {
       name: 'EncryptedContentInfo.contentEncryptionAlgorithm.parameter',
       tagClass: asn1.Class.UNIVERSAL,
-      captureAsn1: 'encParameter'
+      capture: {
+        name: 'encParameter',
+        format: 'asn1'
+      }
     }]
   }, {
     name: 'EncryptedContentInfo.encryptedContent',
@@ -162,8 +168,12 @@ var encryptedContentInfoValidator = {
      * In order to support both, we just capture the context specific
      * field here.  The OCTET STRING bit is removed below.
      */
-    capture: 'encryptedContent',
-    captureAsn1: 'encryptedContentAsn1'
+    capture: [{
+      name: 'encryptedContent'
+    }, {
+      name: 'encryptedContentAsn1',
+      format: 'asn1'
+    }]
   }]
 };
 
@@ -177,13 +187,19 @@ p7v.envelopedDataValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'version'
+    capture: {
+      name: 'version',
+      format: 'number'
+    }
   }, {
     name: 'EnvelopedData.RecipientInfos',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SET,
     constructed: true,
-    captureAsn1: 'recipientInfos'
+    capture: {
+      name: 'recipientInfos',
+      format: 'asn1'
+    }
   }].concat(encryptedContentInfoValidator)
 };
 
@@ -197,7 +213,10 @@ p7v.encryptedDataValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'version'
+    capture: {
+      name: 'version',
+      format: 'number'
+    }
   }].concat(encryptedContentInfoValidator)
 };
 
@@ -258,13 +277,19 @@ p7v.signedDataValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'version'
+    capture: {
+      name: 'version',
+      format: 'number'
+    }
   }, {
     name: 'SignedData.DigestAlgorithms',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SET,
     constructed: true,
-    captureAsn1: 'digestAlgorithms'
+    capture: {
+      name: 'digestAlgorithms',
+      format: 'asn1'
+    }
   },
   contentInfoValidator,
   {
@@ -272,13 +297,19 @@ p7v.signedDataValidator = {
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 0,
     optional: true,
-    captureAsn1: 'certificates'
+    capture: {
+      name: 'certificates',
+      format: 'asn1'
+    }
   }, {
     name: 'SignedData.CertificateRevocationLists',
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 1,
     optional: true,
-    captureAsn1: 'crls'
+    capture: {
+      name: 'crls',
+      format: 'asn1'
+    }
   }, {
     name: 'SignedData.SignerInfos',
     tagClass: asn1.Class.UNIVERSAL,
@@ -299,7 +330,10 @@ p7v.recipientInfoValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false,
-    capture: 'version'
+    capture: {
+      name: 'version',
+      format: 'number'
+    }
   }, {
     name: 'RecipientInfo.issuerAndSerial',
     tagClass: asn1.Class.UNIVERSAL,
@@ -310,13 +344,19 @@ p7v.recipientInfoValidator = {
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
-      captureAsn1: 'issuer'
+      capture: {
+        name: 'issuer',
+        format: 'asn1'
+      }
     }, {
       name: 'RecipientInfo.issuerAndSerial.serialNumber',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.INTEGER,
       constructed: false,
-      capture: 'serial'
+      capture: {
+        name: 'serial',
+        format: 'hex'
+      }
     }]
   }, {
     name: 'RecipientInfo.keyEncryptionAlgorithm',
@@ -333,7 +373,10 @@ p7v.recipientInfoValidator = {
       name: 'RecipientInfo.keyEncryptionAlgorithm.parameter',
       tagClass: asn1.Class.UNIVERSAL,
       constructed: false,
-      captureAsn1: 'encParameter'
+      capture: {
+        name: 'encParameter',
+        format: 'asn1'
+      }
     }]
   }, {
     name: 'RecipientInfo.encryptedKey',

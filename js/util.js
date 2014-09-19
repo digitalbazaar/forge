@@ -88,6 +88,22 @@ util.isArrayBufferView = function(x) {
 // TODO: set ByteBuffer to best available backing
 util.ByteBuffer = ByteStringBuffer;
 
+/**
+ * Concatenates an array of ByteBuffers into a single ByteBuffer (this performs
+ * a copy operation on the ByteBuffers in the list).
+ *
+ * @param list the list of ByteBuffers to concatenate.
+ *
+ * @return the new buffer.
+ */
+util.ByteBuffer.concat = function(list) {
+  var rval = new util.ByteBuffer();
+  for(var i = 0; i < list.length; ++i) {
+    rval.putBytes(list[i].bytes());
+  }
+  return rval;
+};
+
 /** Buffer w/BinaryString backing */
 
 // FIXME: add method to convert an array of integers to a buffer

@@ -91,11 +91,8 @@ p7.messageFromAsn1 = function(obj) {
     throw error;
   }
 
-  var contentType = asn1.derToOid(
-    new ByteBuffer(capture.contentType, {encoding: 'binary'}));
   var msg;
-
-  switch(contentType) {
+  switch(capture.contentType) {
     case forge.pki.oids.envelopedData:
       msg = p7.createEnvelopedData();
       break;
@@ -110,7 +107,7 @@ p7.messageFromAsn1 = function(obj) {
 
     default:
       throw new Error('Cannot read PKCS#7 message. ContentType with OID ' +
-        contentType + ' is not (yet) supported.');
+        capture.contentType + ' is not (yet) supported.');
   }
 
   msg.fromAsn1(capture.content.value[0]);
@@ -137,13 +134,12 @@ var _recipientInfoFromAsn1 = function(obj) {
   }
 
   return {
-    version: capture.version.charCodeAt(0),
+    version: capture.version,
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
-    serialNumber: new ByteBuffer(capture.serial, {encoding: 'binary'}).toHex(),
+    serialNumber: capture.serial,
     encryptedContent: {
-      algorithm: asn1.derToOid(
-        new ByteBuffer(capture.encAlgorithm, {encoding: 'binary'})),
-      parameter: capture.encParameter.value,
+      algorithm: capture.encAlgorithm,
+      parameter: capture.encParameter.value.copy(),
       content: capture.encKey
     }
   };
@@ -159,23 +155,22 @@ var _recipientInfoFromAsn1 = function(obj) {
 var _recipientInfoToAsn1 = function(obj) {
   return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
     // Version
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      asn1.integerToDer(obj.version).getBytes()),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false, obj.version),
     // IssuerAndSerialNumber
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Name
       forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
       // Serial
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes(obj.serialNumber))
+        new ByteBuffer(obj.serialNumber, {encoding: 'hex'}))
     ]),
     // KeyEncryptionAlgorithmIdentifier
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
+        obj.encryptedContent.algorithm),
       // Parameter, force NULL, only RSA supported for now.
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null)
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
@@ -224,20 +219,19 @@ var _encryptedContentToAsn1 = function(ec) {
   return [
     // ContentType, always Data for the moment
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-      asn1.oidToDer(forge.pki.oids.data).getBytes()),
+      forge.pki.oids.data),
     // ContentEncryptionAlgorithmIdentifier
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Algorithm
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(ec.algorithm).getBytes()),
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, ec.algorithm),
       // Parameters (IV)
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-        ec.parameter.getBytes())
+        ec.parameter)
     ]),
     // [0] EncryptedContent
     asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-        ec.content.getBytes())
+        ec.content)
     ])
   ];
 };
@@ -270,52 +264,48 @@ var _fromAsn1 = function(msg, obj, validator) {
   }
 
   // Check contentType, so far we only support (raw) Data.
-  var contentType = asn1.derToOid(
-    new ByteBuffer(capture.contentType, {encoding: 'binary'}));
-  if(contentType !== forge.pki.oids.data) {
+  if(capture.contentType !== forge.pki.oids.data) {
     throw new Error('Unsupported PKCS#7 message. ' +
       'Only wrapped ContentType Data supported.');
   }
 
   if(capture.encryptedContent) {
-    var content = '';
+    var content = [];
     if(forge.util.isArray(capture.encryptedContent)) {
       for(var i = 0; i < capture.encryptedContent.length; ++i) {
         if(capture.encryptedContent[i].type !== asn1.Type.OCTETSTRING) {
           throw new Error('Malformed PKCS#7 message, expecting encrypted ' +
             'content constructed of only OCTET STRING objects.');
         }
-        content += capture.encryptedContent[i].value;
+        content.push(capture.encryptedContent[i].value);
       }
     } else {
-      content = capture.encryptedContent;
+      content.push(capture.encryptedContent);
     }
     msg.encryptedContent = {
-      algorithm: asn1.derToOid(
-        new ByteBuffer(capture.encAlgorithm, {encoding: 'binary'})),
-      parameter: new ByteBuffer(
-        capture.encParameter.value, {encoding: 'binary'}),
-      content: new ByteBuffer(content, {encoding: 'binary'})
+      algorithm: capture.encAlgorithm,
+      parameter: capture.encParameter.value.copy(),
+      content: ByteBuffer.concat(content)
     };
   }
 
   if(capture.content) {
-    var content = '';
+    var content = [];
     if(forge.util.isArray(capture.content)) {
       for(var i = 0; i < capture.content.length; ++i) {
         if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
           throw new Error('Malformed PKCS#7 message, expecting ' +
             'content constructed of only OCTET STRING objects.');
         }
-        content += capture.content[i].value;
+        content.push(capture.content[i].value);
       }
     } else {
-      content = capture.content;
+      content.push(capture.content);
     }
-    msg.content = new ByteBuffer(content, {encoding: 'binary'});
+    msg.content = ByteBuffer.concat(content);
   }
 
-  msg.version = capture.version.charCodeAt(0);
+  msg.version = capture.version;
   msg.rawCapture = capture;
 
   return capture;
@@ -339,13 +329,15 @@ var _decryptContent = function(msg) {
   if(msg.content === undefined) {
     var algorithm;
     switch(msg.encryptedContent.algorithm) {
+    // AES
     case forge.pki.oids['aes128-CBC']:
     case forge.pki.oids['aes192-CBC']:
     case forge.pki.oids['aes256-CBC']:
       algorithm = 'AES-CBC';
       break;
 
-    case forge.pki.oids['desCBC']:
+    // DES
+    case forge.pki.oids.desCBC:
       algorithm = 'DES-CBC';
       break;
     case forge.pki.oids['des-EDE3-CBC']:
@@ -357,9 +349,8 @@ var _decryptContent = function(msg) {
         msg.encryptedContent.algorithm);
     }
 
-    var key = new ByteBuffer(msg.encryptedContent.key, {encoding: 'binary'});
-    var iv = new ByteBuffer(
-      msg.encryptedContent.parameter, {encoding: 'binary'});
+    var key = msg.encryptedContent.key;
+    var iv = msg.encryptedContent.parameter;
     var decipher = forge.cipher.createDecipher(algorithm, key);
     decipher.start({iv: iv});
     decipher.update(msg.encryptedContent.content);
@@ -424,14 +415,13 @@ p7.createSignedData = function() {
       return asn1.create(
         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           // ContentType
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(msg.type).getBytes()),
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, msg.type),
           // [0] SignedData
           asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
               // Version
               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                asn1.integerToDer(msg.version).getBytes()),
+                msg.version),
               // DigestAlgorithmIdentifiers
               asn1.create(
                 asn1.Class.UNIVERSAL, asn1.Type.SET, true,
@@ -468,7 +458,7 @@ p7.createSignedData = function() {
           asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // ContentType
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(forge.pki.oids.data).getBytes())
+              forge.pki.oids.data)
           ]);
 
         // add actual content, if present
@@ -585,14 +575,13 @@ p7.createEnvelopedData = function() {
       // ContentInfo
       return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // ContentType
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(msg.type).getBytes()),
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, msg.type),
         // [0] EnvelopedData
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // Version
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              asn1.integerToDer(msg.version).getBytes()),
+              msg.version),
             // RecipientInfos
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
               _recipientInfosToAsn1(msg.recipients)),

@@ -1247,7 +1247,10 @@ var publicKeyValidator = {
   tagClass: asn1.Class.UNIVERSAL,
   type: asn1.Type.SEQUENCE,
   constructed: true,
-  captureAsn1: 'subjectPublicKeyInfo',
+  capture: {
+    name: 'subjectPublicKeyInfo',
+    format: 'asn1'
+  },
   value: [{
     name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
     tagClass: asn1.Class.UNIVERSAL,
@@ -1273,7 +1276,10 @@ var publicKeyValidator = {
       type: asn1.Type.SEQUENCE,
       constructed: true,
       optional: true,
-      captureAsn1: 'rsaPublicKey'
+      capture {
+        name: 'rsaPublicKey',
+        format: 'asn1'
+      }
     }]
   }]
 };
@@ -1287,8 +1293,7 @@ if(!asn1.validate(
 // capture.subjectPublicKeyInfo contains the full ASN.1 object
 // capture.rsaPublicKey contains the full ASN.1 object for the RSA public key
 // capture.publicKeyOid only contains the value for the OID
-var oid = asn1.derToOid(capture.publicKeyOid);
-if(oid !== pki.oids['rsaEncryption']) {
+if(capture.publicKeyOid !== pki.oids.rsaEncryption) {
   throw 'Unsupported OID.';
 }
 
