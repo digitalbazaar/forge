@@ -134,10 +134,10 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       ASSERT.equal(p7.recipients[0].issuer[6].value, 'stesie@brokenpipe.de');
 
       ASSERT.equal(p7.recipients[0].encryptedContent.algorithm, PKI.oids.rsaEncryption);
-      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length(), 256);
 
       ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['aes256-CBC']);
-      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16);  // IV
+      ASSERT.equal(p7.encryptedContent.parameter.length(), 16);  // IV
     });
 
     it('should import indefinite length message from PEM', function() {
@@ -168,7 +168,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       p7.decrypt(p7.recipients[0], privateKey);
 
       // symmetric key must be 32 bytes long (AES 256 key)
-      ASSERT.equal(p7.encryptedContent.key.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.key.length(), 32);
       ASSERT.equal(
         p7.content,
         'Today is Boomtime, the 9th day of Discord in the YOLD 3178\r\n');
@@ -180,7 +180,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       p7.decrypt(p7.recipients[0], privateKey);
 
       // symmetric key must be 24 bytes long (DES3 key)
-      ASSERT.equal(p7.encryptedContent.key.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.key.length(), 24);
       ASSERT.equal(
         p7.content,
         'Today is Prickle-Prickle, ' +
@@ -216,14 +216,14 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
 
       // since we did not provide a key, a random key should have been created
       // automatically, AES256 requires 32 bytes of key material
-      ASSERT.equal(p7.encryptedContent.key.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.key.length(), 32);
 
       // furthermore an IV must be generated, AES256 has 16 byte IV
-      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16);
+      ASSERT.equal(p7.encryptedContent.parameter.length(), 16);
 
       // content is 18 bytes long, AES has 16 byte blocksize,
       // with padding that makes 32 bytes
-      ASSERT.equal(p7.encryptedContent.content.data.length, 32);
+      ASSERT.equal(p7.encryptedContent.content.length(), 32);
 
       // RSA encryption should yield 256 bytes
       ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
@@ -235,7 +235,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
         p7.recipients[0].encryptedContent.content);
-      ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
+      ASSERT.equal(decryptedKey, p7.encryptedContent.key.bytes());
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = CIPHER.createDecipher('AES-CBC', new ByteBuffer(decryptedKey));
@@ -257,14 +257,14 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
 
       // since we did not provide a key, a random key should have been created
       // automatically, 3DES-EDE requires 24 bytes of key material
-      ASSERT.equal(p7.encryptedContent.key.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.key.length(), 24);
 
       // furthermore an IV must be generated, DES3 has 8 byte IV
-      ASSERT.equal(p7.encryptedContent.parameter.data.length, 8);
+      ASSERT.equal(p7.encryptedContent.parameter.length(), 8);
 
       // content is 18 bytes long, DES has 8 byte blocksize,
       // with padding that makes 24 bytes
-      ASSERT.equal(p7.encryptedContent.content.data.length, 24);
+      ASSERT.equal(p7.encryptedContent.content.length(), 24);
 
       // RSA encryption should yield 256 bytes
       ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
@@ -276,7 +276,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
         p7.recipients[0].encryptedContent.content);
-      ASSERT.equal(decryptedKey, p7.encryptedContent.key.data);
+      ASSERT.equal(decryptedKey, p7.encryptedContent.key.bytes());
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = CIPHER.createDecipher(

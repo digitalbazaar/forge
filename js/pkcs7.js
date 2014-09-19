@@ -133,13 +133,18 @@ var _recipientInfoFromAsn1 = function(obj) {
     throw error;
   }
 
+  // ensure encryption parameters are copied
+  var param = capture.encParameter.value;
+  if(param instanceof ByteBuffer) {
+    param = param.copy();
+  }
   return {
     version: capture.version,
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
     serialNumber: capture.serial,
     encryptedContent: {
       algorithm: capture.encAlgorithm,
-      parameter: capture.encParameter.value.copy(),
+      parameter: param,
       content: capture.encKey
     }
   };
@@ -174,7 +179,7 @@ var _recipientInfoToAsn1 = function(obj) {
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      obj.encryptedContent.content)
+      new ByteBuffer(obj.encryptedContent.content, {encoding: 'binary'}))
   ]);
 };
 
@@ -282,9 +287,14 @@ var _fromAsn1 = function(msg, obj, validator) {
     } else {
       content.push(capture.encryptedContent);
     }
+    // ensure encryption parameters are copied
+    var param = capture.encParameter.value;
+    if(param instanceof ByteBuffer) {
+      param = param.copy();
+    }
     msg.encryptedContent = {
       algorithm: capture.encAlgorithm,
-      parameter: capture.encParameter.value.copy(),
+      parameter: param,
       content: ByteBuffer.concat(content)
     };
   }
@@ -644,8 +654,10 @@ p7.createEnvelopedData = function() {
         switch(recipient.encryptedContent.algorithm) {
           case forge.pki.oids.rsaEncryption:
           case forge.pki.oids.desCBC:
-            var key = privKey.decrypt(recipient.encryptedContent.content);
-            msg.encryptedContent.key = forge.util.createBuffer(key);
+            var key = privKey.decrypt(
+              recipient.encryptedContent.content.bytes());
+            msg.encryptedContent.key = new ByteBuffer(
+              key, {encoding: 'binary'});
             break;
 
           default:
@@ -767,7 +779,7 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.rsaEncryption:
             recipient.encryptedContent.content =
               recipient.encryptedContent.key.encrypt(
-                msg.encryptedContent.key.data);
+                msg.encryptedContent.key.bytes());
             break;
 
           default:
