@@ -1367,10 +1367,12 @@ asn1.prettyPrint = function(obj, level, indentation) {
     break;
   }
 
-  rval += obj.type;
   if(obj.tagClass === asn1.Class.UNIVERSAL) {
     // known types
-    rval += ' (' + asn1.getTypeName(obj.type) + ')';
+    rval += asn1.getTypeName(obj.type);
+    rval += ' (' + obj.type + ')';
+  } else {
+    rval += obj.type;
   }
 
   rval += '\n';
@@ -1392,17 +1394,17 @@ asn1.prettyPrint = function(obj, level, indentation) {
   } else {
     rval += indent + 'Value: ';
     if(obj.type === asn1.Type.OID) {
-      if(forge.pki && forge.pki.oids && obj.value in forge.pki.oids) {
-        rval += '(' + forge.pki.oids[obj.value] + ') ';
-      }
       rval += obj.value;
+      if(forge.pki && forge.pki.oids && obj.value in forge.pki.oids) {
+        rval += ' (' + forge.pki.oids[obj.value] + ')';
+      }
     } else if(obj.type === asn1.Type.BOOLEAN) {
       if(typeof obj.value === 'boolean') {
-        rval += '(' + obj.value + ') ';
-        rval += '0x' + asn1.booleanToDer(obj.value).toString('hex');
+        rval += obj.value;
+        rval += ' (0x' + asn1.booleanToDer(obj.value).toString('hex') + ')';
       } else {
-        rval += '(' + asn1.derToBoolean(obj.value) + ') ';
         rval += '0x' + obj.value.toString('hex');
+        rval += ' (' + asn1.derToBoolean(obj.value) + ')';
       }
     } else if(obj.type === asn1.Type.INTEGER) {
       if(typeof obj.value === 'number') {
