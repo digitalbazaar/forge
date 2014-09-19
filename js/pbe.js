@@ -823,10 +823,8 @@ pki.pbe.getDecipherForPBES2 = function(oid, params, password) {
   }
 
   // decrypt private key using pbe SHA-1 and AES/DES
-  var count = capture.kdfIterationCount;
-  // FIXME: fix count (is native int)
-  count = count.getInt(count.length() << 3);
-  var dk = forge.pkcs5.pbkdf2(password, capture.kdfSalt, count, dkLen);
+  var dk = forge.pkcs5.pbkdf2(
+    password, capture.kdfSalt, capture.kdfIterationCount, dkLen);
   var cipher = forge.cipher.createDecipher(algorithm, dk);
   return cipher.start({iv: capture.encIv});
 };
@@ -856,8 +854,6 @@ pki.pbe.getDecipherForPKCS12PBE = function(oid, params, password) {
 
   var salt = capture.salt;
   var count = capture.iterations;
-  count = count.getInt(count.length() << 3);
-
   var dkLen, dIvLen, decipherFn;
   switch(oid) {
     case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
