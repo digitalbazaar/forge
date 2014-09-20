@@ -12,9 +12,10 @@
 - **captureAsn1** has been replaced with ```capture: {name: '<foo>', format: 'asn1'}```
   Multiple captures of the same value (but in different formats) can be
   obtained by specifying 'capture' as an array.
-- Parsed ASN.1 objects now use native JavaScript primitives for OIDs,
-  strings, and integers. Different formats can be used via the ASN.1 validator
+- Parsed ASN.1 objects now use native JavaScript primitives for certain
+  types in the UNIVERSAL class, including strings, times, BOOLEAN, INTEGER,
+  NULL, and OIDs. Different formats can be used via the ASN.1 validator
   capture API. When capturing ASN.1 values, ASN.1 INTEGERS may be captured
   as 'number', 'hex', or 'buffer'. UTCTIME and GENERALIZEDTIME can be captured
   as Dates by specifying 'date'. A BITSTRING can be captured as a 'buffer' to
-  prevent auto-matic composition detection.
+  prevent automatic composition detection.
