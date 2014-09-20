@@ -14,6 +14,8 @@ function initModule(forge) {
 /* HMAC API */
 var hmac = forge.hmac = forge.hmac || {};
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 /**
  * Creates an HMAC object that uses the given message digest object.
  *
@@ -42,6 +44,8 @@ hmac.create = function() {
    *           a string to use builtin 'sha1', 'md5', 'sha256'.
    * @param key the key to use as a string, array of bytes, byte buffer,
    *           or null to reuse the previous key.
+   *
+   * @return this HMAC for chaining.
    */
   ctx.start = function(md, key) {
     if(md !== null) {
@@ -114,15 +118,22 @@ hmac.create = function() {
     // hash(ipadding | message)
     _md.start();
     _md.update(_ipadding);
+
+    return ctx;
   };
 
   /**
-   * Updates the HMAC with the given message bytes.
+   * Updates the HMAC with the given message input. The input can be
+   * a ByteBuffer or a string to be consumed using the specified-encoding.
    *
-   * @param bytes the bytes to update with.
+   * @param msg the message input to update with (ByteBuffer or string).
+   * @param encoding the encoding to use (eg: 'utf8', 'binary').
+   *
+   * @return this HMAC for chaining.
    */
-  ctx.update = function(bytes) {
-    _md.update(bytes);
+  ctx.update = function(msg, encoding) {
+    _md.update(msg, encoding);
+    return ctx;
   };
 
   /**

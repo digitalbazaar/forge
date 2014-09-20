@@ -19,3 +19,10 @@
   as 'number', 'hex', or 'buffer'. UTCTIME and GENERALIZEDTIME can be captured
   as Dates by specifying 'date'. A BITSTRING can be captured as a 'buffer' to
   prevent automatic composition detection.
+- All message digest **update** calls accept ByteBuffers or strings, but
+  if a string is given, the encoding must also be given, there is no default.
+- The string encoding **raw** has been replaced with **binary**. This does not
+  affect the actual encoding, rather it only refers to the name passed to
+  functions to indicate the encoding. Previously "raw" was deprecated in
+  preference to "binary" which is in common usage in node.js. Now "raw"
+  will be considered an unrecognized encoding.

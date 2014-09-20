@@ -18,6 +18,8 @@ var sha512 = forge.sha512 = forge.sha512 || {};
 forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 // SHA-512
 forge.md.sha512 = forge.md.algorithms.sha512 = sha512;
 
@@ -73,7 +75,7 @@ sha512.create = function(algorithm) {
   var _h = null;
 
   // input buffer
-  var _input = forge.util.createBuffer();
+  var _input;
 
   // used for 64-bit word storage
   var _w = new Array(80);
@@ -101,7 +103,7 @@ sha512.create = function(algorithm) {
   md.start = function() {
     md.messageLength = 0;
     md.messageLength128 = [0, 0, 0, 0];
-    _input = forge.util.createBuffer();
+    _input = new ByteBuffer();
     _h = new Array(_state.length);
     for(var i = 0; i < _state.length; ++i) {
       _h[i] = _state[i].slice(0);
@@ -112,23 +114,22 @@ sha512.create = function(algorithm) {
   md.start();
 
   /**
-   * Updates the digest with the given message input. The given input can
-   * treated as raw input (no encoding will be applied) or an encoding of
-   * 'utf8' maybe given to encode the input using UTF-8.
+   * Updates the digest with the given message input. The input can be
+   * a ByteBuffer or a string to be consumed using the specified-encoding.
    *
-   * @param msg the message input to update with.
-   * @param encoding the encoding to use (default: 'binary', other: 'utf8').
+   * @param msg the message input to update with (ByteBuffer or string).
+   * @param encoding the encoding to use (eg: 'utf8', 'binary').
    *
    * @return this digest object.
    */
   md.update = function(msg, encoding) {
-    if(encoding === 'utf8') {
-      msg = forge.util.encodeUtf8(msg);
+    if(!(msg instanceof ByteBuffer)) {
+      msg = new ByteBuffer(msg, {encoding: encoding});
     }
 
     // update message length
-    md.messageLength += msg.length;
-    var len = msg.length;
+    md.messageLength += msg.length();
+    var len = msg.length();
     len = [(len / 0x100000000) >>> 0, len >>> 0];
     for(var i = 3; i >= 0; --i) {
       md.messageLength128[i] += len[1];
@@ -138,7 +139,7 @@ sha512.create = function(algorithm) {
     }
 
     // add bytes to input buffer
-    _input.putBytes(msg);
+    _input.putBuffer(msg);
 
     // process bytes
     _update(_h, _w, _input);
@@ -180,7 +181,7 @@ sha512.create = function(algorithm) {
     // 1024 bits == 128 bytes, 896 bits == 112 bytes, 128 bits = 16 bytes
     // _padding starts with 1 byte with first bit is set in it which
     // is byte value 128, then there may be up to 127 other pad bytes
-    var padBytes = forge.util.createBuffer();
+    var padBytes = new ByteBuffer();
     padBytes.putBytes(_input.bytes());
     // 128 - (remaining msg + 16 bytes msg length) mod 128
     padBytes.putBytes(
@@ -205,7 +206,7 @@ sha512.create = function(algorithm) {
       h[i] = _h[i].slice(0);
     }
     _update(h, _w, padBytes);
-    var rval = forge.util.createBuffer();
+    var rval = new ByteBuffer();
     var hlen;
     if(algorithm === 'SHA-512') {
       hlen = h.length;
