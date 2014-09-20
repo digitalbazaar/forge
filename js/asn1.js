@@ -153,8 +153,9 @@ asn1.Class = {
 };
 
 /**
- * ASN.1 types. Not all types are supported by this implementation, only
- * those necessary to implement a simple PKI are implemented.
+ * ASN.1 types for ASN.1 class UNIVERSAL. Not all types are supported by this
+ * implementation, only those necessary to implement a simple PKI are
+ * implemented.
  */
 asn1.Type = {
   NONE:             0,
@@ -193,7 +194,7 @@ var ByteBuffer = forge.util.ByteBuffer;
  *          a ByteBuffer, if it is not constructed, otherwise an array of
  *          other asn1 objects.
  *
- * Required value types based on asn1.Types:
+ * Required value types based on UNIVERSAL asn1.Types:
  *
  * OID: string (in dotted format)
  * BOOLEAN: boolean or ByteBuffer
@@ -222,8 +223,8 @@ asn1.create = function(tagClass, type, constructed, value) {
       }
     }
     value = tmp;
-  } else {
-    // validate value type
+  } else if(tagClass === asn1.Class.UNIVERSAL) {
+    // validate UNIVERSAL value type
     switch(type) {
     case asn1.Type.OID:
       if(typeof value !== 'string') {
@@ -283,6 +284,9 @@ asn1.create = function(tagClass, type, constructed, value) {
         throw new TypeError('value must be a ByteBuffer.');
       }
     }
+  } else if(!(value instanceof ByteBuffer)) {
+    // non-UNIVERSAL values must always be ByteBuffers
+    throw new TypeError('value must be a ByteBuffer.');
   }
 
   return {
@@ -416,7 +420,7 @@ asn1.fromDer = function(der, strict) {
 
     value = new ByteBuffer();
     value.putBytes(der.getBytes(length));
-    value = asn1.derToNative(value, type);
+    value = asn1.derToNative(value, tagClass, type);
   }
 
   // create and return asn1 object
@@ -458,7 +462,7 @@ asn1.toDer = function(obj) {
     }
   } else {
     // convert non-composed from native representation
-    value.putBuffer(asn1.nativeToDer(obj.value, obj.type));
+    value.putBuffer(asn1.nativeToDer(obj.value, obj.tagClass, obj.type));
   }
 
   // add tag byte
@@ -498,11 +502,11 @@ asn1.toDer = function(obj) {
 };
 
 /**
- * Converts the given asn1 value to a native representation based on the
- * given type. If no conversion can be performed, the value is
+ * Converts the given asn1 value to a native representation based on
+ * the given class and type. If no conversion can be performed, the value is
  * returned as-is, namely, as a ByteBuffer.
  *
- * Conversions for asn1.Types:
+ * Conversions for UNIVERSAL asn1.Types:
  *
  * OID => string (in dotted format)
  * BOOLEAN => ByteBuffer (not converted to avoid losing non-zero value)
@@ -516,7 +520,11 @@ asn1.toDer = function(obj) {
  *
  * @return the native representation or a ByteBuffer.
  */
-asn1.derToNative = function(der, type) {
+asn1.derToNative = function(der, tagClass, type) {
+  if(tagClass !== asn1.Class.UNIVERSAL) {
+    return der;
+  }
+
   switch(type) {
   case asn1.Type.OID:
     return asn1.derToOid(der);
@@ -555,7 +563,7 @@ asn1.derToNative = function(der, type) {
  * Converts the given native representation of a value to a DER-encoded
  * ByteBuffer based on the given ASN.1 type.
  *
- * Valid conversions for asn1.Types:
+ * Valid conversions for UNIVERSAL asn1.Types:
  *
  * string (in dotted format) (OID)
  * boolean or ByteBuffer (BOOLEAN)
@@ -569,7 +577,17 @@ asn1.derToNative = function(der, type) {
  *
  * @return the ByteBuffer.
  */
-asn1.nativeToDer = function(value, type) {
+asn1.nativeToDer = function(value, tagClass, type) {
+  if(tagClass !== asn1.Class.UNIVERSAL) {
+    if(value instanceof ByteBuffer) {
+      return value.copy();
+    }
+    throw new Error(
+      'Could not convert native value to DER-encoded ByteBuffer; ' +
+      'native type: "' + typeof value + '", ASN.1 class: "' + tagClass +
+      '", ASN.1 type: "' + type + '".');
+  }
+
   switch(type) {
   case asn1.Type.OID:
     if(typeof value !== 'string') {
@@ -641,7 +659,8 @@ asn1.nativeToDer = function(value, type) {
     }
     throw new Error(
       'Could not convert native value to DER-encoded ByteBuffer; ' +
-      'native type: "' + typeof value + '", ASN.1 type: "' + type + '".');
+      'native type: "' + typeof value + '", ASN.1 class: "' + tagClass +
+      '", ASN.1 type: "' + type + '".');
   }
 };
 
@@ -1368,8 +1387,8 @@ asn1.prettyPrint = function(obj, level, indentation) {
   }
 
   if(obj.tagClass === asn1.Class.UNIVERSAL) {
-    // known types
-    rval += asn1.getTypeName(obj.type);
+    // only universal type names are known
+    rval += asn1.getTypeName(obj.tagClass, obj.type);
     rval += ' (' + obj.type + ')';
   } else {
     rval += obj.type;
@@ -1393,12 +1412,13 @@ asn1.prettyPrint = function(obj, level, indentation) {
     rval += indent + 'Sub values: ' + subvalues + sub;
   } else {
     rval += indent + 'Value: ';
-    if(obj.type === asn1.Type.OID) {
+    if(obj.tagClass === asn1.Type.UNIVERSAL && obj.type === asn1.Type.OID) {
       rval += obj.value;
       if(forge.pki && forge.pki.oids && obj.value in forge.pki.oids) {
         rval += ' (' + forge.pki.oids[obj.value] + ')';
       }
-    } else if(obj.type === asn1.Type.BOOLEAN) {
+    } else if(obj.tagClass === asn1.Type.UNIVERSAL &&
+      obj.type === asn1.Type.BOOLEAN) {
       if(typeof obj.value === 'boolean') {
         rval += obj.value;
         rval += ' (0x' + asn1.booleanToDer(obj.value).toString('hex') + ')';
@@ -1406,13 +1426,15 @@ asn1.prettyPrint = function(obj, level, indentation) {
         rval += '0x' + obj.value.toString('hex');
         rval += ' (' + asn1.derToBoolean(obj.value) + ')';
       }
-    } else if(obj.type === asn1.Type.INTEGER) {
+    } else if(obj.tagClass === asn1.Type.UNIVERSAL &&
+      obj.type === asn1.Type.INTEGER) {
       if(typeof obj.value === 'number') {
         rval += obj.value;
       } else {
         rval += '0x' + obj.value.toString('hex');
       }
-    } else if(obj.type === asn1.Type.NULL) {
+    } else if(obj.tagClass === asn1.Type.UNIVERSAL &&
+      obj.type === asn1.Type.NULL) {
       rval += '[null]';
     } else if(obj.value instanceof ByteBuffer) {
       if(obj.value.length() === 0) {
@@ -1432,7 +1454,11 @@ asn1.prettyPrint = function(obj, level, indentation) {
   return rval;
 };
 
-asn1.getTypeName = function(type) {
+asn1.getTypeName = function(tagClass, type) {
+  if(tagClass !== asn1.Class.UNIVERSAL) {
+    return 'Unknown';
+  }
+
   // known types
   switch(type) {
   case asn1.Type.NONE:
