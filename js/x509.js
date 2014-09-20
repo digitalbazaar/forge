@@ -575,7 +575,8 @@ pki.RDNAttributesAsArray = function(rdn, md) {
       attr = set.value[i];
       obj.type = attr.value[0].value;
       obj.value = attr.value[1].value;
-      obj.valueTagClass = attr.value[1].type;
+      obj.valueTagClass = attr.value[1].tagClass;
+      obj.valueType = attr.value[1].type;
       // if the OID is known, get its name and short name
       if(obj.type in oids) {
         obj.name = oids[obj.type];
@@ -584,8 +585,9 @@ pki.RDNAttributesAsArray = function(rdn, md) {
         }
       }
       if(md) {
-        md.update(obj.type);
-        md.update(obj.value);
+        md.update(obj.type, 'utf8');
+        md.update(asn1.nativeToDer(
+          obj.value, obj.valueTagClass, obj.valueType));
       }
       rval.push(obj);
     }
@@ -1087,10 +1089,10 @@ pki.getPublicKeyFingerprint = function(key, options) {
   var bytes;
   switch(type) {
   case 'RSAPublicKey':
-    bytes = asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes();
+    bytes = asn1.toDer(pki.publicKeyToRSAPublicKey(key));
     break;
   case 'SubjectPublicKeyInfo':
-    bytes = asn1.toDer(pki.publicKeyToAsn1(key)).getBytes();
+    bytes = asn1.toDer(pki.publicKeyToAsn1(key));
     break;
   default:
     throw new Error('Unknown fingerprint type "' + options.type + '".');
@@ -1505,10 +1507,10 @@ pki.createCertificate = function() {
 
     // get TBSCertificate, convert to DER
     cert.tbsCertificate = pki.getTBSCertificate(cert);
-    var bytes = asn1.toDer(cert.tbsCertificate);
+    var der = asn1.toDer(cert.tbsCertificate);
 
     // digest and sign
-    cert.md.update(bytes.getBytes());
+    cert.md.update(der);
     cert.signature = key.sign(cert.md);
   };
 
@@ -1563,8 +1565,7 @@ pki.createCertificate = function() {
 
       // produce DER formatted TBSCertificate and digest it
       var tbsCertificate = child.tbsCertificate || pki.getTBSCertificate(child);
-      var bytes = asn1.toDer(tbsCertificate);
-      md.update(bytes.getBytes());
+      md.update(asn1.toDer(tbsCertificate));
     }
 
     if(md !== null) {
@@ -1812,8 +1813,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     }
 
     // produce DER formatted TBSCertificate and digest it
-    var bytes = asn1.toDer(cert.tbsCertificate);
-    cert.md.update(bytes.getBytes());
+    cert.md.update(asn1.toDer(cert.tbsCertificate));
   }
 
   // handle issuer, build issuer message digest
@@ -2047,10 +2047,10 @@ pki.createCertificationRequest = function() {
 
     // get CertificationRequestInfo, convert to DER
     csr.certificationRequestInfo = pki.getCertificationRequestInfo(csr);
-    var bytes = asn1.toDer(csr.certificationRequestInfo);
+    var der = asn1.toDer(csr.certificationRequestInfo);
 
     // digest and sign
-    csr.md.update(bytes.getBytes());
+    csr.md.update(der);
     csr.signature = key.sign(csr.md);
   };
 
@@ -2098,8 +2098,7 @@ pki.createCertificationRequest = function() {
       // produce DER formatted CertificationRequestInfo and digest it
       var cri = csr.certificationRequestInfo ||
         pki.getCertificationRequestInfo(csr);
-      var bytes = asn1.toDer(cri);
-      md.update(bytes.getBytes());
+      md.update(asn1.toDer(cri));
     }
 
     if(md !== null) {
@@ -2175,15 +2174,14 @@ function _dnToAsn1(obj) {
     attr = attrs[i];
     var value = attr.value;
 
-    // reuse tag class for attribute value if available
-    var valueTagClass = asn1.Type.PRINTABLESTRING;
+    // reuse value tag class and type for attribute value if available
+    var valueTagClass = asn1.Class.UNIVERSAL;
     if('valueTagClass' in attr) {
       valueTagClass = attr.valueTagClass;
-
-      if(valueTagClass === asn1.Type.UTF8) {
-        value = forge.util.encodeUtf8(value);
-      }
-      // FIXME: handle more encodings
+    }
+    var valueType = asn1.Type.PRINTABLESTRING;
+    if('valueType' in attr) {
+      valueType = attr.valueType;
     }
 
     // create a RelativeDistinguishedName set
@@ -2194,7 +2192,7 @@ function _dnToAsn1(obj) {
         // AttributeType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, attr.type),
         // AttributeValue
-        asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
+        asn1.create(valueTagClass, valueType, false, value)
       ])
     ]);
     rval.value.push(set);
@@ -2403,10 +2401,14 @@ function _CRIAttributesToAsn1(csr) {
     var attr = attrs[i];
     var value = attr.value;
 
-    // reuse tag class for attribute value if available
-    var valueTagClass = asn1.Type.UTF8;
+    // reuse value tag class and type for attribute value if available
+    var valueTagClass = asn1.Class.UNIVERSAL;
     if('valueTagClass' in attr) {
       valueTagClass = attr.valueTagClass;
+    }
+    var valueType = asn1.Type.UTF8;
+    if('valueType' in attr) {
+      valueType = attr.valueType;
     }
 
     // create a RelativeDistinguishedName set
@@ -2417,7 +2419,7 @@ function _CRIAttributesToAsn1(csr) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false, attr.type),
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
         // AttributeValue
-        asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
+        asn1.create(valueTagClass, valueType, false, value)
       ])
     ]);
     rval.value.push(seq);
