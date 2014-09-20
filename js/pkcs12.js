@@ -493,8 +493,8 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       password, macSalt, 3, macIterations, macKeyBytes, md);
     var mac = forge.hmac.create();
     mac.start(md, macKey);
-    mac.update(data.value.bytes());
-    var macValue = mac.getMac();
+    mac.update(data.value.copy());
+    var macValue = mac.digest();
     if(macValue.getBytes() !== capture.macDigest.bytes()) {
       throw new Error('PKCS#12 MAC could not be verified. Invalid password?');
     }
@@ -832,7 +832,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         pairedCert = pki.certificateFromPem(pairedCert);
       }
       var sha1 = forge.md.sha1.create();
-      sha1.update(asn1.toDer(pki.certificateToAsn1(pairedCert)).getBytes());
+      sha1.update(asn1.toDer(pki.certificateToAsn1(pairedCert)));
       localKeyId = sha1.digest().getBytes();
     } else {
       // FIXME: consider using SHA-1 of public key (which can be generated
@@ -1019,8 +1019,8 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     var key = p12.generateKey(password, macSalt, 3, count, 20);
     var mac = forge.hmac.create();
     mac.start(sha1, key);
-    mac.update(asn1.toDer(safe).getBytes());
-    var macValue = mac.getMac();
+    mac.update(asn1.toDer(safe));
+    var macValue = mac.digest();
     macData = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // mac DigestInfo
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [

@@ -31,8 +31,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
   if(!(s instanceof ByteBuffer)) {
     throw new TypeError('salt must be a ByteBuffer.');
   }
-  // FIXME: change to s.copy() after md accepts ByteBuffer input
-  s = s.bytes();
+  s = s.copy();
 
   // default prf to SHA-1
   if(typeof md === 'undefined' || md === null) {
@@ -82,20 +81,20 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
        Here, INT(i) is a four-octet encoding of the integer i, most
        significant octet first. */
   var prf = forge.hmac.create();
-  prf.start(md, p);
+  prf.start(md, new ByteBuffer(p, {encoding: 'utf8'}));
   var dk = '';
   var xor, u_c, u_c1;
   for(var i = 1; i <= len; ++i) {
     // PRF(P, S || INT(i)) (first iteration)
     prf.start(null, null);
     prf.update(s);
-    prf.update(forge.util.int32ToBytes(i));
+    prf.update(forge.util.int32ToBytes(i), 'binary');
     xor = u_c1 = prf.digest().getBytes();
 
     // PRF(P, u_{c-1}) (other iterations)
     for(var j = 2; j <= c; ++j) {
       prf.start(null, null);
-      prf.update(u_c1);
+      prf.update(u_c1, 'binary');
       u_c = prf.digest().getBytes();
       // F(p, s, c, i)
       xor = forge.util.xorBytes(xor, u_c, hLen);

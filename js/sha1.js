@@ -73,12 +73,17 @@ sha1.create = function() {
    * a ByteBuffer or a string to be consumed using the specified-encoding.
    *
    * @param msg the message input to update with (ByteBuffer or string).
-   * @param encoding the encoding to use (eg: 'utf8', 'binary').
+   * @param encoding the encoding to use (eg: 'utf8', 'binary',
+   *          'hex', 'base64').
    *
    * @return this digest object.
    */
   md.update = function(msg, encoding) {
-    if(!(msg instanceof ByteBuffer)) {
+    if(msg instanceof ByteBuffer) {
+      msg = msg.copy();
+    } else if(!encoding) {
+      throw new Error('String encoding must be specified.');
+    } else {
       msg = new ByteBuffer(msg, {encoding: encoding});
     }
 
@@ -101,12 +106,12 @@ sha1.create = function() {
     return md;
   };
 
-   /**
-    * Produces the digest.
-    *
-    * @return a byte buffer containing the digest value.
-    */
-   md.digest = function() {
+  /**
+   * Produces the digest.
+   *
+   * @return a byte buffer containing the digest value.
+   */
+  md.digest = function() {
     /* Note: Here we copy the remaining bytes in the input buffer and
     add the appropriate SHA-1 padding. Then we do the final update
     on a copy of the state so that if the user wants to get

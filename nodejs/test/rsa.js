@@ -54,7 +54,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
       // sign and verify
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = pair.privateKey.sign(md);
       ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
     });
@@ -74,7 +74,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
       // sign and verify
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = pair.privateKey.sign(md);
       ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
 
@@ -140,7 +140,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
     it('should verify signature', function() {
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = UTIL.hexToBytes(_signature);
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
@@ -149,7 +149,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
@@ -164,7 +164,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
@@ -180,7 +180,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
-      md.update('0123456789abcdef');
+      md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
       ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
     });
@@ -384,7 +384,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           var signature = UTIL.decode64(params.signature);
           ASSERT.equal(key.sign(md), signature);
@@ -396,7 +396,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           ASSERT.equal(key.verify(md.digest().getBytes(), signature), true);
         });
@@ -411,7 +411,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           // create signature
           var pss = PSS.create(
@@ -420,7 +420,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           // verify signature
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
           ASSERT.equal(
             publicKey.verify(md.digest().getBytes(), signature, pss), true);
         });
@@ -431,7 +431,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           var pss = PSS.create(
             MD.sha1.create(), MGF.mgf1.create(MD.sha1.create()), 20);
@@ -445,7 +445,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           // create signature
           var pss = PSS.create({
@@ -457,7 +457,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           // verify signature
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
           ASSERT.equal(
             publicKey.verify(md.digest().getBytes(), signature, pss), true);
         });
@@ -468,7 +468,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           var pss = PSS.create({
             md: MD.sha1.create(),
@@ -484,7 +484,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           // create signature
           var pss = PSS.create({
@@ -503,7 +503,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           var pss = PSS.create({
             md: MD.sha1.create(),
@@ -523,7 +523,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           // create signature
           var pss = PSS.create({
@@ -547,7 +547,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var md = MD.sha1.create();
           md.start();
-          md.update('just testing');
+          md.update('just testing', 'utf8');
 
           var pss = PSS.create({
             md: MD.sha1.create(),

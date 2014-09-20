@@ -683,7 +683,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
     buf.putBytes(I.bytes());
     for(var round = 0; round < iter; round ++) {
       md.start();
-      md.update(buf.getBytes());
+      md.update(buf);
       buf = md.digest();
     }
 
@@ -906,7 +906,7 @@ function evpBytesToKey(password, salt, dkLen) {
 }
 
 function md5(bytes) {
-  return forge.md.md5.create().update(bytes).digest().getBytes();
+  return forge.md.md5.create().update(bytes, 'binary').digest().getBytes();
 }
 
 } // end module implementation

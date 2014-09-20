@@ -109,7 +109,7 @@ pss.create = function(options) {
 
     /* 6. Let H = Hash(M'), an octet string of length hLen. */
     hash.start();
-    hash.update(m_.getBytes());
+    hash.update(m_);
     var h = hash.digest().getBytes();
 
     /* 7. Generate an octet string PS consisting of emLen - sLen - hLen - 2
@@ -230,7 +230,7 @@ pss.create = function(options) {
 
     /* 13. Let H' = Hash(M'), an octet string of length hLen. */
     hash.start();
-    hash.update(m_.getBytes());
+    hash.update(m_);
     var h_ = hash.digest().getBytes();
 
     /* 14. If H = H', output "consistent." Otherwise, output "inconsistent." */

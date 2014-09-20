@@ -118,12 +118,17 @@ sha512.create = function(algorithm) {
    * a ByteBuffer or a string to be consumed using the specified-encoding.
    *
    * @param msg the message input to update with (ByteBuffer or string).
-   * @param encoding the encoding to use (eg: 'utf8', 'binary').
+   * @param encoding the encoding to use (eg: 'utf8', 'binary',
+   *          'hex', 'base64').
    *
    * @return this digest object.
    */
   md.update = function(msg, encoding) {
-    if(!(msg instanceof ByteBuffer)) {
+    if(msg instanceof ByteBuffer) {
+      msg = msg.copy();
+    } else if(!encoding) {
+      throw new Error('String encoding must be specified.');
+    } else {
       msg = new ByteBuffer(msg, {encoding: encoding});
     }
 

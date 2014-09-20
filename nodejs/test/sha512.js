@@ -11,7 +11,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "abc"', function() {
       var md = SHA512.create();
-      md.update('abc');
+      md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f');
@@ -19,7 +19,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"', function() {
       var md = SHA512.create();
-      md.update('abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu');
+      md.update('abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018501d289e4900f7e4331b99dec4b5433ac7d329eeb6dd26545e96e55b874be909');
@@ -27,7 +27,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = SHA512.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6');
@@ -44,7 +44,8 @@ function Tests(ASSERT, SHA512, UTIL) {
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
       var md = SHA512.create();
       md.start();
-      md.update('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq');
+      md.update(
+        'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
       // do twice to check continuing digest
       ASSERT.equal(
         md.digest().toHex(),
@@ -55,7 +56,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
   });
 
-  SHA384 = SHA512.sha384;
+  var SHA384 = SHA512.sha384;
 
   describe('sha384', function() {
     it('should digest the empty string', function() {
@@ -67,7 +68,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "abc"', function() {
       var md = SHA384.create();
-      md.update('abc');
+      md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7');
@@ -75,7 +76,8 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"', function() {
       var md = SHA384.create();
-      md.update('abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu');
+      md.update(
+        'abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712fcc7c71a557e2db966c3e9fa91746039');
@@ -83,7 +85,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = SHA384.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'ca737f1014a48f4c0b6dd43cb177b0afd9e5169367544c494011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1');
@@ -100,7 +102,8 @@ function Tests(ASSERT, SHA512, UTIL) {
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
       var md = SHA384.create();
       md.start();
-      md.update('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq');
+      md.update(
+        'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
       // do twice to check continuing digest
       ASSERT.equal(
         md.digest().toHex(),
@@ -111,7 +114,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
   });
 
-  SHA256 = SHA512.sha256;
+  var SHA256 = SHA512.sha256;
 
   describe('sha512/256', function() {
     it('should digest the empty string', function() {
@@ -123,14 +126,14 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = SHA256.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'dd9d67b371519c339ed8dbd25af90e976a1eeefd4ad3d889005e532fc5bef04d');
     });
   });
 
-  SHA224 = SHA512.sha224;
+  var SHA224 = SHA512.sha224;
 
   describe('sha512/224', function() {
     it('should digest the empty string', function() {
@@ -142,7 +145,7 @@ function Tests(ASSERT, SHA512, UTIL) {
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = SHA224.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '944cd2847fb54558d4775db0485a50003111c8e5daa63fe722c6aa37');

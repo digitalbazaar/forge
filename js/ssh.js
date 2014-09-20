@@ -106,7 +106,7 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
 
   var hmac = forge.hmac.create();
   hmac.start('sha1', mackey);
-  hmac.update(macbuffer.bytes());
+  hmac.update(macbuffer.bytes(), 'binary');
 
   ppk += '\r\nPrivate-MAC: ' + hmac.digest().toHex() + '\r\n';
 
@@ -174,7 +174,7 @@ ssh.getPublicKeyFingerprint = function(key, options) {
 
   // hash public key bytes
   md.start();
-  md.update(buffer.getBytes());
+  md.update(buffer.getBytes(), 'binary');
   var digest = md.digest();
   if(options.encoding === 'hex') {
     var hex = digest.toHex();
@@ -227,7 +227,7 @@ function _sha1() {
   var sha = forge.md.sha1.create();
   var num = arguments.length;
   for (var i = 0; i < num; ++i) {
-    sha.update(arguments[i]);
+    sha.update(arguments[i], 'binary');
   }
   return sha.digest();
 }

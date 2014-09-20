@@ -41,9 +41,9 @@ hmac.create = function() {
    * Starts or restarts the HMAC with the given key and message digest.
    *
    * @param md the message digest to use, null to reuse the previous one,
-   *           a string to use builtin 'sha1', 'md5', 'sha256'.
-   * @param key the key to use as a string, array of bytes, byte buffer,
-   *           or null to reuse the previous key.
+   *          a string to use builtin: 'sha1', 'md5', 'sha256',
+   *          'sha384', 'sha512'.
+   * @param key the key as a ByteBuffer or null to reuse the previous key.
    *
    * @return this HMAC for chaining.
    */
@@ -67,31 +67,22 @@ hmac.create = function() {
       // reuse previous key
       key = _key;
     } else {
-      if(typeof key === 'string') {
-        // convert string into byte buffer
-        key = forge.util.createBuffer(key);
-      } else if(forge.util.isArray(key)) {
-        // convert byte array into byte buffer
-        var tmp = key;
-        key = forge.util.createBuffer();
-        for(var i = 0; i < tmp.length; ++i) {
-          key.putByte(tmp[i]);
-        }
-      }
+      // keep internal copy of key
+      key = key.copy();
 
       // if key is longer than blocksize, hash it
       var keylen = key.length();
       if(keylen > _md.blockLength) {
         _md.start();
-        _md.update(key.bytes());
+        _md.update(key);
         key = _md.digest();
       }
 
       // mix key into inner and outer padding
       // ipadding = [0x36 * blocksize] ^ key
       // opadding = [0x5C * blocksize] ^ key
-      _ipadding = forge.util.createBuffer();
-      _opadding = forge.util.createBuffer();
+      _ipadding = new ByteBuffer();
+      _opadding = new ByteBuffer();
       keylen = key.length();
       for(var i = 0; i < keylen; ++i) {
         var tmp = key.at(i);
@@ -108,8 +99,6 @@ hmac.create = function() {
         }
       }
       _key = key;
-      _ipadding = _ipadding.bytes();
-      _opadding = _opadding.bytes();
     }
 
     // digest is done like so: hash(opadding | hash(ipadding | message))
@@ -117,7 +106,7 @@ hmac.create = function() {
     // prepare to do inner hash
     // hash(ipadding | message)
     _md.start();
-    _md.update(_ipadding);
+    _md.update(_ipadding.copy());
 
     return ctx;
   };
@@ -139,19 +128,20 @@ hmac.create = function() {
   /**
    * Produces the Message Authentication Code (MAC).
    *
+   * Note: Once "digest" is called, this HMAC object can't be used again until
+   * "start" is called.
+   *
    * @return a byte buffer containing the digest value.
    */
-  ctx.getMac = function() {
+  ctx.digest = function() {
     // digest is done like so: hash(opadding | hash(ipadding | message))
     // here we do the outer hashing
-    var inner = _md.digest().bytes();
+    var inner = _md.digest();
     _md.start();
-    _md.update(_opadding);
+    _md.update(_opadding.copy());
     _md.update(inner);
     return _md.digest();
   };
-  // alias for getMac
-  ctx.digest = ctx.getMac;
 
   return ctx;
 };

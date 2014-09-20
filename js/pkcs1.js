@@ -113,7 +113,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   if(!label) {
     label = '';
   }
-  md.update(label, 'raw');
+  md.update(label, 'binary');
   var lHash = md.digest();
 
   var PS = '';
@@ -207,7 +207,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   if(!label) {
     label = '';
   }
-  md.update(label, 'raw');
+  md.update(label, 'binary');
   var lHash = md.digest().getBytes();
 
   // split the message into its parts
@@ -268,7 +268,7 @@ function rsa_mgf1(seed, maskLength, hash) {
     var c = String.fromCharCode(
       (i >> 24) & 0xFF, (i >> 16) & 0xFF, (i >> 8) & 0xFF, i & 0xFF);
     hash.start();
-    hash.update(seed + c);
+    hash.update(seed + c, 'binary');
     t += hash.digest().getBytes();
   }
   return t.substring(0, maskLength);

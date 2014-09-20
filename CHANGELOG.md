@@ -26,3 +26,4 @@
   functions to indicate the encoding. Previously "raw" was deprecated in
   preference to "binary" which is in common usage in node.js. Now "raw"
   will be considered an unrecognized encoding.
+- **hmac.getMac** has been removed, replaced with its previous alias **hmac.digest**.

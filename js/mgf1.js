@@ -44,7 +44,7 @@ mgf1.create = function(md) {
         /* b. Concatenate the hash of the seed mgfSeed and C to the octet
          * string T: */
         md.start();
-        md.update(seed + c.getBytes());
+        md.update(seed + c.getBytes(), 'binary');
         t.putBuffer(md.digest());
       }
 

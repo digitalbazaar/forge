@@ -304,35 +304,35 @@ var prf_TLS1 = function(secret, label, seed, length) {
   var sha1itr = Math.ceil(length / 20);
 
   // do md5 iterations
-  hmac.start('MD5', s1);
+  hmac.start('MD5', new ByteBuffer(s1, {encoding: 'binary'}));
   var md5bytes = forge.util.createBuffer();
   ai.putBytes(seed);
   for(var i = 0; i < md5itr; ++i) {
     // HMAC_hash(secret, A(i-1))
     hmac.start(null, null);
-    hmac.update(ai.getBytes());
+    hmac.update(ai.getBytes(), 'binary');
     ai.putBuffer(hmac.digest());
 
     // HMAC_hash(secret, A(i) + seed)
     hmac.start(null, null);
-    hmac.update(ai.bytes() + seed);
+    hmac.update(ai.bytes() + seed, 'binary');
     md5bytes.putBuffer(hmac.digest());
   }
 
   // do sha1 iterations
-  hmac.start('SHA1', s2);
+  hmac.start('SHA1', new ByteBuffer(s2, {encoding: 'binary'}));
   var sha1bytes = forge.util.createBuffer();
   ai.clear();
   ai.putBytes(seed);
   for(var i = 0; i < sha1itr; ++i) {
     // HMAC_hash(secret, A(i-1))
     hmac.start(null, null);
-    hmac.update(ai.getBytes());
+    hmac.update(ai.getBytes(), 'binary');
     ai.putBuffer(hmac.digest());
 
     // HMAC_hash(secret, A(i) + seed)
     hmac.start(null, null);
-    hmac.update(ai.bytes() + seed);
+    hmac.update(ai.bytes() + seed, 'binary');
     sha1bytes.putBuffer(hmac.digest());
   }
 
@@ -377,7 +377,7 @@ var hmac_sha1 = function(key, seqNum, record) {
   */
   var hmac = forge.hmac.create();
   hmac.start('SHA1', key);
-  var b = forge.util.createBuffer();
+  var b = new ByteBuffer();
   b.putInt32(seqNum[0]);
   b.putInt32(seqNum[1]);
   b.putByte(record.type);
@@ -385,7 +385,7 @@ var hmac_sha1 = function(key, seqNum, record) {
   b.putByte(record.version.minor);
   b.putInt16(record.length);
   b.putBytes(record.fragment.bytes());
-  hmac.update(b.getBytes());
+  hmac.update(b);
   return hmac.digest().getBytes();
 };
 
@@ -1552,8 +1552,8 @@ tls.handleCertificateVerify = function(c, record, length) {
     }
 
     // digest message now that it has been handled
-    c.session.md5.update(msgBytes);
-    c.session.sha1.update(msgBytes);
+    c.session.md5.update(msgBytes, 'binary');
+    c.session.sha1.update(msgBytes, 'binary');
   } catch(ex) {
     return c.error(c, {
       message: 'Bad signature in CertificateVerify.',
@@ -1833,8 +1833,8 @@ tls.handleFinished = function(c, record, length) {
   }
 
   // digest finished message now that it has been handled
-  c.session.md5.update(msgBytes);
-  c.session.sha1.update(msgBytes);
+  c.session.md5.update(msgBytes, 'binary');
+  c.session.sha1.update(msgBytes, 'binary');
 
   // resuming session as client or NOT resuming session as server
   if((c.session.resuming && client) || (!c.session.resuming && !client)) {
@@ -2052,8 +2052,8 @@ tls.handleHandshake = function(c, record) {
     if(type !== tls.HandshakeType.hello_request &&
       type !== tls.HandshakeType.certificate_verify &&
       type !== tls.HandshakeType.finished) {
-      c.session.md5.update(bytes);
-      c.session.sha1.update(bytes);
+      c.session.md5.update(bytes, 'binary');
+      c.session.sha1.update(bytes, 'binary');
     }
 
     // handle specific handshake type record
@@ -3389,8 +3389,8 @@ tls.queue = function(c, record) {
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
     var bytes = record.fragment.bytes();
-    c.session.md5.update(bytes);
-    c.session.sha1.update(bytes);
+    c.session.md5.update(bytes, 'binary');
+    c.session.sha1.update(bytes, 'binary');
     bytes = null;
   }
 

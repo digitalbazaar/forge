@@ -155,7 +155,7 @@ function _createKDF(kdf, md, counterStart, digestLength) {
 
       // digest 'x' and the counter and add the result to the key
       md.start();
-      md.update(x + c.getBytes());
+      md.update(x + c.getBytes(), 'binary');
       var hash = md.digest();
       key.putBytes(hash.getBytes(digestLength));
     }

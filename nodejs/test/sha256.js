@@ -11,7 +11,7 @@ function Tests(ASSERT, SHA256, UTIL) {
 
     it('should digest "abc"', function() {
       var md = SHA256.create();
-      md.update('abc');
+      md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
@@ -19,7 +19,7 @@ function Tests(ASSERT, SHA256, UTIL) {
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = SHA256.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'd7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592');
@@ -36,7 +36,8 @@ function Tests(ASSERT, SHA256, UTIL) {
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
       var md = SHA256.create();
       md.start();
-      md.update('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq');
+      md.update(
+        'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
       // do twice to check continuing digest
       ASSERT.equal(
         md.digest().toHex(),
@@ -49,7 +50,7 @@ function Tests(ASSERT, SHA256, UTIL) {
     it('should digest a long message', function() {
       // Note: might be too slow on old browsers
       var md = SHA256.create();
-      md.update(UTIL.fillString('a', 1000000));
+      md.update(UTIL.fillString('a', 1000000), 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         'cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0');

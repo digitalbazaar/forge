@@ -211,7 +211,7 @@ prng.create = function(plugin) {
     var md = ctx.plugin.md.create();
 
     // digest pool 0's entropy and restart it
-    md.update(ctx.pools[0].digest().getBytes());
+    md.update(ctx.pools[0].digest());
     ctx.pools[0].start();
 
     // digest the entropy of other pools whose index k meet the
@@ -221,13 +221,13 @@ prng.create = function(plugin) {
       // prevent signed numbers from being used
       k = (k === 31) ? 0x80000000 : (k << 2);
       if(k % ctx.reseeds === 0) {
-        md.update(ctx.pools[i].digest().getBytes());
+        md.update(ctx.pools[i].digest());
         ctx.pools[i].start();
       }
     }
 
     // get digest for key bytes and iterate again for seed bytes
-    var keyBytes = md.digest().getBytes();
+    var keyBytes = md.digest();
     md.start();
     md.update(keyBytes);
     var seedBytes = md.digest().getBytes();
@@ -343,7 +343,7 @@ prng.create = function(plugin) {
     // iterate over pools distributing entropy cyclically
     var count = bytes.length;
     for(var i = 0; i < count; ++i) {
-      ctx.pools[ctx.pool].update(bytes.substr(i, 1));
+      ctx.pools[ctx.pool].update(bytes.substr(i, 1), 'binary');
       ctx.pool = (ctx.pool === 31) ? 0 : ctx.pool + 1;
     }
   };

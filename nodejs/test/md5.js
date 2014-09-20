@@ -9,13 +9,13 @@ function Tests(ASSERT, MD5, UTIL) {
 
     it('should digest "abc"', function() {
       var md = MD5.create();
-      md.update('abc');
+      md.update('abc', 'utf8');
       ASSERT.equal(md.digest().toHex(), '900150983cd24fb0d6963f7d28e17f72');
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
       var md = MD5.create();
-      md.update('The quick brown fox jumps over the lazy dog');
+      md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(md.digest().toHex(), '9e107d9d372bb6826bd81d3542a419d6');
     });
 
@@ -28,8 +28,8 @@ function Tests(ASSERT, MD5, UTIL) {
     it('should digest "THIS IS A MESSAGE"', function() {
       var md = MD5.create();
       md.start();
-      md.update('THIS IS ');
-      md.update('A MESSAGE');
+      md.update('THIS IS ', 'utf8');
+      md.update('A MESSAGE', 'utf8');
       // do twice to check continuing digest
       ASSERT.equal(md.digest().toHex(), '78eebfd9d42958e3f31244f116ab7bbe');
       ASSERT.equal(md.digest().toHex(), '78eebfd9d42958e3f31244f116ab7bbe');
@@ -87,7 +87,7 @@ function Tests(ASSERT, MD5, UTIL) {
         '0826860a0c2ef94c7935e6215c3c4cd6b0e43e80cca396d913d36be');
 
       var md = MD5.create();
-      md.update(input);
+      md.update(input, 'binary');
       ASSERT.equal(md.digest().toHex(), 'd15a2da0e92c3da55dc573f885b6e653');
     });
   });
