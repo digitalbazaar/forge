@@ -735,9 +735,9 @@ var _parseExtensions = function(exts) {
       e.critical = false;
       if(ext.value[1].type === asn1.Type.BOOLEAN) {
         e.critical = asn1.derToBoolean(ext.value[1].value);
-        e.value = ext.value[2].value;
+        e.value = ext.value[2].value.copy();
       } else {
-        e.value = ext.value[1].value;
+        e.value = ext.value[1].value.copy();
       }
       // if the oid is known, get its name
       if(e.id in oids) {
@@ -749,12 +749,12 @@ var _parseExtensions = function(exts) {
           var ev = asn1.fromDer(e.value);
           var b2 = 0x00;
           var b3 = 0x00;
-          if(ev.value.length > 1) {
+          if(ev.value.length() > 1) {
             // skip first byte, just indicates unused bits which
             // will be padded with 0s anyway
             // get bytes with flag bits
             b2 = ev.value.at(1);
-            b3 = ev.value.length > 2 ? ev.value.at(2) : 0;
+            b3 = ev.value.length() > 2 ? ev.value.at(2) : 0;
           }
           // set flags
           e.digitalSignature = (b2 & 0x80) === 0x80;
@@ -804,7 +804,7 @@ var _parseExtensions = function(exts) {
           // get value as BIT STRING
           var ev = asn1.fromDer(e.value);
           var b2 = 0x00;
-          if(ev.value.length > 1) {
+          if(ev.value.length() > 1) {
             // skip first byte, just indicates unused bits which
             // will be padded with 0s anyway
             // get bytes with flag bits
@@ -834,7 +834,7 @@ var _parseExtensions = function(exts) {
 
             var altName = {
               type: gn.type,
-              value: gn.value
+              value: gn.value.copy()
             };
             e.altNames.push(altName);
 
@@ -850,11 +850,11 @@ var _parseExtensions = function(exts) {
             // IPAddress
             case 7:
               // convert to IPv4/IPv6 string representation
-              altName.ip = forge.util.bytesToIP(gn.value);
+              altName.ip = forge.util.bytesToIP(gn.value.bytes());
               break;
             // registeredID
             case 8:
-              altName.oid = gn.value;
+              altName.oid = gn.value.bytes();
               break;
             default:
               // unsupported
@@ -1430,6 +1430,9 @@ pki.createCertificate = function() {
                 // deprecated; assume value is OID (backwards-compatibility)
                 value = asn1.oidToDer(value);
               }
+            }
+            if(typeof value === 'string') {
+              value = new ByteBuffer(value, {encoding: 'binary'});
             }
             e.value.value.push(asn1.create(
               asn1.Class.CONTEXT_SPECIFIC, altName.type, false, value));
@@ -2235,9 +2238,11 @@ function _extensionsToAsn1(exts) {
     }
 
     var value = ext.value;
-    if(typeof ext.value !== 'string') {
+    if(value instanceof ByteBuffer) {
+      value = value.copy();
+    } else {
       // value is asn.1
-      value = asn1.toDer(value).getBytes();
+      value = asn1.toDer(value);
     }
 
     // extnValue (OCTET STRING)
@@ -2342,7 +2347,7 @@ function _signatureParametersToAsn1(oid, params) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
             params.hash.algorithmOid),
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, null)
         ])
       ]));
     }
