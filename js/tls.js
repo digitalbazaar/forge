@@ -1544,7 +1544,7 @@ tls.handleCertificateVerify = function(c, record, length) {
 
   try {
     var cert = c.session.clientCertificate;
-    if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
+    if(!cert.publicKey.verify(verify, msg.signature, 'EME-PKCS1-v1_5')) {
       throw new Error('CertificateVerify signature does not match.');
     }
 
@@ -1557,7 +1557,7 @@ tls.handleCertificateVerify = function(c, record, length) {
       send: true,
       alert: {
         level: tls.Alert.Level.fatal,
-        description: tls.Alert.Description.handshake_failure
+        description: tls.Alert.Description.decrypt_error
       }
     });
   }
@@ -3099,7 +3099,7 @@ tls.getClientSignature = function(c, callback) {
         }
       });
     } else {
-      b = privateKey.sign(b, null);
+      b = privateKey.sign(b, 'EME-PKCS1-v1_5');
     }
     callback(c, b);
   };
