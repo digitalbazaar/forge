@@ -81,7 +81,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md) {
        Here, INT(i) is a four-octet encoding of the integer i, most
        significant octet first. */
   var prf = forge.hmac.create();
-  prf.start(md, new ByteBuffer(p, {encoding: 'utf8'}));
+  prf.start(md, new ByteBuffer(p, 'utf8'));
   var dk = '';
   var xor, u_c, u_c1;
   for(var i = 1; i <= len; ++i) {

@@ -575,7 +575,7 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     }
 
     // use OpenSSL legacy key derivation
-    var iv = new ByteBuffer(msg.dekInfo.parameters, {encoding: 'hex'});
+    var iv = new ByteBuffer(msg.dekInfo.parameters, 'hex');
     var dk = evpBytesToKey(password, iv.bytes().substr(0, 8), dkLen);
     var decipher = decipherFn(dk, iv);
     decipher.update(msg.body);

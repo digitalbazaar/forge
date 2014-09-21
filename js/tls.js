@@ -304,7 +304,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
   var sha1itr = Math.ceil(length / 20);
 
   // do md5 iterations
-  hmac.start('MD5', new ByteBuffer(s1, {encoding: 'binary'}));
+  hmac.start('MD5', new ByteBuffer(s1, 'binary'));
   var md5bytes = forge.util.createBuffer();
   ai.putBytes(seed);
   for(var i = 0; i < md5itr; ++i) {
@@ -320,7 +320,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
   }
 
   // do sha1 iterations
-  hmac.start('SHA1', new ByteBuffer(s2, {encoding: 'binary'}));
+  hmac.start('SHA1', new ByteBuffer(s2, 'binary'));
   var sha1bytes = forge.util.createBuffer();
   ai.clear();
   ai.putBytes(seed);
@@ -2397,21 +2397,21 @@ tls.generateKeys = function(c, sp) {
   // split the key material into the MAC and encryption keys
   var rval = {
     client_write_MAC_key: new ByteBuffer(
-      km.getBytes(sp.mac_key_length), {encoding: 'binary'}),
+      km.getBytes(sp.mac_key_length), 'binary'),
     server_write_MAC_key: new ByteBuffer(
-      km.getBytes(sp.mac_key_length), {encoding: 'binary'}),
+      km.getBytes(sp.mac_key_length), 'binary'),
     client_write_key: new ByteBuffer(
-      km.getBytes(sp.enc_key_length), {encoding: 'binary'}),
+      km.getBytes(sp.enc_key_length), 'binary'),
     server_write_key: new ByteBuffer(
-      km.getBytes(sp.enc_key_length), {encoding: 'binary'})
+      km.getBytes(sp.enc_key_length), 'binary')
   };
 
   // include TLS 1.0 IVs
   if(tls10) {
     rval.client_write_IV = new ByteBuffer(
-      km.getBytes(sp.fixed_iv_length, {encoding: 'binary'}));
+      km.getBytes(sp.fixed_iv_length, 'binary'));
     rval.server_write_IV = new ByteBuffer(
-      km.getBytes(sp.fixed_iv_length, {encoding: 'binary'}));
+      km.getBytes(sp.fixed_iv_length, 'binary'));
   }
 
   return rval;

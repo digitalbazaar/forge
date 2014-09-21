@@ -331,7 +331,7 @@ pki.rsa.encrypt = function(m, key, bt) {
     pub = (bt === 0x02);
     eb = _encodePkcs1_v1_5(m, key, bt);
   } else {
-    eb = new ByteBuffer(m, {encoding: 'binary'});
+    eb = new ByteBuffer(m, 'binary');
   }
 
   // load encryption block as big integer 'x'
@@ -387,8 +387,7 @@ pki.rsa.decrypt = function(ed, key, pub, ml) {
 
   // convert encrypted data into a big integer
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var y = new BigInteger(
-    new ByteBuffer(ed, {encoding: 'binary'}).toString('hex'), 16);
+  var y = new BigInteger(new ByteBuffer(ed, 'binary').toString('hex'), 16);
 
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
@@ -862,7 +861,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
      // do rsa decryption w/o any decoding, then verify -- which does decoding
      // FIXME: d will change to a ByteBuffer
      var d = new ByteBuffer(
-       pki.rsa.decrypt(signature, key, true, false), {encoding: 'binary'});
+       pki.rsa.decrypt(signature, key, true, false), 'binary');
      return scheme.verify(digest, d, key.n.bitLength());
   };
 
@@ -927,7 +926,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
         decode: function(d, key) {
           return new ByteBuffer(
             forge.pkcs1.decode_rsa_oaep(key, d.bytes(), schemeOptions),
-            {encoding: 'binary'});
+            'binary');
         }
       };
     } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
@@ -937,8 +936,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     }
 
     // decode according to scheme
-    return scheme.decode(
-      new ByteBuffer(d, {encoding: 'binary'}), key, false).getBytes();
+    return scheme.decode(new ByteBuffer(d, 'binary'), key, false).getBytes();
   };
 
   /**
@@ -1671,7 +1669,7 @@ function _bnToBuffer(b) {
   if(hex[0] >= '8') {
     hex = '00' + hex;
   }
-  return new ByteBuffer(hex, {encoding: 'hex'});
+  return new ByteBuffer(hex, 'hex');
 }
 
 /**

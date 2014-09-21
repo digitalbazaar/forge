@@ -167,7 +167,7 @@ var _recipientInfoToAsn1 = function(obj) {
       forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
       // Serial
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        new ByteBuffer(obj.serialNumber, {encoding: 'hex'}))
+        new ByteBuffer(obj.serialNumber, 'hex'))
     ]),
     // KeyEncryptionAlgorithmIdentifier
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -179,7 +179,7 @@ var _recipientInfoToAsn1 = function(obj) {
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      new ByteBuffer(obj.encryptedContent.content, {encoding: 'binary'}))
+      new ByteBuffer(obj.encryptedContent.content, 'binary'))
   ]);
 };
 
@@ -656,8 +656,7 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.desCBC:
             var key = privKey.decrypt(
               recipient.encryptedContent.content.bytes());
-            msg.encryptedContent.key = new ByteBuffer(
-              key, {encoding: 'binary'});
+            msg.encryptedContent.key = new ByteBuffer(key, 'binary');
             break;
 
           default:

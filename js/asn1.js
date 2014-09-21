@@ -626,7 +626,7 @@ asn1.nativeToDer = function(value, tagClass, type) {
     if(typeof value !== 'string') {
       throw new TypeError('value must be a string for type UTF8.');
     }
-    return new ByteBuffer(value, {encoding: 'utf8'});
+    return new ByteBuffer(value, 'utf8');
   case asn1.Type.PRINTABLESTRING:
     if(typeof value !== 'string') {
       throw new TypeError('value must be a string for type PRINTABLESTRING.');
@@ -636,7 +636,7 @@ asn1.nativeToDer = function(value, tagClass, type) {
     if(typeof value !== 'string') {
       throw new TypeError('value must be a string for type IA5STRING.');
     }
-    return new ByteBuffer(value, {encoding: 'binary'});
+    return new ByteBuffer(value, 'binary');
   case asn1.Type.UTCTIME:
     if(typeof value !== 'string' && !(value instanceof Date)) {
       throw new TypeError('value must be a string or Date for type UTCTIME.');
@@ -1016,7 +1016,7 @@ asn1.dateToGeneralizedTime = function(date) {
  * @return the UTCTime value as a ByteBuffer.
  */
 asn1.utcTimeToDer = function(date) {
-  return new ByteBuffer(asn1.dateToUtcTime(date), {encoding: 'binary'});
+  return new ByteBuffer(asn1.dateToUtcTime(date), 'binary');
 };
 
 /**
@@ -1027,7 +1027,7 @@ asn1.utcTimeToDer = function(date) {
  * @return the GeneralizedTime value as a ByteBuffer.
  */
 asn1.generalizedTimeToDer = function(date) {
-  return new ByteBuffer(asn1.dateToGeneralizedTime(date), {encoding: 'binary'});
+  return new ByteBuffer(asn1.dateToGeneralizedTime(date), 'binary');
 };
 
 /**

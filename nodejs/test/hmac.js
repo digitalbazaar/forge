@@ -6,7 +6,7 @@ function Tests(ASSERT, HMAC, UTIL) {
   describe('hmac', function() {
     it('should md5 hash "Hi There", 16-byte key', function() {
       var key = new ByteBuffer(
-        '0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b', {encoding: 'hex'});
+        '0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b', 'hex');
       var hmac = HMAC.create();
       hmac.start('MD5', key);
       hmac.update('Hi There', 'utf8');
@@ -25,7 +25,7 @@ function Tests(ASSERT, HMAC, UTIL) {
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', {encoding: 'hex'});
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'hex');
       var hmac = HMAC.create();
       hmac.start('MD5', key);
       hmac.update(
@@ -35,7 +35,7 @@ function Tests(ASSERT, HMAC, UTIL) {
 
     it('should sha1 hash "Hi There", 20-byte key', function() {
       var key = new ByteBuffer(
-        '0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b', {encoding: 'hex'});
+        '0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b', 'hex');
       var hmac = HMAC.create();
       hmac.start('SHA1', key);
       hmac.update('Hi There', 'utf8');
@@ -56,7 +56,7 @@ function Tests(ASSERT, HMAC, UTIL) {
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' +
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', {encoding: 'hex'});
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'hex');
       var hmac = HMAC.create();
       hmac.start('SHA1', key);
       hmac.update(

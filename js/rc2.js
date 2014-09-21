@@ -254,7 +254,7 @@ var createCipher = function(key, bits, encrypt) {
       if(iv) {
         /* CBC mode */
         if(typeof iv === 'string') {
-          iv = new ByteBuffer(iv, {encoding: 'binary'});
+          iv = new ByteBuffer(iv, 'binary');
         } else {
           iv = iv.copy();
         }

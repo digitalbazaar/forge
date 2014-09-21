@@ -11,7 +11,7 @@ function Tests(ASSERT, ASN1, UTIL) {
     });
 
     it('should convert an OID from DER', function() {
-      var der = new ByteBuffer('2a864886f70d', {encoding: 'hex'});
+      var der = new ByteBuffer('2a864886f70d', 'hex');
       ASSERT.equal(ASN1.derToOid(der), '1.2.840.113549');
     });
 
@@ -76,77 +76,77 @@ function Tests(ASSERT, ASN1, UTIL) {
     });
 
     it('should convert INTEGER 0 from DER', function() {
-      var der = new ByteBuffer('00', {encoding: 'hex'});
+      var der = new ByteBuffer('00', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 0);
     });
 
     it('should convert INTEGER 1 from DER', function() {
-      var der = new ByteBuffer('01', {encoding: 'hex'});
+      var der = new ByteBuffer('01', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 1);
     });
 
     it('should convert INTEGER 127 from DER', function() {
-      var der = new ByteBuffer('7f', {encoding: 'hex'});
+      var der = new ByteBuffer('7f', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 127);
     });
 
     it('should convert INTEGER 128 from DER', function() {
-      var der = new ByteBuffer('0080', {encoding: 'hex'});
+      var der = new ByteBuffer('0080', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 128);
     });
 
     it('should convert INTEGER 256 from DER', function() {
-      var der = new ByteBuffer('0100', {encoding: 'hex'});
+      var der = new ByteBuffer('0100', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 256);
     });
 
     it('should convert INTEGER -128 from DER', function() {
-      var der = new ByteBuffer('80', {encoding: 'hex'});
+      var der = new ByteBuffer('80', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -128);
     });
 
     it('should convert INTEGER -129 from DER', function() {
-      var der = new ByteBuffer('ff7f', {encoding: 'hex'});
+      var der = new ByteBuffer('ff7f', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -129);
     });
 
     it('should convert INTEGER 32768 from DER', function() {
-      var der = new ByteBuffer('008000', {encoding: 'hex'});
+      var der = new ByteBuffer('008000', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 32768);
     });
 
     it('should convert INTEGER -32768 from DER', function() {
-      var der = new ByteBuffer('8000', {encoding: 'hex'});
+      var der = new ByteBuffer('8000', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -32768);
     });
 
     it('should convert INTEGER -32769 from DER', function() {
-      var der = new ByteBuffer('ff7fff', {encoding: 'hex'});
+      var der = new ByteBuffer('ff7fff', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -32769);
     });
 
     it('should convert INTEGER 8388608 from DER', function() {
-      var der = new ByteBuffer('00800000', {encoding: 'hex'});
+      var der = new ByteBuffer('00800000', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 8388608);
     });
 
     it('should convert INTEGER -8388608 from DER', function() {
-      var der = new ByteBuffer('800000', {encoding: 'hex'});
+      var der = new ByteBuffer('800000', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -8388608);
     });
 
     it('should convert INTEGER -8388609 from DER', function() {
-      var der = new ByteBuffer('ff7fffff', {encoding: 'hex'});
+      var der = new ByteBuffer('ff7fffff', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -8388609);
     });
 
     it('should convert INTEGER 2147483647 from DER', function() {
-      var der = new ByteBuffer('7fffffff', {encoding: 'hex'});
+      var der = new ByteBuffer('7fffffff', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), 2147483647);
     });
 
     it('should convert INTEGER -2147483648 from DER', function() {
-      var der = new ByteBuffer('80000000', {encoding: 'hex'});
+      var der = new ByteBuffer('80000000', 'hex');
       ASSERT.equal(ASN1.derToInteger(der), -2147483648);
     });
 

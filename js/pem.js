@@ -117,7 +117,7 @@ pem.decode = function(str) {
       contentDomain: null,
       dekInfo: null,
       headers: [],
-      body: new ByteBuffer(match[3], {encoding: 'base64'})
+      body: new ByteBuffer(match[3], 'base64')
     };
     rval.push(msg);
 

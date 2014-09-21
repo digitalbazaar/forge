@@ -113,15 +113,18 @@ util.ByteBuffer.concat = function(list) {
  *
  * @param [b] the bytes to wrap (either encoded as string, one byte per
  *          character, or as an ArrayBuffer or Typed Array).
- * @param [options] the options to use:
+ * @param [encoding|options] the encoding for the first parameter or the
+ *          options to use:
  *          [encoding] the encoding ('binary', 'utf8', 'utf16', 'hex') for the
  *            first parameter, if it is a string (default: 'binary').
  */
 function ByteStringBuffer(b, options) {
-  // FIXME: support 'options' as a string -- it can just be the encoding
-  // for 'b'
   // FIXME: if a string is given, force an encoding to be given as well
   // TODO: update to match DataBuffer API
+
+  if(typeof options === 'string') {
+    options = {encoding: options};
+  }
   options = options || {};
 
   // the data in this buffer
@@ -716,7 +719,8 @@ util.ByteStringBuffer.prototype.toString = function(encoding, options) {
  * given as options.
  *
  * @param [b] the initial bytes for this buffer.
- * @param [options] the options to use:
+ * @param [encoding|options] the encoding for the first parameter or the
+ *          options to use:
  *          [readOffset] the starting read offset to use (default: 0).
  *          [writeOffset] the starting write offset to use (default: the
  *            length of the first parameter).
@@ -726,12 +730,11 @@ util.ByteStringBuffer.prototype.toString = function(encoding, options) {
  *            first parameter, if it is a string (default: 'binary').
  */
 function DataBuffer(b, options) {
-  // FIXME: support 'options' as a string -- it can just be the encoding
-  // for 'b'
   // FIXME: support 'b' as an array of integers representing byte values
   // FIXME: if a string is given, force an encoding to be given as well
-
-  // default options
+  if(typeof options === 'string') {
+    options = {encoding: options};
+  }
   options = options || {};
 
   // pointers for read from/write to buffer

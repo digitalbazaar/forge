@@ -853,7 +853,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-            new ByteBuffer(localKeyId, {encoding: 'binary'}))
+            new ByteBuffer(localKeyId, 'binary'))
         ])
       ]));
   }

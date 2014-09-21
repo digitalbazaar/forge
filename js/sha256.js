@@ -89,7 +89,7 @@ sha256.create = function() {
     } else if(!encoding) {
       throw new Error('String encoding must be specified.');
     } else {
-      msg = new ByteBuffer(msg, {encoding: encoding});
+      msg = new ByteBuffer(msg, encoding);
     }
 
     // update message length

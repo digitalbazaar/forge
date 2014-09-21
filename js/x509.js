@@ -1434,7 +1434,7 @@ pki.createCertificate = function() {
               }
             }
             if(typeof value === 'string') {
-              value = new ByteBuffer(value, {encoding: 'binary'});
+              value = new ByteBuffer(value, 'binary');
             }
             e.value.value.push(asn1.create(
               asn1.Class.CONTEXT_SPECIFIC, altName.type, false, value));
@@ -2445,7 +2445,7 @@ pki.getTBSCertificate = function(cert) {
     ]),
     // serialNumber
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      new ByteBuffer(cert.serialNumber, {encoding: 'hex'})),
+      new ByteBuffer(cert.serialNumber, 'hex')),
     // signature
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // algorithm
