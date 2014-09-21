@@ -1544,9 +1544,6 @@ tls.handleCertificateVerify = function(c, record, length) {
 
   try {
     var cert = c.session.clientCertificate;
-    /*b = forge.pki.rsa.decrypt(
-      msg.signature, cert.publicKey, true, verify.length);
-    if(b !== verify) {*/
     if(!cert.publicKey.verify(verify, msg.signature, 'NONE')) {
       throw new Error('CertificateVerify signature does not match.');
     }
