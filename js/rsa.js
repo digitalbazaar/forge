@@ -653,8 +653,8 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
 
     if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = {
-        encode: function(m, key, pub) {
-          return forge.pkcs1.encode_eme_pkcs1_v1_5(key, m, 0x02).getBytes();
+        encode: function(m, key) {
+          return forge.pkcs1.encode_rsaes(key, m);
         }
       };
     } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
@@ -663,7 +663,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
           return forge.pkcs1.encode_rsa_oaep(key, m, schemeOptions);
         }
       };
-    } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+    } else if(scheme === 'NONE' || scheme === null) {
       scheme = { encode: function(e) { return e; } };
     } else if(typeof scheme === 'string') {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
@@ -717,25 +717,19 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
     if(scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = {
         verify: function(digest, d) {
-          // remove padding
-          d = forge.pkcs1.decode_eme_pkcs1_v1_5(key, d, true);
-          // decode
-          d = forge.pkcs1.decode_emsa_pkcs1_v1_5(d);
           // FIXME: digest to become a ByteBuffer, use ByteBuffer.equals?
-          return d.getBytes() === digest;
+          return forge.pkcs1.decode_rsassa(key, d).getBytes() === digest;
         }
       };
     } else if(scheme === 'EME-PKCS1-V1_5') {
       scheme = {
-        verify: function(d) {
-          return forge.pkcs1.encode_eme_pkcs1_v1_5(key, d, 0x02).getBytes();
+        verify: function(digest, d) {
+          return forge.pkcs1.decode_eme_v1_5(key, d).getBytes() === digest;
         }
       };
-    } else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+    } else if(scheme === 'NONE' || scheme === null) {
       scheme = {
         verify: function(digest, d) {
-          // remove padding
-          d = forge.pkcs1.decode_eme_pkcs1_v1_5(key, d, true);
           // FIXME: digest to become a ByteBuffer, use ByteBuffer.equals?
           return d.getBytes() === digest;
         }
@@ -806,7 +800,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
 
     if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = {decode: function(d, key) {
-        return forge.pkcs1.decode_eme_pkcs1_v1_5(key, d);
+        return forge.pkcs1.decode_rsaes(key, d);
       }};
     } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
@@ -816,7 +810,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
             'binary');
         }
       };
-    } else if(['RAW', 'NONE', 'NULL', null].indexOf(scheme) !== -1) {
+    } else if(scheme === 'NONE' || scheme === null) {
       scheme = {decode: function(d) {return d;}};
     } else {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
@@ -866,17 +860,16 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     if(scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = {
         encode: function(d) {
-          d = forge.pkcs1.encode_emsa_pkcs1_v1_5(d);
-          return forge.pkcs1.encode_eme_pkcs1_v1_5(key, d, 0x01).getBytes();
+          return forge.pkcs1.encode_rsassa(key, d);
         }
       };
     } else if(scheme === 'EME-PKCS1-V1_5') {
       scheme = {
         encode: function(d) {
-          return forge.pkcs1.encode_eme_pkcs1_v1_5(key, d, 0x02).getBytes();
+          return forge.pkcs1.encode_eme_v1_5(key, d, 0x02).getBytes();
         }
       };
-    } else if(scheme === 'NONE' || scheme === 'NULL' || scheme === null) {
+    } else if(scheme === 'NONE' || scheme === null) {
       scheme = {encode: function() {return md;}};
     } else if(typeof scheme === 'string') {
       throw new Error('Invalid signature scheme: ' + scheme);

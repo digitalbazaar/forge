@@ -56,11 +56,62 @@ var asn1 = forge.asn1;
 var oids = forge.pki.oids;
 var ByteBuffer = forge.util.ByteBuffer;
 
-// TODO: define pkcs1.encode_rsaes
-// TODO: rename encoding methods with pkcs1 in their name (redundant)
+/**
+ * Encodes the given message using the given key and digest using
+ * RSAES-PKCS1-v1_5. This encoding is an encryption/decryption scheme
+ * standardized in PKCS#1 v1.5.
+ *
+ * @param key the RSA key to use.
+ * @param message the message, as a ByteBuffer, to encode.
+ *
+ * @return the encoded message as a ByteBuffer.
+ */
+pkcs1.encode_rsaes = function(key, message) {
+  return pkcs1.encode_eme_v1_5(key, message, 0x02).getBytes();
+};
 
 /**
- * Wrap digest in DigestInfo object.
+ * Decodes a message previously encoded via RSAES-PKCS1-v1_5.
+ *
+ * @param key the RSA key to use.
+ * @param em the encoded message to decode, as a ByteBuffer.
+ *
+ * @return the decoded message, as a ByteBuffer.
+ */
+pkcs1.decode_rsaes = function(key, em) {
+  return pkcs1.decode_eme_v1_5(key, em);
+};
+
+/**
+ * Encodes the given message using the given key and digest using
+ * RSASSA-PKCS1-v1_5. This encoding is a signature scheme with appendix
+ * standardized in PKCS#1 v1.5.
+ *
+ * @param key the RSA key to use.
+ * @param message the message, as a ByteBuffer, to encode.
+ *
+ * @return the encoded message as a ByteBuffer.
+ */
+pkcs1.encode_rsassa = function(key, message) {
+  var em = pkcs1.encode_emsa_v1_5(message);
+  return pkcs1.encode_eme_v1_5(key, em, 0x01).getBytes();
+};
+
+/**
+ * Decodes a message previously encoded via RSASSA-PKCS1-v1_5.
+ *
+ * @param key the RSA key to use.
+ * @param em the encoded message to decode, as a ByteBuffer.
+ *
+ * @return the decoded message, as a ByteBuffer.
+ */
+pkcs1.decode_rsassa = function(key, em) {
+  var m = pkcs1.decode_eme_v1_5(key, em);
+  return pkcs1.decode_emsa_v1_5(m);
+};
+
+/**
+ * Encodes a message digest by wrapping it in a DigestInfo object.
  *
  * This function implements EMSA-PKCS1-v1_5-ENCODE as per RFC 3447.
  *
@@ -74,9 +125,9 @@ var ByteBuffer = forge.util.ByteBuffer;
  *
  * @param md the message digest object with the hash to sign.
  *
- * @return the encoded message (ready for RSA encrytion)
+ * @return the encoded message, as a ByteBuffer.
  */
-pkcs1.encode_emsa_pkcs1_v1_5 = function(md) {
+pkcs1.encode_emsa_v1_5 = function(md) {
   // get the oid for the algorithm
   var oid;
   if(md.algorithm in oids) {
@@ -111,7 +162,7 @@ pkcs1.encode_emsa_pkcs1_v1_5 = function(md) {
  *
  * @return the decoded message, as a ByteBuffer.
  */
-pkcs1.decode_emsa_pkcs1_v1_5 = function(em) {
+pkcs1.decode_emsa_v1_5 = function(em) {
   // encoded is ASN.1 DER-encoded DigestInfo
   var obj = asn1.fromDer(em);
   // TODO: validate DigestInfo
@@ -124,13 +175,18 @@ pkcs1.decode_emsa_pkcs1_v1_5 = function(em) {
  * Encodes a message using EME-PKCS1-v1_5 padding.
  *
  * @param key the RSA key to use.
- * @param m the message to encode.
- * @param bt the block type to use, i.e. either 0x01 (for signing) or 0x02
- *          (for encryption).
+ * @param m the message to encode, as a ByteBuffer.
+ * @param blockType the block type to use, which can be 0x00, 0x01, or 0x02;
+ *          0x01 is used by RSASSA (signing) and 0x02 is used by RSAES
+ *          (encryption) and by TLS "digitally-signed" data.
  *
- * @return the padded byte buffer.
+ * @return the encoded message as a ByteBuffer.
  */
-pkcs1.encode_eme_pkcs1_v1_5 = function(key, m, bt) {
+pkcs1.encode_eme_v1_5 = function(key, m, blockType) {
+  if(blockType !== 0x00 && blockType !== 0x01 && blockType !== 0x02) {
+    throw new Error('blockType must be 0, 1, or 2.');
+  }
+
   var eb = new ByteBuffer();
 
   // get the length of the modulus in bytes
@@ -151,30 +207,48 @@ pkcs1.encode_eme_pkcs1_v1_5 = function(key, m, bt) {
 
     The block type BT shall be a single octet indicating the structure of
     the encryption block. For this version of the document it shall have
-    value 00, 01, or 02. For a private-key operation, the block type
-    shall be 00 or 01. For a public-key operation, it shall be 02.
+    value 00, 01, or 02.
 
     The padding string PS shall consist of k-3-||D|| octets. For block
     type 00, the octets shall have value 00; for block type 01, they
     shall have value FF; and for block type 02, they shall be
     pseudorandomly generated and nonzero. This makes the length of the
-    encryption block EB equal to k. */
+    encryption block EB equal to k.
+
+    Notes:
+
+    1. The leading 00 octet ensures that the encryption block, converted to
+    an integer, is less than the modulus.
+
+    2. For block type 00, the data D must begin with a nonzero octet or
+    have known length so that the encryption block can be parsed unambiguously.
+    For block types 01 and 02, the encryption block can be parsed unambiguously
+    since the padding string PS contains no octets with value 00 and the
+    padding string is separated from the data D by an octet with value 00.
+
+    3. Block type 01 is recommended for private-key operations. Block type 01
+    has the property that the encryption block, converted to an integer, is
+    guaranteed to be large, which prevents certain attacks of the kind proposed
+    by Desmedt and Odlyzko.
+
+    4. Block types 01 and 02 are compatible with PEM RSA encryption of
+    content-encryption keys and message digests as described in RFC 1423. */
 
   // build the encryption block
   eb.putByte(0x00);
-  eb.putByte(bt);
+  eb.putByte(blockType);
 
   // create the padding
   var padNum = k - 3 - m.length;
   var padByte;
   // private key op
-  if(bt === 0x00 || bt === 0x01) {
-    padByte = (bt === 0x00) ? 0x00 : 0xFF;
+  if(blockType === 0x00 || blockType === 0x01) {
+    padByte = (blockType === 0x00 ? 0x00 : 0xFF);
     for(var i = 0; i < padNum; ++i) {
       eb.putByte(padByte);
     }
   } else {
-    // public key op
+    // public key op (or TLS "digitally-signed" signature)
     // pad with random non-zero values
     while(padNum > 0) {
       var numZeros = 0;
@@ -202,13 +276,13 @@ pkcs1.encode_eme_pkcs1_v1_5 = function(key, m, bt) {
  * Decodes a message that was encoded using EME-PKCS1-v1_5 padding.
  *
  * @param key the RSA key to use.
- * @param em the message to decode.
- * @param pub true if the key is a public key, false if it is private.
- * @param ml the message length, if specified.
+ * @param em the message to decode, as a ByteBuffer.
+ * @param ml the message length, if specified (required if block type 0x00
+ *          encoding was used).
  *
  * @return the decoded bytes in a ByteBuffer.
  */
-pkcs1.decode_eme_pkcs1_v1_5 = function(key, em, pub, ml) {
+pkcs1.decode_eme_v1_5 = function(key, em, ml) {
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
 
@@ -226,10 +300,8 @@ pkcs1.decode_eme_pkcs1_v1_5 = function(key, em, pub, ml) {
   var eb = em.copy();
   var first = eb.getByte();
   var bt = eb.getByte();
-  if(first !== 0x00 ||
-    (pub && bt !== 0x00 && bt !== 0x01) ||
-    (!pub && bt != 0x02) ||
-    (pub && bt === 0x00 && typeof(ml) === 'undefined')) {
+  if(first !== 0x00 || !(bt >= 0x00 && bt <= 0x02) ||
+    (bt === 0x00 && typeof(ml) === 'undefined')) {
     throw new Error('Encryption block is invalid.');
   }
 
@@ -275,8 +347,8 @@ pkcs1.decode_eme_pkcs1_v1_5 = function(key, em, pub, ml) {
 };
 
 /**
- * Encode the given RSAES-OAEP message (M) using key, with optional label (L)
- * and seed.
+ * Encodes the given message (M) using the given key, optional label (L), and
+ * seed using RSAES-OAEP.
  *
  * This method does not perform RSA encryption, it only encodes the message
  * using RSAES-OAEP.
@@ -328,7 +400,9 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var keyLength = Math.ceil(key.n.bitLength() / 8);
   var maxLength = keyLength - 2 * md.digestLength - 2;
   if(message.length > maxLength) {
-    var error = new Error('RSAES-OAEP input message length is too long.');
+    var error = new Error(
+      'RSAES-OAEP input message length is too long; message length=' +
+      message.length + ', max length=' + maxLength);
     error.length = message.length;
     error.maxLength = maxLength;
     throw error;
@@ -351,8 +425,10 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   if(!seed) {
     seed = forge.random.getBytes(md.digestLength);
   } else if(seed.length !== md.digestLength) {
-    var error = new Error('Invalid RSAES-OAEP seed. The seed length must ' +
-      'match the digest length.')
+    var error = new Error(
+      'Invalid RSAES-OAEP seed. The seed length must match the digest ' +
+      'length; seed length=' + seed.length +
+      ', digest length=' + md.digestLength);
     error.seedLength = seed.length;
     error.digestLength = md.digestLength;
     throw error;
@@ -369,8 +445,8 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
 };
 
 /**
- * Decode the given RSAES-OAEP encoded message (EM) using key, with optional
- * label (L).
+ * Decodes the given RSAES-OAEP encoded message (EM) using the given key
+ * and optional label (L).
  *
  * This method does not perform RSA decryption, it only decodes the message
  * using RSAES-OAEP.

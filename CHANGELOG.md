@@ -30,6 +30,8 @@
 - **pki.rsa.encrypt** and **pki.rsa.decrypt** have been removed, use
   **publicKey.encrypt**, **publicKey.verify**, **privateKey.decrypt** or
   **privateKey.sign** on a public or private key object.
+- 'NULL' and 'RAW' are no longer valid signature schemes, use their alias
+  'NONE' or pass **null**.
 - Using a 'NONE' or null signature scheme when generating an RSA signature
   will now use raw RSA encryption; previously EME-PKCS1-v1_5 (PKCS#1 v1.5
   padding block type 2) was applied. To apply this padding use: 'EME-PKCS1-v1_5'
