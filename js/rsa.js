@@ -847,9 +847,6 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
       code like the use of an encoding block type identifier 'bt' will
       eventually be removed. */
 
-    // private key operation
-    var bt = false;
-
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     } else if(scheme === undefined) {
@@ -877,7 +874,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
 
     // encode and then encrypt
     var d = scheme.encode(md, key.n.bitLength());
-    return _rsaRawEncrypt(d, key, bt);
+    return _rsaRawEncrypt(d, key, false);
   };
 
   return key;
@@ -1087,26 +1084,13 @@ pki.publicKeyToRSAPublicKey = function(key) {
  *
  * Performs RSA encryption.
  *
- * The parameter bt controls whether to put padding bytes before the
- * message passed in. Set bt to either true or false to disable padding
- * completely (in order to handle e.g. EMSA-PSS encoding seperately before),
- * signaling whether the encryption operation is a public key operation
- * (i.e. encrypting data) or not, i.e. private key operation (data signing).
- *
- * For PKCS#1 v1.5 padding pass in the block type to use, i.e. either 0x01
- * (for signing) or 0x02 (for encryption). The key operation mode (private
- * or public) is derived from this flag in that case).
- *
  * @param m the message to encrypt as a byte string.
  * @param key the RSA key to use.
- * @param bt for PKCS#1 v1.5 padding, the block type to use
- *   (0x01 for private key, 0x02 for public),
- *   to disable padding: true = public key, false = private key.
+ * @param pub true for a public key operation, false for a private key.
  *
  * @return the encrypted bytes as a string.
  */
-function _rsaRawEncrypt(m, key, bt) {
-  var pub = bt;
+function _rsaRawEncrypt(m, key, pub) {
   var eb = new ByteBuffer(m, 'binary');
 
   // get the length of the modulus in bytes
