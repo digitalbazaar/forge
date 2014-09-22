@@ -1123,11 +1123,6 @@ function _rsaRawEncrypt(m, key, pub) {
  *
  * Performs RSA decryption.
  *
- * The parameter ml controls whether to apply PKCS#1 v1.5 padding
- * or not.  Set ml = false to disable padding removal completely
- * (in order to handle e.g. EMSA-PSS later on) and simply pass back
- * the RSA encryption block.
- *
  * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
  * @param pub true for a public key operation, false for private.
