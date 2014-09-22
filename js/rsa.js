@@ -714,6 +714,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       scheme = 'RSASSA-PKCS1-V1_5';
     }
 
+    // TODO: simplify scheme.verify
     if(scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = {
         verify: function(digest, d) {
@@ -795,9 +796,10 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
       scheme = 'RSAES-PKCS1-V1_5';
     }
 
-    // do rsa decryption w/o any decoding
-    var d = _rsaRawDecrypt(data, key, false, false);
+    // do rsa decryption
+    var d = _rsaRawDecrypt(data, key, false);
 
+    // TODO: simplify scheme.decode
     if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = {decode: function(d, key) {
         return forge.pkcs1.decode_rsaes(key, d);
@@ -1107,12 +1109,8 @@ function _rsaRawEncrypt(m, key, pub) {
   // bytes than k, then prepend zero bytes to fill up ed
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var yhex = y.toString(16);
-  var ed = new ByteBuffer();
   var zeros = k - Math.ceil(yhex.length / 2);
-  while(zeros > 0) {
-    ed.putByte(0x00);
-    --zeros;
-  }
+  var ed = new ByteBuffer().fillWithByte(0x00, zeros);
   ed.putBytes(forge.util.hexToBytes(yhex));
   return ed.getBytes();
 }
@@ -1158,12 +1156,8 @@ function _rsaRawDecrypt(ed, key, pub) {
   // prepend zero bytes to fill up eb
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var xhex = x.toString(16);
-  var eb = new ByteBuffer();
   var zeros = k - Math.ceil(xhex.length / 2);
-  while(zeros > 0) {
-    eb.putByte(0x00);
-    --zeros;
-  }
+  var eb = new ByteBuffer().fillWithByte(0x00, zeros);
   eb.putBytes(forge.util.hexToBytes(xhex));
 
   // return message
