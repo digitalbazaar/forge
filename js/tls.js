@@ -3521,9 +3521,6 @@ tls.verifyCertificateChain = function(c, chain) {
     // verify chain
     forge.pki.verifyCertificateChain(c.caStore, chain,
       function verify(vfd, depth, chain) {
-        // convert pki.certificateError to tls alert description
-        var desc = _certErrorToAlertDesc(vfd);
-
         // call application callback
         var ret = c.verify(c, vfd, depth, chain);
         if(ret !== true) {
