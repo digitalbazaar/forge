@@ -56,6 +56,9 @@ var asn1 = forge.asn1;
 var oids = forge.pki.oids;
 var ByteBuffer = forge.util.ByteBuffer;
 
+// TODO: define pkcs1.encode_rsaes
+// TODO: rename encoding methods with pkcs1 in their name (redundant)
+
 /**
  * Wrap digest in DigestInfo object.
  *
