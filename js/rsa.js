@@ -1098,6 +1098,7 @@ function _rsaRawEncrypt(m, key, pub) {
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
 
+  // OS2IP (RFC 3447)
   // load encryption block as big integer 'x'
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var x = new BigInteger(eb.toHex(), 16);
@@ -1105,6 +1106,7 @@ function _rsaRawEncrypt(m, key, pub) {
   // do RSA encryption
   var y = _rsaModPow(x, key, pub);
 
+  // I2OSP (RFC 3447)
   // convert y into the encrypted data byte string, if y is shorter in
   // bytes than k, then prepend zero bytes to fill up ed
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
@@ -1139,6 +1141,7 @@ function _rsaRawDecrypt(ed, key, pub) {
     throw error;
   }
 
+  // OS2IP (RFC 3447)
   // convert encrypted data into a big integer
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
   var y = new BigInteger(new ByteBuffer(ed, 'binary').toString('hex'), 16);
@@ -1152,6 +1155,7 @@ function _rsaRawDecrypt(ed, key, pub) {
   // do RSA decryption
   var x = _rsaModPow(y, key, pub);
 
+  // I2OSP (RFC 3447)
   // create the encryption block, if x is shorter in bytes than k, then
   // prepend zero bytes to fill up eb
   // FIXME: hex conversion inefficient, get BigInteger w/byte strings
