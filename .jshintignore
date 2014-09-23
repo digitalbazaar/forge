@@ -1,4 +1,5 @@
 js/forge.bundle.js
+js/forge.min.js
 minify.js
 nodejs/build.js
 nodejs/minify.js
