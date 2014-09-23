@@ -12,6 +12,10 @@
     },
     "scripts": {
         "test": "mocha -R spec test/*.js",
+        "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 10000 -u exports -R spec test/*.js",
         "run": "node server"
+    },
+    "devDependencies": {
+        "istanbul": "~0.3.2"
     }
 }

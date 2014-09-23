@@ -2,6 +2,11 @@ var server = require('../server');
 var grunt = require('grunt');
 
 describe('browser', function() {
+  // skip during coverage test
+  if(process.env.running_under_istanbul) {
+    return;
+  }
+
   it('should run tests', function(done) {
     this.timeout(60 * 1000 * 5);
 
