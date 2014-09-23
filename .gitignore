@@ -19,4 +19,5 @@ dist
 js/forge.bundle.js
 js/forge.min.js
 node_modules
+nodejs/coverage
 tests/forge
