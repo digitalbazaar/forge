@@ -19,7 +19,7 @@ describe('browser', function() {
         mocha: {
           all: {
             options: {
-              reporter: 'List',
+              reporter: 'Spec',
               urls: ['http://localhost:' + info.port + '/index.html']
             }
           }

@@ -11,9 +11,9 @@
     "grunt-mocha": "~0.4.11"
   },
   "scripts": {
-    "test": "mocha -t 10000 -R spec test/*.js",
-    "test-node": "mocha -R spec -ig \"browser\" test/*.js",
-    "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 10000 -u exports -R spec test/*.js",
+    "test": "mocha -t 20000 -R spec test/*.js",
+    "test-node": "mocha -t 20000 -R spec -ig \"browser\" test/*.js",
+    "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 20000 -u exports -R spec test/*.js",
     "run": "node server"
   },
   "devDependencies": {

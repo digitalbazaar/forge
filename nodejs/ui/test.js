@@ -1,35 +1,38 @@
 var ASSERT = chai.assert;
 mocha.setup({
-    ui: 'bdd'
+  ui: 'bdd',
+  timeout: 20000
 });
 requirejs.config({
-    paths: {
-        forge: 'forge',
-        test: 'test'
-    }
+  paths: {
+    forge: 'forge',
+    test: 'test'
+  }
 });
 requirejs([
-    'test/util',
-    'test/md5',
-    'test/sha1',
-    'test/sha256',
-    'test/hmac',
-    'test/pbkdf2',
-    'test/mgf1',
-    'test/random',
-    'test/asn1',
-    'test/pem',
-    'test/rsa',
-    'test/kem',
-    'test/pkcs1',
-    'test/x509',
-    'test/csr',
-    'test/aes',
-    'test/rc2',
-    'test/des',
-    'test/pkcs7',
-    'test/pkcs12',
-    'test/tls'
+  'test/aes',
+  'test/asn1',
+  'test/csr',
+  'test/des',
+  'test/hmac',
+  'test/kem',
+  'test/md5',
+  'test/mgf1',
+  'test/pbkdf2',
+  'test/pem',
+  'test/pkcs1',
+  'test/pkcs7',
+  'test/pkcs12',
+  'test/random',
+  'test/rc2',
+  'test/rsa',
+  'test/sha1',
+  'test/sha256',
+  'test/sha512',
+  'test/ssh',
+  'test/tls',
+  'test/util',
+  'test/x509'
 ], function() {
-    mocha.run();
+  mocha.run();
 });
