@@ -1,21 +1,22 @@
 {
-    "name": "forge-nodejs-example",
-    "version": "0.1.0",
-    "private": true,
-    "main": "server.js",
-    "dependencies": {
-        "express": "~3.1.0",
-        "mocha": "~1.21.4",
-        "chai": "~1.9.1",
-        "grunt": "~0.4.5",
-        "grunt-mocha": "~0.4.11"
-    },
-    "scripts": {
-        "test": "mocha -t 10000 -R spec test/*.js",
-        "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 10000 -u exports -R spec test/*.js",
-        "run": "node server"
-    },
-    "devDependencies": {
-        "istanbul": "~0.3.2"
-    }
+  "name": "forge-nodejs-example",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "dependencies": {
+    "express": "~3.1.0",
+    "mocha": "~1.21.4",
+    "chai": "~1.9.1",
+    "grunt": "~0.4.5",
+    "grunt-mocha": "~0.4.11"
+  },
+  "scripts": {
+    "test": "mocha -t 10000 -R spec test/*.js",
+    "test-node": "mocha -R spec -ig \"browser\" test/*.js",
+    "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 10000 -u exports -R spec test/*.js",
+    "run": "node server"
+  },
+  "devDependencies": {
+    "istanbul": "~0.3.2"
+  }
 }
