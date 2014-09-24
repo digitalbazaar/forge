@@ -7,7 +7,7 @@ describe('browser', function() {
     return;
   }
 
-  it('should run tests', function(done) {
+  it('should run tests in browser', function(done) {
     this.timeout(60 * 1000 * 5);
 
     return server.main(function(err, info) {
