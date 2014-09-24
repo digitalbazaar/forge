@@ -669,9 +669,10 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
 
-    // do scheme-based encoding then rsa encryption
+    // encode message according to scheme and then RSA encrypt
     var e = scheme.encode(data, key, true);
-    return _rsaRawEncrypt(e, key, true);
+    return _rsaEncrypt(
+      key, new ByteBuffer(e, 'binary'), _rsaPublicOp).getBytes();
   };
 
   /**
@@ -714,7 +715,7 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       scheme = 'RSASSA-PKCS1-V1_5';
     }
 
-    // TODO: simplify scheme.verify
+    // TODO: simplify scheme.verify (change to scheme.decode)
     if(scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = {
         verify: function(digest, d) {
@@ -739,9 +740,10 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       throw new Error('Invalid signature scheme: ' + scheme);
     }
 
-    // do rsa decryption w/o any decoding, then verify -- which does decoding
-    // FIXME: d will change to a ByteBuffer
-    var d = new ByteBuffer(_rsaRawDecrypt(signature, key, true), 'binary');
+    // RSA decrypt, then verify -- which does message decoding
+    // FIXME: signature will change to a ByteBuffer
+    signature = new ByteBuffer(signature, 'binary');
+    var d = _rsaDecrypt(key, signature, _rsaPublicOp);
     return scheme.verify(digest, d, key.n.bitLength());
   };
 
@@ -796,9 +798,10 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
       scheme = 'RSAES-PKCS1-V1_5';
     }
 
-    // do rsa decryption
-    var d = _rsaRawDecrypt(data, key, false);
+    // RSA decrypt message
+    var d = _rsaDecrypt(key, new ByteBuffer(data, 'binary'), _rsaPrivateOp);
 
+    // decode message according to scheme
     // TODO: simplify scheme.decode
     if(scheme === 'RSAES-PKCS1-V1_5') {
       scheme = {decode: function(d, key) {
@@ -817,9 +820,7 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     } else {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
-
-    // decode according to scheme
-    return scheme.decode(new ByteBuffer(d, 'binary'), key, false).getBytes();
+    return scheme.decode(d, key, false).getBytes();
   };
 
   /**
@@ -874,9 +875,10 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
       throw new Error('Invalid signature scheme: ' + scheme);
     }
 
-    // encode and then encrypt
+    // encode message according to scheme and then RSA encrypt
     var d = scheme.encode(md, key.n.bitLength());
-    return _rsaRawEncrypt(d, key, false);
+    return _rsaEncrypt(
+      key, new ByteBuffer(d, 'binary'), _rsaPrivateOp).getBytes();
   };
 
   return key;
@@ -1081,55 +1083,52 @@ pki.publicKeyToRSAPublicKey = function(key) {
 };
 
 /**
- * NOTE: THIS METHOD IS DEPRECATED, use 'sign' on a private key object or
- * 'encrypt' on a public key object instead.
+ * Encrypts a message with an RSA key. This is used for message encryption
+ * with a public key and for message signing with a private key.
  *
- * Performs RSA encryption.
- *
- * @param m the message to encrypt as a byte string.
+ * @param m the message to encrypt as a ByteBuffer.
  * @param key the RSA key to use.
- * @param pub true for a public key operation, false for a private key.
+ * @param op the public or private key operation to run.
  *
- * @return the encrypted bytes as a string.
+ * @return the encrypted bytes as a ByteBuffer.
  */
-function _rsaRawEncrypt(m, key, pub) {
-  // OS2IP (RFC 3447) (load encrypted message as BigInteger)
-  var x = forge.pkcs1.os2ip(new ByteBuffer(m, 'binary'));
+function _rsaEncrypt(key, m, op) {
+  // OS2IP (RFC 3447) (load message as BigInteger)
+  var x = forge.pkcs1.os2ip(m);
 
-  // do RSA encryption
-  var y = _rsaModPow(x, key, pub);
+  // do appropriate RSA operation
+  var y = op(x, key);
 
   // I2OSP (RFC 3447) (convert BigInteger back to ByteBuffer)
   // use length of modulus in bytes
-  return forge.pkcs1.i2osp(y, Math.ceil(key.n.bitLength() / 8)).getBytes();
+  return forge.pkcs1.i2osp(y, Math.ceil(key.n.bitLength() / 8));
 }
 
 /**
- * NOTE: THIS METHOD IS DEPRECATED, use 'decrypt' on a private key object or
- * 'verify' on a public key object instead.
+ * Decrypts a message previously encrypted with an RSA key. This is used
+ * to decrypted a message with a private key or to decrypt a signature (for
+ * verification) with a public key.
  *
- * Performs RSA decryption.
- *
- * @param ed the encrypted data to decrypt in as a byte string.
  * @param key the RSA key to use.
- * @param pub true for a public key operation, false for private.
+ * @param ed the encrypted data as a ByteBuffer.
+ * @param op the public or private key operation to run.
  *
- * @return the decrypted message as a byte string.
+ * @return the decrypted message as a ByteBuffer.
  */
-function _rsaRawDecrypt(ed, key, pub) {
+function _rsaDecrypt(key, ed, op) {
   // get the length of the modulus in bytes
   var k = Math.ceil(key.n.bitLength() / 8);
 
   // error if the length of the encrypted data ED is not k
-  if(ed.length !== k) {
+  if(ed.length() !== k) {
     var error = new Error('Encrypted message length is invalid.');
-    error.length = ed.length;
+    error.length = ed.length();
     error.expected = k;
     throw error;
   }
 
-  // OS2IP (RFC 3447) (load encryption block as BigInteger)
-  var y = forge.pkcs1.os2ip(new ByteBuffer(ed, 'binary'));
+  // OS2IP (RFC 3447) (load encrypted data as BigInteger)
+  var y = forge.pkcs1.os2ip(ed);
 
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
@@ -1137,27 +1136,34 @@ function _rsaRawDecrypt(ed, key, pub) {
     throw new Error('Encrypted message is invalid.');
   }
 
-  // do RSA decryption
-  var x = _rsaModPow(y, key, pub);
+  // do appropriate RSA operation
+  var x = op(y, key);
 
   // I2OSP (RFC 3447) (convert result back to ByteBuffer)
-  return forge.pkcs1.i2osp(x, k).getBytes();
+  return forge.pkcs1.i2osp(x, k);
 }
 
 /**
- * Performs x^c mod n (RSA encryption or decryption operation).
+ * Performs raw RSA decryption: x^c mod n using an RSA public key (c = e).
  *
  * @param x the number to raise and mod.
  * @param key the key to use.
- * @param pub true if the key is public, false if private.
  *
- * @return the result of x^c mod n.
+ * @return the result of x^c mod n (c = e).
  */
-function _rsaModPow(x, key, pub) {
-  if(pub) {
-    return x.modPow(key.e, key.n);
-  }
+function _rsaPublicOp(x, key) {
+  return x.modPow(key.e, key.n);
+}
 
+/**
+ * Performs raw RSA encryption: x^c mod n using an RSA private key (c = d).
+ *
+ * @param x the number to raise and mod.
+ * @param key the key to use.
+ *
+ * @return the result of x^c mod n (c = d).
+ */
+function _rsaPrivateOp(x, key) {
   if(!key.p || !key.q) {
     // allow calculation without CRT params (slow).
     return x.modPow(key.d, key.n);
