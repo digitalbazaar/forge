@@ -54,7 +54,40 @@ var pkcs1 = forge.pkcs1 = forge.pkcs1 || {};
 // shortcuts
 var asn1 = forge.asn1;
 var oids = forge.pki.oids;
+var BigInteger = forge.jsbn.BigInteger;
 var ByteBuffer = forge.util.ByteBuffer;
+
+/**
+ * I2OSP converts a nonnegative integer (BigInteger) to an octet string
+ * (ByteBuffer) of the specified length. See RFC 3447 Section 4.1.
+ *
+ * @param x the BigInteger to convert.
+ * @param len the intended length (in bytes) to output.
+ *
+ * @return the ByteBuffer.
+ */
+pkcs1.i2osp = function(x, len) {
+  // if x is shorter than len, then prepend zero bytes
+  // FIXME: hex conversion inefficient; write efficient translator
+  var xhex = x.toString(16);
+  var zeros = len - Math.ceil(xhex.length / 2);
+  return new ByteBuffer()
+    .fillWithByte(0x00, zeros)
+    .putBytes(forge.util.hexToBytes(xhex));
+};
+
+/**
+ * OS2IP converts an octet string (ByteBuffer) to a nonnegative integer
+ * (BigInteger). See RFC 3447 Section 4.2.
+ *
+ * @param b the ByteBuffer to convert.
+ *
+ * @return the BigInteger.
+ */
+pkcs1.os2ip = function(b) {
+  // FIXME: hex conversion inefficient; write efficient translator
+  return new BigInteger(b.toString('hex'), 16);
+};
 
 /**
  * Encodes the given message using the given key and digest using
@@ -629,6 +662,7 @@ define([
   './util',
   './random',
   './sha1',
+  './jsbn',
   './asn1'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));

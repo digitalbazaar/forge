@@ -36,5 +36,5 @@
   will now use raw RSA encryption; previously EME-PKCS1-v1_5 (PKCS#1 v1.5
   padding block type 2) was applied. To apply this padding use: 'EME-PKCS1-v1_5'
   instead.
-- PKCS#1 v1.5 functions have been moved to pkcs1.js and this introduced a
-  dependency on asn1.js.
+- PKCS#1 functions (v1.5 encoding, v2.1 I2OSP/OS2IP) have been moved to
+  pkcs1.js and this introduced a dependencies on jsbn.js and asn1.js.

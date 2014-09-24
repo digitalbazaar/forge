@@ -1093,30 +1093,15 @@ pki.publicKeyToRSAPublicKey = function(key) {
  * @return the encrypted bytes as a string.
  */
 function _rsaRawEncrypt(m, key, pub) {
-  var eb = new ByteBuffer(m, 'binary');
-
-  // get the length of the modulus in bytes
-  var k = Math.ceil(key.n.bitLength() / 8);
-
-  // FIXME: move to pkcs1
-  // OS2IP (RFC 3447)
-  // load encryption block as big integer 'x'
-  // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var x = new BigInteger(eb.toHex(), 16);
+  // OS2IP (RFC 3447) (load encrypted message as BigInteger)
+  var x = forge.pkcs1.os2ip(new ByteBuffer(m, 'binary'));
 
   // do RSA encryption
   var y = _rsaModPow(x, key, pub);
 
-  // FIXME: move to pkcs1
-  // I2OSP (RFC 3447)
-  // convert y into the encrypted data byte string, if y is shorter in
-  // bytes than k, then prepend zero bytes to fill up ed
-  // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var yhex = y.toString(16);
-  var zeros = k - Math.ceil(yhex.length / 2);
-  var ed = new ByteBuffer().fillWithByte(0x00, zeros);
-  ed.putBytes(forge.util.hexToBytes(yhex));
-  return ed.getBytes();
+  // I2OSP (RFC 3447) (convert BigInteger back to ByteBuffer)
+  // use length of modulus in bytes
+  return forge.pkcs1.i2osp(y, Math.ceil(key.n.bitLength() / 8)).getBytes();
 }
 
 /**
@@ -1143,11 +1128,8 @@ function _rsaRawDecrypt(ed, key, pub) {
     throw error;
   }
 
-  // FIXME: move to pkcs1
-  // OS2IP (RFC 3447)
-  // convert encrypted data into a big integer
-  // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var y = new BigInteger(new ByteBuffer(ed, 'binary').toString('hex'), 16);
+  // OS2IP (RFC 3447) (load encryption block as BigInteger)
+  var y = forge.pkcs1.os2ip(new ByteBuffer(ed, 'binary'));
 
   // y must be less than the modulus or it wasn't the result of
   // a previous mod operation (encryption) using that modulus
@@ -1158,18 +1140,8 @@ function _rsaRawDecrypt(ed, key, pub) {
   // do RSA decryption
   var x = _rsaModPow(y, key, pub);
 
-  // FIXME: move to pkcs1
-  // I2OSP (RFC 3447)
-  // create the encryption block, if x is shorter in bytes than k, then
-  // prepend zero bytes to fill up eb
-  // FIXME: hex conversion inefficient, get BigInteger w/byte strings
-  var xhex = x.toString(16);
-  var zeros = k - Math.ceil(xhex.length / 2);
-  var eb = new ByteBuffer().fillWithByte(0x00, zeros);
-  eb.putBytes(forge.util.hexToBytes(xhex));
-
-  // return message
-  return eb.getBytes();
+  // I2OSP (RFC 3447) (convert result back to ByteBuffer)
+  return forge.pkcs1.i2osp(x, k).getBytes();
 }
 
 /**
