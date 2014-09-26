@@ -618,7 +618,8 @@ pki.CRIAttributesAsArray = function(attributes) {
       var obj = {};
       obj.type = type;
       obj.value = values[vi].value;
-      obj.valueTagClass = values[vi].type;
+      obj.valueTagClass = values[vi].tagClass;
+      obj.valueType = values[vi].type;
       // if the OID is known, get its name and short name
       if(obj.type in oids) {
         obj.name = oids[obj.type];
