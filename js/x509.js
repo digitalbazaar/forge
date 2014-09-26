@@ -2175,6 +2175,7 @@ function _dnToAsn1(obj) {
     attr = attrs[i];
     var value = attr.value;
 
+    // TODO: change attr.value to attr.asn1 to avoid this issue
     // reuse value tag class and type for attribute value if available
     var valueTagClass = asn1.Class.UNIVERSAL;
     if('valueTagClass' in attr) {
