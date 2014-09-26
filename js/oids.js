@@ -84,6 +84,8 @@ oids['1.2.840.113549.1.9.7'] = 'challengePassword';
 oids['challengePassword'] = '1.2.840.113549.1.9.7';
 oids['1.2.840.113549.1.9.8'] = 'unstructuredAddress';
 oids['unstructuredAddress'] = '1.2.840.113549.1.9.8';
+oids['1.2.840.113549.1.9.14'] = 'extensionRequest';
+oids['extensionRequest'] = '1.2.840.113549.1.9.14';
 
 oids['1.2.840.113549.1.9.20'] = 'friendlyName';
 oids['friendlyName'] = '1.2.840.113549.1.9.20';

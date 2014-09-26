@@ -555,6 +555,13 @@ pki.CRIAttributesAsArray = function(attributes) {
           obj.shortName = _shortNames[obj.name];
         }
       }
+      // parse extensions
+      if(obj.type === oids.extensionRequest) {
+        obj.extensions = [];
+        for(var ei = 0; ei < obj.value.length; ++ei) {
+          obj.extensions.push(pki.certificateExtensionFromAsn1(obj.value[ei]));
+        }
+      }
       rval.push(obj);
     }
   }
@@ -592,217 +599,6 @@ function _getAttribute(obj, options) {
   }
   return rval;
 }
-
-/**
- * Converts an ASN.1 extensions object (with extension sequences as its
- * values) into an array of extension objects with types and values.
- *
- * Supported extensions:
- *
- * id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
- * KeyUsage ::= BIT STRING {
- *   digitalSignature        (0),
- *   nonRepudiation          (1),
- *   keyEncipherment         (2),
- *   dataEncipherment        (3),
- *   keyAgreement            (4),
- *   keyCertSign             (5),
- *   cRLSign                 (6),
- *   encipherOnly            (7),
- *   decipherOnly            (8)
- * }
- *
- * id-ce-basicConstraints OBJECT IDENTIFIER ::=  { id-ce 19 }
- * BasicConstraints ::= SEQUENCE {
- *   cA                      BOOLEAN DEFAULT FALSE,
- *   pathLenConstraint       INTEGER (0..MAX) OPTIONAL
- * }
- *
- * subjectAltName EXTENSION ::= {
- *   SYNTAX GeneralNames
- *   IDENTIFIED BY id-ce-subjectAltName
- * }
- *
- * GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
- *
- * GeneralName ::= CHOICE {
- *   otherName      [0] INSTANCE OF OTHER-NAME,
- *   rfc822Name     [1] IA5String,
- *   dNSName        [2] IA5String,
- *   x400Address    [3] ORAddress,
- *   directoryName  [4] Name,
- *   ediPartyName   [5] EDIPartyName,
- *   uniformResourceIdentifier [6] IA5String,
- *   IPAddress      [7] OCTET STRING,
- *   registeredID   [8] OBJECT IDENTIFIER
- * }
- *
- * OTHER-NAME ::= TYPE-IDENTIFIER
- *
- * EDIPartyName ::= SEQUENCE {
- *   nameAssigner [0] DirectoryString {ub-name} OPTIONAL,
- *   partyName    [1] DirectoryString {ub-name}
- * }
- *
- * @param exts the extensions ASN.1 with extension sequences to parse.
- *
- * @return the array.
- */
-var _parseExtensions = function(exts) {
-  var rval = [];
-
-  var e, ext, extseq;
-  for(var i = 0; i < exts.value.length; ++i) {
-    // get extension sequence
-    extseq = exts.value[i];
-    for(var ei = 0; ei < extseq.value.length; ++ei) {
-      // an extension has:
-      // [0] extnID      OBJECT IDENTIFIER
-      // [1] critical    BOOLEAN DEFAULT FALSE
-      // [2] extnValue   OCTET STRING
-      ext = extseq.value[ei];
-      e = {};
-      e.id = asn1.derToOid(ext.value[0].value);
-      e.critical = false;
-      if(ext.value[1].type === asn1.Type.BOOLEAN) {
-        e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
-        e.value = ext.value[2].value;
-      } else {
-        e.value = ext.value[1].value;
-      }
-      // if the oid is known, get its name
-      if(e.id in oids) {
-        e.name = oids[e.id];
-
-        // handle key usage
-        if(e.name === 'keyUsage') {
-          // get value as BIT STRING
-          var ev = asn1.fromDer(e.value);
-          var b2 = 0x00;
-          var b3 = 0x00;
-          if(ev.value.length > 1) {
-            // skip first byte, just indicates unused bits which
-            // will be padded with 0s anyway
-            // get bytes with flag bits
-            b2 = ev.value.charCodeAt(1);
-            b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
-          }
-          // set flags
-          e.digitalSignature = (b2 & 0x80) === 0x80;
-          e.nonRepudiation = (b2 & 0x40) === 0x40;
-          e.keyEncipherment = (b2 & 0x20) === 0x20;
-          e.dataEncipherment = (b2 & 0x10) === 0x10;
-          e.keyAgreement = (b2 & 0x08) === 0x08;
-          e.keyCertSign = (b2 & 0x04) === 0x04;
-          e.cRLSign = (b2 & 0x02) === 0x02;
-          e.encipherOnly = (b2 & 0x01) === 0x01;
-          e.decipherOnly = (b3 & 0x80) === 0x80;
-        } else if(e.name === 'basicConstraints') {
-          // handle basic constraints
-          // get value as SEQUENCE
-          var ev = asn1.fromDer(e.value);
-          // get cA BOOLEAN flag (defaults to false)
-          if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
-            e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
-          } else {
-            e.cA = false;
-          }
-          // get path length constraint
-          var value = null;
-          if(ev.value.length > 0 && ev.value[0].type === asn1.Type.INTEGER) {
-            value = ev.value[0].value;
-          } else if(ev.value.length > 1) {
-            value = ev.value[1].value;
-          }
-          if(value !== null) {
-            e.pathLenConstraint = asn1.derToInteger(value);
-          }
-        } else if(e.name === 'extKeyUsage') {
-          // handle extKeyUsage
-          // value is a SEQUENCE of OIDs
-          var ev = asn1.fromDer(e.value);
-          for(var vi = 0; vi < ev.value.length; ++vi) {
-            var oid = asn1.derToOid(ev.value[vi].value);
-            if(oid in oids) {
-              e[oids[oid]] = true;
-            } else {
-              e[oid] = true;
-            }
-          }
-        } else if(e.name === 'nsCertType') {
-          // handle nsCertType
-          // get value as BIT STRING
-          var ev = asn1.fromDer(e.value);
-          var b2 = 0x00;
-          if(ev.value.length > 1) {
-            // skip first byte, just indicates unused bits which
-            // will be padded with 0s anyway
-            // get bytes with flag bits
-            b2 = ev.value.charCodeAt(1);
-          }
-          // set flags
-          e.client = (b2 & 0x80) === 0x80;
-          e.server = (b2 & 0x40) === 0x40;
-          e.email = (b2 & 0x20) === 0x20;
-          e.objsign = (b2 & 0x10) === 0x10;
-          e.reserved = (b2 & 0x08) === 0x08;
-          e.sslCA = (b2 & 0x04) === 0x04;
-          e.emailCA = (b2 & 0x02) === 0x02;
-          e.objCA = (b2 & 0x01) === 0x01;
-        } else if(
-          e.name === 'subjectAltName' ||
-          e.name === 'issuerAltName') {
-          // handle subjectAltName/issuerAltName
-          e.altNames = [];
-
-          // ev is a SYNTAX SEQUENCE
-          var gn;
-          var ev = asn1.fromDer(e.value);
-          for(var n = 0; n < ev.value.length; ++n) {
-            // get GeneralName
-            gn = ev.value[n];
-
-            var altName = {
-              type: gn.type,
-              value: gn.value
-            };
-            e.altNames.push(altName);
-
-            // Note: Support for types 1,2,6,7,8
-            switch(gn.type) {
-            // rfc822Name
-            case 1:
-            // dNSName
-            case 2:
-            // uniformResourceIdentifier (URI)
-            case 6:
-              break;
-            // IPAddress
-            case 7:
-              // convert to IPv4/IPv6 string representation
-              altName.ip = forge.util.bytesToIP(gn.value);
-              break;
-            // registeredID
-            case 8:
-              altName.oid = asn1.derToOid(gn.value);
-              break;
-            default:
-              // unsupported
-            }
-          }
-        } else if(e.name === 'subjectKeyIdentifier') {
-          // value is an OCTETSTRING w/the hash of the key-type specific
-          // public key structure (eg: RSAPublicKey)
-          var ev = asn1.fromDer(e.value);
-          e.subjectKeyIdentifier = forge.util.bytesToHex(ev.value);
-        }
-      }
-      rval.push(e);
-    }
-  }
-
-  return rval;
-};
 
 /**
  * Converts signature parameters from ASN.1 structure.
@@ -1179,210 +975,9 @@ pki.createCertificate = function() {
    * @param exts the array of extensions to use.
    */
   cert.setExtensions = function(exts) {
-    var e;
     for(var i = 0; i < exts.length; ++i) {
-      e = exts[i];
-
-      // populate missing name
-      if(typeof(e.name) === 'undefined') {
-        if(e.id && e.id in pki.oids) {
-          e.name = pki.oids[e.id];
-        }
-      }
-
-      // populate missing id
-      if(typeof(e.id) === 'undefined') {
-        if(e.name && e.name in pki.oids) {
-          e.id = pki.oids[e.name];
-        } else {
-          var error = new Error('Extension ID not specified.');
-          error.extension = e;
-          throw error;
-        }
-      }
-
-      // handle missing value
-      if(typeof(e.value) === 'undefined') {
-        // value is a BIT STRING
-        if(e.name === 'keyUsage') {
-          // build flags
-          var unused = 0;
-          var b2 = 0x00;
-          var b3 = 0x00;
-          if(e.digitalSignature) {
-            b2 |= 0x80;
-            unused = 7;
-          }
-          if(e.nonRepudiation) {
-            b2 |= 0x40;
-            unused = 6;
-          }
-          if(e.keyEncipherment) {
-            b2 |= 0x20;
-            unused = 5;
-          }
-          if(e.dataEncipherment) {
-            b2 |= 0x10;
-            unused = 4;
-          }
-          if(e.keyAgreement) {
-            b2 |= 0x08;
-            unused = 3;
-          }
-          if(e.keyCertSign) {
-            b2 |= 0x04;
-            unused = 2;
-          }
-          if(e.cRLSign) {
-            b2 |= 0x02;
-            unused = 1;
-          }
-          if(e.encipherOnly) {
-            b2 |= 0x01;
-            unused = 0;
-          }
-          if(e.decipherOnly) {
-            b3 |= 0x80;
-            unused = 7;
-          }
-
-          // create bit string
-          var value = String.fromCharCode(unused);
-          if(b3 !== 0) {
-            value += String.fromCharCode(b2) + String.fromCharCode(b3);
-          } else if(b2 !== 0) {
-            value += String.fromCharCode(b2);
-          }
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
-        } else if(e.name === 'basicConstraints') {
-          // basicConstraints is a SEQUENCE
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-          // cA BOOLEAN flag defaults to false
-          if(e.cA) {
-            e.value.value.push(asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-              String.fromCharCode(0xFF)));
-          }
-          if('pathLenConstraint' in e) {
-            e.value.value.push(asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-              asn1.integerToDer(e.pathLenConstraint).getBytes()));
-          }
-        } else if(e.name === 'extKeyUsage') {
-          // extKeyUsage is a SEQUENCE of OIDs
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-          var seq = e.value.value;
-          for(var key in e) {
-            if(e[key] !== true) {
-              continue;
-            }
-            // key is name in OID map
-            if(key in oids) {
-              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
-                false, asn1.oidToDer(oids[key]).getBytes()));
-            } else if(key.indexOf('.') !== -1) {
-              // assume key is an OID
-              seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
-                false, asn1.oidToDer(key).getBytes()));
-            }
-          }
-        } else if(e.name === 'nsCertType') {
-          // nsCertType is a BIT STRING
-          // build flags
-          var unused = 0;
-          var b2 = 0x00;
-
-          if(e.client) {
-            b2 |= 0x80;
-            unused = 7;
-          }
-          if(e.server) {
-            b2 |= 0x40;
-            unused = 6;
-          }
-          if(e.email) {
-            b2 |= 0x20;
-            unused = 5;
-          }
-          if(e.objsign) {
-            b2 |= 0x10;
-            unused = 4;
-          }
-          if(e.reserved) {
-            b2 |= 0x08;
-            unused = 3;
-          }
-          if(e.sslCA) {
-            b2 |= 0x04;
-            unused = 2;
-          }
-          if(e.emailCA) {
-            b2 |= 0x02;
-            unused = 1;
-          }
-          if(e.objCA) {
-            b2 |= 0x01;
-            unused = 0;
-          }
-
-          // create bit string
-          var value = String.fromCharCode(unused);
-          if(b2 !== 0) {
-            value += String.fromCharCode(b2);
-          }
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
-        } else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {
-          // SYNTAX SEQUENCE
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-
-          var altName;
-          for(var n = 0; n < e.altNames.length; ++n) {
-            altName = e.altNames[n];
-            var value = altName.value;
-            // handle IP
-            if(altName.type === 7 && altName.ip) {
-              value = forge.util.bytesFromIP(altName.ip);
-              if(value === null) {
-                var error = new Error('Extension "ip" value is not a valid IPv4 ' +
-                  'or IPv6 address.');
-                error.extension = e;
-                throw error;
-              }
-            } else if(altName.type === 8) {
-              // handle OID
-              if(altName.oid) {
-                value = asn1.oidToDer(asn1.oidToDer(altName.oid));
-              } else {
-                // deprecated ... convert value to OID
-                value = asn1.oidToDer(value);
-              }
-            }
-            e.value.value.push(asn1.create(
-              asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
-              value));
-          }
-        } else if(e.name === 'subjectKeyIdentifier') {
-          var ski = cert.generateSubjectKeyIdentifier();
-          e.subjectKeyIdentifier = ski.toHex();
-          // OCTETSTRING w/digest
-          e.value = asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski.getBytes());
-        }
-
-        // ensure value has been defined by now
-        if(typeof(e.value) === 'undefined') {
-          var error = new Error('Extension value not specified.');
-          error.extension = e;
-          throw error;
-        }
-      }
+      _fillMissingExtensionFields(exts[i], {cert: cert});
     }
-
     // set new extensions
     cert.extensions = exts;
   };
@@ -1791,7 +1386,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
 
   // handle extensions
   if(capture.certExtensions) {
-    cert.extensions = _parseExtensions(capture.certExtensions);
+    cert.extensions = pki.certificateExtensionsFromAsn1(capture.certExtensions);
   } else {
     cert.extensions = [];
   }
@@ -1800,6 +1395,225 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
 
   return cert;
+};
+
+/**
+ * Converts an ASN.1 extensions object (with extension sequences as its
+ * values) into an array of extension objects with types and values.
+ *
+ * Supported extensions:
+ *
+ * id-ce-keyUsage OBJECT IDENTIFIER ::=  { id-ce 15 }
+ * KeyUsage ::= BIT STRING {
+ *   digitalSignature        (0),
+ *   nonRepudiation          (1),
+ *   keyEncipherment         (2),
+ *   dataEncipherment        (3),
+ *   keyAgreement            (4),
+ *   keyCertSign             (5),
+ *   cRLSign                 (6),
+ *   encipherOnly            (7),
+ *   decipherOnly            (8)
+ * }
+ *
+ * id-ce-basicConstraints OBJECT IDENTIFIER ::=  { id-ce 19 }
+ * BasicConstraints ::= SEQUENCE {
+ *   cA                      BOOLEAN DEFAULT FALSE,
+ *   pathLenConstraint       INTEGER (0..MAX) OPTIONAL
+ * }
+ *
+ * subjectAltName EXTENSION ::= {
+ *   SYNTAX GeneralNames
+ *   IDENTIFIED BY id-ce-subjectAltName
+ * }
+ *
+ * GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName
+ *
+ * GeneralName ::= CHOICE {
+ *   otherName      [0] INSTANCE OF OTHER-NAME,
+ *   rfc822Name     [1] IA5String,
+ *   dNSName        [2] IA5String,
+ *   x400Address    [3] ORAddress,
+ *   directoryName  [4] Name,
+ *   ediPartyName   [5] EDIPartyName,
+ *   uniformResourceIdentifier [6] IA5String,
+ *   IPAddress      [7] OCTET STRING,
+ *   registeredID   [8] OBJECT IDENTIFIER
+ * }
+ *
+ * OTHER-NAME ::= TYPE-IDENTIFIER
+ *
+ * EDIPartyName ::= SEQUENCE {
+ *   nameAssigner [0] DirectoryString {ub-name} OPTIONAL,
+ *   partyName    [1] DirectoryString {ub-name}
+ * }
+ *
+ * @param exts the extensions ASN.1 with extension sequences to parse.
+ *
+ * @return the array.
+ */
+pki.certificateExtensionsFromAsn1 = function(exts) {
+  var rval = [];
+  for(var i = 0; i < exts.value.length; ++i) {
+    // get extension sequence
+    var extseq = exts.value[i];
+    for(var ei = 0; ei < extseq.value.length; ++ei) {
+      rval.push(pki.certificateExtensionFromAsn1(extseq.value[ei]));
+    }
+  }
+
+  return rval;
+};
+
+/**
+ * Parses a single certificate extension from ASN.1.
+ *
+ * @param ext the extension in ASN.1 format.
+ *
+ * @return the parsed extension as an object.
+ */
+pki.certificateExtensionFromAsn1 = function(ext) {
+  // an extension has:
+  // [0] extnID      OBJECT IDENTIFIER
+  // [1] critical    BOOLEAN DEFAULT FALSE
+  // [2] extnValue   OCTET STRING
+  var e = {};
+  e.id = asn1.derToOid(ext.value[0].value);
+  e.critical = false;
+  if(ext.value[1].type === asn1.Type.BOOLEAN) {
+    e.critical = (ext.value[1].value.charCodeAt(0) !== 0x00);
+    e.value = ext.value[2].value;
+  } else {
+    e.value = ext.value[1].value;
+  }
+  // if the oid is known, get its name
+  if(e.id in oids) {
+    e.name = oids[e.id];
+
+    // handle key usage
+    if(e.name === 'keyUsage') {
+      // get value as BIT STRING
+      var ev = asn1.fromDer(e.value);
+      var b2 = 0x00;
+      var b3 = 0x00;
+      if(ev.value.length > 1) {
+        // skip first byte, just indicates unused bits which
+        // will be padded with 0s anyway
+        // get bytes with flag bits
+        b2 = ev.value.charCodeAt(1);
+        b3 = ev.value.length > 2 ? ev.value.charCodeAt(2) : 0;
+      }
+      // set flags
+      e.digitalSignature = (b2 & 0x80) === 0x80;
+      e.nonRepudiation = (b2 & 0x40) === 0x40;
+      e.keyEncipherment = (b2 & 0x20) === 0x20;
+      e.dataEncipherment = (b2 & 0x10) === 0x10;
+      e.keyAgreement = (b2 & 0x08) === 0x08;
+      e.keyCertSign = (b2 & 0x04) === 0x04;
+      e.cRLSign = (b2 & 0x02) === 0x02;
+      e.encipherOnly = (b2 & 0x01) === 0x01;
+      e.decipherOnly = (b3 & 0x80) === 0x80;
+    } else if(e.name === 'basicConstraints') {
+      // handle basic constraints
+      // get value as SEQUENCE
+      var ev = asn1.fromDer(e.value);
+      // get cA BOOLEAN flag (defaults to false)
+      if(ev.value.length > 0 && ev.value[0].type === asn1.Type.BOOLEAN) {
+        e.cA = (ev.value[0].value.charCodeAt(0) !== 0x00);
+      } else {
+        e.cA = false;
+      }
+      // get path length constraint
+      var value = null;
+      if(ev.value.length > 0 && ev.value[0].type === asn1.Type.INTEGER) {
+        value = ev.value[0].value;
+      } else if(ev.value.length > 1) {
+        value = ev.value[1].value;
+      }
+      if(value !== null) {
+        e.pathLenConstraint = asn1.derToInteger(value);
+      }
+    } else if(e.name === 'extKeyUsage') {
+      // handle extKeyUsage
+      // value is a SEQUENCE of OIDs
+      var ev = asn1.fromDer(e.value);
+      for(var vi = 0; vi < ev.value.length; ++vi) {
+        var oid = asn1.derToOid(ev.value[vi].value);
+        if(oid in oids) {
+          e[oids[oid]] = true;
+        } else {
+          e[oid] = true;
+        }
+      }
+    } else if(e.name === 'nsCertType') {
+      // handle nsCertType
+      // get value as BIT STRING
+      var ev = asn1.fromDer(e.value);
+      var b2 = 0x00;
+      if(ev.value.length > 1) {
+        // skip first byte, just indicates unused bits which
+        // will be padded with 0s anyway
+        // get bytes with flag bits
+        b2 = ev.value.charCodeAt(1);
+      }
+      // set flags
+      e.client = (b2 & 0x80) === 0x80;
+      e.server = (b2 & 0x40) === 0x40;
+      e.email = (b2 & 0x20) === 0x20;
+      e.objsign = (b2 & 0x10) === 0x10;
+      e.reserved = (b2 & 0x08) === 0x08;
+      e.sslCA = (b2 & 0x04) === 0x04;
+      e.emailCA = (b2 & 0x02) === 0x02;
+      e.objCA = (b2 & 0x01) === 0x01;
+    } else if(
+      e.name === 'subjectAltName' ||
+      e.name === 'issuerAltName') {
+      // handle subjectAltName/issuerAltName
+      e.altNames = [];
+
+      // ev is a SYNTAX SEQUENCE
+      var gn;
+      var ev = asn1.fromDer(e.value);
+      for(var n = 0; n < ev.value.length; ++n) {
+        // get GeneralName
+        gn = ev.value[n];
+
+        var altName = {
+          type: gn.type,
+          value: gn.value
+        };
+        e.altNames.push(altName);
+
+        // Note: Support for types 1,2,6,7,8
+        switch(gn.type) {
+        // rfc822Name
+        case 1:
+        // dNSName
+        case 2:
+        // uniformResourceIdentifier (URI)
+        case 6:
+          break;
+        // IPAddress
+        case 7:
+          // convert to IPv4/IPv6 string representation
+          altName.ip = forge.util.bytesToIP(gn.value);
+          break;
+        // registeredID
+        case 8:
+          altName.oid = asn1.derToOid(gn.value);
+          break;
+        default:
+          // unsupported
+        }
+      }
+    } else if(e.name === 'subjectKeyIdentifier') {
+      // value is an OCTETSTRING w/the hash of the key-type specific
+      // public key structure (eg: RSAPublicKey)
+      var ev = asn1.fromDer(e.value);
+      e.subjectKeyIdentifier = forge.util.bytesToHex(ev.value);
+    }
+  }
+  return e;
 };
 
 /**
@@ -1908,7 +1722,7 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
 
   // convert attributes from ASN.1
   csr.getAttribute = function(sn) {
-    return _getAttribute(csr.attributes, sn);
+    return _getAttribute(csr, sn);
   };
   csr.addAttribute = function(attr) {
     _fillMissingFields([attr]);
@@ -1949,7 +1763,7 @@ pki.createCertificationRequest = function() {
   csr.publicKey = null;
   csr.attributes = [];
   csr.getAttribute = function(sn) {
-    return _getAttribute(csr.attributes, sn);
+    return _getAttribute(csr, sn);
   };
   csr.addAttribute = function(attr) {
     _fillMissingFields([attr]);
@@ -2158,56 +1972,6 @@ function _dnToAsn1(obj) {
 }
 
 /**
- * Converts X.509v3 certificate extensions to ASN.1.
- *
- * @param exts the extensions to convert.
- *
- * @return the extensions in ASN.1 format.
- */
-function _extensionsToAsn1(exts) {
-  // create top-level extension container
-  var rval = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 3, true, []);
-
-  // create extension sequence (stores a sequence for each extension)
-  var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-  rval.value.push(seq);
-
-  var ext, extseq;
-  for(var i = 0; i < exts.length; ++i) {
-    ext = exts[i];
-
-    // create a sequence for each extension
-    extseq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
-    seq.value.push(extseq);
-
-    // extnID (OID)
-    extseq.value.push(asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-      asn1.oidToDer(ext.id).getBytes()));
-
-    // critical defaults to false
-    if(ext.critical) {
-      // critical BOOLEAN DEFAULT FALSE
-      extseq.value.push(asn1.create(
-        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
-        String.fromCharCode(0xFF)));
-    }
-
-    var value = ext.value;
-    if(typeof ext.value !== 'string') {
-      // value is asn.1
-      value = asn1.toDer(value).getBytes();
-    }
-
-    // extnValue (OCTET STRING)
-    extseq.value.push(asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
-  }
-
-  return rval;
-}
-
-/**
  * Gets all printable attributes (typically of an issuer or subject) in a
  * simplified JSON format for display.
  *
@@ -2250,7 +2014,7 @@ function _fillMissingFields(attrs) {
     attr = attrs[i];
 
     // populate missing name
-    if(typeof(attr.name) === 'undefined') {
+    if(typeof attr.name === 'undefined') {
       if(attr.type && attr.type in pki.oids) {
         attr.name = pki.oids[attr.type];
       } else if(attr.shortName && attr.shortName in _shortNames) {
@@ -2259,7 +2023,7 @@ function _fillMissingFields(attrs) {
     }
 
     // populate missing type (OID)
-    if(typeof(attr.type) === 'undefined') {
+    if(typeof attr.type === 'undefined') {
       if(attr.name && attr.name in pki.oids) {
         attr.type = pki.oids[attr.name];
       } else {
@@ -2270,18 +2034,247 @@ function _fillMissingFields(attrs) {
     }
 
     // populate missing shortname
-    if(typeof(attr.shortName) === 'undefined') {
+    if(typeof attr.shortName === 'undefined') {
       if(attr.name && attr.name in _shortNames) {
         attr.shortName = _shortNames[attr.name];
       }
     }
 
-    if(typeof(attr.value) === 'undefined') {
+    // convert extensions to value
+    if(attr.type === oids.extensionRequest) {
+      attr.valueConstructed = true;
+      attr.valueTagClass = asn1.Type.SEQUENCE;
+      if(!attr.value && attr.extensions) {
+        attr.value = [];
+        for(var ei = 0; ei < attr.extensions.length; ++ei) {
+          attr.value.push(pki.certificateExtensionToAsn1(
+            _fillMissingExtensionFields(attr.extensions[ei])));
+        }
+      }
+    }
+
+    if(typeof attr.value === 'undefined') {
       var error = new Error('Attribute value not specified.');
       error.attribute = attr;
       throw error;
     }
   }
+}
+
+/**
+ * Fills in missing fields in certificate extensions.
+ *
+ * @param e the extension.
+ * @param [options] the options to use.
+ *          [cert] the certificate the extensions are for.
+ *
+ * @return the extension.
+ */
+function _fillMissingExtensionFields(e, options) {
+  options = options || {};
+
+  // populate missing name
+  if(typeof e.name === 'undefined') {
+    if(e.id && e.id in pki.oids) {
+      e.name = pki.oids[e.id];
+    }
+  }
+
+  // populate missing id
+  if(typeof e.id === 'undefined') {
+    if(e.name && e.name in pki.oids) {
+      e.id = pki.oids[e.name];
+    } else {
+      var error = new Error('Extension ID not specified.');
+      error.extension = e;
+      throw error;
+    }
+  }
+
+  if(typeof e.value !== 'undefined') {
+    return;
+  }
+
+  // handle missing value:
+
+  // value is a BIT STRING
+  if(e.name === 'keyUsage') {
+    // build flags
+    var unused = 0;
+    var b2 = 0x00;
+    var b3 = 0x00;
+    if(e.digitalSignature) {
+      b2 |= 0x80;
+      unused = 7;
+    }
+    if(e.nonRepudiation) {
+      b2 |= 0x40;
+      unused = 6;
+    }
+    if(e.keyEncipherment) {
+      b2 |= 0x20;
+      unused = 5;
+    }
+    if(e.dataEncipherment) {
+      b2 |= 0x10;
+      unused = 4;
+    }
+    if(e.keyAgreement) {
+      b2 |= 0x08;
+      unused = 3;
+    }
+    if(e.keyCertSign) {
+      b2 |= 0x04;
+      unused = 2;
+    }
+    if(e.cRLSign) {
+      b2 |= 0x02;
+      unused = 1;
+    }
+    if(e.encipherOnly) {
+      b2 |= 0x01;
+      unused = 0;
+    }
+    if(e.decipherOnly) {
+      b3 |= 0x80;
+      unused = 7;
+    }
+
+    // create bit string
+    var value = String.fromCharCode(unused);
+    if(b3 !== 0) {
+      value += String.fromCharCode(b2) + String.fromCharCode(b3);
+    } else if(b2 !== 0) {
+      value += String.fromCharCode(b2);
+    }
+    e.value = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
+  } else if(e.name === 'basicConstraints') {
+    // basicConstraints is a SEQUENCE
+    e.value = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    // cA BOOLEAN flag defaults to false
+    if(e.cA) {
+      e.value.value.push(asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+        String.fromCharCode(0xFF)));
+    }
+    if('pathLenConstraint' in e) {
+      e.value.value.push(asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+        asn1.integerToDer(e.pathLenConstraint).getBytes()));
+    }
+  } else if(e.name === 'extKeyUsage') {
+    // extKeyUsage is a SEQUENCE of OIDs
+    e.value = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    var seq = e.value.value;
+    for(var key in e) {
+      if(e[key] !== true) {
+        continue;
+      }
+      // key is name in OID map
+      if(key in oids) {
+        seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
+          false, asn1.oidToDer(oids[key]).getBytes()));
+      } else if(key.indexOf('.') !== -1) {
+        // assume key is an OID
+        seq.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID,
+          false, asn1.oidToDer(key).getBytes()));
+      }
+    }
+  } else if(e.name === 'nsCertType') {
+    // nsCertType is a BIT STRING
+    // build flags
+    var unused = 0;
+    var b2 = 0x00;
+
+    if(e.client) {
+      b2 |= 0x80;
+      unused = 7;
+    }
+    if(e.server) {
+      b2 |= 0x40;
+      unused = 6;
+    }
+    if(e.email) {
+      b2 |= 0x20;
+      unused = 5;
+    }
+    if(e.objsign) {
+      b2 |= 0x10;
+      unused = 4;
+    }
+    if(e.reserved) {
+      b2 |= 0x08;
+      unused = 3;
+    }
+    if(e.sslCA) {
+      b2 |= 0x04;
+      unused = 2;
+    }
+    if(e.emailCA) {
+      b2 |= 0x02;
+      unused = 1;
+    }
+    if(e.objCA) {
+      b2 |= 0x01;
+      unused = 0;
+    }
+
+    // create bit string
+    var value = String.fromCharCode(unused);
+    if(b2 !== 0) {
+      value += String.fromCharCode(b2);
+    }
+    e.value = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, value);
+  } else if(e.name === 'subjectAltName' || e.name === 'issuerAltName') {
+    // SYNTAX SEQUENCE
+    e.value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+
+    var altName;
+    for(var n = 0; n < e.altNames.length; ++n) {
+      altName = e.altNames[n];
+      var value = altName.value;
+      // handle IP
+      if(altName.type === 7 && altName.ip) {
+        value = forge.util.bytesFromIP(altName.ip);
+        if(value === null) {
+          var error = new Error(
+            'Extension "ip" value is not a valid IPv4 or IPv6 address.');
+          error.extension = e;
+          throw error;
+        }
+      } else if(altName.type === 8) {
+        // handle OID
+        if(altName.oid) {
+          value = asn1.oidToDer(asn1.oidToDer(altName.oid));
+        } else {
+          // deprecated ... convert value to OID
+          value = asn1.oidToDer(value);
+        }
+      }
+      e.value.value.push(asn1.create(
+        asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
+        value));
+    }
+  } else if(e.name === 'subjectKeyIdentifier' && options.cert) {
+    var ski = options.cert.generateSubjectKeyIdentifier();
+    e.subjectKeyIdentifier = ski.toHex();
+    // OCTETSTRING w/digest
+    e.value = asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski.getBytes());
+  }
+
+  // ensure value has been defined by now
+  if(typeof e.value === 'undefined') {
+    var error = new Error('Extension value not specified.');
+    error.extension = e;
+    throw error;
+  }
+
+  return e;
 }
 
 /**
@@ -2365,6 +2358,10 @@ function _CRIAttributesToAsn1(csr) {
     if(valueTagClass === asn1.Type.UTF8) {
       value = forge.util.encodeUtf8(value);
     }
+    var valueConstructed = false;
+    if('valueConstructed' in attr) {
+      valueConstructed = attr.valueConstructed;
+    }
     // FIXME: handle more encodings
 
     // create a RelativeDistinguishedName set
@@ -2376,7 +2373,8 @@ function _CRIAttributesToAsn1(csr) {
         asn1.oidToDer(attr.type).getBytes()),
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
         // AttributeValue
-        asn1.create(asn1.Class.UNIVERSAL, valueTagClass, false, value)
+        asn1.create(
+          asn1.Class.UNIVERSAL, valueTagClass, valueConstructed, value)
       ])
     ]);
     rval.value.push(seq);
@@ -2455,7 +2453,7 @@ pki.getTBSCertificate = function(cert) {
 
   if(cert.extensions.length > 0) {
     // extensions (optional)
-    tbs.value.push(_extensionsToAsn1(cert.extensions));
+    tbs.value.push(pki.certificateExtensionsToAsn1(cert.extensions));
   }
 
   return tbs;
@@ -2524,6 +2522,65 @@ pki.certificateToAsn1 = function(cert) {
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
       String.fromCharCode(0x00) + cert.signature)
   ]);
+};
+
+/**
+ * Converts X.509v3 certificate extensions to ASN.1.
+ *
+ * @param exts the extensions to convert.
+ *
+ * @return the extensions in ASN.1 format.
+ */
+pki.certificateExtensionsToAsn1 = function(exts) {
+  // create top-level extension container
+  var rval = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 3, true, []);
+
+  // create extension sequence (stores a sequence for each extension)
+  var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+  rval.value.push(seq);
+
+  for(var i = 0; i < exts.length; ++i) {
+    seq.value.push(pki.certificateExtensionToAsn1(exts[i]));
+  }
+
+  return rval;
+};
+
+/**
+ * Converts a single certificate extension to ASN.1.
+ *
+ * @param ext the extension to convert.
+ *
+ * @return the extension in ASN.1 format.
+ */
+pki.certificateExtensionToAsn1 = function(ext) {
+  // create a sequence for each extension
+  var extseq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+
+  // extnID (OID)
+  extseq.value.push(asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+    asn1.oidToDer(ext.id).getBytes()));
+
+  // critical defaults to false
+  if(ext.critical) {
+    // critical BOOLEAN DEFAULT FALSE
+    extseq.value.push(asn1.create(
+      asn1.Class.UNIVERSAL, asn1.Type.BOOLEAN, false,
+      String.fromCharCode(0xFF)));
+  }
+
+  var value = ext.value;
+  if(typeof ext.value !== 'string') {
+    // value is asn.1
+    value = asn1.toDer(value).getBytes();
+  }
+
+  // extnValue (OCTET STRING)
+  extseq.value.push(asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, value));
+
+  return extseq;
 };
 
 /**

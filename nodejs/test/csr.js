@@ -59,6 +59,22 @@ function Tests(ASSERT, PKI) {
       }, {
         name: 'unstructuredName',
         value: 'My company'
+      }, {
+        name: 'extensionRequest',
+        extensions: [{
+          name: 'subjectAltName',
+          altNames: [{
+            // type 2 is DNS
+            type: 2,
+            value: 'test.domain.com'
+          }, {
+            type: 2,
+            value: 'other.domain.com'
+          }, {
+            type: 2,
+            value: 'www.domain.net'
+          }]
+        }]
       }]);
 
       // sign certification request
@@ -66,6 +82,19 @@ function Tests(ASSERT, PKI) {
 
       var pem = PKI.certificationRequestToPem(csr);
       csr = PKI.certificationRequestFromPem(pem);
+      ASSERT.ok(csr.getAttribute({name: 'extensionRequest'}));
+      ASSERT.equal(csr.getAttribute({name: 'extensionRequest'}).extensions[0].name, 'subjectAltName');
+      ASSERT.deepEqual(csr.getAttribute({name: 'extensionRequest'}).extensions[0].altNames, [{
+        // type 2 is DNS
+        type: 2,
+        value: 'test.domain.com'
+      }, {
+        type: 2,
+        value: 'other.domain.com'
+      }, {
+        type: 2,
+        value: 'www.domain.net'
+      }]);
       ASSERT.ok(csr.verify());
     });
 
