@@ -1,6 +1,7 @@
 var ASSERT = chai.assert;
 mocha.setup({
-    ui: 'bdd'
+    ui: 'bdd',
+    timeout: 20000
 });
 requirejs.config({
     paths: {
