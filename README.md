@@ -1003,8 +1003,15 @@ __Examples__
 
 ```js
 // generate a password-based 16-byte key
+// note an optional message digest can be passed as the final parameter
 var salt = forge.random.getBytesSync(128);
 var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
+
+// generate key asynchronously (note 
+// note an optional message digest can be passed before the callback
+forge.pkcs5.pbkdf2('password', salt, numIterations, 16, function(err, derivedKey) {
+  // do something w/derivedKey
+});
 ```
 
 <a name="pkcs7" />
