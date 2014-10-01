@@ -1,0 +1,15 @@
+{
+  "name": "forge",
+  "version": "0.6.15",
+  "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
+  "authors": [
+    "Digital Bazaar, Inc."
+  ],
+  "license": "BSD",
+  "main": ["js/forge.js"],
+  "dependencies": {},
+  "ignore": [
+    "node_modules",
+    "bower_components"
+  ]
+}
