@@ -836,9 +836,15 @@ var _parseExtensions = function(exts) {
             gn = ev.value[n];
 
             var altName = {
-              type: gn.type,
-              value: gn.value.copy()
+              type: gn.type
             };
+            if(gn.value instanceof ByteBuffer) {
+              altName.value = gn.value.copy();
+            } else {
+              // some currently unsupported types use ASN.1 encoding
+              // so convert back to DER
+              altName.value = asn1.toDer(gn);
+            }
             e.altNames.push(altName);
 
             // Note: Support for types 1,2,6,7,8
