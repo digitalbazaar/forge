@@ -1,5 +1,7 @@
 var forge = require('../js/forge');
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 try {
   // generate a keypair
   console.log('Generating 1024-bit key-pair...');
@@ -82,7 +84,7 @@ try {
 }
 
 function loadPkcs12(pkcs12Der, password, caStore) {
-  var pkcs12Asn1 = forge.asn1.fromDer(pkcs12Der);
+  var pkcs12Asn1 = forge.asn1.fromDer(new ByteBuffer(pkcs12Der, 'binary'));
   var pkcs12 = forge.pkcs12.pkcs12FromAsn1(pkcs12Asn1, false, password);
 
   // load keypair and cert chain from safe content(s) and map to key ID
