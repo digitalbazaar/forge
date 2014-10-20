@@ -1538,6 +1538,7 @@ tls.handleCertificateVerify = function(c, record, length) {
 
   // generate data to verify
   var verify = forge.util.createBuffer();
+  // FIXME: use PRF API
   verify.putBuffer(c.session.md5.digest());
   verify.putBuffer(c.session.sha1.digest());
   verify = verify.getBytes();
@@ -1549,6 +1550,7 @@ tls.handleCertificateVerify = function(c, record, length) {
     }
 
     // digest message now that it has been handled
+    // FIXME: use PRF API
     c.session.md5.update(msgBytes, 'binary');
     c.session.sha1.update(msgBytes, 'binary');
   } catch(ex) {
@@ -1806,6 +1808,7 @@ tls.handleFinished = function(c, record, length) {
 
   // ensure verify data is correct
   b = forge.util.createBuffer();
+  // FIXME: use PRF API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -1830,6 +1833,7 @@ tls.handleFinished = function(c, record, length) {
   }
 
   // digest finished message now that it has been handled
+  // FIXME: use PRF API
   c.session.md5.update(msgBytes, 'binary');
   c.session.sha1.update(msgBytes, 'binary');
 
@@ -2036,6 +2040,7 @@ tls.handleHandshake = function(c, record) {
         compressionMethod: null,
         serverCertificate: null,
         clientCertificate: null,
+        // FIXME: use PRF API
         md5: forge.md.md5.create(),
         sha1: forge.md.sha1.create()
       };
@@ -2049,6 +2054,7 @@ tls.handleHandshake = function(c, record) {
     if(type !== tls.HandshakeType.hello_request &&
       type !== tls.HandshakeType.certificate_verify &&
       type !== tls.HandshakeType.finished) {
+      // FIXME: use PRF API
       c.session.md5.update(bytes, 'binary');
       c.session.sha1.update(bytes, 'binary');
     }
@@ -2087,7 +2093,7 @@ tls.handleHeartbeat = function(c, record) {
   var b = record.fragment;
   var type = b.getByte();
   var length = b.getInt16();
-  var payload = b.getBytes(length);
+  var payload = new ByteBuffer(b.getBytes(length), 'binary');
 
   if(type === tls.HeartbeatMessageType.heartbeat_request) {
     // discard request during handshake or if length is too large
@@ -2104,14 +2110,15 @@ tls.handleHeartbeat = function(c, record) {
     tls.flush(c);
   } else if(type === tls.HeartbeatMessageType.heartbeat_response) {
     // check payload against expected payload, discard heartbeat if no match
-    if(payload !== c.expectedHeartbeatPayload) {
+    // FIXME: use ByteBuffer.compare/equals
+    if(payload.bytes() !== c.expectedHeartbeatPayload.bytes()) {
       // continue
       return c.process();
     }
 
     // notify that a valid heartbeat was received
     if(c.heartbeatReceived) {
-      c.heartbeatReceived(c, forge.util.createBuffer(payload));
+      c.heartbeatReceived(c, payload);
     }
   }
 
@@ -3065,6 +3072,7 @@ tls.createServerKeyExchange = function(c) {
 tls.getClientSignature = function(c, callback) {
   // generate data to RSA encrypt
   var b = forge.util.createBuffer();
+  // FIXME: use PRF API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
   b = b.getBytes();
@@ -3293,6 +3301,7 @@ tls.createChangeCipherSpec = function() {
 tls.createFinished = function(c) {
   // generate verify_data
   var b = forge.util.createBuffer();
+  // FIXME: use PRF API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -3349,21 +3358,24 @@ tls.createFinished = function(c) {
  *
  * @param c the connection.
  * @param type the tls.HeartbeatMessageType.
- * @param payload the heartbeat data to send as the payload.
+ * @param payload the heartbeat data, as a ByteBufer, to send as the payload.
  * @param [payloadLength] the payload length to use, defaults to the
  *          actual payload length.
  *
  * @return the HeartbeatRequest byte buffer.
  */
 tls.createHeartbeat = function(type, payload, payloadLength) {
+  if(!(payload instanceof ByteBuffer)) {
+    throw new TypeError('payload must be a ByteBuffer.');
+  }
   if(typeof payloadLength === 'undefined') {
-    payloadLength = payload.length;
+    payloadLength = payload.length();
   }
   // build record fragment
   var rval = forge.util.createBuffer();
-  rval.putByte(type);               // heartbeat message type
-  rval.putInt16(payloadLength);     // payload length
-  rval.putBytes(payload);           // payload
+  rval.putByte(type);                // heartbeat message type
+  rval.putInt16(payloadLength);      // payload length
+  rval.putBytes(payload.getBytes()); // payload
   // padding
   var plaintextLength = rval.length();
   var paddingLength = Math.max(16, plaintextLength - payloadLength - 3);
@@ -3386,6 +3398,7 @@ tls.queue = function(c, record) {
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
     var bytes = record.fragment.bytes();
+    // FIXME: use PRF API
     c.session.md5.update(bytes, 'binary');
     c.session.sha1.update(bytes, 'binary');
     bytes = null;
@@ -3970,6 +3983,7 @@ tls.createConnection = function(options) {
         certificateRequest: null,
         clientCertificate: null,
         sp: {},
+        // FIXME: use PRF API
         md5: forge.md.md5.create(),
         sha1: forge.md.sha1.create()
       };
@@ -4000,7 +4014,7 @@ tls.createConnection = function(options) {
    * Called when TLS protocol data has been received from somewhere and should
    * be processed by the TLS engine.
    *
-   * @param data the TLS protocol data, as a string, to process.
+   * @param data the TLS protocol data, as a ByteBuffer, to process.
    *
    * @return 0 if the data could be processed, otherwise the number of bytes
    *         required for data to be processed.
@@ -4010,7 +4024,10 @@ tls.createConnection = function(options) {
 
     // buffer input data
     if(data) {
-      c.input.putBytes(data);
+      if(!(data instanceof ByteBuffer)) {
+        throw new TypeError('data must be a ByteBuffer.');
+      }
+      c.input.putBytes(data.getBytes());
     }
 
     // process next record if no failure, process will be called after
@@ -4046,16 +4063,18 @@ tls.createConnection = function(options) {
    * tlsDataReady handler will be called when the TLS record(s) have been
    * prepared.
    *
-   * @param data the application data, as a raw 'binary' encoded string, to
-   *          be sent; to send utf-16/utf-8 string data, use the return value
-   *          of util.encodeUtf8(str).
+   * @param data the application data, as a ByteBuffer, to be sent.
    *
    * @return true on success, false on failure.
    */
   c.prepare = function(data) {
+    if(!(data instanceof ByteBuffer)) {
+      throw new TypeError('data must be a ByteBuffer.');
+    }
+
     tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.application_data,
-      data: forge.util.createBuffer(data)
+      data: data
     }));
     return tls.flush(c);
   };
@@ -4069,20 +4088,21 @@ tls.createConnection = function(options) {
    * handler will be called with the matching payload. This handler can
    * be used to clear a retransmission timer, etc.
    *
-   * @param payload the heartbeat data to send as the payload in the message.
+   * @param payload the heartbeat data, as a ByteBuffer, to send as the payload
+   *          in the message.
    * @param [payloadLength] the payload length to use, defaults to the
    *          actual payload length.
    *
    * @return true on success, false on failure.
    */
   c.prepareHeartbeatRequest = function(payload, payloadLength) {
-    if(payload instanceof forge.util.ByteBuffer) {
-      payload = payload.bytes();
+    if(!(payload instanceof ByteBuffer)) {
+      throw new TypeError('payload must be a ByteBuffer.');
     }
     if(typeof payloadLength === 'undefined') {
-      payloadLength = payload.length;
+      payloadLength = payload.length();
     }
-    c.expectedHeartbeatPayload = payload;
+    c.expectedHeartbeatPayload = payload.copy();
     tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.heartbeat,
       data: tls.createHeartbeat(

@@ -1,5 +1,7 @@
 var forge = require('../js/forge');
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 // function to create certificate
 var createCert = function(cn, data) {
   console.log(
@@ -98,8 +100,8 @@ end.client = forge.tls.createConnection({
 
     // send message to server
     setTimeout(function() {
-      c.prepareHeartbeatRequest('heartbeat');
-      c.prepare('Hello Server');
+      c.prepareHeartbeatRequest(new ByteBuffer('heartbeat', 'utf8'));
+      c.prepare(new ByteBuffer('Hello Server', 'utf8'));
     }, 1);
   },
   getCertificate: function(c, hint) {
@@ -111,7 +113,7 @@ end.client = forge.tls.createConnection({
   },
   tlsDataReady: function(c) {
     // send TLS data to server
-    end.server.process(c.tlsData.getBytes());
+    end.server.process(c.tlsData);
   },
   dataReady: function(c) {
     var response = c.data.getBytes();
@@ -146,7 +148,7 @@ end.server = forge.tls.createConnection({
     forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
   connected: function(c) {
     console.log('Server connected');
-    c.prepareHeartbeatRequest('heartbeat');
+    c.prepareHeartbeatRequest(new ByteBuffer('heartbeat', 'utf8'));
   },
   verifyClient: true,
   verify: function(c, verified, depth, certs) {
@@ -165,13 +167,13 @@ end.server = forge.tls.createConnection({
   },
   tlsDataReady: function(c) {
     // send TLS data to client
-    end.client.process(c.tlsData.getBytes());
+    end.client.process(c.tlsData);
   },
   dataReady: function(c) {
     console.log('Server received \"' + c.data.getBytes() + '\"');
 
     // send response
-    c.prepare('Hello Client');
+    c.prepare(new ByteBuffer('Hello Client', 'utf8'));
     c.close();
   },
   heartbeatReceived: function(c, payload) {

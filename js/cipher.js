@@ -186,6 +186,9 @@ BlockCipher.prototype.start = function(options) {
 BlockCipher.prototype.update = function(input) {
   if(!this._finish) {
     // not finishing, so fill the input buffer with more input
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer.');
+    }
     this._input.putBuffer(input);
   }
 

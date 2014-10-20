@@ -1,6 +1,8 @@
 var forge = require('../js/forge');
 var net = require('net');
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 var socket = new net.Socket();
 
 var client = forge.tls.createConnection({
@@ -12,7 +14,7 @@ var client = forge.tls.createConnection({
   connected: function(connection) {
     // heartbleeds 2k
     console.log('[tls] connected');
-    connection.prepareHeartbeatRequest('', 2048);
+    connection.prepareHeartbeatRequest(new ByteBuffer(), 2048);
     setTimeout(function() {
       client.close();
     }, 1000);
@@ -45,11 +47,11 @@ socket.on('connect', function() {
   client.handshake();
 });
 socket.on('data', function(data) {
-  client.process(data.toString('binary'));
+  client.process(new ByteBuffer(data.toString('binary'), 'binary'));
 });
 socket.on('end', function() {
   console.log('[socket] disconnected');
 });
 
 // connect
-socket.connect(443, 'yahoo.com');
+socket.connect(443, 'wordpress.payswarm.dev');

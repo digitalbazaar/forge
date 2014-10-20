@@ -1,6 +1,8 @@
 var forge = require('../js/forge');
 var net = require('net');
 
+var ByteBuffer = forge.util.ByteBuffer;
+
 var socket = new net.Socket();
 
 var client = forge.tls.createConnection({
@@ -36,7 +38,7 @@ socket.on('connect', function() {
   client.handshake();
 });
 socket.on('data', function(data) {
-  client.process(data.toString('binary'));
+  client.process(new ByteBuffer(data.toString('binary'), 'binary'));
 });
 socket.on('end', function() {
   console.log('[socket] disconnected');

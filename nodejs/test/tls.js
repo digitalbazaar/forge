@@ -1,6 +1,8 @@
 (function() {
 
 function Tests(ASSERT, forge) {
+  var ByteBuffer = forge.util.ByteBuffer;
+
   describe('tls', function() {
     it('should test TLS 1.0 PRF', function() {
       // Note: This test vector is originally from:
@@ -45,7 +47,7 @@ function Tests(ASSERT, forge) {
         connected: function(c) {
           ASSERT.equal(c.version.major, 3);
           ASSERT.equal(c.version.minor, 1);
-          c.prepare('Hello Server');
+          c.prepare(new ByteBuffer('Hello Server', 'utf8'));
         },
         getCertificate: function(c, hint) {
           return data.client.cert;
@@ -54,7 +56,7 @@ function Tests(ASSERT, forge) {
           return data.client.privateKey;
         },
         tlsDataReady: function(c) {
-          end.server.process(c.tlsData.getBytes());
+          end.server.process(c.tlsData);
         },
         dataReady: function(c) {
           data.client.connection.data = c.data.getBytes();
@@ -97,11 +99,11 @@ function Tests(ASSERT, forge) {
           return data.server.privateKey;
         },
         tlsDataReady: function(c) {
-          end.client.process(c.tlsData.getBytes());
+          end.client.process(c.tlsData);
         },
         dataReady: function(c) {
           data.server.connection.data = c.data.getBytes();
-          c.prepare('Hello Client');
+          c.prepare(new ByteBuffer('Hello Client', 'utf8'));
           c.close();
         },
         closed: function(c) {
@@ -199,7 +201,7 @@ function Tests(ASSERT, forge) {
         connected: function(c) {
           ASSERT.equal(c.version.major, 3);
           ASSERT.equal(c.version.minor, 2);
-          c.prepare('Hello Server');
+          c.prepare(new ByteBuffer('Hello Server', 'utf8'));
         },
         getCertificate: function(c, hint) {
           return data.client.cert;
@@ -208,7 +210,7 @@ function Tests(ASSERT, forge) {
           return data.client.privateKey;
         },
         tlsDataReady: function(c) {
-          end.server.process(c.tlsData.getBytes());
+          end.server.process(c.tlsData);
         },
         dataReady: function(c) {
           data.client.connection.data = c.data.getBytes();
@@ -251,11 +253,11 @@ function Tests(ASSERT, forge) {
           return data.server.privateKey;
         },
         tlsDataReady: function(c) {
-          end.client.process(c.tlsData.getBytes());
+          end.client.process(c.tlsData);
         },
         dataReady: function(c) {
           data.server.connection.data = c.data.getBytes();
-          c.prepare('Hello Client');
+          c.prepare(new ByteBuffer('Hello Client', 'utf8'));
           c.close();
         },
         closed: function(c) {
