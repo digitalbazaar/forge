@@ -12,6 +12,7 @@
   },
   "scripts": {
     "test": "mocha -t 20000 -R spec test/*.js",
+    "test-browser": "mocha -t 20000 -R spec test/browser.js",
     "test-node": "mocha -t 20000 -R spec -ig \"browser\" test/*.js",
     "coverage": "./node_modules/.bin/istanbul cover --root .. ./node_modules/.bin/_mocha -- -t 20000 -u exports -R spec test/*.js",
     "run": "node server"
