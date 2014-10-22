@@ -237,261 +237,6 @@ function initModule(forge) {
 var ByteBuffer = forge.util.ByteBuffer;
 
 /**
- * Generates pseudo random bytes by mixing the result of two hash functions,
- * MD5 and SHA-1.
- *
- * prf_TLS1(secret, label, seed) =
- *   P_MD5(S1, label + seed) XOR P_SHA-1(S2, label + seed);
- *
- * Each P_hash function functions as follows:
- *
- * P_hash(secret, seed) = HMAC_hash(secret, A(1) + seed) +
- *                        HMAC_hash(secret, A(2) + seed) +
- *                        HMAC_hash(secret, A(3) + seed) + ...
- * A() is defined as:
- *   A(0) = seed
- *   A(i) = HMAC_hash(secret, A(i-1))
- *
- * The '+' operator denotes concatenation.
- *
- * As many iterations A(N) as are needed are performed to generate enough
- * pseudo random byte output. If an iteration creates more data than is
- * necessary, then it is truncated.
- *
- * Therefore:
- * A(1) = HMAC_hash(secret, A(0))
- *      = HMAC_hash(secret, seed)
- * A(2) = HMAC_hash(secret, A(1))
- *      = HMAC_hash(secret, HMAC_hash(secret, seed))
- *
- * Therefore:
- * P_hash(secret, seed) =
- *   HMAC_hash(secret, HMAC_hash(secret, A(0)) + seed) +
- *   HMAC_hash(secret, HMAC_hash(secret, A(1)) + seed) +
- *   ...
- *
- * Therefore:
- * P_hash(secret, seed) =
- *   HMAC_hash(secret, HMAC_hash(secret, seed) + seed) +
- *   HMAC_hash(secret, HMAC_hash(secret, HMAC_hash(secret, seed)) + seed) +
- *   ...
- *
- * @param secret the secret to use.
- * @param label the label to use.
- * @param seed the seed value to use.
- * @param length the number of bytes to generate.
- *
- * @return the pseudo random bytes in a byte buffer.
- */
-var prf_TLS1 = function(secret, label, seed, length) {
-  var rval = forge.util.createBuffer();
-
-  /* For TLS 1.0, the secret is split in half, into two secrets of equal
-    length. If the secret has an odd length then the last byte of the first
-    half will be the same as the first byte of the second. The length of the
-    two secrets is half of the secret rounded up. */
-  var idx = (secret.length >> 1);
-  var slen = idx + (secret.length & 1);
-  var s1 = secret.substr(0, slen);
-  var s2 = secret.substr(idx, slen);
-  var ai = forge.util.createBuffer();
-  var hmac = forge.hmac.create();
-  seed = label + seed;
-
-  // determine the number of iterations that must be performed to generate
-  // enough output bytes, md5 creates 16 byte hashes, sha1 creates 20
-  var md5itr = Math.ceil(length / 16);
-  var sha1itr = Math.ceil(length / 20);
-
-  // do md5 iterations
-  hmac.start('MD5', new ByteBuffer(s1, 'binary'));
-  var md5bytes = forge.util.createBuffer();
-  ai.putBytes(seed);
-  for(var i = 0; i < md5itr; ++i) {
-    // HMAC_hash(secret, A(i-1))
-    hmac.start(null, null);
-    hmac.update(ai.getBytes(), 'binary');
-    ai.putBuffer(hmac.digest());
-
-    // HMAC_hash(secret, A(i) + seed)
-    hmac.start(null, null);
-    hmac.update(ai.bytes() + seed, 'binary');
-    md5bytes.putBuffer(hmac.digest());
-  }
-
-  // do sha1 iterations
-  hmac.start('SHA1', new ByteBuffer(s2, 'binary'));
-  var sha1bytes = forge.util.createBuffer();
-  ai.clear();
-  ai.putBytes(seed);
-  for(var i = 0; i < sha1itr; ++i) {
-    // HMAC_hash(secret, A(i-1))
-    hmac.start(null, null);
-    hmac.update(ai.getBytes(), 'binary');
-    ai.putBuffer(hmac.digest());
-
-    // HMAC_hash(secret, A(i) + seed)
-    hmac.start(null, null);
-    hmac.update(ai.bytes() + seed, 'binary');
-    sha1bytes.putBuffer(hmac.digest());
-  }
-
-  // XOR the md5 bytes with the sha1 bytes
-  rval.putBytes(forge.util.xorBytes(
-    md5bytes.getBytes(), sha1bytes.getBytes(), length));
-
-  return rval;
-};
-
-/**
- * Generates pseudo random bytes using a SHA256 algorithm. For TLS 1.2.
- *
- * @param secret the secret to use.
- * @param label the label to use.
- * @param seed the seed value to use.
- * @param length the number of bytes to generate.
- *
- * @return the pseudo random bytes in a byte buffer.
- */
-var prf_sha256 = function(secret, label, seed, length) {
-   // FIXME: implement me for TLS 1.2
-};
-
-/**
- * Gets a MAC for a record using the SHA-1 hash algorithm.
- *
- * @param key the mac key as a ByteBuffer.
- * @param state the sequence number (array of two 32-bit integers).
- * @param record the record.
- *
- * @return the sha-1 hash (20 bytes) for the given record.
- */
-var hmac_sha1 = function(key, seqNum, record) {
-  /* MAC is computed like so:
-  HMAC_hash(
-    key, seqNum +
-      TLSCompressed.type +
-      TLSCompressed.version +
-      TLSCompressed.length +
-      TLSCompressed.fragment)
-  */
-  var hmac = forge.hmac.create();
-  hmac.start('SHA1', key);
-  var b = new ByteBuffer();
-  b.putInt32(seqNum[0]);
-  b.putInt32(seqNum[1]);
-  b.putByte(record.type);
-  b.putByte(record.version.major);
-  b.putByte(record.version.minor);
-  b.putInt16(record.length);
-  b.putBytes(record.fragment.bytes());
-  hmac.update(b);
-  return hmac.digest().getBytes();
-};
-
-/**
- * Compresses the TLSPlaintext record into a TLSCompressed record using the
- * deflate algorithm.
- *
- * @param c the TLS connection.
- * @param record the TLSPlaintext record to compress.
- * @param s the ConnectionState to use.
- *
- * @return true on success, false on failure.
- */
-var deflate = function(c, record, s) {
-  var rval = false;
-
-  try {
-    var bytes = c.deflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
-    record.length = bytes.length;
-    rval = true;
-  } catch(ex) {
-    // deflate error, fail out
-  }
-
-  return rval;
-};
-
-/**
- * Decompresses the TLSCompressed record into a TLSPlaintext record using the
- * deflate algorithm.
- *
- * @param c the TLS connection.
- * @param record the TLSCompressed record to decompress.
- * @param s the ConnectionState to use.
- *
- * @return true on success, false on failure.
- */
-var inflate = function(c, record, s) {
-  var rval = false;
-
-  try {
-    var bytes = c.inflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
-    record.length = bytes.length;
-    rval = true;
-  } catch(ex) {
-    // inflate error, fail out
-  }
-
-  return rval;
-};
-
-/**
- * Reads a TLS variable-length vector from a byte buffer.
- *
- * Variable-length vectors are defined by specifying a subrange of legal
- * lengths, inclusively, using the notation <floor..ceiling>. When these are
- * encoded, the actual length precedes the vector's contents in the byte
- * stream. The length will be in the form of a number consuming as many bytes
- * as required to hold the vector's specified maximum (ceiling) length. A
- * variable-length vector with an actual length field of zero is referred to
- * as an empty vector.
- *
- * @param b the byte buffer.
- * @param lenBytes the number of bytes required to store the length.
- *
- * @return the resulting byte buffer.
- */
-var readVector = function(b, lenBytes) {
-  var len = 0;
-  switch(lenBytes) {
-  case 1:
-    len = b.getByte();
-    break;
-  case 2:
-    len = b.getInt16();
-    break;
-  case 3:
-    len = b.getInt24();
-    break;
-  case 4:
-    len = b.getInt32();
-    break;
-  }
-
-  // read vector bytes into a new buffer
-  return forge.util.createBuffer(b.getBytes(len));
-};
-
-/**
- * Writes a TLS variable-length vector to a byte buffer.
- *
- * @param b the byte buffer.
- * @param lenBytes the number of bytes required to store the length.
- * @param v the byte buffer vector.
- */
-var writeVector = function(b, lenBytes, v) {
-  // encode length at the start of the vector, where the number of bytes for
-  // the length is the maximum number of bytes it would take to encode the
-  // vector's ceiling
-  b.putInt(v.length(), lenBytes << 3);
-  b.putBuffer(v);
-};
-
-/**
  * The tls implementation.
  */
 var tls = {};
@@ -1468,6 +1213,8 @@ tls.handleClientKeyExchange = function(c, record, length) {
  *   DistinguishedName certificate_authorities<0..2^16-1>;
  * } CertificateRequest;
  *
+ * Note: SignatureAndHashAlgorithm only present in TLS 1.2+
+ *
  * @param c the connection.
  * @param record the record.
  * @param length the length of the handshake message.
@@ -1485,13 +1232,24 @@ tls.handleCertificateRequest = function(c, record, length) {
     });
   }
 
-  // TODO: TLS 1.2+ has different format including
-  // SignatureAndHashAlgorithm after cert types
   var b = record.fragment;
-  var msg = {
-    certificate_types: readVector(b, 1),
-    certificate_authorities: readVector(b, 2)
-  };
+  var msg;
+  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
+    c.version.minor <= tls.Versions.TLS_1_1.minor);
+  if(before_tls_1_2) {
+    // TLS 1.0/1.1
+    msg = {
+      certificate_types: readVector(b, 1),
+      certificate_authorities: readVector(b, 2)
+    };
+  } else {
+    // TLS 1.2+
+    msg = {
+      certificate_types: readVector(b, 1),
+      supported_signature_algorithms: readVector(b, 2),
+      certificate_authorities: readVector(b, 2)
+    };
+  }
 
   // save certificate request in session
   c.session.certificateRequest = msg;
@@ -1538,7 +1296,7 @@ tls.handleCertificateVerify = function(c, record, length) {
 
   // generate data to verify
   var verify = forge.util.createBuffer();
-  // FIXME: use PRF API
+  // FIXME: use SignatureAndHashAlgorithm API
   verify.putBuffer(c.session.md5.digest());
   verify.putBuffer(c.session.sha1.digest());
   verify = verify.getBytes();
@@ -1550,7 +1308,7 @@ tls.handleCertificateVerify = function(c, record, length) {
     }
 
     // digest message now that it has been handled
-    // FIXME: use PRF API
+    // FIXME: use SignatureAndHashAlgorithm API
     c.session.md5.update(msgBytes, 'binary');
     c.session.sha1.update(msgBytes, 'binary');
   } catch(ex) {
@@ -1808,7 +1566,7 @@ tls.handleFinished = function(c, record, length) {
 
   // ensure verify data is correct
   b = forge.util.createBuffer();
-  // FIXME: use PRF API
+  // FIXME: use SignatureAndHashAlgorithm API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -1816,10 +1574,10 @@ tls.handleFinished = function(c, record, length) {
   var client = (c.entity === tls.ConnectionEnd.client);
   var label = client ? 'server finished' : 'client finished';
 
-  // TODO: determine prf function and verify length for TLS 1.2
   var sp = c.session.sp;
-  var vdl = 12;
-  var prf = prf_TLS1;
+  // verify_data_length given by cipher suite, default is 12
+  var vdl = c.session.cipherSuite.verifyDataLength || 12;
+  var prf = c.session.prf;
   b = prf(sp.master_secret, label, b.getBytes(), vdl);
   if(b.getBytes() !== vd) {
     return c.error(c, {
@@ -1833,7 +1591,7 @@ tls.handleFinished = function(c, record, length) {
   }
 
   // digest finished message now that it has been handled
-  // FIXME: use PRF API
+  // FIXME: use SignatureAndHashAlgorithm API
   c.session.md5.update(msgBytes, 'binary');
   c.session.sha1.update(msgBytes, 'binary');
 
@@ -2029,6 +1787,7 @@ tls.handleHandshake = function(c, record) {
     // initialize server session
     if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
       c.handshaking = true;
+      // FIXME: add createSession func
       c.session = {
         version: null,
         extensions: {
@@ -2040,7 +1799,7 @@ tls.handleHandshake = function(c, record) {
         compressionMethod: null,
         serverCertificate: null,
         clientCertificate: null,
-        // FIXME: use PRF API
+        // FIXME: use SignatureAndHashAlgorithm API
         md5: forge.md.md5.create(),
         sha1: forge.md.sha1.create()
       };
@@ -2054,7 +1813,7 @@ tls.handleHandshake = function(c, record) {
     if(type !== tls.HandshakeType.hello_request &&
       type !== tls.HandshakeType.certificate_verify &&
       type !== tls.HandshakeType.finished) {
-      // FIXME: use PRF API
+      // FIXME: use SignatureAndHashAlgorithm API
       c.session.md5.update(bytes, 'binary');
       c.session.sha1.update(bytes, 'binary');
     }
@@ -2297,9 +2056,9 @@ hsTable[tls.ConnectionEnd.server] = [
  *   opaque                 server_random[32];
  * } SecurityParameters;
  *
- * Note that this definition is from TLS 1.2. In TLS 1.0 some of these
+ * Note that this definition is from TLS 1.2. In TLS 1.0/1.1 some of these
  * parameters are ignored because, for instance, the PRFAlgorithm is a
- * builtin-fixed algorithm combining iterations of MD5 and SHA-1 in TLS 1.0.
+ * builtin-fixed algorithm combining iterations of MD5 and SHA-1.
  *
  * The Record Protocol requires an algorithm to generate keys required by the
  * current connection state.
@@ -2336,8 +2095,7 @@ hsTable[tls.ConnectionEnd.server] = [
  * server_write_IV[SecurityParameters.fixed_iv_length]
  *
  * In TLS 1.2, the client_write_IV and server_write_IV are only generated for
- * implicit nonce techniques as described in Section 3.2.1 of [AEAD]. This
- * implementation uses TLS 1.0 so IVs are generated.
+ * implicit nonce techniques as described in Section 3.2.1 of [AEAD].
  *
  * Implementation note: The currently defined cipher suite which requires the
  * most material is AES_256_CBC_SHA256. It requires 2 x 32 byte keys and 2 x 32
@@ -2350,30 +2108,36 @@ hsTable[tls.ConnectionEnd.server] = [
  * @return the security keys.
  */
 tls.generateKeys = function(c, sp) {
+  // Note:
   // TLS_RSA_WITH_AES_128_CBC_SHA (required to be compliant with TLS 1.2) &
   // TLS_RSA_WITH_AES_256_CBC_SHA are the only cipher suites implemented
   // at present
 
   // TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA is required to be compliant with
-  // TLS 1.0 but we don't care right now because AES is better and we have
-  // an implementation for it
+  // TLS 1.0 but we don't care right now because AES is better, we have
+  // an implementation for it, and almost all TLS 1.0 implementations have it
 
-  // TODO: TLS 1.2 implementation
-  /*
+  var tls1_0 = (c.version.major === tls.Versions.TLS_1_0.major &&
+    c.version.minor === tls.Versions.TLS_1_0.minor);
+  var tls1_1 = (c.version.major === tls.Versions.TLS_1_1.major &&
+    c.version.minor === tls.Versions.TLS_1_1.minor);
+
   // determine the PRF
-  var prf;
-  switch(sp.prf_algorithm) {
-  case tls.PRFAlgorithm.tls_prf_sha256:
-    prf = prf_sha256;
-    break;
-  default:
-    // should never happen
-    throw new Error('Invalid PRF');
+  if(tls1_0 || tls1_1) {
+    // TLS 1.0/1.1 always use prf_TLS1
+    c.session.prf = prf_TLS1;
+  } else {
+    // TLS 1.2+ allows specified PRF
+    switch(sp.prf_algorithm) {
+    case tls.PRFAlgorithm.tls_prf_sha256:
+      c.session.prf = prf_sha256;
+      break;
+    default:
+      // should never happen
+      throw new Error('Invalid PRF.');
+    }
   }
-  */
-
-  // TLS 1.0/1.1 implementation
-  var prf = prf_TLS1;
+  var prf = c.session.prf;
 
   // concatenate server and client random
   var random = sp.client_random + sp.server_random;
@@ -2391,9 +2155,7 @@ tls.generateKeys = function(c, sp) {
   var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
 
   // include IV for TLS/1.0
-  var tls10 = (c.version.major === tls.Versions.TLS_1_0.major &&
-    c.version.minor === tls.Versions.TLS_1_0.minor);
-  if(tls10) {
+  if(tls1_0) {
     length += 2 * sp.fixed_iv_length;
   }
   var km = prf(sp.master_secret, 'key expansion', random, length);
@@ -2411,7 +2173,7 @@ tls.generateKeys = function(c, sp) {
   };
 
   // include TLS 1.0 IVs
-  if(tls10) {
+  if(tls1_0) {
     rval.client_write_IV = new ByteBuffer(
       km.getBytes(sp.fixed_iv_length, 'binary'));
     rval.server_write_IV = new ByteBuffer(
@@ -3072,7 +2834,7 @@ tls.createServerKeyExchange = function(c) {
 tls.getClientSignature = function(c, callback) {
   // generate data to RSA encrypt
   var b = forge.util.createBuffer();
-  // FIXME: use PRF API
+  // FIXME: use SignatureAndHashAlgorithm API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
   b = b.getBytes();
@@ -3301,7 +3063,7 @@ tls.createChangeCipherSpec = function() {
 tls.createFinished = function(c) {
   // generate verify_data
   var b = forge.util.createBuffer();
-  // FIXME: use PRF API
+  // FIXME: use SignatureAndHashAlgorithm API
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -3398,7 +3160,7 @@ tls.queue = function(c, record) {
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
     var bytes = record.fragment.bytes();
-    // FIXME: use PRF API
+    // FIXME: use SignatureAndHashAlgorithm API
     c.session.md5.update(bytes, 'binary');
     c.session.sha1.update(bytes, 'binary');
     bytes = null;
@@ -3973,6 +3735,7 @@ tls.createConnection = function(options) {
         }
       }
 
+      // FIXME: add createSession func
       // set up session
       c.session = {
         id: sessionId,
@@ -3983,7 +3746,8 @@ tls.createConnection = function(options) {
         certificateRequest: null,
         clientCertificate: null,
         sp: {},
-        // FIXME: use PRF API
+        prf: null,
+        // FIXME: use SignatureAndHashAlgorithm API
         md5: forge.md.md5.create(),
         sha1: forge.md.sha1.create()
       };
@@ -4119,6 +3883,7 @@ tls.createConnection = function(options) {
   c.close = function(clearFail) {
     // save session if connection didn't fail
     if(!c.fail && c.sessionCache && c.session) {
+      // FIXME: add createSession func w/flag for storing session
       // only need to preserve session ID, version, and security params
       var session = {
         id: c.session.id,
@@ -4274,6 +4039,264 @@ forge.tls.createSessionCache = tls.createSessionCache;
  * @return the new TLS connection.
  */
 forge.tls.createConnection = tls.createConnection;
+
+/** Utility/Helper functions */
+
+/**
+ * Generates pseudo random bytes by mixing the result of two hash functions,
+ * MD5 and SHA-1.
+ *
+ * prf_TLS1(secret, label, seed) =
+ *   P_MD5(S1, label + seed) XOR P_SHA-1(S2, label + seed);
+ *
+ * Each P_hash function functions as follows:
+ *
+ * P_hash(secret, seed) = HMAC_hash(secret, A(1) + seed) +
+ *                        HMAC_hash(secret, A(2) + seed) +
+ *                        HMAC_hash(secret, A(3) + seed) + ...
+ * A() is defined as:
+ *   A(0) = seed
+ *   A(i) = HMAC_hash(secret, A(i-1))
+ *
+ * The '+' operator denotes concatenation.
+ *
+ * As many iterations A(N) as are needed are performed to generate enough
+ * pseudo random byte output. If an iteration creates more data than is
+ * necessary, then it is truncated.
+ *
+ * Therefore:
+ * A(1) = HMAC_hash(secret, A(0))
+ *      = HMAC_hash(secret, seed)
+ * A(2) = HMAC_hash(secret, A(1))
+ *      = HMAC_hash(secret, HMAC_hash(secret, seed))
+ *
+ * Therefore:
+ * P_hash(secret, seed) =
+ *   HMAC_hash(secret, HMAC_hash(secret, A(0)) + seed) +
+ *   HMAC_hash(secret, HMAC_hash(secret, A(1)) + seed) +
+ *   ...
+ *
+ * Therefore:
+ * P_hash(secret, seed) =
+ *   HMAC_hash(secret, HMAC_hash(secret, seed) + seed) +
+ *   HMAC_hash(secret, HMAC_hash(secret, HMAC_hash(secret, seed)) + seed) +
+ *   ...
+ *
+ * @param secret the secret to use.
+ * @param label the label to use.
+ * @param seed the seed value to use.
+ * @param length the number of bytes to generate.
+ *
+ * @return the pseudo random bytes in a byte buffer.
+ */
+function prf_TLS1(secret, label, seed, length) {
+  var rval = forge.util.createBuffer();
+
+  /* For TLS 1.0, the secret is split in half, into two secrets of equal
+    length. If the secret has an odd length then the last byte of the first
+    half will be the same as the first byte of the second. The length of the
+    two secrets is half of the secret rounded up. */
+  var idx = (secret.length >> 1);
+  var slen = idx + (secret.length & 1);
+  var s1 = secret.substr(0, slen);
+  var s2 = secret.substr(idx, slen);
+  var ai = forge.util.createBuffer();
+  var hmac = forge.hmac.create();
+  seed = label + seed;
+
+  // determine the number of iterations that must be performed to generate
+  // enough output bytes, md5 creates 16 byte hashes, sha1 creates 20
+  var md5itr = Math.ceil(length / 16);
+  var sha1itr = Math.ceil(length / 20);
+
+  // do md5 iterations
+  hmac.start('MD5', new ByteBuffer(s1, 'binary'));
+  var md5bytes = forge.util.createBuffer();
+  ai.putBytes(seed);
+  for(var i = 0; i < md5itr; ++i) {
+    // HMAC_hash(secret, A(i-1))
+    hmac.start(null, null);
+    hmac.update(ai.getBytes(), 'binary');
+    ai.putBuffer(hmac.digest());
+
+    // HMAC_hash(secret, A(i) + seed)
+    hmac.start(null, null);
+    hmac.update(ai.bytes() + seed, 'binary');
+    md5bytes.putBuffer(hmac.digest());
+  }
+
+  // do sha1 iterations
+  hmac.start('SHA1', new ByteBuffer(s2, 'binary'));
+  var sha1bytes = forge.util.createBuffer();
+  ai.clear();
+  ai.putBytes(seed);
+  for(var i = 0; i < sha1itr; ++i) {
+    // HMAC_hash(secret, A(i-1))
+    hmac.start(null, null);
+    hmac.update(ai.getBytes(), 'binary');
+    ai.putBuffer(hmac.digest());
+
+    // HMAC_hash(secret, A(i) + seed)
+    hmac.start(null, null);
+    hmac.update(ai.bytes() + seed, 'binary');
+    sha1bytes.putBuffer(hmac.digest());
+  }
+
+  // XOR the md5 bytes with the sha1 bytes
+  rval.putBytes(forge.util.xorBytes(
+    md5bytes.getBytes(), sha1bytes.getBytes(), length));
+
+  return rval;
+}
+
+/**
+ * Generates pseudo random bytes using a SHA256 algorithm. For TLS 1.2.
+ *
+ * @param secret the secret to use.
+ * @param label the label to use.
+ * @param seed the seed value to use.
+ * @param length the number of bytes to generate.
+ *
+ * @return the pseudo random bytes in a byte buffer.
+ */
+function prf_sha256(secret, label, seed, length) {
+  // FIXME: implement me for TLS 1.2+
+  throw new Error('Not implemented.');
+}
+
+/**
+ * Gets a MAC for a record using the SHA-1 hash algorithm.
+ *
+ * @param key the mac key as a ByteBuffer.
+ * @param state the sequence number (array of two 32-bit integers).
+ * @param record the record.
+ *
+ * @return the sha-1 hash (20 bytes) for the given record.
+ */
+function hmac_sha1(key, seqNum, record) {
+  /* MAC is computed like so:
+  HMAC_hash(
+    key, seqNum +
+      TLSCompressed.type +
+      TLSCompressed.version +
+      TLSCompressed.length +
+      TLSCompressed.fragment)
+  */
+  var hmac = forge.hmac.create();
+  hmac.start('SHA1', key);
+  var b = new ByteBuffer();
+  b.putInt32(seqNum[0]);
+  b.putInt32(seqNum[1]);
+  b.putByte(record.type);
+  b.putByte(record.version.major);
+  b.putByte(record.version.minor);
+  b.putInt16(record.length);
+  b.putBytes(record.fragment.bytes());
+  hmac.update(b);
+  return hmac.digest().getBytes();
+}
+
+/**
+ * Compresses the TLSPlaintext record into a TLSCompressed record using the
+ * deflate algorithm.
+ *
+ * @param c the TLS connection.
+ * @param record the TLSPlaintext record to compress.
+ * @param s the ConnectionState to use.
+ *
+ * @return true on success, false on failure.
+ */
+function deflate(c, record, s) {
+  var rval = false;
+
+  try {
+    var bytes = c.deflate(record.fragment.getBytes());
+    record.fragment = forge.util.createBuffer(bytes);
+    record.length = bytes.length;
+    rval = true;
+  } catch(ex) {
+    // deflate error, fail out
+  }
+
+  return rval;
+}
+
+/**
+ * Decompresses the TLSCompressed record into a TLSPlaintext record using the
+ * deflate algorithm.
+ *
+ * @param c the TLS connection.
+ * @param record the TLSCompressed record to decompress.
+ * @param s the ConnectionState to use.
+ *
+ * @return true on success, false on failure.
+ */
+function inflate(c, record, s) {
+  var rval = false;
+
+  try {
+    var bytes = c.inflate(record.fragment.getBytes());
+    record.fragment = forge.util.createBuffer(bytes);
+    record.length = bytes.length;
+    rval = true;
+  } catch(ex) {
+    // inflate error, fail out
+  }
+
+  return rval;
+}
+
+/**
+ * Reads a TLS variable-length vector from a byte buffer.
+ *
+ * Variable-length vectors are defined by specifying a subrange of legal
+ * lengths, inclusively, using the notation <floor..ceiling>. When these are
+ * encoded, the actual length precedes the vector's contents in the byte
+ * stream. The length will be in the form of a number consuming as many bytes
+ * as required to hold the vector's specified maximum (ceiling) length. A
+ * variable-length vector with an actual length field of zero is referred to
+ * as an empty vector.
+ *
+ * @param b the byte buffer.
+ * @param lenBytes the number of bytes required to store the length.
+ *
+ * @return the resulting byte buffer.
+ */
+function readVector(b, lenBytes) {
+  var len = 0;
+  switch(lenBytes) {
+  case 1:
+    len = b.getByte();
+    break;
+  case 2:
+    len = b.getInt16();
+    break;
+  case 3:
+    len = b.getInt24();
+    break;
+  case 4:
+    len = b.getInt32();
+    break;
+  }
+
+  // read vector bytes into a new buffer
+  return forge.util.createBuffer(b.getBytes(len));
+}
+
+/**
+ * Writes a TLS variable-length vector to a byte buffer.
+ *
+ * @param b the byte buffer.
+ * @param lenBytes the number of bytes required to store the length.
+ * @param v the byte buffer vector.
+ */
+function writeVector(b, lenBytes, v) {
+  // encode length at the start of the vector, where the number of bytes for
+  // the length is the maximum number of bytes it would take to encode the
+  // vector's ceiling
+  b.putInt(v.length(), lenBytes << 3);
+  b.putBuffer(v);
+}
 
 } // end module implementation
 

@@ -20,6 +20,7 @@ var ByteBuffer = forge.util.ByteBuffer;
 tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   id: [0x00,0x2f],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
+  verifyDataLength: 12,
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
@@ -36,6 +37,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
 tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
   id: [0x00,0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
+  verifyDataLength: 12,
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
