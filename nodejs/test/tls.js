@@ -328,6 +328,8 @@ function Tests(ASSERT, forge) {
         };
       }
     });
+
+    // TODO: add session resumption test
   });
 }
 
