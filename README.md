@@ -272,10 +272,10 @@ var client = forge.tls.createConnection({
   connected: function(connection) {
     console.log('connected');
     // send message to server
-    connection.prepare(forge.util.encodeUtf8('Hi server!'));
+    connection.prepare(new ByteBuffer('Hi server!', 'utf8'));
     /* NOTE: experimental, start heartbeat retransmission timer
     myHeartbeatTimer = setInterval(function() {
-      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+      connection.prepareHeartbeatRequest(new ByteBuffer('1234', 'utf8'));
     }, 5*60*1000);*/
   },
   /* provide a client-side cert if you want
@@ -288,14 +288,15 @@ var client = forge.tls.createConnection({
   },
   tlsDataReady: function(connection) {
     // TLS data (encrypted) is ready to be sent to the server
-    sendToServerSomehow(connection.tlsData.getBytes());
+    sendToServerSomehow(connection.tlsData);
     // if you were communicating with the server below, you'd do:
     // server.process(connection.tlsData.getBytes());
   },
   dataReady: function(connection) {
     // clear data from the server is ready
-    console.log('the server sent: ' +
-      forge.util.decodeUtf8(connection.data.getBytes()));
+    var response = connection.data.toString('utf8');
+    connection.data.clear();
+    console.log('the server sent: ' + response);
     // close connection
     connection.close();
   },
@@ -304,7 +305,7 @@ var client = forge.tls.createConnection({
     // restart retransmission timer, look at payload
     clearInterval(myHeartbeatTimer);
     myHeartbeatTimer = setInterval(function() {
-      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+      connection.prepareHeartbeatRequest(new ByteBuffer('1234', 'utf8'));
     }, 5*60*1000);
     payload.getBytes();
   },*/
@@ -351,10 +352,10 @@ var server = forge.tls.createConnection({
   connected: function(connection) {
     console.log('connected');
     // send message to client
-    connection.prepare(forge.util.encodeUtf8('Hi client!'));
+    connection.prepare(new ByteBuffer('Hi client!', 'utf8'));
     /* NOTE: experimental, start heartbeat retransmission timer
     myHeartbeatTimer = setInterval(function() {
-      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+      connection.prepareHeartbeatRequest(new ByteBuffer('1234', 'utf8'));
     }, 5*60*1000);*/
   },
   getCertificate: function(connection, hint) {
@@ -365,14 +366,15 @@ var server = forge.tls.createConnection({
   },
   tlsDataReady: function(connection) {
     // TLS data (encrypted) is ready to be sent to the client
-    sendToClientSomehow(connection.tlsData.getBytes());
+    sendToClientSomehow(connection.tlsData);
     // if you were communicating with the client above you'd do:
     // client.process(connection.tlsData.getBytes());
   },
   dataReady: function(connection) {
     // clear data from the client is ready
-    console.log('the client sent: ' +
-      forge.util.decodeUtf8(connection.data.getBytes()));
+    var response = connection.data.toString('utf8');
+    connection.data.clear();
+    console.log('the client sent: ' + response);
     // close connection
     connection.close();
   },
@@ -381,7 +383,7 @@ var server = forge.tls.createConnection({
     // restart retransmission timer, look at payload
     clearInterval(myHeartbeatTimer);
     myHeartbeatTimer = setInterval(function() {
-      connection.prepareHeartbeatRequest(forge.util.createBuffer('1234'));
+      connection.prepareHeartbeatRequest(new ByteBuffer('1234', 'utf8'));
     }, 5*60*1000);
     payload.getBytes();
   },*/
@@ -439,7 +441,9 @@ socket.on('connect', function() {
   client.handshake();
 });
 socket.on('data', function(data) {
-  client.process(data.toString('binary')); // encoding should be 'binary'
+  // encoding should be 'binary'
+  var buffer = new ByteBuffer(data.toString('binary'), 'binary');
+  client.process(buffer);
 });
 socket.on('end', function() {
   console.log('[socket] disconnected');
