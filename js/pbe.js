@@ -472,7 +472,7 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
   }
 
   // encrypt private key using OpenSSL legacy key derivation
-  var dk = evpBytesToKey(password, iv.substr(0, 8), dkLen);
+  var dk = forge.pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
   var cipher = cipherFn(dk);
   cipher.start(iv);
   cipher.update(asn1.toDer(pki.privateKeyToAsn1(rsaKey)));
@@ -566,7 +566,7 @@ pki.decryptRsaPrivateKey = function(pem, password) {
 
     // use OpenSSL legacy key derivation
     var iv = forge.util.hexToBytes(msg.dekInfo.parameters);
-    var dk = evpBytesToKey(password, iv.substr(0, 8), dkLen);
+    var dk = forge.pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
     var cipher = cipherFn(dk);
     cipher.start(iv);
     cipher.update(forge.util.createBuffer(msg.body));
@@ -829,7 +829,8 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
  * @param oid The PKCS#12 PBE OID (in string notation).
  * @param params The ASN.1 PKCS#12 PBE-params object.
  * @param password The password to decrypt with.
- * @return New cipher object instance.
+ *
+ * @return the new cipher object instance.
  */
 pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
   // get PBE params
@@ -882,19 +883,27 @@ pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
  * See: http://www.openssl.org/docs/crypto/EVP_BytesToKey.html
  *
  * @param password the password to derive the key from.
- * @param salt the salt to use.
+ * @param salt the salt to use, null for none.
  * @param dkLen the number of bytes needed for the derived key.
+ * @param [options] the options to use:
+ *          [md] an optional message digest object to use.
  */
-function evpBytesToKey(password, salt, dkLen) {
-  var digests = [md5(password + salt)];
+pki.pbe.opensslDeriveBytes = function(password, salt, dkLen, md) {
+  if(typeof md === 'undefined' || md === null) {
+    md = forge.md.md5.create();
+  }
+  if(salt === null) {
+    salt = '';
+  }
+  var digests = [hash(md, password + salt)];
   for(var length = 16, i = 1; length < dkLen; ++i, length += 16) {
-    digests.push(md5(digests[i - 1] + password + salt));
+    digests.push(hash(md, digests[i - 1] + password + salt));
   }
   return digests.join('').substr(0, dkLen);
-}
+};
 
-function md5(bytes) {
-  return forge.md.md5.create().update(bytes).digest().getBytes();
+function hash(md, bytes) {
+  return md.start().update(bytes).digest().getBytes();
 }
 
 } // end module implementation

@@ -568,6 +568,16 @@ var salt = forge.random.getBytesSync(128);
 var key = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 */
 
+/* alternatively, to generate a password-based key and IV that will match
+the "openssl enc" command:
+var salt = forge.random.getBytesSync(16);
+// or salt = null; for "openssl enc -nosalt"
+var derivedBytes = forge.pbe.opensslDeriveBytes('password', salt, 32);
+var buffer = forge.util.createBuffer(derivedBytes);
+var key = buffer.getBytes(16);
+var iv = buffer.getBytes(16);
+*/
+
 // encrypt some bytes using CBC mode
 // (other modes include: CFB, OFB, CTR, and GCM)
 var cipher = forge.cipher.createCipher('AES-CBC', key);
@@ -1007,7 +1017,7 @@ __Examples__
 var salt = forge.random.getBytesSync(128);
 var derivedKey = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 
-// generate key asynchronously (note 
+// generate key asynchronously
 // note an optional message digest can be passed before the callback
 forge.pkcs5.pbkdf2('password', salt, numIterations, 16, function(err, derivedKey) {
   // do something w/derivedKey
