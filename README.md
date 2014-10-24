@@ -568,16 +568,6 @@ var salt = forge.random.getBytesSync(128);
 var key = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 */
 
-/* alternatively, to generate a password-based key and IV that will match
-the "openssl enc" command:
-var salt = forge.random.getBytesSync(16);
-// or salt = null; for "openssl enc -nosalt"
-var derivedBytes = forge.pbe.opensslDeriveBytes('password', salt, 32);
-var buffer = forge.util.createBuffer(derivedBytes);
-var key = buffer.getBytes(16);
-var iv = buffer.getBytes(16);
-*/
-
 // encrypt some bytes using CBC mode
 // (other modes include: CFB, OFB, CTR, and GCM)
 var cipher = forge.cipher.createCipher('AES-CBC', key);
@@ -627,6 +617,66 @@ var pass = decipher.finish();
 if(pass) {
   // outputs decrypted hex
   console.log(decipher.output.toHex());
+}
+```
+
+Using forge in node.js to match openssl's "enc" command line tool:
+
+```js
+var forge = require('node-forge');
+var fs = require('fs');
+
+// openssl enc -des3 -nosalt -in input.txt -out input.enc
+function encrypt(password) {
+  var input = fs.readFileSync('input.txt', {encoding: 'utf8'});
+
+  // 3DES key and IV sizes
+  var keySize = 24;
+  var ivSize = 8;
+
+  // get derived bytes
+  // Notes:
+  // 1. If using an alternative hash (eg: "-md sha1") pass
+  //   "forge.md.sha1.create()" as the final parameter.
+  // 2. If using a salt, generate one with forge.random.getBytesSync.
+  var salt = null; // -nosalt
+  // var md = forge.md.sha1.create(); // -md sha1
+  var derivedBytes = forge.pbe.opensslDeriveBytes(
+    password, salt, keySize + ivSize/*, md*/);
+  var buffer = forge.util.createBuffer(derivedBytes);
+  var key = buffer.getBytes(keySize);
+  var iv = buffer.getBytes(ivSize);
+
+  var cipher = forge.cipher.createCipher('3DES-CBC', key);
+  cipher.start({iv: iv});
+  cipher.update(forge.util.createBuffer(input, 'utf8'));
+  cipher.finish();
+
+  fs.writeFileSync('input.enc', cipher.output.getBytes(), {encoding: 'binary'});
+}
+
+// openssl enc -d -des3 -nosalt -in input.enc -out input.dec.txt
+function decrypt(password) {
+  var input = fs.readFileSync('input.enc', {encoding: 'binary'});
+
+  // 3DES key and IV sizes
+  var keySize = 24;
+  var ivSize = 8;
+
+  var salt = null; // -nosalt
+  var derivedBytes = forge.pbe.opensslDeriveBytes(
+    password, salt, keySize + ivSize);
+  var buffer = forge.util.createBuffer(derivedBytes);
+  var key = buffer.getBytes(keySize);
+  var iv = buffer.getBytes(ivSize);
+
+  var decipher = forge.cipher.createDecipher('3DES-CBC', key);
+  decipher.start({iv: iv});
+  decipher.update(forge.util.createBuffer(input, 'binary'));
+  decipher.finish(); // check for true/false
+
+  fs.writeFileSync(
+    'input.dec.txt', decipher.output.getBytes(), {encoding: 'utf8'});
 }
 ```
 
