@@ -3265,6 +3265,9 @@ tls.queue = function(c, record) {
     var bytes = record.fragment.bytes();
     // TODO: this data might need to be buffered instead of digested
     // in TLS 1.2+ because the hash method may not be known yet
+    // TODO: should probably have a wrapper that buffers until
+    // the algorithm is chosen, then it digests that buffer and switches
+    // over to using the algorithm
     // TODO: use c.session.signatureAndHashAlgorithm.md.update
     c.session.md5.update(bytes, 'binary');
     c.session.sha1.update(bytes, 'binary');
