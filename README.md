@@ -656,8 +656,7 @@ function encrypt(password) {
 
   // if using a salt, prepend this to the output:
   if(salt !== null) {
-    // only add "Salted__" to match "-out" behavior
-    output.putBytes('Salted__');
+    output.putBytes('Salted__'); // (add to match openssl tool output)
     output.putBytes(salt);
   }
   output.putBuffer(cipher.output);
@@ -672,8 +671,7 @@ function decrypt(password) {
 
   // parse salt from input
   input = forge.util.createBuffer(input, 'binary');
-  // skip "Salted__"
-  // (Note: "Salted__" is only present if using "-out")
+  // skip "Salted__" (if known to be present)
   input.getBytes('Salted__'.length);
   // read 8-byte salt
   var salt = input.getBytes(8);
