@@ -1304,8 +1304,9 @@ var bags = p12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879
 
 // get bags by type
 var bags = p12.getBags({bagType: forge.pki.oids.certBag});
-// each bag as a 'cert' property with the certificate object
-var cert = bags[0].cert;
+// bags are key'd by bagType and each bagType key's value
+// is an array of matches (in this case, certificate objects)
+var cert = bags[forge.pki.oids.certBag][0];
 
 // get bags by friendlyName and filter on bag type
 var bags = p12.getBags({
