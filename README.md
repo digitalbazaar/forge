@@ -1295,12 +1295,21 @@ var p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, '');
 
 // get bags by friendlyName
 var bags = p12.getBags({friendlyName: 'test'});
+// bags are key'd by attribute type (here "friendlyName")
+// and the key values are an array of matching objects
+var cert = bags.friendlyName[0];
 
 // get bags by localKeyId
 var bags = p12.getBags({localKeyId: buffer});
+// bags are key'd by attribute type (here "localKeyId")
+// and the key values are an array of matching objects
+var cert = bags.localKeyId[0];
 
 // get bags by localKeyId (input in hex)
 var bags = p12.getBags({localKeyIdHex: '7b59377ff142d0be4565e9ac3d396c01401cd879'});
+// bags are key'd by attribute type (here "localKeyId", *not* "localKeyIdHex")
+// and the key values are an array of matching objects
+var cert = bags.localKeyId[0];
 
 // get bags by type
 var bags = p12.getBags({bagType: forge.pki.oids.certBag});
