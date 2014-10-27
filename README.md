@@ -628,7 +628,7 @@ var fs = require('fs');
 
 // openssl enc -des3 -in input.txt -out input.enc
 function encrypt(password) {
-  var input = fs.readFileSync('input.txt', {encoding: 'utf8'});
+  var input = fs.readFileSync('input.txt', {encoding: 'binary'});
 
   // 3DES key and IV sizes
   var keySize = 24;
@@ -649,7 +649,7 @@ function encrypt(password) {
 
   var cipher = forge.cipher.createCipher('3DES-CBC', key);
   cipher.start({iv: iv});
-  cipher.update(forge.util.createBuffer(input, 'utf8'));
+  cipher.update(forge.util.createBuffer(input, 'binary'));
   cipher.finish();
 
   var output = forge.util.createBuffer();
@@ -694,7 +694,7 @@ function decrypt(password) {
   var result = decipher.finish(); // check 'result' for true/false
 
   fs.writeFileSync(
-    'input.dec.txt', decipher.output.getBytes(), {encoding: 'utf8'});
+    'input.dec.txt', decipher.output.getBytes(), {encoding: 'binary'});
 }
 ```
 
