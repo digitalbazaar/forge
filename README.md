@@ -667,7 +667,6 @@ function encrypt(password) {
 // openssl enc -d -des3 -in input.enc -out input.dec.txt
 function decrypt(password) {
   var input = fs.readFileSync('input.enc', {encoding: 'binary'});
-  input = forge.util.createBuffer(input, 'binary');
 
   // parse salt from input
   input = forge.util.createBuffer(input, 'binary');
