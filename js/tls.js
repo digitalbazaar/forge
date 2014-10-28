@@ -1874,22 +1874,7 @@ tls.handleHandshake = function(c, record) {
     // initialize server session
     if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
       c.handshaking = true;
-      // FIXME: add createSession func
-      c.session = {
-        version: null,
-        extensions: {
-          server_name: {
-            serverNameList: []
-          }
-        },
-        cipherSuite: null,
-        compressionMethod: null,
-        serverCertificate: null,
-        clientCertificate: null,
-        // TODO: use c.session.signatureAndHashAlgorithm
-        md5: forge.md.md5.create(),
-        sha1: forge.md.sha1.create()
-      };
+      c.session = tls.createSession();
     }
 
     /* Update handshake messages digest. Finished and CertificateVerify
@@ -2119,6 +2104,33 @@ hsTable[tls.ConnectionEnd.server] = [
 /*CAD*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__],
 /*CER*/[__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__,__]
 ];
+
+/**
+ * Creates a new TLS session.
+ *
+ * @return the new TLS session.
+ */
+tls.createSession = function() {
+  return {
+    id: '',
+    version: null,
+    cipherSuite: null,
+    compressionMethod: null,
+    serverCertificate: null,
+    certificateRequest: null,
+    clientCertificate: null,
+    sp: {},
+    prf: null,
+    // TODO: use c.session.signatureAndHashAlgorithm
+    md5: forge.md.md5.create(),
+    sha1: forge.md.sha1.create(),
+    extensions: {
+      server_name: {
+        serverNameList: []
+      }
+    }
+  };
+};
 
 /**
  * Generates the master_secret and keys using the given security parameters.
@@ -3853,22 +3865,9 @@ tls.createConnection = function(options) {
         }
       }
 
-      // FIXME: add createSession func
       // set up session
-      c.session = {
-        id: sessionId,
-        version: null,
-        cipherSuite: null,
-        compressionMethod: null,
-        serverCertificate: null,
-        certificateRequest: null,
-        clientCertificate: null,
-        sp: {},
-        prf: null,
-        // TODO: use c.session.signatureAndHashAlgorithm
-        md5: forge.md.md5.create(),
-        sha1: forge.md.sha1.create()
-      };
+      c.session = tls.createSession();
+      c.session.id = sessionId;
 
       // use existing session information
       if(session) {
@@ -4001,7 +4000,7 @@ tls.createConnection = function(options) {
   c.close = function(clearFail) {
     // save session if connection didn't fail
     if(!c.fail && c.sessionCache && c.session) {
-      // FIXME: add createSession func w/flag for storing session
+      // FIXME: do this in setSession()
       // only need to preserve session ID, version, and security params
       var session = {
         id: c.session.id,
