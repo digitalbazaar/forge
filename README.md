@@ -1722,6 +1722,10 @@ Contact
 * Bugs: https://github.com/digitalbazaar/forge/issues
 * Email: support@digitalbazaar.com
 
+Donations welcome:
+
+* Donate: paypal@digitalbazaar.com
+
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
 [Apache]: http://httpd.apache.org/
