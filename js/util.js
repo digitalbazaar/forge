@@ -124,8 +124,31 @@ function ByteStringBuffer(b) {
     this.data = b.data;
     this.read = b.read;
   }
+
+  // used for v8 optimization
+  this._constructedStringLength = 0;
 }
 util.ByteStringBuffer = ByteStringBuffer;
+
+/* Note: This is an optimization for V8-based browsers. When V8 concatenates
+  a string, the strings are only joined logically using a "cons string" or
+  "constructed/concatenated string". These containers keep references to one
+  another and can result in very large memory usage. For example, if a 2MB
+  string is constructed by concatenating 4 bytes together at a time, the
+  memory usage will be ~44MB; so ~22x increase. The strings are only joined
+  together when an operation requiring their joining takes place, such as
+  substr(). This function is called when adding data to this buffer to ensure
+  these types of strings are periodically joined to reduce the memory
+  footprint. */
+var _MAX_CONSTRUCTED_STRING_LENGTH = 4096;
+util.ByteStringBuffer.prototype._optimizeConstructedString = function(x) {
+  this._constructedStringLength += x;
+  if(this._constructedStringLength > _MAX_CONSTRUCTED_STRING_LENGTH) {
+    // this substr() should cause the constructed string to join
+    this.data.substr(0, 1);
+    this._constructedStringLength = 0;
+  }
+};
 
 /**
  * Gets the number of bytes in this buffer.
@@ -153,8 +176,7 @@ util.ByteStringBuffer.prototype.isEmpty = function() {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putByte = function(b) {
-  this.data += String.fromCharCode(b);
-  return this;
+  return this.putBytes(String.fromCharCode(b));
 };
 
 /**
@@ -178,6 +200,7 @@ util.ByteStringBuffer.prototype.fillWithByte = function(b, n) {
     }
   }
   this.data = d;
+  this._optimizeConstructedString(n);
   return this;
 };
 
@@ -189,8 +212,8 @@ util.ByteStringBuffer.prototype.fillWithByte = function(b, n) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putBytes = function(bytes) {
-  // TODO: update to match DataBuffer API
   this.data += bytes;
+  this._optimizeConstructedString(bytes.length);
   return this;
 };
 
@@ -202,8 +225,7 @@ util.ByteStringBuffer.prototype.putBytes = function(bytes) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putString = function(str) {
-  this.data += util.encodeUtf8(str);
-  return this;
+  return this.putBytes(util.encodeUtf8(str));
 };
 
 /**
@@ -214,10 +236,9 @@ util.ByteStringBuffer.prototype.putString = function(str) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt16 = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
+    String.fromCharCode(i & 0xFF));
 };
 
 /**
@@ -228,11 +249,10 @@ util.ByteStringBuffer.prototype.putInt16 = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt24 = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i >> 16 & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
+    String.fromCharCode(i & 0xFF));
 };
 
 /**
@@ -243,12 +263,11 @@ util.ByteStringBuffer.prototype.putInt24 = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt32 = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i >> 24 & 0xFF) +
     String.fromCharCode(i >> 16 & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i & 0xFF);
-  return this;
+    String.fromCharCode(i & 0xFF));
 };
 
 /**
@@ -259,10 +278,9 @@ util.ByteStringBuffer.prototype.putInt32 = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt16Le = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i & 0xFF) +
-    String.fromCharCode(i >> 8 & 0xFF);
-  return this;
+    String.fromCharCode(i >> 8 & 0xFF));
 };
 
 /**
@@ -273,11 +291,10 @@ util.ByteStringBuffer.prototype.putInt16Le = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt24Le = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
-    String.fromCharCode(i >> 16 & 0xFF);
-  return this;
+    String.fromCharCode(i >> 16 & 0xFF));
 };
 
 /**
@@ -288,12 +305,11 @@ util.ByteStringBuffer.prototype.putInt24Le = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt32Le = function(i) {
-  this.data +=
+  return this.putBytes(
     String.fromCharCode(i & 0xFF) +
     String.fromCharCode(i >> 8 & 0xFF) +
     String.fromCharCode(i >> 16 & 0xFF) +
-    String.fromCharCode(i >> 24 & 0xFF);
-  return this;
+    String.fromCharCode(i >> 24 & 0xFF));
 };
 
 /**
@@ -305,11 +321,12 @@ util.ByteStringBuffer.prototype.putInt32Le = function(i) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt = function(i, n) {
+  var bytes = '';
   do {
     n -= 8;
-    this.data += String.fromCharCode((i >> n) & 0xFF);
+    bytes += String.fromCharCode((i >> n) & 0xFF);
   } while(n > 0);
-  return this;
+  return this.putBytes(bytes);
 };
 
 /**
@@ -336,8 +353,7 @@ util.ByteStringBuffer.prototype.putSignedInt = function(i, n) {
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putBuffer = function(buffer) {
-  this.data += buffer.getBytes();
-  return this;
+  return this.putBytes(buffer.getBytes());
 };
 
 /**
