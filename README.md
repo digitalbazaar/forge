@@ -227,7 +227,20 @@ To disable native code when including forge in the browser:
 
 ```js
 forge = {disableNativeCode: true};
-// now include other files
+// now include forge script file(s)
+// Note: with this approach, script files *must*
+// be included after initializing the global forge var
+
+// alternatively, include script files first and then call
+forge = forge({disableNativeCode: true});
+
+// Note: forge will be permanently reconfigured now;
+// to avoid this but use the same "forge" var name,
+// you can wrap your code in a function to shadow the
+// global var, eg:
+(function(forge) {
+  // ...
+})(forge({disableNativeCode: true}));
 ```
 
 To disable native code when using node.js:
