@@ -1647,11 +1647,11 @@ __Examples__
 ```js
 // encode/decode base64
 var encoded = forge.util.encode64(str);
-var str = forge.util.decode64(decoded);
+var str = forge.util.decode64(encoded);
 
 // encode/decode UTF-8
 var encoded = forge.util.encodeUtf8(str);
-var str = forge.util.decodeUtf8(decoded);
+var str = forge.util.decodeUtf8(encoded);
 
 // bytes to/from hex
 var bytes = forge.util.hexToBytes(hex);
