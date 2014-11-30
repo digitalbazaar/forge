@@ -1582,7 +1582,7 @@ forge.prime.generateProbablePrime(bits, options, function(err, num) {
 ### PRNG
 
 Provides a [Fortuna][]-based cryptographically-secure pseudo-random number
-generator, to be used with a cryptographic function backend, ie: [AES][]. An
+generator, to be used with a cryptographic function backend, e.g. [AES][]. An
 implementation using [AES][] as a backend is provided. An API for collecting
 entropy is given, though if window.crypto.getRandomValues is available, it will
 be used automatically.
