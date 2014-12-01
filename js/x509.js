@@ -2637,29 +2637,16 @@ pki.createCaStore = function(certs) {
    * @return the parent certificate or null if none was found.
    */
   caStore.getIssuer = function(cert) {
-    var rval = null;
+    var rval = getBySubject(cert.issuer);
 
-    // produce issuer hash if it doesn't exist
-    if(!cert.issuer.hash) {
-      var md = forge.md.sha1.create();
-      cert.issuer.attributes =  pki.RDNAttributesAsArray(
-        _dnToAsn1(cert.issuer), md);
-      cert.issuer.hash = md.digest().toHex();
-    }
-
-    // get the entry using the cert's issuer hash
-    if(cert.issuer.hash in caStore.certs) {
-      rval = caStore.certs[cert.issuer.hash];
-
-      // see if there are multiple matches
-      if(forge.util.isArray(rval)) {
-        // TODO: resolve multiple matches by checking
-        // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
-        // FIXME: or alternatively do authority key mapping
-        // if possible (X.509v1 certs can't work?)
-        throw new Error('Resolving multiple issuer matches not implemented yet.');
-      }
-    }
+    // see if there are multiple matches
+    /*if(forge.util.isArray(rval)) {
+      // TODO: resolve multiple matches by checking
+      // authorityKey/subjectKey/issuerUniqueID/other identifiers, etc.
+      // FIXME: or alternatively do authority key mapping
+      // if possible (X.509v1 certs can't work?)
+      throw new Error('Resolving multiple issuer matches not implemented yet.');
+    }*/
 
     return rval;
   };
@@ -2695,6 +2682,42 @@ pki.createCaStore = function(certs) {
       caStore.certs[cert.subject.hash] = cert;
     }
   };
+
+  /**
+   * Checks to see if the given certificate is in the store.
+   *
+   * @param cert the certificate to check.
+   *
+   * @return true if the certificate is in the store, false if not.
+   */
+  caStore.hasCertificate = function(cert) {
+    var match = getBySubject(cert.subject);
+    if(!match) {
+      return false;
+    }
+    if(!forge.util.isArray(match)) {
+      match = [match];
+    }
+    // compare DER-encoding of certificates
+    var der1 = asn1.toDer(pki.certificateToAsn1(cert)).getBytes();
+    for(var i = 0; i < match.length; ++i) {
+      var der2 = asn1.toDer(pki.certificateToAsn1(match[i])).getBytes();
+      if(der1 === der2) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  function getBySubject(subject) {
+    // produce subject hash if it doesn't exist
+    if(!subject.hash) {
+      var md = forge.md.sha1.create();
+      subject.attributes =  pki.RDNAttributesAsArray(_dnToAsn1(subject), md);
+      subject.hash = md.digest().toHex();
+    }
+    return caStore.certs[subject.hash] || null;
+  }
 
   // auto-add passed in certs
   if(certs) {
@@ -2839,8 +2862,10 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     For each certificate in the 'chain', the following is checked:
 
     1. The certificate validity period includes the current time.
-    2. The certificate was signed by its parent (where the parent is
-       either the next in the chain or from the CA store).
+    2. The certificate was signed by its parent (where the parent is either
+       the next in the chain or from the CA store). Allow processing to
+       continue to the next step if no parent is found but the certificate is
+       in the CA store.
     3. TODO: The certificate has not been revoked.
     4. The certificate issuer name matches the parent's subject name.
     5. TODO: If the certificate is self-issued and not the final certificate
@@ -2858,14 +2883,15 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
        handling the policy extension which is not presently supported in this
        implementation. Instead, if a critical policy extension is found, the
        certificate is rejected as not supported.
-    8. If the certificate is not the first or the only certificate in the
-       chain and it has a critical key usage extension, verify that the
-       keyCertSign bit is set. If the key usage extension exists, verify that
-       the basic constraints extension exists. If the basic constraints
-       extension exists, verify that the cA flag is set. If pathLenConstraint
-       is set, ensure that the number of certificates that follow in the chain,
-       minus any self-signed ones that aren't the last one, isn't greater than
-       the pathLenConstraint (plus 1). */
+    8. If the certificate is not the first or if its the only certificate in
+       the chain (having no parent from the CA store or is self-signed) and it
+       has a critical key usage extension, verify that the keyCertSign bit is
+       set. If the key usage extension exists, verify that the basic
+       constraints extension exists. If the basic constraints extension exists,
+       verify that the cA flag is set. If pathLenConstraint is set, ensure that
+       the number of certificates that follow in the chain, minus any
+       self-signed ones that aren't the last one, isn't greater than the
+       pathLenConstraint (plus 1). */
 
   // copy cert chain references to another array to protect against changes
   // in verify callback
@@ -2880,9 +2906,10 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
   var first = true;
   var error = null;
   var depth = 0;
-  var parent = null;
   do {
     var cert = chain.shift();
+    var parent = null;
+    var selfSigned = false;
 
     // 1. check valid time
     if(now < cert.validity.notBefore || now > cert.validity.notAfter) {
@@ -2893,51 +2920,58 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         notAfter: cert.validity.notAfter,
         now: now
       };
-    } else {
-      // 2. verify with parent
-      // get parent from chain
-      var verified = false;
-      if(chain.length > 0) {
-        // verify using parent
-        parent = chain[0];
-        try {
-          verified = parent.verify(cert);
-        } catch(ex) {
-          // failure to verify, don't care why, just fail
-        }
-      } else {
-        // get parent(s) from CA store
-        var parents = caStore.getIssuer(cert);
-        if(parents === null) {
-          // no parent issuer, so certificate not trusted
-          error = {
-            message: 'Certificate is not trusted.',
-            error: pki.certificateError.unknown_ca
-          };
-        } else {
-          // CA store might have multiple certificates where the issuer
-          // can't be determined from the certificate (unlikely case for
-          // old certificates) so normalize by always putting parents into
-          // an array
-          if(!forge.util.isArray(parents)) {
-            parents = [parents];
-          }
+    }
 
-          // multiple parents to try verifying with
-          while(!verified && parents.length > 0) {
-            parent = parents.shift();
-            try {
-              verified = parent.verify(cert);
-            } catch(ex) {
-              // failure to verify, try next one
-            }
-          }
+    // 2. verify with parent from chain or CA store
+    if(error === null) {
+      parent = chain[0] || caStore.getIssuer(cert);
+      if(parent === null) {
+        // check for self-signed cert
+        if(cert.isIssuer(cert)) {
+          selfSigned = true;
+          parent = cert;
         }
       }
-      if(error === null && !verified) {
+
+      if(parent) {
+        // FIXME: current CA store implementation might have multiple
+        // certificates where the issuer can't be determined from the
+        // certificate (happens rarely with, eg: old certificates) so normalize
+        // by always putting parents into an array
+        // TODO: there's may be an extreme degenerate case currently uncovered
+        // where an old intermediate certificate seems to have a matching parent
+        // but none of the parents actually verify ... but the intermediate
+        // is in the CA and it should pass this check; needs investigation
+        var parents = parent;
+        if(!forge.util.isArray(parents)) {
+          parents = [parents];
+        }
+
+        // try to verify with each possible parent (typically only one)
+        var verified = false;
+        while(!verified && parents.length > 0) {
+          parent = parents.shift();
+          try {
+            verified = parent.verify(cert);
+          } catch(ex) {
+            // failure to verify, don't care why, try next one
+          }
+        }
+
+        if(!verified) {
+          error = {
+            message: 'Certificate signature is invalid.',
+            error: pki.certificateError.bad_certificate
+          };
+        }
+      }
+
+      if(error === null && (!parent || selfSigned) &&
+        !caStore.hasCertificate(cert)) {
+        // no parent issuer and certificate itself is not trusted
         error = {
-          message: 'Certificate signature is invalid.',
-          error: pki.certificateError.bad_certificate
+          message: 'Certificate is not trusted.',
+          error: pki.certificateError.unknown_ca
         };
       }
     }
@@ -2945,7 +2979,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     // TODO: 3. check revoked
 
     // 4. check for matching issuer/subject
-    if(error === null && !cert.isIssuer(parent)) {
+    if(error === null && parent && !cert.isIssuer(parent)) {
       // parent is not issuer
       error = {
         message: 'Certificate issuer is invalid.',
@@ -2977,9 +3011,10 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     }
 
     // 8. check for CA if cert is not first or is the only certificate
-    // in chain with no parent, first check keyUsage extension and then basic
-    // constraints
-    if(!first || (chain.length === 0 && !parent)) {
+    // in chain with no parent/self-signed, first check keyUsage extension and
+    // then basic constraints
+    if(error === null &&
+      (!first || (chain.length === 0 && (!parent || selfSigned)))) {
       var bcExt = cert.getExtension('basicConstraints');
       var keyUsageExt = cert.getExtension('keyUsage');
       if(keyUsageExt !== null) {
@@ -3016,14 +3051,14 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         // pathLen is the maximum # of non-self-signed certs (the last one in
         // the chain is not included in that limitation) that can follow
         // this one, where a value of 0 means only one may follow
-        var selfSigned = 0;
+        var selfSignedCount = 0;
         for(var i = 1; i < chain.length - 1; ++i) {
           if(chain[i].isIssuer(chain[i])) {
-            ++selfSigned;
+            ++selfSignedCount;
           }
         }
         var maxFollow = bcExt.pathLenConstraint + 1;
-        if((chain.length - selfSigned) > maxFollow) {
+        if((chain.length - selfSignedCount) > maxFollow) {
           // pathLenConstraint violated, bad certificate
           error = {
             message:

@@ -55,18 +55,11 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.ok(certificate.verify(certificate));
     });
 
-    it('should generate a self-signed certificate', function() {
+    it('should generate and verify a self-signed certificate', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
         publicKey: PKI.publicKeyFromPem(_pem.publicKey)
       };
-      var cert = PKI.createCertificate();
-      cert.publicKey = keys.publicKey;
-      cert.serialNumber = '01';
-      cert.validity.notBefore = new Date();
-      cert.validity.notAfter = new Date();
-      cert.validity.notAfter.setFullYear(
-        cert.validity.notBefore.getFullYear() + 1);
       var attrs = [{
         name: 'commonName',
         value: 'example.org'
@@ -86,56 +79,254 @@ function Tests(ASSERT, PKI, MD, UTIL) {
         shortName: 'OU',
         value: 'Test'
       }];
-      cert.setSubject(attrs);
-      cert.setIssuer(attrs);
-      cert.setExtensions([{
-        name: 'basicConstraints',
-        cA: true
-      }, {
-        name: 'keyUsage',
-        keyCertSign: true,
-        digitalSignature: true,
-        nonRepudiation: true,
-        keyEncipherment: true,
-        dataEncipherment: true
-      }, {
-        name: 'extKeyUsage',
-        serverAuth: true,
-        clientAuth: true,
-        codeSigning: true,
-        emailProtection: true,
-        timeStamping: true
-      }, {
-        name: 'nsCertType',
-        client: true,
-        server: true,
-        email: true,
-        objsign: true,
-        sslCA: true,
-        emailCA: true,
-        objCA: true
-      }, {
-        name: 'subjectAltName',
-        altNames: [{
-          type: 6, // URI
-          value: 'http://example.org/webid#me'
-        }]
-      }, {
-        name: 'subjectKeyIdentifier'
-      }]);
-      // FIXME: add authorityKeyIdentifier extension
-
-      cert.sign(keys.privateKey);
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
 
       var pem = PKI.certificateToPem(cert);
       cert = PKI.certificateFromPem(pem);
 
-      // verify certificate
+      // verify certificate chain
       var caStore = PKI.createCaStore();
       caStore.addCertificate(cert);
       PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
         ASSERT.equal(vfd, true);
         ASSERT.ok(cert.verifySubjectKeyIdentifier());
+        return true;
+      });
+    });
+
+    it('should generate and fail to verify a self-signed certificate that is not in the CA store', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
+        ASSERT.equal(vfd, PKI.certificateError.unknown_ca);
+        return true;
+      });
+    });
+
+    it('should verify certificate chain ending with intermediate certificate from CA store', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var entity = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var intermediate = [{
+        name: 'commonName',
+        value: 'intermediate'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var root = [{
+        name: 'commonName',
+        value: 'root'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+
+      var intermediateCert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: intermediate,
+        issuer: root,
+        isCA: true
+      });
+
+      var entityCert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: entity,
+        issuer: intermediate,
+        isCA: false
+      });
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(intermediateCert);
+      var chain = [entityCert, intermediateCert];
+      PKI.verifyCertificateChain(caStore, chain, function(vfd, depth, chain) {
+        ASSERT.equal(vfd, true);
+        return true;
+      });
+    });
+
+    it('should fail to verify certificate chain ending with non-CA intermediate certificate from CA store', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var entity = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var intermediate = [{
+        name: 'commonName',
+        value: 'intermediate'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var root = [{
+        name: 'commonName',
+        value: 'root'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+
+      var intermediateCert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: intermediate,
+        issuer: root,
+        isCA: false
+      });
+
+      var entityCert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: entity,
+        issuer: intermediate,
+        isCA: false
+      });
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(intermediateCert);
+      var chain = [entityCert, intermediateCert];
+      PKI.verifyCertificateChain(caStore, chain, function(vfd, depth, chain) {
+        if(depth === 0) {
+          ASSERT.equal(vfd, true);
+        } else {
+          ASSERT.equal(vfd, PKI.certificateError.bad_certificate);
+        }
         return true;
       });
     });
@@ -450,6 +641,70 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.equal(fp, 'e5:c5:ba:57:7f:e2:4f:b8:a6:78:d8:d5:8f:53:9c:d7');
     });
   });
+
+  function createCertificate(options) {
+    var publicKey = options.publicKey;
+    var signingKey = options.signingKey;
+    var subject = options.subject;
+    var issuer = options.issuer;
+    var isCA = options.isCA;
+    var serialNumber = options.serialNumber || '01';
+
+    var cert = PKI.createCertificate();
+    cert.publicKey = publicKey;
+    cert.serialNumber = serialNumber;
+    cert.validity.notBefore = new Date();
+    cert.validity.notAfter = new Date();
+    cert.validity.notAfter.setFullYear(
+      cert.validity.notBefore.getFullYear() + 1);
+    cert.setSubject(subject);
+    cert.setIssuer(issuer);
+    var extensions = [];
+    if(isCA) {
+      extensions.push({
+        name: 'basicConstraints',
+        cA: true
+      });
+    }
+    extensions.push({
+      name: 'keyUsage',
+      keyCertSign: true,
+      digitalSignature: true,
+      nonRepudiation: true,
+      keyEncipherment: true,
+      dataEncipherment: true
+    }, {
+      name: 'extKeyUsage',
+      serverAuth: true,
+      clientAuth: true,
+      codeSigning: true,
+      emailProtection: true,
+      timeStamping: true
+    }, {
+      name: 'nsCertType',
+      client: true,
+      server: true,
+      email: true,
+      objsign: true,
+      sslCA: true,
+      emailCA: true,
+      objCA: true
+    }, {
+      name: 'subjectAltName',
+      altNames: [{
+        type: 6, // URI
+        value: 'http://example.org/webid#me'
+      }]
+    }, {
+      name: 'subjectKeyIdentifier'
+    });
+    // FIXME: add authorityKeyIdentifier extension
+    cert.setExtensions(extensions);
+
+    cert.sign(signingKey);
+
+    return cert;
+  }
 }
 
 // check for AMD
