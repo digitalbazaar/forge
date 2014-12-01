@@ -2889,9 +2889,12 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
        set. If the key usage extension exists, verify that the basic
        constraints extension exists. If the basic constraints extension exists,
        verify that the cA flag is set. If pathLenConstraint is set, ensure that
-       the number of certificates that follow in the chain, minus any
-       self-signed ones that aren't the last one, isn't greater than the
-       pathLenConstraint (plus 1). */
+       the number of certificates that precede in the chain (come earlier
+       in the chain as implemented below), excluding the very first in the
+       chain (typically the end-entity one), isn't greater than the
+       pathLenConstraint. This constraint limits the number of intermediate
+       CAs that may appear below a CA before only end-entity certificates
+       may be issued. */
 
   // copy cert chain references to another array to protect against changes
   // in verify callback
@@ -3011,10 +3014,10 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     }
 
     // 8. check for CA if cert is not first or is the only certificate
-    // in chain with no parent/self-signed, first check keyUsage extension and
-    // then basic constraints
+    // remaining in chain with no parent or is self-signed
     if(error === null &&
       (!first || (chain.length === 0 && (!parent || selfSigned)))) {
+      // first check keyUsage extension and then basic constraints
       var bcExt = cert.getExtension('basicConstraints');
       var keyUsageExt = cert.getExtension('keyUsage');
       if(keyUsageExt !== null) {
@@ -3048,17 +3051,12 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
       // which means we can check pathLenConstraint (if it exists)
       if(error === null && keyUsageExt !== null &&
         'pathLenConstraint' in bcExt) {
-        // pathLen is the maximum # of non-self-signed certs (the last one in
-        // the chain is not included in that limitation) that can follow
-        // this one, where a value of 0 means only one may follow
-        var selfSignedCount = 0;
-        for(var i = 1; i < chain.length - 1; ++i) {
-          if(chain[i].isIssuer(chain[i])) {
-            ++selfSignedCount;
-          }
-        }
-        var maxFollow = bcExt.pathLenConstraint + 1;
-        if((chain.length - selfSignedCount) > maxFollow) {
+        // pathLen is the maximum # of intermediate CA certs that can be
+        // found between the current certificate and the end-entity (depth 0)
+        // certificate; this number does not include the end-entity (depth 0,
+        // last in the chain) even if it happens to be a CA certificate itself
+        var pathLen = depth - 1;
+        if(pathLen > bcExt.pathLenConstraint) {
           // pathLenConstraint violated, bad certificate
           error = {
             message:
