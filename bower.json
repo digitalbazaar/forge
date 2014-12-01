@@ -1,6 +1,6 @@
 {
   "name": "forge",
-  "version": "0.6.19",
+  "version": "0.6.20-dev",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
   "authors": [
     "Digital Bazaar, Inc."
