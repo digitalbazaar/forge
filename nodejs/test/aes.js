@@ -380,7 +380,7 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         '000102030405060708090A0B0C0D0E0F',
         'CDC80D6FDDF18CAB34C25909C99A4174',
         '67CE7F7F81173621961A2B70171D3D7A',
-        '2E1E8A1DD59B88B1C8E60FED1EFAC4C9',
+        '2E1E8A1DD59B88B1C8E60FED1EFAC4C9'
       ];
 
       var inputs = [
@@ -649,17 +649,17 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
     (function() {
       var keys = [
         '2b7e151628aed2a6abf7158809cf4f3c',
-        '00000000000000000000000000000000',
+        '00000000000000000000000000000000'
       ];
 
       var ivs = [
         'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff',
-        '650cdb80ff9fc758342d2bd99ee2abcf',
+        '650cdb80ff9fc758342d2bd99ee2abcf'
       ];
 
       var inputs = [
         '6bc1bee22e409f96e93d7e117393172a',
-        'This is a 48-byte message (exactly 3 AES blocks)',
+        'This is a 48-byte message (exactly 3 AES blocks)'
       ];
 
       var outputs = [

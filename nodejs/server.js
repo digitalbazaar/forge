@@ -20,8 +20,7 @@ exports.main = function(callback) {
       server: server,
       port: PORT
     });
-  }
-  catch(err) {
+  } catch(err) {
     return callback(err);
   }
 };

@@ -2242,8 +2242,8 @@ util.getQueryVariables = function(query) {
       var key;
       var val;
       if(pos > 0) {
-        key = kvpairs[i].substring(0,pos);
-        val = kvpairs[i].substring(pos+1);
+        key = kvpairs[i].substring(0, pos);
+        val = kvpairs[i].substring(pos + 1);
       } else {
         key = kvpairs[i];
         val = null;
@@ -2298,8 +2298,8 @@ util.parseFragment = function(fragment) {
   // split into path and query if possible at the first '?'
   var pos = fragment.indexOf('?');
   if(pos > 0) {
-    fp = fragment.substring(0,pos);
-    fq = fragment.substring(pos+1);
+    fp = fragment.substring(0, pos);
+    fq = fragment.substring(pos + 1);
   }
   // split path based on '/' and ignore first element if empty
   var path = fp.split('/');
@@ -2367,8 +2367,7 @@ util.makeRequest = function(reqString) {
         rval = frag.query;
       } else {
         rval = frag.query[k];
-        if(rval && typeof(i) !== 'undefined')
-        {
+        if(rval && typeof(i) !== 'undefined') {
            rval = rval[i];
         }
       }

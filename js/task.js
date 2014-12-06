@@ -369,11 +369,11 @@ Task.prototype.unblock = function(n) {
 Task.prototype.sleep = function(n) {
   n = typeof(n) === 'undefined' ? 0 : n;
   this.state = sStateTable[this.state][SLEEP];
-  var task = this;
+  var self = this;
   this.timeoutId = setTimeout(function() {
-    task.timeoutId = null;
-    task.state = RUNNING;
-    runNext(task, 0);
+    self.timeoutId = null;
+    self.state = RUNNING;
+    runNext(self, 0);
   }, n);
 };
 
@@ -515,8 +515,7 @@ var runNext = function(task, recurse) {
         subtask.swapTime = task.swapTime;
         subtask.userData = task.userData;
         subtask.run(subtask);
-        if(!subtask.error)
-        {
+        if(!subtask.error) {
            runNext(subtask, recurse);
         }
       } else {
@@ -702,8 +701,7 @@ forge.task.createCondition = function() {
    */
   cond.wait = function(task) {
     // only block once
-    if(!(task.id in cond.tasks))
-    {
+    if(!(task.id in cond.tasks)) {
        task.block();
        cond.tasks[task.id] = task;
     }

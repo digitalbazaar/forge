@@ -1179,7 +1179,7 @@ http.createResponse = function() {
         _readChunkedBody(b);
       } else {
         var error = new Error('Unknown Transfer-Encoding.');
-        error.details = {'transferEncoding' : transferEncoding};
+        error.details = {'transferEncoding': transferEncoding};
         throw error;
       }
     } else if((contentLength !== null && contentLength < 0) ||

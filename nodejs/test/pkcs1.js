@@ -37,8 +37,7 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
           throw {
             message: 'Expected an exception.'
           };
-        }
-        catch(e) {
+        } catch(e) {
           ASSERT.equal(e.message, 'Invalid RSAES-OAEP padding.');
         }
       }

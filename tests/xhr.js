@@ -38,7 +38,7 @@ jQuery(function($)
    var tests = [];
    var passed = 0;
    var failed = 0;
-   
+
    var init = function() {
       passed = failed = 0;
       $('.ready,.testing,.pass,.fail')
@@ -112,12 +112,12 @@ jQuery(function($)
    $('#start').click(function() {
       start();
    });
-   
+
    $('#reset').click(function() {
       init();
    });
-   
-   var stressStats = 
+
+   var stressStats =
    {
       sent: 0,
       success: 0,
@@ -128,7 +128,7 @@ jQuery(function($)
       return 'received:' + (stressStats.success + stressStats.error) + '/' +
          stressStats.sent + ' errors:' + stressStats.error;
    };
-   
+
    $('#stress').click(function() {
       for(var i = 1; i <= 100; ++i)
       {
@@ -167,7 +167,7 @@ jQuery(function($)
       }
       return false;
    });
-   
+
    /**
     * Creates a simple XMLHttpRequest wrapper. For testing.
     */
@@ -178,9 +178,9 @@ jQuery(function($)
       var HEADERS_RECEIVED = 2;
       var LOADING = 3;
       var DONE = 4;
-      
+
       var toWrap = new XMLHttpRequest();
-      
+
       // create xhr wrapper object
       var xhr =
       {
@@ -196,67 +196,67 @@ jQuery(function($)
          status: 0,
          // FIXME: readonly, returns the HTTP status message
          statusText: null,
-         
+
          // FIXME: async, user, and password are optional
          open: function(method, url, async, user, password)
          {
             toWrap.open(method, url, async, user, password);
          },
-         
+
          setRequestHeader: function(header, value)
          {
             toWrap.setRequestHeader(header, value);
          },
-         
+
          // FIXME: data can be a string or a document
          send: function(data)
          {
             toWrap.send(data);
          },
-         
+
          abort: function()
          {
             toWrap.abort();
             toWrap.onreadystatechange = null;
             toWrap = null;
          },
-         
+
          // FIXME: return all response headers as a string
          getAllResponseHeaders: function()
          {
             return toWrap.getAllResponseHeaders();
          },
-         
+
          // FIXME: return header field value
          getResponseHeader: function(header)
          {
             return toWrap.getResponseHeader(header);
          }
       };
-      
+
       toWrap.onreadystatechange = function()
       {
          // copy attributes
          xhr.readyState = toWrap.readyState;
          xhr.responseText = toWrap.responseText;
          xhr.responseXML = toWrap.responseXML;
-         
+
          if(toWrap.readyState == HEADERS_RECEIVED)
          {
             xhr.status = toWrap.status;
             xhr.statusText = toWrap.statusText;
          }
-         
+
          if(xhr.onreadystatechange)
          {
             //forge.log.debug(cat, 'wrapper orsc', toWrap);
             xhr.onreadystatechange();
          }
       };
-      
+
       return xhr;
    };
-   
+
    var addTest = function(name, run)
    {
       var container = $('<ul><li>Test ' + name + '</li><ul/></ul>');
@@ -317,7 +317,7 @@ jQuery(function($)
    addTest('builtin xhr', function(task, test)
    {
       task.block();
-      
+
       $.ajax(
       {
          type: 'GET',
@@ -333,13 +333,13 @@ jQuery(function($)
             task.fail();
          }
       });
-      
+
       task.next(function(task)
       {
          test.pass();
       });
    });
-   
+
    addTest('builtin xhr (10 serial)', function(task, test)
    {
       var N = 10;
@@ -348,7 +348,7 @@ jQuery(function($)
          task.next(function(task)
          {
             task.parent.block();
-            
+
             $.ajax(
             {
                type: 'GET',
@@ -365,13 +365,13 @@ jQuery(function($)
             });
          });
       }
-      
+
       task.next(function(task)
       {
          test.pass(N);
       });
    });
-   
+
    addTest('builtin xhr (10 parallel)', function(task, test)
    {
       var N = 10;
@@ -393,20 +393,20 @@ jQuery(function($)
             }
          });
       }
-      
+
       task.next(function(task)
       {
          test.pass(N);
       });
    });
-   
+
    // test only works with non-IE
    if(!$.browser.msie)
    {
       addTest('generic wrapper xhr', function(task, test)
       {
          task.block();
-         
+
          $.ajax(
          {
             type: 'GET',
@@ -423,13 +423,13 @@ jQuery(function($)
             },
             xhr: createWrapper
          });
-         
+
          task.next(function(task)
          {
             test.pass();
          });
       });
-      
+
       addTest('generic wrapper xhr (10 serial)', function(task, test)
       {
          var N = 10;
@@ -438,7 +438,7 @@ jQuery(function($)
             task.next(function(task)
             {
                task.parent.block();
-               
+
                $.ajax(
                {
                   type: 'GET',
@@ -456,13 +456,13 @@ jQuery(function($)
                });
             });
          }
-         
+
          task.next(function(task)
          {
             test.pass(N);
          });
       });
-      
+
       addTest('generic wrapper xhr (10 parallel)', function(task, test)
       {
          var N = 10;
@@ -485,19 +485,19 @@ jQuery(function($)
                xhr: createWrapper
             });
          }
-         
+
          task.next(function(task)
          {
             test.pass(N);
          });
       });
    }
-   
+
    for(var i = 0; i < 3; i++) {
    addTest('TLS xhr ' + i, function(task, test)
    {
       task.block();
-      
+
       $.ajax(
       {
          type: 'GET',
@@ -514,14 +514,14 @@ jQuery(function($)
          },
          xhr: forge.xhr.create
       });
-      
+
       task.next(function(task)
       {
          test.pass();
       });
    });
    }
-   
+
    addTest('TLS xhr (10 serial)', function(task, test)
    {
       var N = 10;
@@ -530,7 +530,7 @@ jQuery(function($)
          task.next(function(task)
          {
             task.parent.block();
-            
+
             $.ajax(
             {
                type: 'GET',
@@ -548,13 +548,13 @@ jQuery(function($)
             });
          });
       }
-      
+
       task.next(function(task)
       {
          test.pass(N);
       });
    });
-   
+
    addTest('TLS xhr (10 parallel) ' +
       '(hit "Reset" then "Start" to speed up - uses SSL session cache)',
       function(task, test)
@@ -579,12 +579,12 @@ jQuery(function($)
             xhr: forge.xhr.create
          });
       }
-      
+
       task.next(function(task)
       {
          test.pass(N);
       });
    });
-   
+
    init();
 });

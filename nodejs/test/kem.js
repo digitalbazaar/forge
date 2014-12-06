@@ -98,7 +98,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
       var rsaPublicKey = RSA.setPublicKey(
         new JSBN.BigInteger(n), new JSBN.BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
+        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);

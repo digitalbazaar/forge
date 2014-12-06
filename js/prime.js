@@ -23,7 +23,7 @@ var BigInteger = forge.jsbn.BigInteger;
 var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 var THIRTY = new BigInteger(null);
 THIRTY.fromInt(30);
-var op_or = function(x,y) {return x|y;};
+var op_or = function(x, y) {return x|y;};
 
 /**
  * Generates a random probable prime with the given number of bits.
@@ -150,7 +150,7 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
   // use web workers to generate keys
   var numWorkers = options.workers;
   var workLoad = options.workLoad || 100;
-  var range = workLoad * 30/8;
+  var range = workLoad * 30 / 8;
   var workerScript = options.workerScript || 'forge/prime.worker.js';
   if(numWorkers === -1) {
     return forge.util.estimateCores(function(err, cores) {
