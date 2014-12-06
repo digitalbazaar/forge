@@ -8,32 +8,38 @@
     "email": "support@digitalbazaar.com",
     "url": "http://digitalbazaar.com/"
   },
-  "contributors": [{
-    "name": "Dave Longley",
-    "email": "dlongley@digitalbazaar.com"
-  }, {
-    "name": "Stefan Siegl",
-    "email": "stesie@brokenpipe.de"
-  }, {
-    "name": "Christoph Dorn",
-    "email": "christoph@christophdorn.com"
-  }],
+  "contributors": [
+    {
+      "name": "Dave Longley",
+      "email": "dlongley@digitalbazaar.com"
+    },
+    {
+      "name": "Stefan Siegl",
+      "email": "stesie@brokenpipe.de"
+    },
+    {
+      "name": "Christoph Dorn",
+      "email": "christoph@christophdorn.com"
+    }
+  ],
   "devDependencies": {
     "almond": "~0.2.6",
     "requirejs": "~2.1.8"
   },
   "repository": {
-    "type" : "git",
-    "url" : "http://github.com/digitalbazaar/forge"
+    "type": "git",
+    "url": "http://github.com/digitalbazaar/forge"
   },
   "bugs": {
     "url": "https://github.com/digitalbazaar/forge/issues",
     "email": "support@digitalbazaar.com"
   },
-  "licenses": [{
-    "type": "BSD",
-    "url": "https://github.com/digitalbazaar/forge/raw/master/LICENSE"
-  }],
+  "licenses": [
+    {
+      "type": "BSD",
+      "url": "https://github.com/digitalbazaar/forge/raw/master/LICENSE"
+    }
+  ],
   "main": "js/forge.js",
   "engines": {
     "node": "*"
