@@ -24,6 +24,7 @@
   ],
   "devDependencies": {
     "almond": "~0.2.6",
+    "jscs": "^1.8.1",
     "requirejs": "~2.1.8"
   },
   "repository": {
@@ -76,6 +77,7 @@
   "scripts": {
     "bundle": "r.js -o minify.js optimize=none out=js/forge.bundle.js",
     "minify": "r.js -o minify.js",
+    "jscs": "jscs *.js js/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
     "jshint": "jshint *.js js/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
   }
 }
