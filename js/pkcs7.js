@@ -123,6 +123,31 @@ var _recipientInfoFromAsn1 = function(obj) {
   // Validate EnvelopedData content block and capture data.
   var capture = {};
   var errors = [];
+  if(!asn1.validate(obj, p7.asn1.recipientInfoVersionValidator, capture, errors))
+  {
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not an PKCS#7 EnvelopedData.');
+    error.errors = errors;
+    throw error;
+  }
+  var version = capture.version.charCodeAt(0);
+
+  switch(version) {
+  case 0:
+    return _recipientInfoFromAsn1Cert(obj);
+  case 2:
+    return _recipientInfoFromAsn1SKI(obj);
+  default:
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not an PKCS#7 EnvelopedData.');
+    error.errors = ["Invalid recipient info version"];
+    throw error;
+  }
+
+};
+var _recipientInfoFromAsn1Cert = function(obj) {
+  var capture = {};
+  var errors = [];
   if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors))
   {
     var error = new Error('Cannot read PKCS#7 message. ' +
@@ -130,7 +155,6 @@ var _recipientInfoFromAsn1 = function(obj) {
     error.errors = errors;
     throw error;
   }
-
   return {
     version: capture.version.charCodeAt(0),
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
@@ -141,7 +165,28 @@ var _recipientInfoFromAsn1 = function(obj) {
       content: capture.encKey
     }
   };
-};
+}
+
+var _recipientInfoFromAsn1SKI = function(obj) {
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, p7.asn1.recipientInfoValidatorSKI, capture, errors))
+  {
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not an PKCS#7 EnvelopedData.');
+    error.errors = errors;
+    throw error;
+  }
+  return {
+    version: capture.version.charCodeAt(0),
+    subjectKeyIdentifier: capture.subjectKeyIdentifier,
+    encryptedContent: {
+      algorithm: asn1.derToOid(capture.encAlgorithm),
+      parameter: capture.encParameter.value,
+      content: capture.encKey
+    }
+  };
+}
 
 /**
  * Converts a single recipientInfo object to an ASN.1 object.
@@ -155,14 +200,8 @@ var _recipientInfoToAsn1 = function(obj) {
     // Version
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
       asn1.integerToDer(obj.version).getBytes()),
-    // IssuerAndSerialNumber
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // Name
-      forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
-      // Serial
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes(obj.serialNumber))
-    ]),
+    ,
+    obj.version == 0 ? _certToAsn1(obj) : _SKIToAsn1(obj),
     // KeyEncryptionAlgorithmIdentifier
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
       // Algorithm
@@ -176,6 +215,21 @@ var _recipientInfoToAsn1 = function(obj) {
       obj.encryptedContent.content)
   ]);
 };
+
+var _certToAsn1 = function(obj) {
+  // IssuerAndSerialNumber
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // Name
+    forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
+    // Serial
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      forge.util.hexToBytes(obj.serialNumber))
+  ]);
+}
+var _SKIToAsn1 = function(obj) {
+  // IssuerAndSerialNumber
+  return asn1.create(asn1.Class.CONTEXT_SPECIFIC, asn1.Type.NONE, false, obj.subjectKeyIdentifier);
+}
 
 /**
  * Map a set of RecipientInfo ASN.1 objects to recipientInfo objects.
@@ -596,7 +650,16 @@ p7.createEnvelopedData = function() {
      *
      * @return the recipient object.
      */
-    findRecipient: function(cert) {
+    findRecipient: function(recipient) {
+      if (typeof recipient === "string") {
+        for(var i in msg.recipients) {
+          if (msg.recipients[i].subjectKeyIdentifier === recipient) {
+            return r;
+          }
+        }
+        return null;
+      }
+      var cert = recipient;
       var sAttr = cert.issuer.attributes;
 
       for(var i = 0; i < msg.recipients.length; ++i) {
@@ -658,19 +721,34 @@ p7.createEnvelopedData = function() {
      *
      * @param cert The certificate of the entity to add.
      */
-    addRecipient: function(cert) {
-      msg.recipients.push({
-        version: 0,
-        issuer: cert.issuer.attributes,
-        serialNumber: cert.serialNumber,
-        encryptedContent: {
-          // We simply assume rsaEncryption here, since forge.pki only
-          // supports RSA so far.  If the PKI module supports other
-          // ciphers one day, we need to modify this one as well.
-          algorithm: forge.pki.oids.rsaEncryption,
-          key: cert.publicKey
-        }
-      });
+    addRecipient: function(recipient) {
+      if (recipient.subjectKeyIdentifier) {
+        msg.recipients.push({
+          version: 2,
+          subjectKeyIdentifier: recipient.subjectKeyIdentifier,
+          encryptedContent: {
+            // We simply assume rsaEncryption here, since forge.pki only
+            // supports RSA so far.  If the PKI module supports other
+            // ciphers one day, we need to modify this one as well.
+            algorithm: forge.pki.oids.rsaEncryption,
+            key: recipient.publicKey
+          }          
+        });
+      } else {
+        var cert = recipient;
+        msg.recipients.push({
+          version: 0,
+          issuer: cert.issuer.attributes,
+          serialNumber: cert.serialNumber,
+          encryptedContent: {
+            // We simply assume rsaEncryption here, since forge.pki only
+            // supports RSA so far.  If the PKI module supports other
+            // ciphers one day, we need to modify this one as well.
+            algorithm: forge.pki.oids.rsaEncryption,
+            key: cert.publicKey
+          }
+        });
+      }
     },
 
     /**
