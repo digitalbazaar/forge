@@ -633,7 +633,7 @@ if(pass) {
 }
 ```
 
-Using forge in node.js to match openssl's "enc" command line tool:
+Using forge in node.js to match openssl's "enc" command line tool (**Note**: OpenSSL "enc" uses a non-standard file format with a custom key derivation function and a fixed iteration count of 1, which some consider less secure than alternatives such as [OpenPGP](https://tools.ietf.org/html/rfc4880)/[GnuPG](https://www.gnupg.org/)):
 
 ```js
 var forge = require('node-forge');
