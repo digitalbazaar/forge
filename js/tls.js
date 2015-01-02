@@ -2742,6 +2742,29 @@ tls.createClientHello = function(c) {
     writeVector(ext, 2, snList);
     extensions.putBuffer(ext);
   }
+
+  // add signature_algorithms extension
+  var ext = new ByteBuffer();
+  ext.putInt16(tls.ExtensionType.signature_algorithms);
+  for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
+    var alg = c.signatureAndHashAlgorithms[i];
+    // skip built-in TLS 1.0 algorithm
+    if(alg === tls.SignatureAndHashAlgorithms.tls1) {
+      continue;
+    }
+    // instantiate to get hash ID and signature ID
+    alg = alg();
+    var sahAlgorithm = new ByteBuffer();
+    sahAlgorithm.putByte(alg.hashId);
+    sahAlgorithm.putByte(alg.signatureId);
+    writeVector(ext, 2, sahAlgorithm);
+  }
+  // only add extension if non-empty (more than just 2 'ExtenionType' bytes)
+  if(ext.length() > 2) {
+    extensions.putBuffer(ext);
+  }
+
+  // calculate extensions length
   var extLength = extensions.length();
   if(extLength > 0) {
     // add extension vector length
