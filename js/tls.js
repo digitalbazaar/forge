@@ -568,7 +568,7 @@ tls.SignatureAndHashAlgorithms.tls1 = function() {
  *
  * @param hash the hash identifier as a byte (integer).
  * @param signature the signature identifier as a byte (integer).
- * @param [supported] the list of supported algorithms
+ * @param [supported] the list of supported algorithm factories or algorithms
  *          (default: tls.SignatureAndHashAlgorithms).
  *
  * @return the matching supported signature and hash algorithm or null.
@@ -582,10 +582,13 @@ tls.getSignatureAndHashAlgorithm = function(hash, signature, supported) {
   }
   var rval = null;
   for(var i = 0; i < supported.length; ++i) {
-    // instantiate to check hash ID and signature ID
-    var alg = supported[key]();
+    var alg = supported[i];
+    if(typeof alg === 'function' && !('hashId' in alg)) {
+      // assume alg is a factory, instantiate to check hash and signature IDs
+      alg = alg();
+    }
     if(alg.hashId === hash && alg.signatureId === signature) {
-      rval = supported[key];
+      rval = supported[i];
       break;
     }
   }
@@ -1377,7 +1380,9 @@ tls.handleCertificateRequest = function(c, record, length) {
     };
 
     // use built-in TLS 1.0 signature and hash algorithm
-    c.session.signatureAndHashAlgorithm = tls.SignatureAndHashAlgorithms.tls1;
+    c.session.signatureAndHashAlgorithm.clientCertificate =
+      tls.getSignatureAndHashAlgorithm(
+        -1, -1, c.session.signatureAndHashAlgorithms);
   } else {
     // TLS 1.2+
     msg = {
@@ -1386,22 +1391,22 @@ tls.handleCertificateRequest = function(c, record, length) {
       certificate_authorities: readVector(b, 2)
     };
 
-    // get a supported preferred signature and hash pair
-    // choose the first supported cipher suite
+    // choose the first supported signature and hash algorithm
+    // (preference is in descending order)
     var tmp = msg.supported_signature_algorithms.copy();
     while(tmp.length() > 0) {
       var hash = tmp.getByte();
       var signature = tmp.getByte();
       var alg = tls.getSignatureAndHashAlgorithm(
-        hash, signature, c.signatureAndHashAlgorithms);
+        hash, signature, c.session.signatureAndHashAlgorithms);
       if(alg) {
-        c.session.signatureAndHashAlgorithm = alg;
+        c.session.signatureAndHashAlgorithm.clientCertificate = alg;
         break;
       }
     }
 
     // signature and hash algorithm not supported
-    if(c.session.signatureAndHashAlgorithm === null) {
+    if(c.session.signatureAndHashAlgorithm.clientCertificate === null) {
       return c.error(c, {
         message: 'No signature and hash algorithm in common.',
         send: true,
@@ -2200,6 +2205,10 @@ tls.createSession = function(c) {
     clientCertificate: null,
     sp: {},
     prf: null,
+    signatureAndHashAlgorithm: {
+      clientCertificate: null,
+      serverCertificate: null
+    },
     signatureAndHashAlgorithms: [],
     // TODO: use c.session.signatureAndHashAlgorithm
     md5: forge.md.md5.create(),
@@ -3227,7 +3236,7 @@ tls.createCertificateRequest = function(c) {
     // supported SignatureAndHashAlgorithm(s)
     sahs = new ByteBuffer();
     for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
-      var sah = c.signatureAndHashAlgorithms[i];
+      var sah = c.signatureAndHashAlgorithms[i]();
       sahs.putByte(sah.hashId);
       sahs.putByte(sah.signatureId);
     }
@@ -4313,7 +4322,8 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   cipherSuites: an optional array of cipher suites to use,
  *     see tls.CipherSuites.
  *   signatureAndHashAlgorithms: an optional array of signature and hash
- *     algorithms to use, see: tls.SignatureAndHashAlgorithms.
+ *     algorithm IDs (or factories) to use,
+ *     see: tls.SignatureAndHashAlgorithms.
  *   connected: function(conn) called when the first handshake completes.
  *   virtualHost: the virtual server name to use in a TLS SNI extension.
  *   verifyClient: true to require a client certificate in server mode,
