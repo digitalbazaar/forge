@@ -1370,9 +1370,7 @@ tls.handleCertificateRequest = function(c, record, length) {
 
   var b = record.fragment;
   var msg;
-  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
-    c.version.minor <= tls.Versions.TLS_1_1.minor);
-  if(before_tls_1_2) {
+  if(before_tls_1_2(c.version)) {
     // TLS 1.0/1.1
     msg = {
       certificate_types: readVector(b, 1),
@@ -1459,9 +1457,7 @@ tls.handleCertificateVerify = function(c, record, length) {
   // digitally-signed struct changed between TLS 1.1 and 1.2, adding
   // a new SignatureAndHashAlgorithm field
   var msg;
-  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
-    c.version.minor <= tls.Versions.TLS_1_1.minor);
-  if(before_tls_1_2) {
+  if(before_tls_1_2(c.version)) {
     // TLS 1.0/1.1
     msg = {
       algorithm: [-1, -1],
@@ -3237,9 +3233,7 @@ tls.createCertificateVerify = function(c, signature) {
   // determine length of the handshake message
   var length = 2 + signature.length();
 
-  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
-    c.version.minor <= tls.Versions.TLS_1_1.minor);
-  if(before_tls_1_2) {
+  if(before_tls_1_2(c.version)) {
     rval.putInt24(length);
   } else {
     // include SignatureAndHashAlgorithm
@@ -4659,6 +4653,11 @@ function writeVector(b, lenBytes, v) {
   // vector's ceiling
   b.putInt(v.length(), lenBytes << 3);
   b.putBuffer(v);
+}
+
+function before_tls_1_2(version) {
+  return (version.major === tls.Versions.TLS_1_0.major &&
+    version.minor <= tls.Versions.TLS_1_1.minor);
 }
 
 } // end module implementation
