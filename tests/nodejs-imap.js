@@ -7,6 +7,7 @@ var socket = new net.Socket();
 
 var client = forge.tls.createConnection({
   server: false,
+  virtualHost: 'imap.gmail.com',
   verify: function(connection, verified, depth, certs) {
     // skip verification for testing
     return true;
