@@ -551,8 +551,8 @@ tls.SignatureAndHashAlgorithms.tls1 = function() {
 
   // signature algorithm
   algorithm.sign = function(key, buffer) {
-    // TODO: remove extra buffer once .sign uses buffers
-    var buffer = new ByteBuffer(
+    // TODO: remove extra buffer once key.sign uses buffers
+    return new ByteBuffer(
       key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
   };
   algorithm.verify = function(key, buffer, signature) {
@@ -1456,9 +1456,40 @@ tls.handleCertificateVerify = function(c, record, length) {
   var msgBytes = b.bytes();
   b.read += 4;
 
-  var msg = {
-    signature: readVector(b, 2).getBytes()
-  };
+  // digitally-signed struct changed between TLS 1.1 and 1.2, adding
+  // a new SignatureAndHashAlgorithm field
+  var msg;
+  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
+    c.version.minor <= tls.Versions.TLS_1_1.minor);
+  if(before_tls_1_2) {
+    // TLS 1.0/1.1
+    msg = {
+      algorithm: [-1, -1],
+      signature: readVector(b, 2).getBytes()
+    };
+  } else {
+    // TLS 1.2+
+    msg = {
+      algorithm: [b.getByte(), b.getByte()],
+      signature: readVector(b, 2).getBytes()
+    };
+  }
+
+  // get signature and hash algorithm
+  c.session.signatureAndHashAlgorithm.clientCertificate =
+    tls.getSignatureAndHashAlgorithm(
+      msg.algorithm[0], msg.algorithm[1],
+      c.session.signatureAndHashAlgorithms);
+  if(!c.session.signatureAndHashAlgorithm.clientCertificate) {
+    return c.error(c, {
+      message: 'Unsupported signature and hash algorithm used.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.handshake_failure
+      }
+    });
+  }
 
   // TODO: add support for DSA
 
@@ -1471,8 +1502,11 @@ tls.handleCertificateVerify = function(c, record, length) {
 
   try {
     var cert = c.session.clientCertificate;
-    // TODO: pass public key to c.session.signatureAndHashAlgorithm.verify
-    if(!cert.publicKey.verify(verify, msg.signature, 'EME-PKCS1-V1_5')) {
+    // TODO: remove extra buffer creation
+    if(!c.session.signatureAndHashAlgorithm.clientCertificate.verify(
+      cert.publicKey,
+      new ByteBuffer(verify, 'binary'),
+      new ByteBuffer(msg.signature, 'binary'))) {
       throw new Error('CertificateVerify signature does not match.');
     }
 
@@ -1589,10 +1623,19 @@ tls.handleServerHelloDone = function(c, record, length) {
   // expect no messages until the following callback has been called
   c.expect = SER;
 
+  // if there is no certificate request or no client certificate, do
+  // callback immediately
+  if(c.session.certificateRequest === null ||
+    c.session.clientCertificate === null) {
+    return callback(c, null);
+  }
+
+  // otherwise get the client signature
+  tls.getClientSignature(c, callback);
+
   // create callback to handle client signature (for client-certs)
-  var callback = function(c, signature) {
-    if(c.session.certificateRequest !== null &&
-      c.session.clientCertificate !== null) {
+  function callback(c, signature) {
+    if(signature !== null) {
       // create certificate verify message
       tls.queue(c, tls.createRecord(c, {
         type: tls.ContentType.handshake,
@@ -1626,17 +1669,7 @@ tls.handleServerHelloDone = function(c, record, length) {
 
     // continue
     c.process();
-  };
-
-  // if there is no certificate request or no client certificate, do
-  // callback immediately
-  if(c.session.certificateRequest === null ||
-    c.session.clientCertificate === null) {
-    return callback(c, null);
   }
-
-  // otherwise get the client signature
-  tls.getClientSignature(c, callback);
 };
 
 /**
@@ -3078,6 +3111,7 @@ tls.getClientSignature = function(c, callback) {
   // TODO: use c.session.signatureAndHashAlgorithm.md.digest
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
+  // TODO: remove
   b = b.getBytes();
 
   // create default signing function as necessary
@@ -3110,8 +3144,9 @@ tls.getClientSignature = function(c, callback) {
         }
       });
     } else {
-      // TODO: pass private key to c.session.signatureAndHashAlgorithm.sign
-      b = privateKey.sign(b, 'EME-PKCS1-V1_5');
+      // TODO: support async signature and hash algorithm functions?
+      b = c.session.signatureAndHashAlgorithm.clientCertificate.sign(
+        privateKey, new ByteBuffer(b, 'binary'));
     }
     callback(c, b);
   };
@@ -3166,9 +3201,15 @@ tls.getClientSignature = function(c, callback) {
  * } Signature;
  *
  * In digital signing, one-way hash functions are used as input for a
- * signing algorithm. A digitally-signed element is encoded as an opaque
- * vector <0..2^16-1>, where the length is specified by the signing
- * algorithm and key.
+ * signing algorithm. In TLS 1.0 and 1.1, a digitally-signed element is encoded
+ * as an opaque vector <0..2^16-1>, where the length is specified by the signing
+ * algorithm and key. In TLS 1.2, a digitally-signed element includes the
+ * signature and hash algorithm used, like so:
+ *
+ * struct {
+ *   SignatureAndHashAlgorithm algorithm;
+ *   opaque signature<0..2^16-1>;
+ * } DigitallySigned;
  *
  * In RSA signing, a 36-byte structure of two hashes (one SHA and one
  * MD5) is signed (encrypted with the private key). It is encoded with
@@ -3178,26 +3219,38 @@ tls.getClientSignature = function(c, callback) {
  * Digital Signing Algorithm with no additional hashing.
  *
  * @param c the connection.
- * @param signature the signature to include in the message.
+ * @param signature the signature, as a ByteBuffer, to include in the message.
  *
  * @return the CertificateVerify byte buffer.
  */
 tls.createCertificateVerify = function(c, signature) {
-  /* Note: The signature will be stored in a "digitally-signed" opaque
-    vector that has the length prefixed using 2 bytes, so include those
-    2 bytes in the handshake message length. This is done as a minor
-    optimization instead of calling writeVector(). */
-
-  // determine length of the handshake message
-  var length = signature.length + 2;
+  /* Note: For TLS 1.0/1.1, the signature will be stored in a
+    "digitally-signed" opaque vector that has the length prefixed using
+    2 bytes, so include those 2 bytes in the handshake message length. For
+    TLS 1.2+, a SignatureAndHashAlgorithm is added to the message prior to
+    adding the signature. */
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.certificate_verify);
-  rval.putInt24(length);
-  // add vector length bytes
-  rval.putInt16(signature.length);
-  rval.putBytes(signature);
+
+  // determine length of the handshake message
+  var length = 2 + signature.length();
+
+  var before_tls_1_2 = (c.version.major === tls.Versions.TLS_1_0.major &&
+    c.version.minor <= tls.Versions.TLS_1_1.minor);
+  if(before_tls_1_2) {
+    rval.putInt24(length);
+  } else {
+    // include SignatureAndHashAlgorithm
+    length += 2;
+    rval.putInt24(length);
+    var alg = c.session.signatureAndHashAlgorithm.clientCertificate;
+    rval.putByte(alg.hashId);
+    rval.putByte(alg.signatureId);
+  }
+
+  writeVector(rval, 2, signature);
   return rval;
 };
 
