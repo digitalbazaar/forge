@@ -475,6 +475,25 @@ tls.HeartbeatMessageType = {
 };
 
 /**
+ * Extension types.
+ * enum {
+ *   server_name(0), max_fragment_length(1),
+ *   client_certificate_url(2), trusted_ca_keys(3),
+ *   truncated_hmac(4), status_request(5),
+ *   signature_algorithms(13), (65535)
+ * } ExtensionType;
+ */
+tls.ExtensionType = {
+  server_name: 0,
+  max_fragment_length: 1,
+  client_certificate_url: 2,
+  trusted_ca_keys: 3,
+  truncated_hmac: 4,
+  status_request: 5,
+  signature_algorithms: 13
+};
+
+/**
  * Supported cipher suites.
  */
 tls.CipherSuites = {};
@@ -669,18 +688,17 @@ tls.parseHelloMessage = function(c, record, length) {
       var exts = readVector(b, 2);
       while(exts.length() > 0) {
         msg.extensions.push({
-          type: [exts.getByte(), exts.getByte()],
+          type: exts.getInt16(),
           data: readVector(exts, 2)
         });
       }
 
-      // TODO: make extension support modular
+      // TODO: make extension support more modular
       if(!client) {
         for(var i = 0; i < msg.extensions.length; ++i) {
           var ext = msg.extensions[i];
-
-          // support SNI extension
-          if(ext.type[0] === 0x00 && ext.type[1] === 0x00) {
+          if(ext.type === tls.ExtensionType.server_name) {
+            // SNI extension
             // get server name list
             var snl = readVector(ext.data, 2);
             while(snl.length() > 0) {
@@ -697,6 +715,8 @@ tls.parseHelloMessage = function(c, record, length) {
               c.session.extensions.server_name.serverNameList.push(
                 readVector(snl, 2).getBytes());
             }
+          } else if(ext.type === tls.ExtensionType.signature_algorithms) {
+            // TODO: support signature_algorithms extension
           }
         }
       }
@@ -2687,8 +2707,8 @@ tls.createClientHello = function(c) {
   if(c.virtualHost) {
     // create extension struct
     var ext = new ByteBuffer();
-    ext.putByte(0x00); // type server_name (ExtensionType is 2 bytes)
-    ext.putByte(0x00);
+    // ExtensionType is 2 bytes
+    ext.putInt16(tls.ExtensionType.server_name);
 
     /* In order to provide the server name, clients MAY include an
      * extension of type "server_name" in the (extended) client hello.
@@ -3678,7 +3698,8 @@ tls.createConnection = function(options) {
   var sahAlgorithms = options.signatureAndHashAlgorithms || null;
   if(sahAlgorithms === null) {
     // TODO: add optimization to only add tls.SignatureAndHashAlgorithms.tls1
-    // if max TLS version is 1.1?
+    // if max TLS version is 1.1 and/or add special code to combine md5
+    // and sha1 signature and hash algorithms when version <= TLS 1.1?
 
     // use default signature and hash algorithms
     sahAlgorithms = [];
