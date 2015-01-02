@@ -507,19 +507,63 @@ tls.SignatureAndHashAlgorithms = {};
 // TODO: add supported algorithms (rsa + all hashes in md)
 
 /**
+ * TLS 1.0 MD5 + SHA-1 combination hash.
+ */
+tls.SignatureAndHashAlgorithms.tls1 = {
+  hashId: -1,
+  signatureId: -1,
+  start: function(handshakeMessages) {
+    var md5 = forge.md.md5.create();
+    var sha1 = forge.md.md5.create();
+    var md = {};
+    md.update = function(bytes, encoding) {
+      md5.update(bytes, encoding);
+      sha1.update(bytes, encoding);
+      return md;
+    };
+    md.digest = function() {
+      var buffer = new ByteBuffer();
+      buffer.putBuffer(md5.digest());
+      buffer.putBuffer(sha1.digest());
+      return buffer;
+    };
+
+    // consume handshake messages buffer
+    md.update(handshakeMessages);
+    // TODO: remove once extra copying within digest is removed
+    handshakeMessages.clear();
+
+    return {
+      hashId: -1,
+      signatureId: -1,
+      md: md,
+      sign: function(key, buffer) {
+        // TODO: remove extra buffer once .sign uses buffers
+        var buffer = new ByteBuffer(
+          key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
+      },
+      verify: function(key, buffer, signature) {
+        return key.verify(
+          buffer.getBytes(), signature.getBytes(), 'EME-PKCS1-V1_5');
+      }
+    };
+  }
+};
+
+/**
  * Gets a supported signature and hash algorithm pair from its 2 byte ID.
  *
  * @param hash the hash identifier as a byte (integer).
  * @param signature the signature identifier as a byte (integer).
  *
- * @return the matching supported signature and hash algorithm pair or null.
+ * @return the matching supported signature and hash algorithm or null.
  */
 tls.getSignatureAndHashAlgorithm = function(hash, signature) {
   var rval = null;
   for(var key in tls.SignatureAndHashAlgorithms) {
-    var pair = tls.SignatureAndHashAlgorithms[key];
-    if(pair.hashId === hash && pair.signatureId === signature) {
-      rval = pair;
+    var alg = tls.SignatureAndHashAlgorithms[key];
+    if(alg.hashId === hash && alg.signatureId === signature) {
+      rval = alg;
       break;
     }
   }
@@ -1316,9 +1360,9 @@ tls.handleCertificateRequest = function(c, record, length) {
     while(tmp.length() > 0) {
       var hash = tmp.getByte();
       var signature = tmp.getByte();
-      var pair = tls.getSignatureAndHashAlgorithm(hash, signature);
-      if(pair !== null && tls.signatureAndHashAlgorithms.indexOf(pair) !== -1) {
-        c.session.signatureAndHashAlgorithm = pair;
+      var alg = tls.getSignatureAndHashAlgorithm(hash, signature);
+      if(alg) {
+        c.session.signatureAndHashAlgorithm = alg;
         break;
       }
     }
@@ -3580,13 +3624,34 @@ tls.createConnection = function(options) {
     }
   }
 
-  // setup default signature and hash algorithms
   var sahAlgorithms = options.signatureAndHashAlgorithms || null;
   if(sahAlgorithms === null) {
+    // use default signature and hash algorithms
     sahAlgorithms = [];
     for(var key in tls.SignatureAndHashAlgorithms) {
       sahAlgorithms.push(tls.SignatureAndHashAlgorithms[key]);
     }
+  } else if(!forge.util.isArray(sahAlgorithms)) {
+    throw new TypeError('options.signatureAndHashAlgorithms must be an Array.');
+  } else {
+    // use specified signature and hash algorithms
+    var alg;
+    var _sahAlgorithms = [];
+    for(var i = 0; i < sahAlgorithms.length; ++i) {
+      if(typeof sahAlgorithms[i] === 'string') {
+        // convert string ID to algorithm
+        alg = tls.SignatureAndHashAlgorithms[sahAlgorithms[i]] || null;
+        if(!alg) {
+          throw new Error(
+            'Unknown signature and hash algorithm: "' +
+            sahAlgorithms[i] + '".');
+        }
+      } else {
+        alg = sahAlgorithms[i];
+      }
+      _sahAlgorithms.push(alg);
+    }
+    sahAlgorithms = _sahAlgorithms;
   }
 
   // set default entity
