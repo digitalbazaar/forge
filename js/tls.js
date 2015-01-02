@@ -506,50 +506,43 @@ tls.getCipherSuite = function(twoBytes) {
 tls.SignatureAndHashAlgorithms = {};
 // TODO: add supported algorithms (rsa + all hashes in md)
 
-tls.SignatureAndHashAlgorithm = function() {
-  this.hashId = -1;
-  this.signatureId = -1;
-  this.md = null;
-  this.sign = function() {
-    throw new Error('Not implemented.');
-  };
-  this.verify = function() {
-    throw new Error('Not implemented.');
-  };
-};
-
 /**
  * TLS 1.0 MD5 + SHA-1 combination hash.
  */
 tls.SignatureAndHashAlgorithms.tls1 = function() {
-  var md = this.md = {};
+  var algorithm = {};
+  algorithm.hashId = -1;
+  algorithm.signatureId = -1;
+
+  // hash algorithm
+  var hash = algorithm.hash = {};
   var md5 = forge.md.md5.create();
   var sha1 = forge.md.md5.create();
-  md.update = function(bytes, encoding) {
+  hash.update = function(bytes, encoding) {
     md5.update(bytes, encoding);
     sha1.update(bytes, encoding);
-    return md;
+    return hash;
   };
-  md.digest = function() {
+  hash.digest = function() {
     var buffer = new ByteBuffer();
     buffer.putBuffer(md5.digest());
     buffer.putBuffer(sha1.digest());
     return buffer;
   };
 
-  this.sign = function(key, buffer) {
+  // signature algorithm
+  algorithm.sign = function(key, buffer) {
     // TODO: remove extra buffer once .sign uses buffers
     var buffer = new ByteBuffer(
       key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
   };
-
-  this.verify = function(key, buffer, signature) {
+  algorithm.verify = function(key, buffer, signature) {
     return key.verify(
       buffer.getBytes(), signature.getBytes(), 'EME-PKCS1-V1_5');
   };
+
+  return algorithm;
 };
-tls.SignatureAndHashAlgorithms.tls1.prototype =
-  new tls.SignatureAndHashAlgorithm();
 
 /**
  * Gets a supported signature and hash algorithm pair from its 2 byte ID.
@@ -565,14 +558,15 @@ tls.getSignatureAndHashAlgorithm = function(hash, signature, supported) {
   if(!supported) {
     supported = [];
     for(var key in tls.SignatureAndHashAlgorithms) {
-      supported.push(new tls.SignatureAndHashAlgorithms[key]());
+      supported.push(tls.SignatureAndHashAlgorithms[key]);
     }
   }
   var rval = null;
   for(var i = 0; i < supported.length; ++i) {
-    var alg = supported[key];
+    // instantiate to check hash ID and signature ID
+    var alg = supported[key]();
     if(alg.hashId === hash && alg.signatureId === signature) {
-      rval = alg;
+      rval = supported[key];
       break;
     }
   }
@@ -2191,10 +2185,11 @@ tls.createSession = function(c) {
     }
   };
 
-  // start handshake message digests
+  // instantiate supported hash algorithms from connection
+  session.signatureAndHashAlgorithms = [];
   for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
-    var sah = c.signatureAndHashAlgorithms[i];
-    session.signatureAndHashAlgorithms.push(sah);
+    session.signatureAndHashAlgorithms.push(
+      c.signatureAndHashAlgorithms[i]());
   }
 
   /**
@@ -3668,10 +3663,13 @@ tls.createConnection = function(options) {
 
   var sahAlgorithms = options.signatureAndHashAlgorithms || null;
   if(sahAlgorithms === null) {
+    // TODO: add optimization to only add tls.SignatureAndHashAlgorithms.tls1
+    // if max TLS version is 1.1?
+
     // use default signature and hash algorithms
     sahAlgorithms = [];
     for(var key in tls.SignatureAndHashAlgorithms) {
-      sahAlgorithms.push(new tls.SignatureAndHashAlgorithms[key]());
+      sahAlgorithms.push(tls.SignatureAndHashAlgorithms[key]);
     }
   } else if(!forge.util.isArray(sahAlgorithms)) {
     throw new TypeError('options.signatureAndHashAlgorithms must be an Array.');
@@ -3688,11 +3686,16 @@ tls.createConnection = function(options) {
             'Unknown signature and hash algorithm: "' +
             sahAlgorithms[i] + '".');
         }
-      } else if(sahAlgorithms[i] instanceof tls.SignatureAndHashAlgorithm) {
+      } else if(typeof sahAlgorithms[i] === 'function') {
         alg = sahAlgorithms[i];
-      } else {
+      } else if(typeof sahAlgorithms[i] === 'object') {
         alg = tls.getSignatureAndHashAlgorithm(
           sahAlgorithms[i].hashId, sahAlgorithms[i].signatureId);
+      } else {
+        throw new TypeError(
+          'options.signatureAndHashAlgorithms must be an Array containing ' +
+          'strings, factory functions, or objects with "hashId" and ' +
+          '"signatureId" keys.');
       }
       _sahAlgorithms.push(alg);
     }
