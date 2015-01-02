@@ -2364,13 +2364,8 @@ tls.generateKeys = function(c, sp) {
   // TLS 1.0 but we don't care right now because AES is better, we have
   // an implementation for it, and almost all TLS 1.0 implementations have it
 
-  var tls1_0 = (c.version.major === tls.Versions.TLS_1_0.major &&
-    c.version.minor === tls.Versions.TLS_1_0.minor);
-  var tls1_1 = (c.version.major === tls.Versions.TLS_1_1.major &&
-    c.version.minor === tls.Versions.TLS_1_1.minor);
-
   // determine the PRF
-  if(tls1_0 || tls1_1) {
+  if(is_tls_1_0(c.version) || is_tls_1_1(c.version)) {
     // TLS 1.0/1.1 always use prf_TLS1
     c.session.prf = prf_TLS1;
   } else {
@@ -2402,7 +2397,7 @@ tls.generateKeys = function(c, sp) {
   var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
 
   // include IV for TLS/1.0
-  if(tls1_0) {
+  if(is_tls_1_0(c.version)) {
     length += 2 * sp.fixed_iv_length;
   }
   var km = prf(sp.master_secret, 'key expansion', random, length);
@@ -2420,7 +2415,7 @@ tls.generateKeys = function(c, sp) {
   };
 
   // include TLS 1.0 IVs
-  if(tls1_0) {
+  if(is_tls_1_0(c.version)) {
     rval.client_write_IV = new ByteBuffer(
       km.getBytes(sp.fixed_iv_length, 'binary'));
     rval.server_write_IV = new ByteBuffer(
@@ -3277,9 +3272,7 @@ tls.createCertificateRequest = function(c) {
 
   // TLS 1.2 adds support for SignatureAndHashAlgorithm(s)
   var sahs;
-  var tls_1_2 = (c.version.major === tls.Versions.TLS_1_2.major &&
-    c.version.minor === tls.Versions.TLS_1_2.minor);
-  if(tls_1_2) {
+  if(is_tls_1_2(c.version)) {
     // supported SignatureAndHashAlgorithm(s)
     sahs = new ByteBuffer();
     for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
@@ -3295,7 +3288,7 @@ tls.createCertificateRequest = function(c) {
   rval.putByte(tls.HandshakeType.certificate_request);
   rval.putInt24(length);
   writeVector(rval, 1, certTypes);
-  if(tls_1_2) {
+  if(is_tls_1_2(c.version)) {
     writeVector(rval, 2, sahs);
   }
   writeVector(rval, 2, cAs);
@@ -4653,6 +4646,21 @@ function writeVector(b, lenBytes, v) {
   // vector's ceiling
   b.putInt(v.length(), lenBytes << 3);
   b.putBuffer(v);
+}
+
+function is_tls_1_0(version) {
+  return (version.major === tls.Versions.TLS_1_0.major &&
+    version.minor === tls.Versions.TLS_1_0.minor);
+}
+
+function is_tls_1_1(version) {
+  return (version.major === tls.Versions.TLS_1_1.major &&
+    version.minor === tls.Versions.TLS_1_1.minor);
+}
+
+function is_tls_1_2(version) {
+  return (version.major === tls.Versions.TLS_1_2.major &&
+    version.minor === tls.Versions.TLS_1_2.minor);
 }
 
 function before_tls_1_2(version) {
