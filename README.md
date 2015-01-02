@@ -249,6 +249,8 @@ __Examples__
 ```js
 // create TLS client
 var client = forge.tls.createConnection({
+  // optionally force TLS 1.0 (or other supported version)
+  //version: forge.tls.Versions.TLS_1_0,
   server: false,
   caStore: /* Array of PEM-formatted certs or a CA store object */,
   sessionCache: {},
@@ -316,9 +318,6 @@ var client = forge.tls.createConnection({
     console.log('uh oh', error);
   }
 });
-
-// optionally force TLS 1.0 (or another supported version)
-// client.version = {major: 3, minor: 1};
 
 // start the handshake process
 client.handshake();

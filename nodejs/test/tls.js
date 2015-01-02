@@ -62,10 +62,12 @@ function Tests(ASSERT, forge) {
     }
 
     function createClientConnection(options, callback) {
+      var version = options.version || forge.tls.Version;
       var end = options.end;
       var data = options.data;
       var assert = options.assert || {};
       return forge.tls.createConnection({
+        version: version,
         server: false,
         caStore: [data.server.cert],
         sessionCache: {},
@@ -112,10 +114,12 @@ function Tests(ASSERT, forge) {
     }
 
     function createServerConnection(options) {
+      var version = options.version || forge.tls.Version;
       var end = options.end;
       var data = options.data;
       var assert = options.assert || {};
       return forge.tls.createConnection({
+        version: version,
         server: true,
         caStore: [data.client.cert],
         sessionCache: {},
@@ -192,6 +196,7 @@ function Tests(ASSERT, forge) {
         version: {major: 3, minor: 1}
       };
       end.client = createClientConnection({
+        version: forge.tls.Versions.TLS_1_0,
         end: end,
         data: data,
         assert: assert
@@ -202,7 +207,6 @@ function Tests(ASSERT, forge) {
         assert: assert
       });
 
-      end.client.version = {major: 3, minor: 1};
       end.client.handshake();
     });
 
@@ -219,6 +223,7 @@ function Tests(ASSERT, forge) {
         version: {major: 3, minor: 2}
       };
       end.client = createClientConnection({
+        version: forge.tls.Versions.TLS_1_1,
         end: end,
         data: data,
         assert: assert
@@ -229,7 +234,6 @@ function Tests(ASSERT, forge) {
         assert: assert
       });
 
-      end.client.version = {major: 3, minor: 2};
       end.client.handshake();
     });
 

@@ -3712,7 +3712,7 @@ tls.createConnection = function(options) {
 
   // create TLS connection
   var c = {
-    version: {major: tls.Version.major, minor: tls.Version.minor},
+    version: options.version || tls.Version,
     entity: entity,
     sessionId: options.sessionId,
     caStore: caStore,
@@ -3769,7 +3769,7 @@ tls.createConnection = function(options) {
    * @param clearFail true to clear the fail flag (default: true).
    */
   c.reset = function(clearFail) {
-    c.version = {major: tls.Version.major, minor: tls.Version.minor};
+    c.version = options.version || tls.Version;
     c.record = null;
     c.session = null;
     c.peerCertificate = null;
@@ -4238,6 +4238,7 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   be called once the signature is ready.
  *
  * @param options the options for this connection:
+ *   version: the maximum TLS version to support (see: tls.Versions).
  *   server: true if the connection is server-side, false for client.
  *   sessionId: a session ID to reuse, null for a new connection.
  *   caStore: an array of certificates to trust.
