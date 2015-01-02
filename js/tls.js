@@ -3639,6 +3639,20 @@ tls.createSessionCache = function(cache, capacity) {
  * @return the new TLS connection.
  */
 tls.createConnection = function(options) {
+  options = options || {};
+  if(options.version) {
+    var found = false;
+    for(var version in tls.Versions) {
+      if(options.version === tls.Versions[version]) {
+        found = true;
+        break;
+      }
+    }
+    if(!found) {
+      throw new Error('Unsupported TLS version specified via options.version.');
+    }
+  }
+
   var caStore = null;
   if(options.caStore) {
     // if CA store is an array, convert it to a CA store object
