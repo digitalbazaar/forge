@@ -126,6 +126,7 @@ pkcs1.decode_rsaes = function(key, em) {
  * @return the encoded message as a ByteBuffer.
  */
 pkcs1.encode_rsassa = function(key, message) {
+  // FIXME: encode_emsa_v1_5 expects a message digest object
   var em = pkcs1.encode_emsa_v1_5(message);
   return pkcs1.encode_eme_v1_5(key, em, 0x01).getBytes();
 };

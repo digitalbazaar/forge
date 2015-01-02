@@ -845,6 +845,9 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    * @return the signature as a byte string.
    */
   key.sign = function(md, scheme) {
+    // FIXME: discrepancy/confusion between passing bytes and passing
+    // a message digest object -- clean up API
+
     /* Note: The internal implementation of RSA operations is being
       transitioned away from a PKCS#1 v1.5 hard-coded scheme. Some legacy
       code like the use of an encoding block type identifier 'bt' will
