@@ -716,7 +716,16 @@ tls.parseHelloMessage = function(c, record, length) {
                 readVector(snl, 2).getBytes());
             }
           } else if(ext.type === tls.ExtensionType.signature_algorithms) {
-            // TODO: support signature_algorithms extension
+            // signature_algorithms extension
+            var sahAlgorithms = readVector(ext.data, 2);
+            while(sahAlgorithms.length() > 0) {
+              // read algorithm type
+              c.session.extensions.signature_algorithms
+                .signatureAndHashAlgorithms.push({
+                hashId: sahAlgorithms.getByte(),
+                signatureId: sahAlgorithms.getByte()
+              });
+            }
           }
         }
       }
