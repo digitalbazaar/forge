@@ -3097,13 +3097,14 @@ tls.createServerKeyExchange = function(c) {
  * @param callback the callback to call once the signed data is ready.
  */
 tls.getClientSignature = function(c, callback) {
-  // generate data to RSA encrypt
+  var algorithm = c.session.signatureAndHashAlgorithm.clientCertificate;
+
+  // generate data to sign
   var b = forge.util.createBuffer();
   // TODO: use c.session.signatureAndHashAlgorithm.md.digest
+  //b.putBuffer(algorithm.md.digest());
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
-  // TODO: remove
-  b = b.getBytes();
 
   // create default signing function as necessary
   c.getSignature = c.getSignature || function(c, b, callback) {
@@ -3136,8 +3137,7 @@ tls.getClientSignature = function(c, callback) {
       });
     } else {
       // TODO: support async signature and hash algorithm functions?
-      b = c.session.signatureAndHashAlgorithm.clientCertificate.sign(
-        privateKey, new ByteBuffer(b, 'binary'));
+      b = algorithm.sign(privateKey, b);
     }
     callback(c, b);
   };
