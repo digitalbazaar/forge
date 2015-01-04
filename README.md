@@ -1335,11 +1335,25 @@ var bags = p12.getBags({
   bagType: forge.pki.oids.certBag
 });
 
-// generate p12, base64 encode
+// generate p12 using AES (default)
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');
+
+// generate a p12 that can be imported by Chrome/Firefox
+// (requires the use of Triple DES instead of AES)
+var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
+  privateKey, certificateChain, 'password',
+  {algorithm: '3des'});
+
+// base64-encode p12
 var p12Der = forge.asn1.toDer(p12Asn1).getBytes();
 var p12b64 = forge.util.encode64(p12Der);
+
+// create download link for p12
+var a = document.createElement('a');
+a.download = 'example.p12';
+a.setAttribute('href','data:application/x-pkcs12;base64,' + p12b64);
+a.appendChild(document.createTextNode('Download'));
 ```
 
 <a name="asn" />
