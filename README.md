@@ -1335,7 +1335,7 @@ var bags = p12.getBags({
   bagType: forge.pki.oids.certBag
 });
 
-// generate p12 using AES (default)
+// generate a p12 using AES (default)
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');
 
@@ -1352,7 +1352,7 @@ var p12b64 = forge.util.encode64(p12Der);
 // create download link for p12
 var a = document.createElement('a');
 a.download = 'example.p12';
-a.setAttribute('href','data:application/x-pkcs12;base64,' + p12b64);
+a.setAttribute('href', 'data:application/x-pkcs12;base64,' + p12b64);
 a.appendChild(document.createTextNode('Download'));
 ```
 
