@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2009-2015 Digital Bazaar, Inc.
  *
  */
 (function() {
@@ -18,7 +18,7 @@ var ByteBuffer = forge.util.ByteBuffer;
  * Supported cipher suites.
  */
 tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
-  id: [0x00,0x2f],
+  id: [0x00, 0x2F],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
@@ -32,11 +32,10 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
     sp.mac_key_length = 20;
   },
   initConnectionState: initConnectionState,
-  verifyDataLength: 12,
-  handshakeHashAlgorithm: 'sha256'
+  verifyDataLength: 12
 };
 tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
-  id: [0x00,0x35],
+  id: [0x00, 0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
@@ -48,6 +47,43 @@ tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
     sp.mac_algorithm = tls.MACAlgorithm.hmac_sha1;
     sp.mac_length = 20;
     sp.mac_key_length = 20;
+  },
+  initConnectionState: initConnectionState,
+  verifyDataLength: 12
+};
+tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA256'] = {
+  id: [0x00, 0x3C],
+  name: 'TLS_RSA_WITH_AES_128_CBC_SHA256',
+  initSecurityParameters: function(sp) {
+    sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
+    sp.cipher_type = tls.CipherType.block;
+    sp.enc_key_length = 16;
+    sp.block_length = 16;
+    sp.fixed_iv_length = 16;
+    sp.record_iv_length = 16;
+    sp.mac_algorithm = tls.MACAlgorithm.hmac_sha256;
+    sp.mac_length = 32;
+    sp.mac_key_length = 32;
+    sp.prf_algorithm = tls.PRFAlgorithm.tls_prf_sha256;
+  },
+  initConnectionState: initConnectionState,
+  verifyDataLength: 12,
+  handshakeHashAlgorithm: 'sha256'
+};
+tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA256'] = {
+  id: [0x00, 0x3D],
+  name: 'TLS_RSA_WITH_AES_256_CBC_SHA256',
+  initSecurityParameters: function(sp) {
+    sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
+    sp.cipher_type = tls.CipherType.block;
+    sp.enc_key_length = 32;
+    sp.block_length = 16;
+    sp.fixed_iv_length = 16;
+    sp.record_iv_length = 16;
+    sp.mac_algorithm = tls.MACAlgorithm.hmac_sha256;
+    sp.mac_length = 32;
+    sp.mac_key_length = 32;
+    sp.prf_algorithm = tls.PRFAlgorithm.tls_prf_sha256;
   },
   initConnectionState: initConnectionState,
   verifyDataLength: 12,
@@ -70,12 +106,21 @@ function initConnectionState(state, c, sp) {
       sp.keys.client_write_key : sp.keys.server_write_key),
     iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
   };
-  state.read.cipherFunction = decrypt_aes_cbc_sha1;
-  state.write.cipherFunction = encrypt_aes_cbc_sha1;
+  state.read.cipherFunction = decrypt_aes_cbc;
+  state.write.cipherFunction = encrypt_aes_cbc;
 
   // MAC setup
   state.read.macLength = state.write.macLength = sp.mac_length;
-  state.read.macFunction = state.write.macFunction = tls.hmac_sha1;
+  var macFunction;
+  switch(sp.mac_algorithm) {
+  case tls.MACAlgorithm.hmac_sha1:
+    macFunction = tls.createHmac('sha1');
+    break;
+  case tls.MACAlgorithm.hmac_sha256:
+    macFunction = tls.createHmac('sha256');
+    break;
+  }
+  state.read.macFunction = state.write.macFunction = macFunction;
 }
 
 /**
@@ -87,12 +132,12 @@ function initConnectionState(state, c, sp) {
  *
  * @return true on success, false on failure.
  */
-function encrypt_aes_cbc_sha1(record, s) {
+function encrypt_aes_cbc(record, s) {
   var rval = false;
 
   // append MAC to fragment, update sequence number
   var mac = s.macFunction(s.macKey, s.sequenceNumber, record);
-  record.fragment.putBytes(mac);
+  record.fragment.putBuffer(mac);
   s.updateSequenceNumber();
 
   // TLS 1.1+ use an explicit IV every time to protect against CBC attacks
@@ -118,7 +163,7 @@ function encrypt_aes_cbc_sha1(record, s) {
 
   // do encryption (default padding is appropriate)
   cipher.update(record.fragment);
-  if(cipher.finish(encrypt_aes_cbc_sha1_padding)) {
+  if(cipher.finish(encrypt_aes_cbc_padding)) {
     // set record fragment to encrypted output
     record.fragment = cipher.output;
     record.length = record.fragment.length();
@@ -129,7 +174,7 @@ function encrypt_aes_cbc_sha1(record, s) {
 }
 
 /**
- * Handles padding for aes_cbc_sha1 in encrypt mode.
+ * Handles padding for aes_cbc in encrypt mode.
  *
  * @param blockSize the block size.
  * @param input the input buffer.
@@ -137,7 +182,7 @@ function encrypt_aes_cbc_sha1(record, s) {
  *
  * @return true on success, false on failure.
  */
-function encrypt_aes_cbc_sha1_padding(blockSize, input, decrypt) {
+function encrypt_aes_cbc_padding(blockSize, input, decrypt) {
   /* The encrypted data length (TLSCiphertext.length) is one more than the sum
    of SecurityParameters.block_length, TLSCompressed.length,
    SecurityParameters.mac_length, and padding_length.
@@ -167,7 +212,7 @@ function encrypt_aes_cbc_sha1_padding(blockSize, input, decrypt) {
 }
 
 /**
- * Handles padding for aes_cbc_sha1 in decrypt mode.
+ * Handles padding for aes_cbc in decrypt mode.
  *
  * @param blockSize the block size.
  * @param output the output buffer.
@@ -175,7 +220,7 @@ function encrypt_aes_cbc_sha1_padding(blockSize, input, decrypt) {
  *
  * @return true on success, false on failure.
  */
-function decrypt_aes_cbc_sha1_padding(blockSize, output, decrypt) {
+function decrypt_aes_cbc_padding(blockSize, output, decrypt) {
   var rval = true;
   if(decrypt) {
     /* The last byte in the output specifies the number of padding bytes not
@@ -205,10 +250,8 @@ function decrypt_aes_cbc_sha1_padding(blockSize, output, decrypt) {
  *
  * @return true on success, false on failure.
  */
-var count = 0;
-function decrypt_aes_cbc_sha1(record, s) {
+function decrypt_aes_cbc(record, s) {
   var rval = false;
-  ++count;
 
   var iv;
   if(record.version.minor === tls.Versions.TLS_1_0.minor) {
@@ -229,37 +272,35 @@ function decrypt_aes_cbc_sha1(record, s) {
 
   // do decryption
   cipher.update(record.fragment);
-  rval = cipher.finish(decrypt_aes_cbc_sha1_padding);
+  rval = cipher.finish(decrypt_aes_cbc_padding);
 
   // even if decryption fails, keep going to minimize timing attacks
 
   // decrypted data:
-  // first (len - 20) bytes = application data
-  // last 20 bytes          = MAC
+  // first (len - macLen) bytes = application data
+  // last macLen bytes          = MAC
   var macLen = s.macLength;
 
   // create a zero'd out mac
-  var mac = '';
-  for(var i = 0; i < macLen; ++i) {
-    mac += String.fromCharCode(0);
-  }
+  var mac = new ByteBuffer().fillWithByte(0, macLen);
 
   // get fragment and mac
   var len = cipher.output.length();
   if(len >= macLen) {
     record.fragment = cipher.output.getBytes(len - macLen);
-    mac = cipher.output.getBytes(macLen);
+    mac = new ByteBuffer(cipher.output.getBytes(macLen), 'binary');
   } else {
     // bad data, but get bytes anyway to try to keep timing consistent
     record.fragment = cipher.output.getBytes();
   }
-  record.fragment = forge.util.createBuffer(record.fragment);
+  record.fragment = new ByteBuffer(record.fragment, 'binary');
   record.length = record.fragment.length();
 
   // see if data integrity checks out, update sequence number
   var mac2 = s.macFunction(s.macKey, s.sequenceNumber, record);
   s.updateSequenceNumber();
-  rval = (mac2 === mac) && rval;
+  // TODO: use buffer compare/equals
+  rval = (mac2.getBytes() === mac.getBytes()) && rval;
   return rval;
 }
 

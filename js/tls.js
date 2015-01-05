@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2009-2015 Digital Bazaar, Inc.
  *
  * The TLS Handshake Protocol involves the following steps:
  *
@@ -2440,13 +2440,10 @@ tls.createSession = function(c) {
  */
 tls.generateKeys = function(c, sp) {
   // Note:
-  // TLS_RSA_WITH_AES_128_CBC_SHA (required to be compliant with TLS 1.2) &
-  // TLS_RSA_WITH_AES_256_CBC_SHA are the only cipher suites implemented
-  // at present
-
   // TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA is required to be compliant with
-  // TLS 1.0 but we don't care right now because AES is better, we have
-  // an implementation for it, and almost all TLS 1.0 implementations have it
+  // TLS 1.0 but is presently unimplemented, instead
+  // TLS_RSA_WITH_AES_128_CBC_SHA, required by TLS 1.2, is implemented;
+  // almost all TLS 1.0 implementations support it
 
   // determine the PRF
   if(is_tls_1_0(c.version) || is_tls_1_1(c.version)) {
@@ -2703,7 +2700,7 @@ tls.createConnectionState = function(c) {
 tls.createRandom = function() {
   // get UTC milliseconds
   var d = new Date();
-  var utc = +d + d.getTimezoneOffset() * 60000;
+  var utc = d.getTime() + d.getTimezoneOffset() * 60000;
   var rval = forge.util.createBuffer();
   rval.putInt32(utc);
   rval.putBytes(forge.random.getBytes(28));
@@ -4329,8 +4326,13 @@ for(var key in tls) {
 // expose prf_tls1 for testing
 forge.tls.prf_tls1 = prf_TLS1;
 
-// expose sha1 hmac method
-forge.tls.hmac_sha1 = hmac_sha1;
+// expose hmac method and factory
+forge.tls.hmac = tls_hmac;
+forge.tls.createHmac = function(algorithm) {
+  return function(key, seqNum, record) {
+    return tls_hmac(algorithm, key, seqNum, record);
+  };
+};
 
 // expose session cache creation
 forge.tls.createSessionCache = tls.createSessionCache;
@@ -4474,7 +4476,7 @@ forge.tls.createConnection = tls.createConnection;
  * @return the pseudo random bytes in a byte buffer.
  */
 function prf_TLS1(secret, label, seed, length) {
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
 
   /* For TLS 1.0, the secret is split in half, into two secrets of equal
     length. If the secret has an odd length then the last byte of the first
@@ -4549,15 +4551,16 @@ function prf_sha256(secret, label, seed, length) {
 }
 
 /**
- * Gets a MAC for a record using the SHA-1 hash algorithm.
+ * Gets a MAC for a record using the given hash algorithm.
  *
+ * @param algorithm the algorithm to use.
  * @param key the mac key as a ByteBuffer.
  * @param state the sequence number (array of two 32-bit integers).
  * @param record the record.
  *
- * @return the sha-1 hash (20 bytes) for the given record.
+ * @return the MAC for the given record as a ByteBuffer.
  */
-function hmac_sha1(key, seqNum, record) {
+function tls_hmac(algorithm, key, seqNum, record) {
   /* MAC is computed like so:
   HMAC_hash(
     key, seqNum +
@@ -4567,7 +4570,7 @@ function hmac_sha1(key, seqNum, record) {
       TLSCompressed.fragment)
   */
   var hmac = forge.hmac.create();
-  hmac.start('SHA1', key);
+  hmac.start(algorithm, key);
   var b = new ByteBuffer();
   b.putInt32(seqNum[0]);
   b.putInt32(seqNum[1]);
@@ -4577,7 +4580,7 @@ function hmac_sha1(key, seqNum, record) {
   b.putInt16(record.length);
   b.putBytes(record.fragment.bytes());
   hmac.update(b);
-  return hmac.digest().getBytes();
+  return hmac.digest();
 }
 
 /**
