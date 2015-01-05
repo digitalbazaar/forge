@@ -593,6 +593,8 @@ util.ByteStringBuffer.prototype.last = function() {
  * @return the copy.
  */
 // TODO: add .copyView to get a shallow copy
+// Note: need to be careful with semantics as the underlying byte array
+// can't actually be shared with this particular implementation (ByteString)
 util.ByteStringBuffer.prototype.copy = function() {
   var c = util.createBuffer(this.data);
   c.read = this.read;
