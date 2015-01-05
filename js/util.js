@@ -592,6 +592,7 @@ util.ByteStringBuffer.prototype.last = function() {
  *
  * @return the copy.
  */
+// TODO: add .copyView to get a shallow copy
 util.ByteStringBuffer.prototype.copy = function() {
   var c = util.createBuffer(this.data);
   c.read = this.read;
@@ -1289,6 +1290,7 @@ util.DataBuffer.prototype.last = function() {
  *
  * @return the copy.
  */
+// TODO: add .copyView to get a shallow copy
 util.DataBuffer.prototype.copy = function() {
   return new util.DataBuffer(this);
 };
