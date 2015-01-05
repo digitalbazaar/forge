@@ -1329,16 +1329,36 @@ tls.handleClientKeyExchange = function(c, record, length) {
     enc_pre_master_secret: readVector(b, 2).getBytes()
   };
 
-  // do rsa decryption
-  var privateKey = null;
-  if(c.getPrivateKey) {
+  // get private key
+  if(!c.getPrivateKey) {
+    return callback(new Error('No private key set.'));
+  }
+  if(c.getPrivateKey.length < 3) {
+    // sync version
+    var key;
     try {
-      privateKey = c.getPrivateKey(c, c.session.serverCertificate);
-      privateKey = forge.pki.privateKeyFromPem(privateKey);
-    } catch(ex) {
-      c.error(c, {
+      key = c.getPrivateKey(c, c.session.serverCertificate);
+    } catch(e) {
+      return callback(e);
+    }
+    return callback(null, key);
+  }
+  // async version
+  c.getPrivateKey(c, c.session.serverCertificate, callback);
+
+  function callback(err, key) {
+    if(!err && typeof key === 'string') {
+      try {
+        key = forge.pki.privateKeyFromPem(key);
+      } catch(e) {
+        err = e;
+      }
+    }
+
+    if(err) {
+      return c.error(c, {
         message: 'Could not get private key.',
-        cause: ex,
+        cause: err,
         send: true,
         alert: {
           level: tls.Alert.Level.fatal,
@@ -1346,52 +1366,40 @@ tls.handleClientKeyExchange = function(c, record, length) {
         }
       });
     }
-  }
 
-  if(privateKey === null) {
-    return c.error(c, {
-      message: 'No private key set.',
-      send: true,
-      alert: {
-        level: tls.Alert.Level.fatal,
-        description: tls.Alert.Description.internal_error
+    try {
+      // decrypt 48-byte pre-master secret
+      var sp = c.session.sp;
+      sp.pre_master_secret = key.decrypt(msg.enc_pre_master_secret);
+
+      // ensure client hello version matches first 2 bytes
+      var version = c.session.clientHelloVersion;
+      if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
+        version.minor !== sp.pre_master_secret.charCodeAt(1)) {
+        // error, do not send alert (see BLEI attack below)
+        throw new Error('TLS version rollback attack detected.');
       }
-    });
-  }
-
-  try {
-    // decrypt 48-byte pre-master secret
-    var sp = c.session.sp;
-    // TODO: use c.session.SignatureAndHashAlgorithm
-    sp.pre_master_secret = privateKey.decrypt(msg.enc_pre_master_secret);
-
-    // ensure client hello version matches first 2 bytes
-    var version = c.session.clientHelloVersion;
-    if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
-      version.minor !== sp.pre_master_secret.charCodeAt(1)) {
-      // error, do not send alert (see BLEI attack below)
-      throw new Error('TLS version rollback attack detected.');
+    } catch(ex) {
+      /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
+        TLS server which is using PKCS#1 encoded RSA, so instead of
+        failing here, we generate 48 random bytes and use that as
+        the pre-master secret. */
+      sp.pre_master_secret = forge.random.getBytes(48);
     }
-  } catch(ex) {
-    /* Note: Daniel Bleichenbacher [BLEI] can be used to attack a
-      TLS server which is using PKCS#1 encoded RSA, so instead of
-      failing here, we generate 48 random bytes and use that as
-      the pre-master secret. */
-    sp.pre_master_secret = forge.random.getBytes(48);
-  }
 
-  // expect a CertificateVerify message if a Certificate was received that
-  // does not have fixed Diffie-Hellman params, otherwise expect
-  // ChangeCipherSpec
-  c.expect = CCC;
-  if(c.session.clientCertificate !== null) {
-    // only RSA support, so expect CertificateVerify
-    // TODO: support Diffie-Hellman
-    c.expect = CCV;
-  }
+    // expect a CertificateVerify message if a Certificate was received that
+    // does not have fixed Diffie-Hellman params, otherwise expect
+    // ChangeCipherSpec
+    c.expect = CCC;
+    if(c.session.clientCertificate !== null) {
+      // only RSA support, so expect CertificateVerify
+      // TODO: support Diffie-Hellman
+      c.expect = CCV;
+    }
 
-  // continue
-  c.process();
+    // continue
+    c.process();
+  }
 };
 
 /**
@@ -3156,7 +3164,6 @@ tls.createClientKeyExchange = function(c) {
 
   // RSA-encrypt the pre-master secret
   var key = c.session.serverCertificate.publicKey;
-  // TODO: use c.session.SignatureAndHashAlgorithm
   b = key.encrypt(sp.pre_master_secret);
 
   /* Note: The encrypted pre-master secret will be stored in a
