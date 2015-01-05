@@ -1579,10 +1579,7 @@ tls.handleCertificateVerify = function(c, record, length) {
     }
 
     // digest message now that it has been handled
-    // TODO: use c.session.signatureAndHashAlgorithm.md.update
     c.session.digestHandshakeMessage(new ByteBuffer(msgBytes, 'binary'));
-    c.session.md5.update(msgBytes, 'binary');
-    c.session.sha1.update(msgBytes, 'binary');
 
     // expect ChangeCipherSpec
     c.expect = CCC;
@@ -1841,8 +1838,8 @@ tls.handleFinished = function(c, record, length) {
   // ensure verify data is correct
   b = new ByteBuffer();
   if(before_tls_1_2(c.version)) {
-    b.putBuffer(c.session.md5.digest());
-    b.putBuffer(c.session.sha1.digest());
+    b.putBuffer(c.session.handshakeHashes.md5.digest());
+    b.putBuffer(c.session.handshakeHashes.sha1.digest());
   } else {
     // use hash from cipher suite
     var md = c.session.handshakeHashes[
@@ -1871,10 +1868,7 @@ tls.handleFinished = function(c, record, length) {
   }
 
   // digest finished message now that it has been handled
-  // TODO: use c.session.signatureAndHashAlgorithm.md.update
   c.session.digestHandshakeMessage(new ByteBuffer(msgBytes, 'binary'));
-  c.session.md5.update(msgBytes, 'binary');
-  c.session.sha1.update(msgBytes, 'binary');
 
   // resuming session as client or NOT resuming session as server
   if((c.session.resuming && client) || (!c.session.resuming && !client)) {
@@ -2079,10 +2073,7 @@ tls.handleHandshake = function(c, record) {
     if(type !== tls.HandshakeType.hello_request &&
       type !== tls.HandshakeType.certificate_verify &&
       type !== tls.HandshakeType.finished) {
-      // TODO: use c.session.signatureAndHashAlgorithm.md.update
       c.session.digestHandshakeMessage(new ByteBuffer(bytes, 'binary'));
-      c.session.md5.update(bytes, 'binary');
-      c.session.sha1.update(bytes, 'binary');
     }
 
     // handle specific handshake type record
@@ -2324,9 +2315,6 @@ tls.createSession = function(c) {
     },
     handshakeHashes: {},
     signatureAndHashAlgorithms: c.signatureAndHashAlgorithms.slice(),
-    // TODO: use c.session.signatureAndHashAlgorithm
-    md5: forge.md.md5.create(),
-    sha1: forge.md.sha1.create(),
     extensions: {
       server_name: {
         serverNameList: []
@@ -3423,8 +3411,8 @@ tls.createFinished = function(c) {
   var b = new ByteBuffer();
   // TODO: use c.session.signatureAndHashAlgorithm.md.digest
   if(before_tls_1_2(c.version)) {
-    b.putBuffer(c.session.md5.digest());
-    b.putBuffer(c.session.sha1.digest());
+    b.putBuffer(c.session.handshakeHashes.md5.digest());
+    b.putBuffer(c.session.handshakeHashes.sha1.digest());
   } else {
     // use hash from cipher suite
     var md = c.session.handshakeHashes[
@@ -3434,6 +3422,7 @@ tls.createFinished = function(c) {
 
   var client = (c.entity === tls.ConnectionEnd.client);
   var sp = c.session.sp;
+  // verify_data_length given by cipher suite, default is 12
   var vdl = c.session.cipherSuite.verifyDataLength || 12;
   var prf = c.session.prf;
   var label = client ? 'client finished' : 'server finished';
@@ -3523,17 +3512,9 @@ tls.queue = function(c, record) {
 
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
+    // TODO: copy fragment view and consume
     var bytes = record.fragment.bytes();
-    // TODO: this data might need to be buffered instead of digested
-    // in TLS 1.2+ because the hash method may not be known yet
-    // TODO: should probably have a wrapper that buffers until
-    // the algorithm is chosen, then it digests that buffer and switches
-    // over to using the algorithm
-    // TODO: use c.session.signatureAndHashAlgorithm.md.update
     c.session.digestHandshakeMessage(new ByteBuffer(bytes, 'binary'));
-    c.session.md5.update(bytes, 'binary');
-    c.session.sha1.update(bytes, 'binary');
-    bytes = null;
   }
 
   // handle record fragmentation
