@@ -1839,8 +1839,8 @@ tls.handleFinished = function(c, record, length) {
   var vd = record.fragment.getBytes();
 
   // ensure verify data is correct
+  b = new ByteBuffer();
   if(before_tls_1_2(c.version)) {
-    b = new ByteBuffer();
     b.putBuffer(c.session.md5.digest());
     b.putBuffer(c.session.sha1.digest());
   } else {
@@ -3420,16 +3420,22 @@ tls.createChangeCipherSpec = function() {
  */
 tls.createFinished = function(c) {
   // generate verify_data
-  var b = forge.util.createBuffer();
+  var b = new ByteBuffer();
   // TODO: use c.session.signatureAndHashAlgorithm.md.digest
-  b.putBuffer(c.session.md5.digest());
-  b.putBuffer(c.session.sha1.digest());
+  if(before_tls_1_2(c.version)) {
+    b.putBuffer(c.session.md5.digest());
+    b.putBuffer(c.session.sha1.digest());
+  } else {
+    // use hash from cipher suite
+    var md = c.session.handshakeHashes[
+      c.session.cipherSuite.handshakeHashAlgorithm || 'sha256'];
+    b.putBuffer(md.digest());
+  }
 
-  // TODO: determine prf function and verify length for TLS 1.2
   var client = (c.entity === tls.ConnectionEnd.client);
   var sp = c.session.sp;
-  var vdl = 12;
-  var prf = prf_TLS1;
+  var vdl = c.session.cipherSuite.verifyDataLength || 12;
+  var prf = c.session.prf;
   var label = client ? 'client finished' : 'server finished';
   b = prf(sp.master_secret, label, b.getBytes(), vdl);
 
