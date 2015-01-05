@@ -520,55 +520,118 @@ tls.getCipherSuite = function(twoBytes) {
 };
 
 /**
- * Supported signature and hash algorithms.
+ * Abstract core signature and hash algorithm.
+ *
+ * This base class can be extended to provide other hash and signature
+ * algorithms or to provide special signature implementations such as
+ * signatures via external web calls, etc. For example, in order to
+ * prevent direct access to a private key, a sign method may call out to
+ * a secure external web service to provide the signature in exchange for
+ * the appropriate credentials.
  */
-tls.SignatureAndHashAlgorithms = {};
-// TODO: add supported algorithms (rsa + all hashes in md)
+tls.SignatureAndHashAlgorithm = function() {
+  this.hash = {id: -1};
+  this.signature = {id: -1};
+  this.signature.sign = function(connection, callback) {
+    return callback(new Error('Not implemented.'));
+  };
+  this.signature.verify = function(connection, key, signature, callback) {
+    return callback(new Error('Not implemented.'));
+  };
+  this.init = function(connection) {};
+  this.getPrivateKey = function(connection, callback) {
+    if(!connection.getPrivateKey) {
+      return callback(new Error('No private key set.'));
+    }
+    var certificate = (connection.entity === tls.ConnectionEnd.client ?
+      connection.session.clientCertificate :
+      connection.session.serverCertificate);
+    if(connection.getPrivateKey.length < 3) {
+      // synchronous version
+      var key;
+      try {
+        key = connection.getPrivateKey(connection, certificate);
+        if(typeof key === 'string') {
+          key = forge.pki.privateKeyFromPem(key);
+        }
+      } catch(e) {
+        return callback(e);
+      }
+      return callback(null, key);
+    }
+    connection.getPrivateKey(connection, certificate, function(err, key) {
+      if(err) {
+        return callback(err);
+      }
+      if(typeof key === 'string') {
+        key = forge.pki.privateKeyFromPem(key);
+      }
+      callback(null, key);
+    });
+  };
+};
 
 /**
  * TLS 1.0 MD5 + SHA-1 combination hash.
  */
-tls.SignatureAndHashAlgorithms.tls1 = function() {
-  var algorithm = {};
-  algorithm.hashId = -1;
-  algorithm.signatureId = -1;
-
-  // hash algorithm
-  var hash = algorithm.hash = {};
-  var md5 = forge.md.md5.create();
-  var sha1 = forge.md.md5.create();
-  hash.update = function(bytes, encoding) {
-    md5.update(bytes, encoding);
-    sha1.update(bytes, encoding);
-    return hash;
+TLS1_SignatureAndHashAlgorithm.prototype = new tls.SignatureAndHashAlgorithm();
+function TLS1_SignatureAndHashAlgorithm() {
+  var self = this;
+  self.init = function(connection) {
+    // requires both MD5 and SHA-1
+    connection.session.registerMessageDigest(forge.md.md5.create());
+    connection.session.registerMessageDigest(forge.md.sha1.create());
   };
-  hash.digest = function() {
+
+  // RSA PKCS#1 v1.5 sign w/EME only (no appendix (RSASSA))
+  self.signature.sign = function(connection, callback) {
+    self.getPrivateKey(connection, function(err, key) {
+      if(err) {
+        return callback(err);
+      }
+      var buffer = getVerifyData(connection.session);
+      // TODO: remove extra buffer once key.sign uses buffers
+      try {
+        buffer = new ByteBuffer(
+          key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
+      } catch(e) {
+        return callback(e);
+      }
+      callback(null, buffer);
+    });
+  };
+
+  // RSA PKCS#1 v1.5 verify w/EME only (no appendix (RSASSA))
+  self.signature.verify = function(connection, key, signature, callback) {
+    var rval = false;
+    var buffer = getVerifyData(connection.session);
+    try {
+      // TODO: remove `.getBytes()` once key.verify uses buffers
+      rval = key.verify(
+        buffer.getBytes(), signature.getBytes(), 'EME-PKCS1-V1_5');
+    } catch(e) {
+      return callback(e);
+    }
+    callback(null, rval);
+  };
+
+  function getVerifyData(session) {
     var buffer = new ByteBuffer();
-    buffer.putBuffer(md5.digest());
-    buffer.putBuffer(sha1.digest());
+    buffer.putBuffer(session.handshakeHashes.md5.digest());
+    buffer.putBuffer(session.handshakeHashes.sha1.digest());
     return buffer;
-  };
+  }
+}
 
-  // signature algorithm
-  algorithm.sign = function(key, buffer) {
-    // TODO: remove extra buffer once key.sign uses buffers
-    return new ByteBuffer(
-      key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
-  };
-  algorithm.verify = function(key, buffer, signature) {
-    return key.verify(
-      buffer.getBytes(), signature.getBytes(), 'EME-PKCS1-V1_5');
-  };
-
-  return algorithm;
-};
+// TODO: add supported algorithms (rsa + all hashes in md)
+// TODO: add support for DSA
 
 /**
  * Gets a supported signature and hash algorithm pair from its 2 byte ID.
  *
  * @param hash the hash identifier as a byte (integer).
  * @param signature the signature identifier as a byte (integer).
- * @param [supported] the list of supported algorithm factories or algorithms
+ * @param [supported] the list of supported algorithms
  *          (default: tls.SignatureAndHashAlgorithms).
  *
  * @return the matching supported signature and hash algorithm or null.
@@ -582,18 +645,20 @@ tls.getSignatureAndHashAlgorithm = function(hash, signature, supported) {
   }
   var rval = null;
   for(var i = 0; i < supported.length; ++i) {
-    var alg = supported[i];
-    if(typeof alg === 'function' && !('hashId' in alg)) {
-      // assume alg is a factory, instantiate to check hash and signature IDs
-      alg = alg();
-    }
-    if(alg.hashId === hash && alg.signatureId === signature) {
+    var algorithm = supported[i];
+    if(algorithm.hash.id === hash && algorithm.signature.id === signature) {
       rval = supported[i];
       break;
     }
   }
   return rval;
 };
+
+/**
+ * Supported signature and hash algorithms.
+ */
+tls.SignatureAndHashAlgorithms = {};
+tls.SignatureAndHashAlgorithms.tls1 = new TLS1_SignatureAndHashAlgorithm();
 
 /**
  * Called when an unexpected record is encountered.
@@ -722,12 +787,14 @@ tls.parseHelloMessage = function(c, record, length) {
             // signature_algorithms extension
             var sahAlgorithms = readVector(ext.data, 2);
             while(sahAlgorithms.length() > 0) {
-              // read algorithm type
-              c.session.extensions.signature_algorithms
-                .signatureAndHashAlgorithms.push({
-                hashId: sahAlgorithms.getByte(),
-                signatureId: sahAlgorithms.getByte()
-              });
+              // read algorithm type and convert to supported algorithm
+              var algorithm = tls.getSignatureAndHashAlgorithm(
+                sahAlgorithms.getByte(), sahAlgorithms.getByte(),
+                c.session.signatureAndHashAlgorithms);
+              if(algorithm) {
+                c.session.extensions.signature_algorithms
+                  .signatureAndHashAlgorithms.push(algorithm);
+              }
             }
           }
         }
@@ -1295,6 +1362,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
   try {
     // decrypt 48-byte pre-master secret
     var sp = c.session.sp;
+    // TODO: use c.session.SignatureAndHashAlgorithm
     sp.pre_master_secret = privateKey.decrypt(msg.enc_pre_master_secret);
 
     // ensure client hello version matches first 2 bytes
@@ -1472,11 +1540,10 @@ tls.handleCertificateVerify = function(c, record, length) {
   }
 
   // get signature and hash algorithm
-  c.session.signatureAndHashAlgorithm.clientCertificate =
-    tls.getSignatureAndHashAlgorithm(
-      msg.algorithm[0], msg.algorithm[1],
-      c.session.signatureAndHashAlgorithms);
-  if(!c.session.signatureAndHashAlgorithm.clientCertificate) {
+  var algorithm = tls.getSignatureAndHashAlgorithm(
+    msg.algorithm[0], msg.algorithm[1],
+    c.session.signatureAndHashAlgorithms);
+  if(!algorithm) {
     return c.error(c, {
       message: 'Unsupported signature and hash algorithm used.',
       send: true,
@@ -1486,46 +1553,35 @@ tls.handleCertificateVerify = function(c, record, length) {
       }
     });
   }
+  c.session.signatureAndHashAlgorithm.clientCertificate = algorithm;
 
-  // TODO: add support for DSA
-
-  // generate data to verify
-  var verify = forge.util.createBuffer();
-  // TODO: use c.session.signatureAndHashAlgorithm.md.digest
-  verify.putBuffer(c.session.md5.digest());
-  verify.putBuffer(c.session.sha1.digest());
-  verify = verify.getBytes();
-
-  try {
-    var cert = c.session.clientCertificate;
-    // TODO: remove extra buffer creation
-    if(!c.session.signatureAndHashAlgorithm.clientCertificate.verify(
-      cert.publicKey,
-      new ByteBuffer(verify, 'binary'),
-      new ByteBuffer(msg.signature, 'binary'))) {
-      throw new Error('CertificateVerify signature does not match.');
+  // TODO: remove once msg.signature is already buffer
+  var publicKey = c.session.clientCertificate.publicKey;
+  var signature = new ByteBuffer(msg.signature, 'binary');
+  algorithm.signature.verify(c, publicKey, signature, function(err, result) {
+    if(err || !result) {
+      return c.error(c, {
+        message: err ? err.message : 'Bad signature in CertificateVerify.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.decrypt_error
+        }
+      });
     }
 
     // digest message now that it has been handled
     // TODO: use c.session.signatureAndHashAlgorithm.md.update
+    c.session.digestHandshakeMessage(new ByteBuffer(msgBytes, 'binary'));
     c.session.md5.update(msgBytes, 'binary');
     c.session.sha1.update(msgBytes, 'binary');
-  } catch(ex) {
-    return c.error(c, {
-      message: 'Bad signature in CertificateVerify.',
-      send: true,
-      alert: {
-        level: tls.Alert.Level.fatal,
-        description: tls.Alert.Description.decrypt_error
-      }
-    });
-  }
 
-  // expect ChangeCipherSpec
-  c.expect = CCC;
+    // expect ChangeCipherSpec
+    c.expect = CCC;
 
-  // continue
-  c.process();
+    // continue
+    c.process();
+  });
 };
 
 /**
@@ -1626,10 +1682,22 @@ tls.handleServerHelloDone = function(c, record, length) {
     return callback(c, null);
   }
 
-  // otherwise get the client signature
-  tls.getClientSignature(c, callback);
+  // get the client signature then do callback
+  var algorithm = c.session.signatureAndHashAlgorithm.clientCertificate;
+  algorithm.signature.sign(c, function(err, signature) {
+    if(err) {
+      return c.error(c, {
+        message: err.message,
+        send: true,
+        alert: {
+          level: tls.Alert.Level.datal,
+          description: tls.Alert.Description.internal_error
+        }
+      });
+    }
+    callback(c, signature);
+  });
 
-  // create callback to handle client signature (for client-certs)
   function callback(c, signature) {
     if(signature !== null) {
       // create certificate verify message
@@ -1763,10 +1831,16 @@ tls.handleFinished = function(c, record, length) {
   var vd = record.fragment.getBytes();
 
   // ensure verify data is correct
-  b = forge.util.createBuffer();
-  // TODO: use c.session.signatureAndHashAlgorithm.md.digest
-  b.putBuffer(c.session.md5.digest());
-  b.putBuffer(c.session.sha1.digest());
+  if(before_tls_1_2(c.version)) {
+    b = new ByteBuffer();
+    b.putBuffer(c.session.md5.digest());
+    b.putBuffer(c.session.sha1.digest());
+  } else {
+    // use hash from cipher suite
+    var md = c.session.handshakeHashes[
+      c.session.cipherSuite.handshakeHashAlgorithm || 'sha256'];
+    b.putBuffer(md.digest());
+  }
 
   // set label based on entity type
   var client = (c.entity === tls.ConnectionEnd.client);
@@ -1790,6 +1864,7 @@ tls.handleFinished = function(c, record, length) {
 
   // digest finished message now that it has been handled
   // TODO: use c.session.signatureAndHashAlgorithm.md.update
+  c.session.digestHandshakeMessage(new ByteBuffer(msgBytes, 'binary'));
   c.session.md5.update(msgBytes, 'binary');
   c.session.sha1.update(msgBytes, 'binary');
 
@@ -1985,7 +2060,7 @@ tls.handleHandshake = function(c, record) {
     // initialize server session
     if(c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
       c.handshaking = true;
-      c.session = tls.createSession(c);
+      tls.createSession(c);
     }
 
     /* Update handshake messages digest. Finished and CertificateVerify
@@ -1997,6 +2072,7 @@ tls.handleHandshake = function(c, record) {
       type !== tls.HandshakeType.certificate_verify &&
       type !== tls.HandshakeType.finished) {
       // TODO: use c.session.signatureAndHashAlgorithm.md.update
+      c.session.digestHandshakeMessage(new ByteBuffer(bytes, 'binary'));
       c.session.md5.update(bytes, 'binary');
       c.session.sha1.update(bytes, 'binary');
     }
@@ -2217,14 +2293,14 @@ hsTable[tls.ConnectionEnd.server] = [
 ];
 
 /**
- * Creates a new TLS session.
+ * Creates a new TLS session and attaches it to the given connection.
  *
  * @param c the TLS connection to create the session for.
  *
  * @return the new TLS session.
  */
 tls.createSession = function(c) {
-  var session = {
+  var session = c.session = {
     id: '',
     version: null,
     cipherSuite: null,
@@ -2238,7 +2314,8 @@ tls.createSession = function(c) {
       clientCertificate: null,
       serverCertificate: null
     },
-    signatureAndHashAlgorithms: [],
+    handshakeHashes: {},
+    signatureAndHashAlgorithms: c.signatureAndHashAlgorithms.slice(),
     // TODO: use c.session.signatureAndHashAlgorithm
     md5: forge.md.md5.create(),
     sha1: forge.md.sha1.create(),
@@ -2252,12 +2329,18 @@ tls.createSession = function(c) {
     }
   };
 
-  // instantiate supported hash algorithms from connection
-  session.signatureAndHashAlgorithms = [];
-  for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
-    session.signatureAndHashAlgorithms.push(
-      c.signatureAndHashAlgorithms[i]());
-  }
+  /**
+   * Registers a message digest to use when digesting handshake messages. The
+   * given message digest object will only be used if no other message digest
+   * object for the same algorithm has been registered.
+   *
+   * @param md the message digest object to register.
+   */
+  session.registerMessageDigest = function(md) {
+    if(!(md.algorithm in session.handshakeHashes)) {
+      session.handshakeHashes[md.algorithm] = md;
+    }
+  };
 
   /**
    * Digests a handshake message for later signing using each supported
@@ -2268,14 +2351,19 @@ tls.createSession = function(c) {
    * The number of supported hashes is low, so this option was chosen
    * as an implementation detail. It can be changed in the future.
    *
-   * @param msg the handshake message to consume.
+   * @param msg the handshake message, as a ByteBuffer, to consume.
    */
   session.digestHandshakeMessage = function(msg) {
-    for(var i = 0; i < session.signatureAndHashAlgorithms.length; ++i) {
-      var md = session.signatureAndHashAlgorithms[i].md;
-      md.update(msg);
+    for(var key in session.handshakeHashes) {
+      session.handshakeHashes[key].update(msg);
     }
   };
+
+  // initialize session for use w/each signature+hash algorithm
+  var algorithms = session.signatureAndHashAlgorithms;
+  for(var i = 0; i < algorithms.length; ++i) {
+    algorithms[i].init(c);
+  }
 
   return session;
 };
@@ -2540,10 +2628,12 @@ tls.createConnectionState = function(c) {
     return !c.fail;
   };
 
-  // handle security parameters
   if(c.session) {
+    var cipherSuite = c.session.cipherSuite;
+
+    // init security params
     var sp = c.session.sp;
-    c.session.cipherSuite.initSecurityParameters(sp);
+    cipherSuite.initSecurityParameters(sp);
 
     // generate keys
     sp.keys = tls.generateKeys(c, sp);
@@ -2552,8 +2642,7 @@ tls.createConnectionState = function(c) {
     state.write.macKey = client ?
       sp.keys.client_write_MAC_key : sp.keys.server_write_MAC_key;
 
-    // cipher suite setup
-    c.session.cipherSuite.initConnectionState(state, c, sp);
+    cipherSuite.initConnectionState(state, c, sp);
 
     // compression setup
     switch(sp.compression_algorithm) {
@@ -2565,6 +2654,29 @@ tls.createConnectionState = function(c) {
       break;
     default:
       throw new Error('Unsupported compression algorithm.');
+    }
+
+    // add any required handshake message digests
+    if(before_tls_1_2(c.version)) {
+      // pre TLS 1.2 always uses MD5 + SHA-1
+      c.session.registerMessageDigest(forge.md.md5.create());
+      c.session.registerMessageDigest(forge.md.sha1.create());
+    } else if(cipherSuite.handshakeHashAlgorithm) {
+      if(typeof cipherSuite.handshakeHashAlgorithm !== 'string') {
+        throw new Error(
+          'Cipher suite "handshakeHashAlgorithm" must be a string that ' +
+          'identifies a hash algorithm.');
+      }
+      var md = forge.md[cipherSuite.handshakeHashAlgorithm];
+      if(!md) {
+        throw new Error(
+          'Unsupported hash algorithm: "' +
+          cipherSuite.handshakeHashAlgorithm + '".');
+      }
+      c.session.registerMessageDigest(md.create());
+    } else {
+      // use TLS 1.2+ default of SHA-256
+      c.session.registerMessageDigest(forge.md.sha256.create());
     }
   }
 
@@ -2789,16 +2901,14 @@ tls.createClientHello = function(c) {
   var ext = new ByteBuffer();
   ext.putInt16(tls.ExtensionType.signature_algorithms);
   for(var i = 0; i < c.signatureAndHashAlgorithms.length; ++i) {
-    var alg = c.signatureAndHashAlgorithms[i];
+    var algorithm = c.signatureAndHashAlgorithms[i];
     // skip built-in TLS 1.0 algorithm
-    if(alg === tls.SignatureAndHashAlgorithms.tls1) {
+    if(algorithm === tls.SignatureAndHashAlgorithms.tls1) {
       continue;
     }
-    // instantiate to get hash ID and signature ID
-    alg = alg();
     var sahAlgorithm = new ByteBuffer();
-    sahAlgorithm.putByte(alg.hashId);
-    sahAlgorithm.putByte(alg.signatureId);
+    sahAlgorithm.putByte(algorithm.hash.id);
+    sahAlgorithm.putByte(algorithm.signature.id);
     writeVector(ext, 2, sahAlgorithm);
   }
   // only add extension if non-empty (more than just 2 'ExtenionType' bytes)
@@ -3046,6 +3156,7 @@ tls.createClientKeyExchange = function(c) {
 
   // RSA-encrypt the pre-master secret
   var key = c.session.serverCertificate.publicKey;
+  // TODO: use c.session.SignatureAndHashAlgorithm
   b = key.encrypt(sp.pre_master_secret);
 
   /* Note: The encrypted pre-master secret will be stored in a
@@ -3087,63 +3198,6 @@ tls.createServerKeyExchange = function(c) {
     rval.putInt24(length);
   }
   return rval;
-};
-
-/**
- * Gets the signed data used to verify a client-side certificate. See
- * tls.createCertificateVerify() for details.
- *
- * @param c the connection.
- * @param callback the callback to call once the signed data is ready.
- */
-tls.getClientSignature = function(c, callback) {
-  var algorithm = c.session.signatureAndHashAlgorithm.clientCertificate;
-
-  // generate data to sign
-  var b = forge.util.createBuffer();
-  // TODO: use c.session.signatureAndHashAlgorithm.md.digest
-  //b.putBuffer(algorithm.md.digest());
-  b.putBuffer(c.session.md5.digest());
-  b.putBuffer(c.session.sha1.digest());
-
-  // create default signing function as necessary
-  c.getSignature = c.getSignature || function(c, b, callback) {
-    // do rsa encryption, call callback
-    var privateKey = null;
-    if(c.getPrivateKey) {
-      try {
-        privateKey = c.getPrivateKey(c, c.session.clientCertificate);
-        privateKey = forge.pki.privateKeyFromPem(privateKey);
-      } catch(ex) {
-        c.error(c, {
-          message: 'Could not get private key.',
-          cause: ex,
-          send: true,
-          alert: {
-            level: tls.Alert.Level.fatal,
-            description: tls.Alert.Description.internal_error
-          }
-        });
-      }
-    }
-    if(privateKey === null) {
-      c.error(c, {
-        message: 'No private key set.',
-        send: true,
-        alert: {
-          level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.internal_error
-        }
-      });
-    } else {
-      // TODO: support async signature and hash algorithm functions?
-      b = algorithm.sign(privateKey, b);
-    }
-    callback(c, b);
-  };
-
-  // get client signature
-  c.getSignature(c, b, callback);
 };
 
 /**
@@ -3463,6 +3517,7 @@ tls.queue = function(c, record) {
     // the algorithm is chosen, then it digests that buffer and switches
     // over to using the algorithm
     // TODO: use c.session.signatureAndHashAlgorithm.md.update
+    c.session.digestHandshakeMessage(new ByteBuffer(bytes, 'binary'));
     c.session.md5.update(bytes, 'binary');
     c.session.sha1.update(bytes, 'binary');
     bytes = null;
@@ -3776,20 +3831,22 @@ tls.createConnection = function(options) {
     }
   }
 
+  // indicate supported signature+hash algorithm pairs
   var sahAlgorithms = options.signatureAndHashAlgorithms || null;
   if(sahAlgorithms === null) {
     // TODO: add optimization to only add tls.SignatureAndHashAlgorithms.tls1
-    // if max TLS version is 1.1 and/or add special code to combine md5
-    // and sha1 signature and hash algorithms when version <= TLS 1.1?
+    // if max TLS version is 1.1?
 
     // use default signature and hash algorithms
     sahAlgorithms = [];
     for(var key in tls.SignatureAndHashAlgorithms) {
       sahAlgorithms.push(tls.SignatureAndHashAlgorithms[key]);
     }
-  } else if(!forge.util.isArray(sahAlgorithms)) {
-    throw new TypeError('options.signatureAndHashAlgorithms must be an Array.');
   } else {
+    if(!forge.util.isArray(sahAlgorithms)) {
+      throw new TypeError(
+        'options.signatureAndHashAlgorithms must be an Array.');
+    }
     // use specified signature and hash algorithms
     var alg;
     var _sahAlgorithms = [];
@@ -3797,21 +3854,18 @@ tls.createConnection = function(options) {
       if(typeof sahAlgorithms[i] === 'string') {
         // convert string ID to algorithm
         alg = tls.SignatureAndHashAlgorithms[sahAlgorithms[i]] || null;
-        if(!alg) {
-          throw new Error(
-            'Unknown signature and hash algorithm: "' +
-            sahAlgorithms[i] + '".');
-        }
-      } else if(typeof sahAlgorithms[i] === 'function') {
+      } else if(sahAlgorithms[i] instanceof tls.SignatureAndHashAlgorithm) {
         alg = sahAlgorithms[i];
-      } else if(typeof sahAlgorithms[i] === 'object') {
-        alg = tls.getSignatureAndHashAlgorithm(
-          sahAlgorithms[i].hashId, sahAlgorithms[i].signatureId);
       } else {
         throw new TypeError(
           'options.signatureAndHashAlgorithms must be an Array containing ' +
-          'strings, factory functions, or objects with "hashId" and ' +
-          '"signatureId" keys.');
+          'strings identifying algorithms in "tls.SignatureAndHashAlgorithms"' +
+          'or "tls.SignatureAndHashAlgorithm" objects.');
+      }
+      if(!alg) {
+        throw new Error(
+          'Unknown signature and hash algorithm: "' +
+          sahAlgorithms[i] + '".');
       }
       _sahAlgorithms.push(alg);
     }
@@ -4095,7 +4149,7 @@ tls.createConnection = function(options) {
       }
 
       // set up session
-      c.session = tls.createSession(c);
+      tls.createSession(c);
       c.session.id = sessionId;
 
       // use existing session information
@@ -4337,22 +4391,10 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   PEM-formatted certificate or an array of PEM-formatted certificates
  *   that constitute a certificate chain, with the first in the array/chain
  *   being the client's certificate.
- * getPrivateKey(conn, certificate)
+ * getPrivateKey(conn, certificate, [callback(err, key)])
  *   The second parameter is an forge.pki X.509 certificate object that
  *   is associated with the requested private key. The return value must
- *   be a PEM-formatted private key.
- * getSignature(conn, bytes, callback)
- *   This callback can be used instead of getPrivateKey if the private key
- *   is not directly accessible in javascript or should not be. For
- *   instance, a secure external web service could provide the signature
- *   in exchange for appropriate credentials. The second parameter is a
- *   string of bytes to be signed that are part of the TLS protocol. These
- *   bytes are used to verify that the private key for the previously
- *   provided client-side certificate is accessible to the client. The
- *   callback is a function that takes 2 parameters, the TLS connection
- *   and the RSA encrypted (signed) bytes as a string. This callback must
- *   be called once the signature is ready.
- *
+ *   be a PEM-formatted private key if a callback is not provided. *
  * @param options the options for this connection:
  *   version: the maximum TLS version to support (see: tls.Versions).
  *   server: true if the connection is server-side, false for client.
@@ -4362,8 +4404,7 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   cipherSuites: an optional array of cipher suites to use,
  *     see tls.CipherSuites.
  *   signatureAndHashAlgorithms: an optional array of signature and hash
- *     algorithm IDs (or factories) to use,
- *     see: tls.SignatureAndHashAlgorithms.
+ *     algorithm IDs to use, see: tls.SignatureAndHashAlgorithms.
  *   connected: function(conn) called when the first handshake completes.
  *   virtualHost: the virtual server name to use in a TLS SNI extension.
  *   verifyClient: true to require a client certificate in server mode,
@@ -4372,7 +4413,6 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   getCertificate: an optional callback used to get a certificate or
  *     a chain of certificates (as an array).
  *   getPrivateKey: an optional callback used to get a private key.
- *   getSignature: an optional callback used to get a signature.
  *   tlsDataReady: function(conn) called when TLS protocol data has been
  *     prepared and is ready to be used (typically sent over a socket
  *     connection to its destination), read from conn.tlsData buffer.

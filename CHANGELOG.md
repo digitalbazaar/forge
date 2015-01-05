@@ -38,3 +38,8 @@
   instead.
 - PKCS#1 functions (v1.5 encoding, v2.1 I2OSP/OS2IP) have been moved to
   pkcs1.js and this introduced a dependencies on jsbn.js and asn1.js.
+- The **getSignature** option for TLS connections has been removed. This
+  option was used to provide a signature via an external method to prevent
+  JavaScript access to the private key. The same functionality can now be
+  achieved by providing a custom "tls.SignatureAndHashAlgorithm" via the
+  **signatureAndHashAlgorithms** option.

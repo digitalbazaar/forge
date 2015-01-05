@@ -20,7 +20,6 @@ var ByteBuffer = forge.util.ByteBuffer;
 tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   id: [0x00,0x2f],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
-  verifyDataLength: 12,
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
@@ -32,12 +31,13 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
     sp.mac_length = 20;
     sp.mac_key_length = 20;
   },
-  initConnectionState: initConnectionState
+  initConnectionState: initConnectionState,
+  verifyDataLength: 12,
+  handshakeHashAlgorithm: 'sha256'
 };
 tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
   id: [0x00,0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
-  verifyDataLength: 12,
   initSecurityParameters: function(sp) {
     sp.bulk_cipher_algorithm = tls.BulkCipherAlgorithm.aes;
     sp.cipher_type = tls.CipherType.block;
@@ -49,7 +49,9 @@ tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
     sp.mac_length = 20;
     sp.mac_key_length = 20;
   },
-  initConnectionState: initConnectionState
+  initConnectionState: initConnectionState,
+  verifyDataLength: 12,
+  handshakeHashAlgorithm: 'sha256'
 };
 
 function initConnectionState(state, c, sp) {
