@@ -10,11 +10,17 @@
 function initModule(forge) {
 
 var sha1 = forge.sha1 = forge.sha1 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
+
+// FIXME: backwards compatibility
 forge.md.sha1 = forge.md.algorithms.sha1 = sha1;
 
 var ByteBuffer = forge.util.ByteBuffer;
+
+/*forge.md.registerAlgorithm('sha1', new forge.sha1.Algorithm());
+
+forge.sha1.Algorithm = function() {
+
+};*/
 
 /**
  * Creates a SHA-1 message digest object.
@@ -342,7 +348,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './util'], function() {
+define(['require', 'module', './util', './md'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

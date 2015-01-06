@@ -4763,10 +4763,13 @@ define([
   'module',
   './asn1',
   './hmac',
-  './md',
+  './md5',
   './pem',
   './pki',
   './random',
+  './sha1',
+  './sha256',
+  './sha512',
   './util'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });

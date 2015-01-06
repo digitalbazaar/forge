@@ -72,13 +72,17 @@ var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/hmac',
-    'forge/util'
-  ], function(HMAC, UTIL) {
+    'forge/util',
+    'forge/md5',
+    'forge/sha1'
+  ], function(HMAC, UTIL, MD5, SHA1) {
     Tests(
       // Global provided by test harness
       ASSERT,
       HMAC(forge),
-      UTIL(forge)
+      UTIL(forge),
+      MD5(forge),
+      SHA1(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -86,7 +90,9 @@ if(typeof define === 'function') {
   Tests(
     require('assert'),
     require('../../js/hmac')(forge),
-    require('../../js/util')(forge));
+    require('../../js/util')(forge),
+    require('../../js/md5')(forge),
+    require('../../js/sha1')(forge));
 }
 
 })();

@@ -43,3 +43,9 @@
   JavaScript access to the private key. The same functionality can now be
   achieved by providing a custom "tls.SignatureAndHashAlgorithm" via the
   **signatureAndHashAlgorithms** option.
+- A new **MessageDigest** API. The advent of the new API resulted in a
+  reordering of dependencies. Previously, requiring the **md** module would
+  pull MD5, SHA-1, and SHA-256 support. Now, it doesn't bring in any
+  algorithms, instead, those algorithms depend on the **md** module to provide
+  the base API. To pull in the hash algorithms you want, specify the modules
+  that implement them, (eg: **md5**, **sha1**, **sha256**, **sha512**).

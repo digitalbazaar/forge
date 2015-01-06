@@ -10,8 +10,8 @@
 function initModule(forge) {
 
 var md5 = forge.md5 = forge.md5 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
+
+// FIXME: backwards compatibility
 forge.md.md5 = forge.md.algorithms.md5 = md5;
 
 var ByteBuffer = forge.util.ByteBuffer;
@@ -322,7 +322,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './util'], function() {
+define(['require', 'module', './util', './md'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

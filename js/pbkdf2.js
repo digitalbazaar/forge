@@ -161,7 +161,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './hmac', './md', './util'], function() {
+define(['require', 'module', './hmac', './sha1', './util'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

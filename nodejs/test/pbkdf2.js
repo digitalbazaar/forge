@@ -50,14 +50,16 @@ if(typeof define === 'function') {
   define([
     'forge/pbkdf2',
     'forge/md',
-    'forge/util'
-  ], function(PBKDF2, MD, UTIL) {
+    'forge/util',
+    'forge/sha256'
+  ], function(PBKDF2, MD, UTIL, SHA256) {
     Tests(
       // Global provided by test harness
       ASSERT,
       PBKDF2(forge),
       MD(forge),
-      UTIL(forge)
+      UTIL(forge),
+      SHA256(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -66,7 +68,8 @@ if(typeof define === 'function') {
     require('assert'),
     require('../../js/pbkdf2')(forge),
     require('../../js/md')(forge),
-    require('../../js/util')(forge));
+    require('../../js/util')(forge),
+    require('../../js/sha256')(forge));
 }
 
 })();

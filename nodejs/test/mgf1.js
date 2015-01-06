@@ -18,14 +18,16 @@ if(typeof define === 'function') {
   define([
     'forge/mgf',
     'forge/md',
-    'forge/util'
-  ], function(MGF, MD, UTIL) {
+    'forge/util',
+    'forge/sha1'
+  ], function(MGF, MD, UTIL, SHA1) {
     Tests(
       // Global provided by test harness
       ASSERT,
       MGF(forge),
       MD(forge),
-      UTIL(forge)
+      UTIL(forge),
+      SHA1(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -34,7 +36,8 @@ if(typeof define === 'function') {
     require('assert'),
     require('../../js/mgf')(forge),
     require('../../js/md')(forge),
-    require('../../js/util')(forge));
+    require('../../js/util')(forge),
+    require('../../js/sha1')(forge));
 }
 
 })();

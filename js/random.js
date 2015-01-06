@@ -231,7 +231,13 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './aes', './md', './prng', './util'], function() {
+define([
+  'require',
+  'module',
+  './aes',
+  './sha256',
+  './prng',
+  './util'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

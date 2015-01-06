@@ -3121,12 +3121,15 @@ define([
   './aes',
   './asn1',
   './des',
-  './md',
+  './md5',
   './mgf',
   './oids',
   './pem',
   './pss',
   './rsa',
+  './sha1',
+  './sha256',
+  './sha512',
   './util'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));

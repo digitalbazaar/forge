@@ -15,14 +15,14 @@
 function initModule(forge) {
 
 var sha512 = forge.sha512 = forge.sha512 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
 
 var ByteBuffer = forge.util.ByteBuffer;
 
+// FIXME: backwards compatibility
 // SHA-512
 forge.md.sha512 = forge.md.algorithms.sha512 = sha512;
 
+// FIXME: backwards compatibility
 // SHA-384
 var sha384 = forge.sha384 = forge.sha512.sha384 = forge.sha512.sha384 || {};
 sha384.create = function() {
@@ -30,6 +30,7 @@ sha384.create = function() {
 };
 forge.md.sha384 = forge.md.algorithms.sha384 = sha384;
 
+// FIXME: backwards compatibility
 // SHA-512/256
 forge.sha512.sha256 = forge.sha512.sha256 || {
   create: function() {
@@ -39,6 +40,7 @@ forge.sha512.sha256 = forge.sha512.sha256 || {
 forge.md['sha512/256'] = forge.md.algorithms['sha512/256'] =
   forge.sha512.sha256;
 
+// FIXME: backwards compatibility
 // SHA-512/224
 forge.sha512.sha224 = forge.sha512.sha224 || {
   create: function() {
@@ -590,7 +592,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './util'], function() {
+define(['require', 'module', './util', './md'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

@@ -1074,33 +1074,38 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/pki',
     'forge/pkcs1',
     'forge/md',
     'forge/jsbn',
-    'forge/util'
+    'forge/util',
+    'forge/sha1',
+    'forge/sha256'
   ], function(PKI, PKCS1, MD, JSBN, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI(),
-      PKCS1(),
-      MD(),
-      JSBN(),
-      UTIL()
+      PKI(forge),
+      PKCS1(forge),
+      MD(forge),
+      JSBN(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki')(),
-    require('../../js/pkcs1')(),
-    require('../../js/md')(),
-    require('../../js/jsbn')(),
-    require('../../js/util')());
+    require('../../js/pki')(forge),
+    require('../../js/pkcs1')(forge),
+    require('../../js/md')(forge),
+    require('../../js/jsbn')(forge),
+    require('../../js/util')(forge),
+    require('../../js/sha1')(forge),
+    require('../../js/sha256')(forge));
 }
 
 })();

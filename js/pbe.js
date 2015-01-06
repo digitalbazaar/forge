@@ -964,13 +964,14 @@ define([
   './aes',
   './asn1',
   './des',
-  './md',
+  './md5',
   './oids',
   './pem',
   './pbkdf2',
   './random',
   './rc2',
   './rsa',
+  './sha1',
   './util'
 ], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));

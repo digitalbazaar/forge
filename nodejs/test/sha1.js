@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, SHA1, UTIL) {
+function Tests(ASSERT, MD, SHA1, UTIL) {
   describe('sha1', function() {
     it('should digest the empty string', function() {
       var md = SHA1.create();
@@ -55,12 +55,14 @@ function Tests(ASSERT, SHA1, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
+    'forge/md',
     'forge/sha1',
     'forge/util'
-  ], function(SHA1, UTIL) {
+  ], function(MD, SHA1, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
+      MD(forge),
       SHA1(forge),
       UTIL(forge)
     );
@@ -69,6 +71,7 @@ if(typeof define === 'function') {
   // assume NodeJS
   Tests(
     require('assert'),
+    require('../../js/md')(forge),
     require('../../js/sha1')(forge),
     require('../../js/util')(forge));
 }
