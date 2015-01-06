@@ -739,7 +739,7 @@ tls.parseHelloMessage = function(c, record, length) {
       major: b.getByte(),
       minor: b.getByte()
     },
-    random: forge.util.createBuffer(b.getBytes(32)),
+    random: new ByteBuffer(b.getBytes(32), 'binary'),
     session_id: readVector(b, 1),
     extensions: []
   };
@@ -826,7 +826,8 @@ tls.parseHelloMessage = function(c, record, length) {
   } else {
     // get a supported preferred (ClientHello) cipher suite
     // choose the first supported cipher suite
-    var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
+    // TODO: use `.copy`
+    var tmp = new ByteBuffer(msg.cipher_suites.bytes(), 'binary');
     while(tmp.length() > 0) {
       // FIXME: should be checking configured acceptable suites
       // cipher suites take up 2 bytes
@@ -2041,7 +2042,7 @@ tls.handleHandshake = function(c, record) {
     // cache the record, clear its fragment, and reset the buffer read
     // pointer before the type and length were read
     c.fragmented = record;
-    record.fragment = forge.util.createBuffer();
+    record.fragment = new ByteBuffer();
     b.read -= 4;
 
     // continue
@@ -2704,7 +2705,7 @@ tls.createRandom = function() {
   // get UTC milliseconds
   var d = new Date();
   var utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putInt32(utc);
   rval.putBytes(forge.random.getBytes(28));
   return rval;
@@ -2747,7 +2748,7 @@ tls.createRecord = function(c, options) {
  * @return the created alert record.
  */
 tls.createAlert = function(c, alert) {
-  var b = forge.util.createBuffer();
+  var b = new ByteBuffer();
   b.putByte(alert.level);
   b.putByte(alert.description);
   return tls.createRecord(c, {
@@ -2932,13 +2933,13 @@ tls.createClientHello = function(c) {
     extLength;             // extensions vector
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.client_hello);
   rval.putInt24(length);                     // handshake length
   rval.putByte(c.version.major);             // major version
   rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.client_random); // random time + bytes
-  writeVector(rval, 1, forge.util.createBuffer(sessionId));
+  writeVector(rval, 1, new ByteBuffer(sessionId, 'binary'));
   writeVector(rval, 2, cipherSuites);
   writeVector(rval, 1, compressionMethods);
   if(extLength > 0) {
@@ -2965,13 +2966,13 @@ tls.createServerHello = function(c) {
     1;                     // chosen compression method
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.server_hello);
   rval.putInt24(length);                     // handshake length
   rval.putByte(c.version.major);             // major version
   rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.server_random); // random time + bytes
-  writeVector(rval, 1, forge.util.createBuffer(sessionId));
+  writeVector(rval, 1, new ByteBuffer(sessionId, 'binary'));
   rval.putByte(c.session.cipherSuite.id[0]);
   rval.putByte(c.session.cipherSuite.id[1]);
   rval.putByte(c.session.compressionMethod);
@@ -3078,7 +3079,7 @@ tls.createCertificate = function(c) {
   var length = 3 + certList.length(); // cert list vector
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.certificate);
   rval.putInt24(length);
   writeVector(rval, 3, certList);
@@ -3136,7 +3137,7 @@ tls.createCertificate = function(c) {
  */
 tls.createClientKeyExchange = function(c) {
   // create buffer to encrypt
-  var b = forge.util.createBuffer();
+  var b = new ByteBuffer();
 
   // add highest client-supported protocol to help server avoid version
   // rollback attacks
@@ -3163,7 +3164,7 @@ tls.createClientKeyExchange = function(c) {
   var length = b.length + 2;
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.client_key_exchange);
   rval.putInt24(length);
   // add vector length bytes
@@ -3187,7 +3188,7 @@ tls.createServerKeyExchange = function(c) {
   var length = 0;
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   if(length > 0) {
     rval.putByte(tls.HandshakeType.server_key_exchange);
     rval.putInt24(length);
@@ -3333,7 +3334,7 @@ tls.createCertificateRequest = function(c) {
   }
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.certificate_request);
   rval.putInt24(length);
   writeVector(rval, 1, certTypes);
@@ -3353,7 +3354,7 @@ tls.createCertificateRequest = function(c) {
  */
 tls.createServerHelloDone = function(c) {
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.server_hello_done);
   rval.putInt24(0);
   return rval;
@@ -3374,7 +3375,7 @@ tls.createServerHelloDone = function(c) {
  * @return the ChangeCipherSpec byte buffer.
  */
 tls.createChangeCipherSpec = function() {
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(0x01);
   return rval;
 };
@@ -3429,7 +3430,7 @@ tls.createFinished = function(c) {
   b = prf(sp.master_secret, label, b.getBytes(), vdl);
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.finished);
   rval.putInt24(b.length());
   rval.putBuffer(b);
@@ -3487,7 +3488,7 @@ tls.createHeartbeat = function(type, payload, payloadLength) {
     payloadLength = payload.length();
   }
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = new ByteBuffer();
   rval.putByte(type);                // heartbeat message type
   rval.putInt16(payloadLength);      // payload length
   rval.putBytes(payload.getBytes()); // payload
@@ -3528,7 +3529,7 @@ tls.queue = function(c, record) {
     while(data.length > tls.MaxFragment) {
       records.push(tls.createRecord(c, {
         type: record.type,
-        data: forge.util.createBuffer(data.slice(0, tls.MaxFragment))
+        data: new ByteBuffer(data.slice(0, tls.MaxFragment), 'binary')
       }));
       data = data.slice(tls.MaxFragment);
     }
@@ -3536,7 +3537,7 @@ tls.queue = function(c, record) {
     if(data.length > 0) {
       records.push(tls.createRecord(c, {
         type: record.type,
-        data: forge.util.createBuffer(data)
+        data: new ByteBuffer(data)
       }));
     }
   }
@@ -3890,9 +3891,9 @@ tls.createConnection = function(options) {
     getCertificate: options.getCertificate || null,
     getPrivateKey: options.getPrivateKey || null,
     getSignature: options.getSignature || null,
-    input: forge.util.createBuffer(),
-    tlsData: forge.util.createBuffer(),
-    data: forge.util.createBuffer(),
+    input: new ByteBuffer(),
+    tlsData: new ByteBuffer(),
+    data: new ByteBuffer(),
     tlsDataReady: options.tlsDataReady,
     dataReady: options.dataReady,
     heartbeatReceived: options.heartbeatReceived,
@@ -4005,7 +4006,7 @@ tls.createConnection = function(options) {
           minor: b.getByte()
         },
         length: b.getInt16(),
-        fragment: forge.util.createBuffer(),
+        fragment: new ByteBuffer(),
         ready: false
       };
 
@@ -4489,7 +4490,7 @@ function prf_TLS1(secret, label, seed, length) {
   var slen = idx + (secret.length & 1);
   var s1 = secret.substr(0, slen);
   var s2 = secret.substr(idx, slen);
-  var ai = forge.util.createBuffer();
+  var ai = new ByteBuffer();
   var hmac = forge.hmac.create();
   seed = label + seed;
 
@@ -4500,7 +4501,7 @@ function prf_TLS1(secret, label, seed, length) {
 
   // do md5 iterations
   hmac.start('MD5', new ByteBuffer(s1, 'binary'));
-  var md5bytes = forge.util.createBuffer();
+  var md5bytes = new ByteBuffer();
   ai.putBytes(seed);
   for(var i = 0; i < md5itr; ++i) {
     // HMAC_hash(secret, A(i-1))
@@ -4516,7 +4517,7 @@ function prf_TLS1(secret, label, seed, length) {
 
   // do sha1 iterations
   hmac.start('SHA1', new ByteBuffer(s2, 'binary'));
-  var sha1bytes = forge.util.createBuffer();
+  var sha1bytes = new ByteBuffer();
   ai.clear();
   ai.putBytes(seed);
   for(var i = 0; i < sha1itr; ++i) {
@@ -4601,7 +4602,7 @@ function deflate(c, record, s) {
 
   try {
     var bytes = c.deflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
+    record.fragment = new ByteBuffer(bytes, 'binary');
     record.length = bytes.length;
     rval = true;
   } catch(ex) {
@@ -4626,7 +4627,7 @@ function inflate(c, record, s) {
 
   try {
     var bytes = c.inflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
+    record.fragment = new ByteBuffer(bytes, 'binary');
     record.length = bytes.length;
     rval = true;
   } catch(ex) {
@@ -4670,7 +4671,7 @@ function readVector(b, lenBytes) {
   }
 
   // read vector bytes into a new buffer
-  return forge.util.createBuffer(b.getBytes(len));
+  return new ByteBuffer(b.getBytes(len), 'binary');
 }
 
 /**
