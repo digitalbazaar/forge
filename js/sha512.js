@@ -198,12 +198,10 @@ sha512.create = function(algorithm) {
     as a 128-bit number in big-endian order. Since we store the length in
     bytes, we must multiply the 128-bit length by 8 (or left shift by 3). */
     var bitLength = [];
-    for(var i = 0; i < 3; ++i) {
+    for(var i = 0; i < 4; ++i) {
       bitLength[i] = ((md.messageLength128[i] << 3) |
-        (md.messageLength128[i - 1] >>> 28));
+        (md.messageLength128[i + 1] >>> 28));
     }
-    // shift the last integer normally
-    bitLength[3] = md.messageLength128[3] << 3;
     padBytes.putInt32(bitLength[0]);
     padBytes.putInt32(bitLength[1]);
     padBytes.putInt32(bitLength[2]);
