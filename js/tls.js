@@ -712,8 +712,6 @@ tls.handleHelloRequest = function(c, record, length) {
  * @return the parsed message.
  */
 tls.parseHelloMessage = function(c, record, length) {
-  var msg = null;
-
   var client = (c.entity === tls.ConnectionEnd.client);
 
   // minimum of 38 bytes in message
@@ -728,132 +726,137 @@ tls.parseHelloMessage = function(c, record, length) {
         description: tls.Alert.Description.illegal_parameter
       }
     });
+    return null;
+  }
+
+  var msg = null;
+
+  // use 'remaining' to calculate # of remaining bytes in the message
+  var b = record.fragment;
+  var remaining = b.length();
+  msg = {
+    version: {
+      major: b.getByte(),
+      minor: b.getByte()
+    },
+    random: forge.util.createBuffer(b.getBytes(32)),
+    session_id: readVector(b, 1),
+    extensions: []
+  };
+  if(client) {
+    msg.cipher_suite = b.getBytes(2);
+    msg.compression_method = b.getByte();
   } else {
-    // use 'remaining' to calculate # of remaining bytes in the message
-    var b = record.fragment;
-    var remaining = b.length();
-    msg = {
-      version: {
-        major: b.getByte(),
-        minor: b.getByte()
-      },
-      random: forge.util.createBuffer(b.getBytes(32)),
-      session_id: readVector(b, 1),
-      extensions: []
-    };
-    if(client) {
-      msg.cipher_suite = b.getBytes(2);
-      msg.compression_method = b.getByte();
-    } else {
-      msg.cipher_suites = readVector(b, 2);
-      msg.compression_methods = readVector(b, 1);
-    }
+    msg.cipher_suites = readVector(b, 2);
+    msg.compression_methods = readVector(b, 1);
+  }
 
-    // read extensions if there are any bytes left in the message
-    remaining = length - (remaining - b.length());
-    if(remaining > 0) {
-      // parse extensions
-      var exts = readVector(b, 2);
-      while(exts.length() > 0) {
-        msg.extensions.push({
-          type: exts.getInt16(),
-          data: readVector(exts, 2)
-        });
-      }
-
-      // TODO: make extension support more modular
-      if(!client) {
-        for(var i = 0; i < msg.extensions.length; ++i) {
-          var ext = msg.extensions[i];
-          if(ext.type === tls.ExtensionType.server_name) {
-            // SNI extension
-            // get server name list
-            var snl = readVector(ext.data, 2);
-            while(snl.length() > 0) {
-              // read server name type
-              var snType = snl.getByte();
-
-              // only HostName type (0x00) is known, break out if
-              // another type is detected
-              if(snType !== 0x00) {
-                break;
-              }
-
-              // add host name to server name list
-              c.session.extensions.server_name.serverNameList.push(
-                readVector(snl, 2).getBytes());
-            }
-          } else if(ext.type === tls.ExtensionType.signature_algorithms) {
-            // signature_algorithms extension
-            var sahAlgorithms = readVector(ext.data, 2);
-            while(sahAlgorithms.length() > 0) {
-              // read algorithm type and convert to supported algorithm
-              var algorithm = tls.getSignatureAndHashAlgorithm(
-                sahAlgorithms.getByte(), sahAlgorithms.getByte(),
-                c.session.signatureAndHashAlgorithms);
-              if(algorithm) {
-                c.session.extensions.signature_algorithms
-                  .signatureAndHashAlgorithms.push(algorithm);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // version already set, do not allow version change
-    if(c.session.version) {
-      if(msg.version.major !== c.session.version.major ||
-        msg.version.minor !== c.session.version.minor) {
-        return c.error(c, {
-          message: 'TLS version change is disallowed during renegotiation.',
-          send: true,
-          alert: {
-            level: tls.Alert.Level.fatal,
-            description: tls.Alert.Description.protocol_version
-          }
-        });
-      }
-    }
-
-    // get the chosen (ServerHello) cipher suite
-    if(client) {
-      // FIXME: should be checking configured acceptable cipher suites
-      c.session.cipherSuite = tls.getCipherSuite(msg.cipher_suite);
-    } else {
-      // get a supported preferred (ClientHello) cipher suite
-      // choose the first supported cipher suite
-      var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
-      while(tmp.length() > 0) {
-        // FIXME: should be checking configured acceptable suites
-        // cipher suites take up 2 bytes
-        c.session.cipherSuite = tls.getCipherSuite(tmp.getBytes(2));
-        if(c.session.cipherSuite !== null) {
-          break;
-        }
-      }
-    }
-
-    // cipher suite not supported
-    if(c.session.cipherSuite === null) {
-      return c.error(c, {
-        message: 'No cipher suites in common.',
-        send: true,
-        alert: {
-          level: tls.Alert.Level.fatal,
-          description: tls.Alert.Description.handshake_failure
-        },
-        cipherSuite: msg.cipher_suite.toHex()
+  // read extensions if there are any bytes left in the message
+  remaining = length - (remaining - b.length());
+  if(remaining > 0) {
+    // parse extensions
+    var exts = readVector(b, 2);
+    while(exts.length() > 0) {
+      msg.extensions.push({
+        type: exts.getInt16(),
+        data: readVector(exts, 2)
       });
     }
 
-    // TODO: handle compression methods
-    if(client) {
-      c.session.compressionMethod = msg.compression_method;
-    } else {
-      // no compression
-      c.session.compressionMethod = tls.CompressionMethod.none;
+    // TODO: make extension support more modular
+    if(!client) {
+      for(var i = 0; i < msg.extensions.length; ++i) {
+        var ext = msg.extensions[i];
+        if(ext.type === tls.ExtensionType.server_name) {
+          // SNI extension
+          // get server name list
+          var snl = readVector(ext.data, 2);
+          while(snl.length() > 0) {
+            // read server name type
+            var snType = snl.getByte();
+
+            // only HostName type (0x00) is known, break out if
+            // another type is detected
+            if(snType !== 0x00) {
+              break;
+            }
+
+            // add host name to server name list
+            c.session.extensions.server_name.serverNameList.push(
+              readVector(snl, 2).getBytes());
+          }
+        } else if(ext.type === tls.ExtensionType.signature_algorithms) {
+          // signature_algorithms extension
+          var sahAlgorithms = readVector(ext.data, 2);
+          while(sahAlgorithms.length() > 0) {
+            // read algorithm type and convert to supported algorithm
+            var algorithm = tls.getSignatureAndHashAlgorithm(
+              sahAlgorithms.getByte(), sahAlgorithms.getByte(),
+              c.session.signatureAndHashAlgorithms);
+            if(algorithm) {
+              c.session.extensions.signature_algorithms
+                .signatureAndHashAlgorithms.push(algorithm);
+            }
+          }
+        }
+      }
     }
+  }
+
+  // version already set, do not allow version change
+  if(c.session.version) {
+    if(msg.version.major !== c.session.version.major ||
+      msg.version.minor !== c.session.version.minor) {
+      c.error(c, {
+        message: 'TLS version change is disallowed during renegotiation.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.protocol_version
+        }
+      });
+      return null;
+    }
+  }
+
+  // get the chosen (ServerHello) cipher suite
+  if(client) {
+    // FIXME: should be checking configured acceptable cipher suites
+    c.session.cipherSuite = tls.getCipherSuite(msg.cipher_suite);
+  } else {
+    // get a supported preferred (ClientHello) cipher suite
+    // choose the first supported cipher suite
+    var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
+    while(tmp.length() > 0) {
+      // FIXME: should be checking configured acceptable suites
+      // cipher suites take up 2 bytes
+      c.session.cipherSuite = tls.getCipherSuite(tmp.getBytes(2));
+      if(c.session.cipherSuite !== null) {
+        break;
+      }
+    }
+  }
+
+  // cipher suite not supported
+  if(c.session.cipherSuite === null) {
+    c.error(c, {
+      message: 'No cipher suites in common.',
+      send: true,
+      alert: {
+        level: tls.Alert.Level.fatal,
+        description: tls.Alert.Description.handshake_failure
+      },
+      cipherSuite: msg.cipher_suite.toHex()
+    });
+    return null;
+  }
+
+  // TODO: handle compression methods
+  if(client) {
+    c.session.compressionMethod = msg.compression_method;
+  } else {
+    // no compression
+    c.session.compressionMethod = tls.CompressionMethod.none;
   }
 
   return msg;
