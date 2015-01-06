@@ -17,7 +17,7 @@ var ByteBuffer = forge.util.ByteBuffer;
 /**
  * Supported cipher suites.
  */
-tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
+tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA = {
   id: [0x00, 0x2F],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
   initSecurityParameters: function(sp) {
@@ -34,7 +34,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   initConnectionState: initConnectionState,
   verifyDataLength: 12
 };
-tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
+tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA = {
   id: [0x00, 0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
   initSecurityParameters: function(sp) {
@@ -51,7 +51,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
   initConnectionState: initConnectionState,
   verifyDataLength: 12
 };
-tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA256'] = {
+tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA256 = {
   id: [0x00, 0x3C],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA256',
   initSecurityParameters: function(sp) {
@@ -70,7 +70,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA256'] = {
   verifyDataLength: 12,
   handshakeHashAlgorithm: 'sha256'
 };
-tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA256'] = {
+tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA256 = {
   id: [0x00, 0x3D],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA256',
   initSecurityParameters: function(sp) {
@@ -221,22 +221,23 @@ function encrypt_aes_cbc_padding(blockSize, input, decrypt) {
  * @return true on success, false on failure.
  */
 function decrypt_aes_cbc_padding(blockSize, output, decrypt) {
+  if(!decrypt) {
+    return true;
+  }
+  /* The last byte in the output specifies the number of padding bytes not
+    including itself. Each of the padding bytes has the same value as that
+    last byte (known as the padding_length). Here we check all padding
+    bytes to ensure they have the value of padding_length even if one of
+    them is bad in order to ward-off timing attacks. */
   var rval = true;
-  if(decrypt) {
-    /* The last byte in the output specifies the number of padding bytes not
-      including itself. Each of the padding bytes has the same value as that
-      last byte (known as the padding_length). Here we check all padding
-      bytes to ensure they have the value of padding_length even if one of
-      them is bad in order to ward-off timing attacks. */
-    var len = output.length();
-    var paddingLength = output.last();
-    for(var i = len - 1 - paddingLength; i < len - 1; ++i) {
-      rval = rval && (output.at(i) == paddingLength);
-    }
-    if(rval) {
-      // trim off padding bytes and last padding length byte
-      output.truncate(paddingLength + 1);
-    }
+  var len = output.length();
+  var paddingLength = output.last();
+  for(var i = len - 1 - paddingLength; i < len - 1; ++i) {
+    rval = rval && (output.at(i) == paddingLength);
+  }
+  if(rval) {
+    // trim off padding bytes and last padding length byte
+    output.truncate(paddingLength + 1);
   }
   return rval;
 }
