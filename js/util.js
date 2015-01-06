@@ -1741,8 +1741,11 @@ util.binary.base64.decode = function(input, output, offset) {
       }
     }
   }
-
-  return output ? (j - offset) : out;
+  
+  // make sure result is the exact decoded length
+  return output ?
+         (j - offset) :
+         out.subarray(0, j);
 };
 
 // text encoding/decoding tools
