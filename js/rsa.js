@@ -632,17 +632,17 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    * should use the 'RSA-OAEP' decryption scheme, 'RSAES-PKCS1-V1_5' is for
    * legacy applications.
    *
-   * @param data the byte string to encrypt.
+   * @param data the data, as a ByteBuffer, to encrypt.
    * @param scheme the encryption scheme to use:
    *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA encryption,
    *          an object with an 'encode' property set to a function
    *          with the signature 'function(data, key)' that returns
-   *          a binary-encoded string representing the encoded data.
+   *          a ByteBuffer representing the encoded data.
    * @param schemeOptions any scheme-specific options.
    *
-   * @return the encrypted byte string.
+   * @return the encrypted data as a ByteBuffer.
    */
   key.encrypt = function(data, scheme, schemeOptions) {
     if(typeof scheme === 'string') {
@@ -664,21 +664,23 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
         }
       };
     } else if(scheme === 'NONE' || scheme === null) {
-      scheme = { encode: function(e) { return e; } };
+      scheme = {encode: function(e) {return e;}};
     } else if(typeof scheme === 'string') {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
 
     // encode message according to scheme and then RSA encrypt
-    var e = scheme.encode(data, key, true);
-    return _rsaEncrypt(
-      key, new ByteBuffer(e, 'binary'), _rsaPublicOp).getBytes();
+    var encoded = scheme.encode(data, key, true);
+    // TODO: remove once schemes encode to ByteBuffers
+    encoded = new ByteBuffer(encoded, 'binary');
+    // TODO: return ByteBuffer
+    return _rsaEncrypt(key, encoded, _rsaPublicOp).getBytes();
   };
 
   /**
-   * Verifies the given signature against the given digest.
+   * Verifies the given signature against the given ByteBuffer of data.
    *
-   * PKCS#1 supports multiple (currently two) signature schemes:
+   * Two PKCS#1 signature schemes are supported:
    * RSASSA-PKCS1-V1_5 and RSASSA-PSS.
    *
    * By default this implementation uses the "old scheme", i.e.
@@ -695,9 +697,11 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    * To perform PSS signature verification, provide an instance
    * of Forge PSS object as the scheme parameter.
    *
-   * @param digest the message digest hash to compare against the signature,
-   *          as a binary-encoded string.
-   * @param signature the signature to verify, as a binary-encoded string.
+   * @param data the data, as a ByteBuffer, to compare against the signature;
+   *          for RSASSA-PKCS1-V1_5 and RSASSA-PSS, this should be the message
+   *          digest hash that was signed, for EME-PKCS1-v1_5 or NONE, this
+   *          would be the raw data that signed.
+   * @param signature the signature to verify, as a ByteBuffer.
    * @param scheme signature verification scheme to use:
    *          'RSASSA-PKCS1-V1_5' or undefined for RSASSA PKCS#1 v1.5,
    *          a Forge PSS object for RSASSA-PSS,
@@ -708,7 +712,11 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    *
    * @return true if the signature was verified, false if not.
    */
-  key.verify = function(digest, signature, scheme) {
+  key.verify = function(data, signature, scheme) {
+    /*if(!(data instanceof ByteBuffer)) {
+      throw new TypeError('data must be a ByteBuffer.');
+    }*/
+
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     } else if(scheme === undefined) {
@@ -718,22 +726,24 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
     // TODO: simplify scheme.verify (change to scheme.decode)
     if(scheme === 'RSASSA-PKCS1-V1_5') {
       scheme = {
-        verify: function(digest, d) {
-          // FIXME: digest to become a ByteBuffer, use ByteBuffer.equals?
-          return forge.pkcs1.decode_rsassa(key, d).getBytes() === digest;
+        verify: function(input, decrypted) {
+          // FIXME: input to become a ByteBuffer, use ByteBuffer.equals?
+          return forge.pkcs1.decode_rsassa(
+            key, decrypted).getBytes() === input;
         }
       };
     } else if(scheme === 'EME-PKCS1-V1_5') {
       scheme = {
-        verify: function(digest, d) {
-          return forge.pkcs1.decode_eme_v1_5(key, d).getBytes() === digest;
+        verify: function(input, decrypted) {
+          return forge.pkcs1.decode_eme_v1_5(
+            key, decrypted).getBytes() === input;
         }
       };
     } else if(scheme === 'NONE' || scheme === null) {
       scheme = {
-        verify: function(digest, d) {
-          // FIXME: digest to become a ByteBuffer, use ByteBuffer.equals?
-          return d.getBytes() === digest;
+        verify: function(input, decrypted) {
+          // FIXME: input to become a ByteBuffer, use ByteBuffer.equals?
+          return decrypted.getBytes() === input;
         }
       };
     } else if(typeof scheme === 'string') {
@@ -743,8 +753,8 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
     // RSA decrypt, then verify -- which does message decoding
     // FIXME: signature will change to a ByteBuffer
     signature = new ByteBuffer(signature, 'binary');
-    var d = _rsaDecrypt(key, signature, _rsaPublicOp);
-    return scheme.verify(digest, d, key.n.bitLength());
+    var decrypted = _rsaDecrypt(key, signature, _rsaPublicOp);
+    return scheme.verify(data, decrypted, key.n.bitLength());
   };
 
   return key;
@@ -782,16 +792,20 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    * Decrypts the given data with this private key. The decryption scheme
    * must match the one used to encrypt the data.
    *
-   * @param data the byte string to decrypt.
+   * @param data the data, as a ByteBuffer, to decrypt.
    * @param scheme the decryption scheme to use:
    *          'RSAES-PKCS1-V1_5' (default),
    *          'RSA-OAEP',
    *          'RAW', 'NONE', or null to perform raw RSA decryption.
    * @param schemeOptions any scheme-specific options.
    *
-   * @return the decrypted byte string.
+   * @return the decrypted data as a ByteBuffer.
    */
   key.decrypt = function(data, scheme, schemeOptions) {
+    /*if(!(data instanceof ByteBuffer)) {
+      throw new TypeError('data must be a ByteBuffer.');
+    }*/
+
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     } else if(scheme === undefined) {
@@ -799,41 +813,53 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     }
 
     // RSA decrypt message
-    var d = _rsaDecrypt(key, new ByteBuffer(data, 'binary'), _rsaPrivateOp);
+    // TODO: will become a ByteBuffer
+    data = new ByteBuffer(data, 'binary');
+    var decrypted = _rsaDecrypt(key, data, _rsaPrivateOp);
 
     // decode message according to scheme
     // TODO: simplify scheme.decode
     if(scheme === 'RSAES-PKCS1-V1_5') {
-      scheme = {decode: function(d, key) {
-        return forge.pkcs1.decode_rsaes(key, d);
+      scheme = {decode: function(decrypted, key) {
+        return forge.pkcs1.decode_rsaes(key, decrypted);
       }};
     } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
       scheme = {
-        decode: function(d, key) {
+        decode: function(decrypted, key) {
+          // TODO: change decode_rsa_oaep to return a ByteBuffer
           return new ByteBuffer(
-            forge.pkcs1.decode_rsa_oaep(key, d.bytes(), schemeOptions),
+            forge.pkcs1.decode_rsa_oaep(key, decrypted.bytes(), schemeOptions),
             'binary');
         }
       };
     } else if(scheme === 'NONE' || scheme === null) {
-      scheme = {decode: function(d) {return d;}};
+      scheme = {decode: function(decrypted) {return decrypted;}};
     } else {
       throw new Error('Unsupported encryption scheme: "' + scheme + '".');
     }
-    return scheme.decode(d, key, false).getBytes();
+    return scheme.decode(decrypted, key, false).getBytes();
   };
 
   /**
-   * Signs the given digest, producing a signature.
+   * Signs the given message digest or raw data, producing a signature.
    *
-   * PKCS#1 supports multiple (currently two) signature schemes:
+   * Several signature methods are supported:
+   *
+   * Two PKCS#1 signature schemes are provided for message digests:
    * RSASSA-PKCS1-V1_5 and RSASSA-PSS.
    *
    * By default this implementation uses the "old scheme", i.e.
    * RSASSA-PKCS1-V1_5. In order to generate a PSS signature, provide
    * an instance of Forge PSS object as the scheme parameter.
    *
-   * @param md the message digest object with the hash to sign.
+   * Two signature methods are provided for raw data:
+   * EME-PKCS1-V1_5 and NONE.
+   *
+   * EME-PKCS1-V1_5 is used for the TLS protocol, and NONE may be used
+   * to perform raw RSA encryption (Note: this is unsafe unless some other
+   * encoding/armoring has been previously performed on the message).
+   *
+   * @param input the ByteBuffer or message digest object with the hash to sign.
    * @param scheme the signature scheme to use:
    *          'RSASSA-PKCS1-V1_5' or undefined for RSASSA PKCS#1 v1.5,
    *          a Forge PSS object for RSASSA-PSS,
@@ -842,17 +868,13 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    *            used (which is unsafe if some external padding mechanism isn't
    *            used).
    *
-   * @return the signature as a byte string.
+   * @return the signature as a ByteBuffer.
    */
-  key.sign = function(md, scheme) {
-    // FIXME: discrepancy/confusion between passing bytes and passing
-    // a message digest object -- clean up API
-
+  key.sign = function(input, scheme) {
     /* Note: The internal implementation of RSA operations is being
       transitioned away from a PKCS#1 v1.5 hard-coded scheme. Some legacy
       code like the use of an encoding block type identifier 'bt' will
       eventually be removed. */
-
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     } else if(scheme === undefined) {
@@ -861,27 +883,44 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     }
 
     if(scheme === 'RSASSA-PKCS1-V1_5') {
+      // TODO: check against MessageDigest API
+      if(input instanceof ByteBuffer || typeof input !== 'object') {
+        throw new TypeError(
+          'input must be a message digest object to use the ' +
+          '"RSASSA-PKCS1-V1_5" signature scheme.');
+      }
       scheme = {
-        encode: function(d) {
-          return forge.pkcs1.encode_rsassa(key, d);
+        encode: function(md) {
+          return forge.pkcs1.encode_rsassa(key, md);
         }
       };
     } else if(scheme === 'EME-PKCS1-V1_5') {
+      /*if(!(typeof input instanceof ByteBuffer)) {
+        throw new TypeError(
+          'input must be a ByteBuffer to use the ' +
+          '"EME-PKCS1-V1_5" signature scheme.');
+      }*/
       scheme = {
-        encode: function(d) {
-          return forge.pkcs1.encode_eme_v1_5(key, d, 0x02).getBytes();
+        encode: function(data) {
+          return forge.pkcs1.encode_eme_v1_5(key, data, 0x02).getBytes();
         }
       };
     } else if(scheme === 'NONE' || scheme === null) {
-      scheme = {encode: function() {return md;}};
+      /*if(!(typeof input instanceof ByteBuffer)) {
+        throw new TypeError(
+          'input must be a ByteBuffer to use raw RSA encryption.');
+      }*/
+      scheme = {encode: function() {return input;}};
     } else if(typeof scheme === 'string') {
       throw new Error('Invalid signature scheme: ' + scheme);
     }
 
     // encode message according to scheme and then RSA encrypt
-    var d = scheme.encode(md, key.n.bitLength());
-    return _rsaEncrypt(
-      key, new ByteBuffer(d, 'binary'), _rsaPrivateOp).getBytes();
+    var encoded = scheme.encode(input, key.n.bitLength());
+    // TODO: remove once schemes encode to ByteBuffers
+    encoded = new ByteBuffer(encoded, 'binary');
+    // TODO: return buffer
+    return _rsaEncrypt(key, encoded, _rsaPrivateOp).getBytes();
   };
 
   return key;
