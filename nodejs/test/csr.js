@@ -99,6 +99,7 @@ function Tests(ASSERT, PKI) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/pki'
@@ -106,14 +107,14 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI()
+      PKI(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki')());
+    require('../../js/pki')(forge));
 }
 
 })();

@@ -30,18 +30,18 @@ var _padding = null;
 forge.md.createMessageDigest = function(algorithm) {
   var api = algorithm;
   if(typeof api === 'string') {
-    api = forge.sign.getAlgorithm(api);
+    api = forge.md.getAlgorithm(api);
   }
   if(!api) {
     throw new Error('Unsupported algorithm: ' + algorithm);
   }
 
   // TODO: change _padding to buffer
-  if(!_padding || _padding.length < algorithm.blockSize) {
+  if(!_padding || _padding.length < api.blockSize) {
     // create shared padding
     _padding = String.fromCharCode(128);
     _padding += forge.util.fillString(
-      String.fromCharCode(0x00), algorithm.blockSize);
+      String.fromCharCode(0x00), api.blockSize);
   }
 
   return new forge.md.MessageDigest({
@@ -57,8 +57,15 @@ forge.md.createMessageDigest = function(algorithm) {
  * @param algorithm the algorithm API object.
  */
 forge.md.registerAlgorithm = function(name, algorithm) {
-  name = name.toUpperCase();
   forge.md.algorithms[name] = algorithm;
+
+  // FIXME: backwards compatibility
+  if(!('create' in algorithm)) {
+    algorithm.create = function() {
+      return forge.md.createMessageDigest(algorithm);
+    };
+  }
+  forge.md[name] = algorithm;
 };
 
 /**
@@ -69,15 +76,25 @@ forge.md.registerAlgorithm = function(name, algorithm) {
  * @return the algorithm, if found, null if not.
  */
 forge.md.getAlgorithm = function(name) {
-  name = name.toUpperCase();
   if(name in forge.md.algorithms) {
     return forge.md.algorithms[name];
   }
   return null;
 };
 
+/**
+ * Creates a new MessageDigest.
+ *
+ * @param options the options to use.
+ *          algorithm the algorithm API.
+ */
 var MessageDigest = forge.md.MessageDigest = function(options) {
-  this.algorithm = options.algorithm;
+  this._algorithm = options.algorithm;
+  // FIXME: backwards compatibility
+  this.algorithm = this._algorithm.name;
+  this.digestLength = this._algorithm.digestLength;
+  this.blockLength = this._algorithm.blockSize;
+
   // start digest automatically for first time
   this.start();
 };
@@ -93,7 +110,7 @@ MessageDigest.prototype.start = function() {
 
   // full message length
   this.fullMessageLength = [];
-  var int32s = this.algorithm.messageLengthSize / 4;
+  var int32s = this._algorithm.messageLengthSize / 4;
   for(var i = 0; i < int32s; ++i) {
     this.fullMessageLength.push(0);
   }
@@ -102,7 +119,7 @@ MessageDigest.prototype.start = function() {
   this._input = new ByteBuffer();
 
   // get starting state
-  this.state = this.algorithm.start();
+  this.state = this._algorithm.start();
 
   return this;
 };
@@ -142,9 +159,8 @@ MessageDigest.prototype.update = function(msg, encoding) {
   this._input.putBuffer(msg);
 
   // digest blocks
-  len = this._input.length();
-  while(len >= this.algorithm.blockSize) {
-    this.state = this.algorithm.digestBlock(this.state, this._input);
+  while(this._input.length() >= this._algorithm.blockSize) {
+    this.state = this._algorithm.digest(this.state, this._input);
   }
 
   // compact input buffer every 2K or if empty
@@ -161,6 +177,10 @@ MessageDigest.prototype.update = function(msg, encoding) {
  * @return a byte buffer containing the digest value.
  */
 MessageDigest.prototype.digest = function() {
+  // TODO: May need to better abstract padding and writing message length
+  // etc. in the future, but for now popular hashes generally all work the
+  // same way.
+
   /* Note: Here we copy the remaining bytes in the input buffer and add the
   appropriate padding. Then we do the final update on a copy of the state so
   that if the user wants to get intermediate digests they can do so. */
@@ -191,23 +211,29 @@ MessageDigest.prototype.digest = function() {
 
   // compute remaining size to be digested (include message length size)
   var remaining = (
-    this.fullMessageLength[this.fullMessageLength - 1] + this.messageLengthSize);
+    this.fullMessageLength[this.fullMessageLength.length - 1] +
+    this._algorithm.messageLengthSize);
 
   // add padding for overflow blockSize - overflow
   // _padding starts with 1 byte with first bit is set (byte value 128), then
   // there may be up to (blockSize - 1) other pad bytes
-  var overflow = remaining & (this.blockSize - 1);
-  finalBlock.putBytes(_padding.substr(0, this.blockSize - overflow));
+  var overflow = remaining & (this._algorithm.blockSize - 1);
+  finalBlock.putBytes(_padding.substr(0, this._algorithm.blockSize - overflow));
 
-  // append the length of the message (algorithm-specific)
+  // serialize message length in bits in big-endian order; since length
+  // is stored in bytes we multiply by 8 (left shift by 3 and merge in
+  // remainder from )
   var messageLength = new ByteBuffer();
   for(var i = 0; i < this.fullMessageLength.length; ++i) {
-    messageLength.putInt32(this.fullMessageLength[i]);
+    messageLength.putInt32((this.fullMessageLength[i] << 3) |
+      (this.fullMessageLength[i + 1] >>> 28));
   }
-  this.algorithm.appendMessageLength(finalBlock, messageLength);
+
+  // write the length of the message (algorithm-specific)
+  this._algorithm.writeMessageLength(finalBlock, messageLength);
 
   // digest final block
-  var state = this.algorithm.digestBlock(this.state.copy(), finalBlock);
+  var state = this._algorithm.digest(this.state.copy(), finalBlock);
 
   // write state to buffer
   var rval = new ByteBuffer();
@@ -222,7 +248,7 @@ MessageDigest.prototype.digest = function() {
  */
 MessageDigest.prototype.copy = function() {
   var rval = new MessageDigest({
-    algorithm: this.algorithm
+    algorithm: this._algorithm
   });
   rval.state = this.state.copy();
   return rval;
