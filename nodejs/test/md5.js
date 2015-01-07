@@ -1,32 +1,32 @@
 (function() {
 
-function Tests(ASSERT, MD5, UTIL) {
+function Tests(ASSERT, MD5, UTIL, MD) {
   describe('md5', function() {
     it('should digest the empty string', function() {
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       ASSERT.equal(md.digest().toHex(), 'd41d8cd98f00b204e9800998ecf8427e');
     });
 
     it('should digest "abc"', function() {
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       md.update('abc', 'utf8');
       ASSERT.equal(md.digest().toHex(), '900150983cd24fb0d6963f7d28e17f72');
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(md.digest().toHex(), '9e107d9d372bb6826bd81d3542a419d6');
     });
 
     it('should digest "c\'\u00e8"', function() {
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       md.update("c\'\u00e8", 'utf8');
       ASSERT.equal(md.digest().toHex(), '8ef7c2941d78fe89f31e614437c9db59');
     });
 
     it('should digest "THIS IS A MESSAGE"', function() {
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       md.start();
       md.update('THIS IS ', 'utf8');
       md.update('A MESSAGE', 'utf8');
@@ -86,7 +86,7 @@ function Tests(ASSERT, MD5, UTIL) {
         '7f156e0b4a5d1f54ce2742eb70c895f5f8b85f5febe69bc73e891f928' +
         '0826860a0c2ef94c7935e6215c3c4cd6b0e43e80cca396d913d36be');
 
-      var md = MD5.create();
+      var md = MD.createMessageDigest('md5');
       md.update(input, 'binary');
       ASSERT.equal(md.digest().toHex(), 'd15a2da0e92c3da55dc573f885b6e653');
     });
@@ -98,13 +98,15 @@ var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/md5',
-    'forge/util'
-  ], function(MD5, UTIL) {
+    'forge/util',
+    'forge/md'
+  ], function(MD5, UTIL, MD) {
     Tests(
       // Global provided by test harness
       ASSERT,
       MD5(forge),
-      UTIL(forge)
+      UTIL(forge),
+      MD(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -112,7 +114,8 @@ if(typeof define === 'function') {
   Tests(
     require('assert'),
     require('../../js/md5')(forge),
-    require('../../js/util')(forge));
+    require('../../js/util')(forge),
+    require('../../js/md')(forge));
 }
 
 })();
