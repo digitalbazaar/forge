@@ -30,7 +30,7 @@ sha1.Algorithm.prototype.start = function() {
   if(!_w) {
     _w = new Array(80);
   }
-  return createState();
+  return _createState();
 };
 
 sha1.Algorithm.prototype.writeMessageLength = function(
@@ -146,7 +146,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
 
 forge.md.registerAlgorithm('sha1', new forge.sha1.Algorithm());
 
-function createState() {
+function _createState() {
   var state = {
     h0: 0x67452301,
     h1: 0xEFCDAB89,
@@ -155,7 +155,7 @@ function createState() {
     h4: 0xC3D2E1F0
   };
   state.copy = function() {
-    var rval = createState();
+    var rval = _createState();
     rval.h0 = state.h0;
     rval.h1 = state.h1;
     rval.h2 = state.h2;

@@ -27,7 +27,7 @@ md5.Algorithm.prototype.start = function() {
   if(!_initialized) {
     _init();
   }
-  return createState();
+  return _createState();
 };
 
 md5.Algorithm.prototype.writeMessageLength = function(
@@ -110,7 +110,7 @@ md5.Algorithm.prototype.digest = function(s, input) {
 
 forge.md.registerAlgorithm('md5', new forge.md5.Algorithm());
 
-function createState() {
+function _createState() {
   var state = {
     h0: 0x67452301,
     h1: 0xEFCDAB89,
@@ -118,7 +118,7 @@ function createState() {
     h3: 0x10325476
   };
   state.copy = function() {
-    var rval = createState();
+    var rval = _createState();
     rval.h0 = state.h0;
     rval.h1 = state.h1;
     rval.h2 = state.h2;
