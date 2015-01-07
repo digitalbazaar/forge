@@ -1,16 +1,16 @@
 (function() {
 
-function Tests(ASSERT, SHA256, UTIL) {
+function Tests(ASSERT, SHA256, UTIL, MD) {
   describe('sha256', function() {
     it('should digest the empty string', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       ASSERT.equal(
         md.digest().toHex(),
         'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
     });
 
     it('should digest "abc"', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -18,7 +18,7 @@ function Tests(ASSERT, SHA256, UTIL) {
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -26,7 +26,7 @@ function Tests(ASSERT, SHA256, UTIL) {
     });
 
     it('should digest "c\'\u00e8"', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       md.update("c\'\u00e8", 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -34,7 +34,7 @@ function Tests(ASSERT, SHA256, UTIL) {
     });
 
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       md.start();
       md.update(
         'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
@@ -49,7 +49,7 @@ function Tests(ASSERT, SHA256, UTIL) {
 
     it('should digest a long message', function() {
       // Note: might be too slow on old browsers
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha256');
       md.update(UTIL.fillString('a', 1000000), 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -63,13 +63,15 @@ var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/sha256',
-    'forge/util'
-  ], function(SHA256, UTIL) {
+    'forge/util',
+    'forge/md'
+  ], function(SHA256, UTIL, MD) {
     Tests(
       // Global provided by test harness
       ASSERT,
       SHA256(forge),
-      UTIL(forge)
+      UTIL(forge),
+      MD(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -77,7 +79,8 @@ if(typeof define === 'function') {
   Tests(
     require('assert'),
     require('../../js/sha256')(forge),
-    require('../../js/util')(forge));
+    require('../../js/util')(forge),
+    require('../../js/md')(forge));
 }
 
 })();

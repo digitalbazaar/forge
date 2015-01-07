@@ -1,16 +1,16 @@
 (function() {
 
-function Tests(ASSERT, SHA512, UTIL) {
+function Tests(ASSERT, SHA512, MD) {
   describe('sha512', function() {
     it('should digest the empty string', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       ASSERT.equal(
         md.digest().toHex(),
         'cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e');
     });
 
     it('should digest "abc"', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -18,7 +18,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       md.update('abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -26,7 +26,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -34,7 +34,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "c\'\u00e8"', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       md.update("c\'\u00e8", 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -42,7 +42,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
-      var md = SHA512.create();
+      var md = MD.createMessageDigest('sha512');
       md.start();
       md.update(
         'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
@@ -56,18 +56,16 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
   });
 
-  var SHA384 = SHA512.sha384;
-
   describe('sha384', function() {
     it('should digest the empty string', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       ASSERT.equal(
         md.digest().toHex(),
         '38b060a751ac96384cd9327eb1b1e36a21fdb71114be07434c0cc7bf63f6e1da274edebfe76f65fbd51ad2f14898b95b');
     });
 
     it('should digest "abc"', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       md.update('abc', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -75,7 +73,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       md.update(
         'abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu', 'utf8');
       ASSERT.equal(
@@ -84,7 +82,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -92,7 +90,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "c\'\u00e8"', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       md.update("c\'\u00e8", 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -100,7 +98,7 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
 
     it('should digest "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"', function() {
-      var md = SHA384.create();
+      var md = MD.createMessageDigest('sha384');
       md.start();
       md.update(
         'abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq', 'utf8');
@@ -114,18 +112,16 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
   });
 
-  var SHA256 = SHA512.sha256;
-
   describe('sha512/256', function() {
     it('should digest the empty string', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha512/256');
       ASSERT.equal(
         md.digest().toHex(),
         'c672b8d1ef56ed28ab87c3622c5114069bdd3ad7b8f9737498d0c01ecef0967a');
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = SHA256.create();
+      var md = MD.createMessageDigest('sha512/256');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -133,18 +129,16 @@ function Tests(ASSERT, SHA512, UTIL) {
     });
   });
 
-  var SHA224 = SHA512.sha224;
-
   describe('sha512/224', function() {
     it('should digest the empty string', function() {
-      var md = SHA224.create();
+      var md = MD.createMessageDigest('sha512/224');
       ASSERT.equal(
         md.digest().toHex(),
         '6ed0dd02806fa89e25de060c19d3ac86cabb87d6a0ddd05c333b84f4');
     });
 
     it('should digest "The quick brown fox jumps over the lazy dog"', function() {
-      var md = SHA224.create();
+      var md = MD.createMessageDigest('sha512/224');
       md.update('The quick brown fox jumps over the lazy dog', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
@@ -158,13 +152,13 @@ var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/sha512',
-    'forge/util'
-  ], function(SHA512, UTIL) {
+    'forge/md'
+  ], function(SHA512, MD) {
     Tests(
       // Global provided by test harness
       ASSERT,
       SHA512(forge),
-      UTIL(forge)
+      MD(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -172,7 +166,7 @@ if(typeof define === 'function') {
   Tests(
     require('assert'),
     require('../../js/sha512')(forge),
-    require('../../js/util')(forge));
+    require('../../js/md')(forge));
 }
 
 })();
