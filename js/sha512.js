@@ -8,7 +8,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2014 Digital Bazaar, Inc.
+ * Copyright (c) 2014-2015 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -16,240 +16,341 @@ function initModule(forge) {
 
 var sha512 = forge.sha512 = forge.sha512 || {};
 
-var ByteBuffer = forge.util.ByteBuffer;
-
 // FIXME: backwards compatibility
-// SHA-512
-forge.md.sha512 = forge.md.algorithms.sha512 = sha512;
-
-// FIXME: backwards compatibility
-// SHA-384
-var sha384 = forge.sha384 = forge.sha512.sha384 = forge.sha512.sha384 || {};
-sha384.create = function() {
-  return sha512.create('SHA-384');
-};
-forge.md.sha384 = forge.md.algorithms.sha384 = sha384;
-
-// FIXME: backwards compatibility
-// SHA-512/256
-forge.sha512.sha256 = forge.sha512.sha256 || {
-  create: function() {
-    return sha512.create('SHA-512/256');
-  }
-};
-forge.md['sha512/256'] = forge.md.algorithms['sha512/256'] =
-  forge.sha512.sha256;
-
-// FIXME: backwards compatibility
-// SHA-512/224
-forge.sha512.sha224 = forge.sha512.sha224 || {
-  create: function() {
-    return sha512.create('SHA-512/224');
-  }
-};
-forge.md['sha512/224'] = forge.md.algorithms['sha512/224'] =
-  forge.sha512.sha224;
-
-/**
- * Creates a SHA-2 message digest object.
- *
- * @param algorithm the algorithm to use (SHA-512, SHA-384, SHA-512/224,
- *          SHA-512/256).
- *
- * @return a message digest object.
- */
 sha512.create = function(algorithm) {
-  // do initialization as necessary
-  if(!_initialized) {
-    _init();
+  // SHA-512 => sha512
+  algorithm = algorithm || 'sha512';
+  algorithm = algorithm.replace('-', '').toLowerCase();
+  return forge.md.createMessageDigest(algorithm);
+};
+
+var sha2 = {};
+sha2.Algorithm = {};
+
+sha2.Algorithm.base = function() {
+  this.blockSize = 128;
+  this.messageLengthSize = 16;
+};
+
+sha2.Algorithm.base.prototype.writeMessageLength = function(
+  finalBlock, messageLength) {
+  // message length is in bits and in big-endian order; simply append
+  finalBlock.putBuffer(messageLength);
+};
+
+sha2.Algorithm.base.prototype.digest = function(s, input) {
+  // consume 512 bit (128 byte) chunks
+  var t1_hi, t1_lo;
+  var t2_hi, t2_lo;
+  var s0_hi, s0_lo;
+  var s1_hi, s1_lo;
+  var ch_hi, ch_lo;
+  var maj_hi, maj_lo;
+  var a_hi, a_lo;
+  var b_hi, b_lo;
+  var c_hi, c_lo;
+  var d_hi, d_lo;
+  var e_hi, e_lo;
+  var f_hi, f_lo;
+  var g_hi, g_lo;
+  var h_hi, h_lo;
+  var i, hi, lo, w2, w7, w15, w16;
+  var h = s.h;
+  var len = input.length();
+  while(len >= 128) {
+    // the w array will be populated with sixteen 64-bit big-endian words
+    // and then extended into 64 64-bit words according to SHA-512
+    for(i = 0; i < 16; ++i) {
+      _w[i][0] = input.getInt32() >>> 0;
+      _w[i][1] = input.getInt32() >>> 0;
+    }
+    for(; i < 80; ++i) {
+      // for word 2 words ago: ROTR 19(x) ^ ROTR 61(x) ^ SHR 6(x)
+      w2 = _w[i - 2];
+      hi = w2[0];
+      lo = w2[1];
+
+      // high bits
+      t1_hi = (
+        ((hi >>> 19) | (lo << 13)) ^ // ROTR 19
+        ((lo >>> 29) | (hi << 3)) ^ // ROTR 61/(swap + ROTR 29)
+        (hi >>> 6)) >>> 0; // SHR 6
+      // low bits
+      t1_lo = (
+        ((hi << 13) | (lo >>> 19)) ^ // ROTR 19
+        ((lo << 3) | (hi >>> 29)) ^ // ROTR 61/(swap + ROTR 29)
+        ((hi << 26) | (lo >>> 6))) >>> 0; // SHR 6
+
+      // for word 15 words ago: ROTR 1(x) ^ ROTR 8(x) ^ SHR 7(x)
+      w15 = _w[i - 15];
+      hi = w15[0];
+      lo = w15[1];
+
+      // high bits
+      t2_hi = (
+        ((hi >>> 1) | (lo << 31)) ^ // ROTR 1
+        ((hi >>> 8) | (lo << 24)) ^ // ROTR 8
+        (hi >>> 7)) >>> 0; // SHR 7
+      // low bits
+      t2_lo = (
+        ((hi << 31) | (lo >>> 1)) ^ // ROTR 1
+        ((hi << 24) | (lo >>> 8)) ^ // ROTR 8
+        ((hi << 25) | (lo >>> 7))) >>> 0; // SHR 7
+
+      // sum(t1, word 7 ago, t2, word 16 ago) modulo 2^64 (carry lo overflow)
+      w7 = _w[i - 7];
+      w16 = _w[i - 16];
+      lo = (t1_lo + w7[1] + t2_lo + w16[1]);
+      _w[i][0] = (t1_hi + w7[0] + t2_hi + w16[0] +
+        ((lo / 0x100000000) >>> 0)) >>> 0;
+      _w[i][1] = lo >>> 0;
+    }
+
+    // initialize hash value for this chunk
+    a_hi = h[0][0];
+    a_lo = h[0][1];
+    b_hi = h[1][0];
+    b_lo = h[1][1];
+    c_hi = h[2][0];
+    c_lo = h[2][1];
+    d_hi = h[3][0];
+    d_lo = h[3][1];
+    e_hi = h[4][0];
+    e_lo = h[4][1];
+    f_hi = h[5][0];
+    f_lo = h[5][1];
+    g_hi = h[6][0];
+    g_lo = h[6][1];
+    h_hi = h[7][0];
+    h_lo = h[7][1];
+
+    // round function
+    for(i = 0; i < 80; ++i) {
+      // Sum1(e) = ROTR 14(e) ^ ROTR 18(e) ^ ROTR 41(e)
+      s1_hi = (
+        ((e_hi >>> 14) | (e_lo << 18)) ^ // ROTR 14
+        ((e_hi >>> 18) | (e_lo << 14)) ^ // ROTR 18
+        ((e_lo >>> 9) | (e_hi << 23))) >>> 0; // ROTR 41/(swap + ROTR 9)
+      s1_lo = (
+        ((e_hi << 18) | (e_lo >>> 14)) ^ // ROTR 14
+        ((e_hi << 14) | (e_lo >>> 18)) ^ // ROTR 18
+        ((e_lo << 23) | (e_hi >>> 9))) >>> 0; // ROTR 41/(swap + ROTR 9)
+
+      // Ch(e, f, g) (optimized the same way as SHA-1)
+      ch_hi = (g_hi ^ (e_hi & (f_hi ^ g_hi))) >>> 0;
+      ch_lo = (g_lo ^ (e_lo & (f_lo ^ g_lo))) >>> 0;
+
+      // Sum0(a) = ROTR 28(a) ^ ROTR 34(a) ^ ROTR 39(a)
+      s0_hi = (
+        ((a_hi >>> 28) | (a_lo << 4)) ^ // ROTR 28
+        ((a_lo >>> 2) | (a_hi << 30)) ^ // ROTR 34/(swap + ROTR 2)
+        ((a_lo >>> 7) | (a_hi << 25))) >>> 0; // ROTR 39/(swap + ROTR 7)
+      s0_lo = (
+        ((a_hi << 4) | (a_lo >>> 28)) ^ // ROTR 28
+        ((a_lo << 30) | (a_hi >>> 2)) ^ // ROTR 34/(swap + ROTR 2)
+        ((a_lo << 25) | (a_hi >>> 7))) >>> 0; // ROTR 39/(swap + ROTR 7)
+
+      // Maj(a, b, c) (optimized the same way as SHA-1)
+      maj_hi = ((a_hi & b_hi) | (c_hi & (a_hi ^ b_hi))) >>> 0;
+      maj_lo = ((a_lo & b_lo) | (c_lo & (a_lo ^ b_lo))) >>> 0;
+
+      // main algorithm
+      // t1 = (h + s1 + ch + _k[i] + __w[i]) modulo 2^64 (carry lo overflow)
+      lo = (h_lo + s1_lo + ch_lo + _k[i][1] + _w[i][1]);
+      t1_hi = (h_hi + s1_hi + ch_hi + _k[i][0] + _w[i][0] +
+        ((lo / 0x100000000) >>> 0)) >>> 0;
+      t1_lo = lo >>> 0;
+
+      // t2 = s0 + maj modulo 2^64 (carry lo overflow)
+      lo = s0_lo + maj_lo;
+      t2_hi = (s0_hi + maj_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+      t2_lo = lo >>> 0;
+
+      h_hi = g_hi;
+      h_lo = g_lo;
+
+      g_hi = f_hi;
+      g_lo = f_lo;
+
+      f_hi = e_hi;
+      f_lo = e_lo;
+
+      // e = (d + t1) modulo 2^64 (carry lo overflow)
+      lo = d_lo + t1_lo;
+      e_hi = (d_hi + t1_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+      e_lo = lo >>> 0;
+
+      d_hi = c_hi;
+      d_lo = c_lo;
+
+      c_hi = b_hi;
+      c_lo = b_lo;
+
+      b_hi = a_hi;
+      b_lo = a_lo;
+
+      // a = (t1 + t2) modulo 2^64 (carry lo overflow)
+      lo = t1_lo + t2_lo;
+      a_hi = (t1_hi + t2_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+      a_lo = lo >>> 0;
+    }
+
+    // update hash state (additional modulo 2^64)
+    lo = h[0][1] + a_lo;
+    h[0][0] = (h[0][0] + a_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[0][1] = lo >>> 0;
+
+    lo = h[1][1] + b_lo;
+    h[1][0] = (h[1][0] + b_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[1][1] = lo >>> 0;
+
+    lo = h[2][1] + c_lo;
+    h[2][0] = (h[2][0] + c_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[2][1] = lo >>> 0;
+
+    lo = h[3][1] + d_lo;
+    h[3][0] = (h[3][0] + d_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[3][1] = lo >>> 0;
+
+    lo = h[4][1] + e_lo;
+    h[4][0] = (h[4][0] + e_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[4][1] = lo >>> 0;
+
+    lo = h[5][1] + f_lo;
+    h[5][0] = (h[5][0] + f_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[5][1] = lo >>> 0;
+
+    lo = h[6][1] + g_lo;
+    h[6][0] = (h[6][0] + g_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[6][1] = lo >>> 0;
+
+    lo = h[7][1] + h_lo;
+    h[7][0] = (h[7][0] + h_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
+    h[7][1] = lo >>> 0;
+
+    len -= 128;
   }
 
-  if(typeof algorithm === 'undefined') {
-    algorithm = 'SHA-512';
-  }
+  return s;
+};
 
-  if(!(algorithm in _states)) {
-    throw new Error('Invalid SHA-512 algorithm: ' + algorithm);
-  }
+// register algorithms
+_registerAlgorithm('sha512', 64);
+_registerAlgorithm('sha384', 48);
+_registerAlgorithm('sha512/256', 32);
+_registerAlgorithm('sha512/224', 28);
 
-  // SHA-512 state contains eight 64-bit integers (each as two 32-bit ints)
-  var _state = _states[algorithm];
-  var _h = null;
+// FIXME: backwards compatibility
+forge.sha512.sha384 = forge.sha512.sha384 || forge.md.sha384;
+forge.sha512.sha256 = forge.sha512.sha256 || forge.md['sha512/256'];
+forge.sha512.sha224 = forge.sha512.sha224 || forge.md['sha512/224'];
 
-  // input buffer
-  var _input;
-
-  // used for 64-bit word storage
-  var _w = new Array(80);
-  for(var wi = 0; wi < 80; ++wi) {
-    _w[wi] = new Array(2);
-  }
-
-  // message digest object
-  var md = {
-    // SHA-512 => sha512
-    algorithm: algorithm.replace('-', '').toLowerCase(),
-    blockLength: 128,
-    digestLength: 64,
-    // 56-bit length of message so far (does not including padding)
-    messageLength: 0,
-    // true 128-bit message length as four 32-bit ints
-    messageLength128: [0, 0, 0, 0]
+function _registerAlgorithm(name, digestLength) {
+  sha2.Algorithm[name] = function() {
+    this.name = name;
+    this.digestLength = digestLength;
   };
-
-  /**
-   * Starts the digest.
-   *
-   * @return this digest object.
-   */
-  md.start = function() {
-    md.messageLength = 0;
-    md.messageLength128 = [0, 0, 0, 0];
-    _input = new ByteBuffer();
-    _h = new Array(_state.length);
-    for(var i = 0; i < _state.length; ++i) {
-      _h[i] = _state[i].slice(0);
+  sha2.Algorithm[name].prototype = new sha2.Algorithm.base();
+  sha2.Algorithm[name].prototype.start = function() {
+    if(!_initialized) {
+      _init();
     }
-    return md;
+    return _createState(name);
   };
-  // start digest automatically for first time
-  md.start();
+  forge.md.registerAlgorithm(name, new sha2.Algorithm[name]());
+}
 
-  /**
-   * Updates the digest with the given message input. The input can be
-   * a ByteBuffer or a string to be consumed using the specified-encoding.
-   *
-   * @param msg the message input to update with (ByteBuffer or string).
-   * @param encoding the encoding to use (eg: 'utf8', 'binary',
-   *          'hex', 'base64').
-   *
-   * @return this digest object.
-   */
-  md.update = function(msg, encoding) {
-    if(msg instanceof ByteBuffer) {
-      msg = msg.copy();
-    } else if(!encoding) {
-      throw new Error('String encoding must be specified.');
-    } else {
-      msg = new ByteBuffer(msg, encoding);
-    }
-
-    // update message length
-    md.messageLength += msg.length();
-    var len = msg.length();
-    len = [(len / 0x100000000) >>> 0, len >>> 0];
-    for(var i = 3; i >= 0; --i) {
-      md.messageLength128[i] += len[1];
-      len[1] = len[0] + ((md.messageLength128[i] / 0x100000000) >>> 0);
-      md.messageLength128[i] = md.messageLength128[i] >>> 0;
-      len[0] = ((len[1] / 0x100000000) >>> 0);
-    }
-
-    // add bytes to input buffer
-    _input.putBuffer(msg);
-
-    // process bytes
-    _update(_h, _w, _input);
-
-    // compact input buffer every 2K or if empty
-    if(_input.read > 2048 || _input.length() === 0) {
-      _input.compact();
-    }
-
-    return md;
-  };
-
-  /**
-   * Produces the digest.
-   *
-   * @return a byte buffer containing the digest value.
-   */
-  md.digest = function() {
-    /* Note: Here we copy the remaining bytes in the input buffer and
-    add the appropriate SHA-512 padding. Then we do the final update
-    on a copy of the state so that if the user wants to get
-    intermediate digests they can do so. */
-
-    /* Determine the number of bytes that must be added to the message
-    to ensure its length is congruent to 896 mod 1024. In other words,
-    the data to be digested must be a multiple of 1024 bits (or 128 bytes).
-    This data includes the message, some padding, and the length of the
-    message. Since the length of the message will be encoded as 16 bytes (128
-    bits), that means that the last segment of the data must have 112 bytes
-    (896 bits) of message and padding. Therefore, the length of the message
-    plus the padding must be congruent to 896 mod 1024 because
-    1024 - 128 = 896.
-
-    In order to fill up the message length it must be filled with
-    padding that begins with 1 bit followed by all 0 bits. Padding
-    must *always* be present, so if the message length is already
-    congruent to 896 mod 1024, then 1024 padding bits must be added. */
-
-    // 1024 bits == 128 bytes, 896 bits == 112 bytes, 128 bits = 16 bytes
-    // _padding starts with 1 byte with first bit is set in it which
-    // is byte value 128, then there may be up to 127 other pad bytes
-    var padBytes = new ByteBuffer();
-    padBytes.putBytes(_input.bytes());
-    // 128 - (remaining msg + 16 bytes msg length) mod 128
-    padBytes.putBytes(
-      _padding.substr(0, 128 - ((md.messageLength128[3] + 16) & 0x7F)));
-
-    /* Now append length of the message. The length is appended in bits
-    as a 128-bit number in big-endian order. Since we store the length in
-    bytes, we must multiply the 128-bit length by 8 (or left shift by 3). */
-    var bitLength = [];
-    for(var i = 0; i < 4; ++i) {
-      bitLength[i] = ((md.messageLength128[i] << 3) |
-        (md.messageLength128[i + 1] >>> 28));
-    }
-    padBytes.putInt32(bitLength[0]);
-    padBytes.putInt32(bitLength[1]);
-    padBytes.putInt32(bitLength[2]);
-    padBytes.putInt32(bitLength[3]);
-    var h = new Array(_h.length);
-    for(var i = 0; i < _h.length; ++i) {
-      h[i] = _h[i].slice(0);
-    }
-    _update(h, _w, padBytes);
-    var rval = new ByteBuffer();
-    var hlen;
-    if(algorithm === 'SHA-512') {
-      hlen = h.length;
-    } else if(algorithm === 'SHA-384') {
-      hlen = h.length - 2;
-    } else {
-      hlen = h.length - 4;
-    }
-    for(var i = 0; i < hlen; ++i) {
-      rval.putInt32(h[i][0]);
-      if(i !== hlen - 1 || algorithm !== 'SHA-512/224') {
-        rval.putInt32(h[i][1]);
-      }
+function _createState(algorithm) {
+  var state = {};
+  state.copy = function() {
+    var rval = _createState(algorithm);
+    rval.h = new Array(state.h.length);
+    for(var i = 0; i < state.h.length; ++i) {
+      rval.h[i] = state.h[i].slice(0);
     }
     return rval;
   };
+  state.write = function(buffer) {
+    var hlen;
+    if(algorithm === 'sha512') {
+      hlen = state.h.length;
+    } else if(algorithm === 'sha384') {
+      hlen = state.h.length - 2;
+    } else {
+      hlen = state.h.length - 4;
+    }
+    for(var i = 0; i < hlen; ++i) {
+      buffer.putInt32(state.h[i][0]);
+      if(i !== hlen - 1 || algorithm !== 'sha512/224') {
+        buffer.putInt32(state.h[i][1]);
+      }
+    }
+  };
 
-  return md;
-};
+  // initial hash states
+  switch(algorithm) {
+  case 'sha512':
+    state.h = [
+      [0x6a09e667, 0xf3bcc908],
+      [0xbb67ae85, 0x84caa73b],
+      [0x3c6ef372, 0xfe94f82b],
+      [0xa54ff53a, 0x5f1d36f1],
+      [0x510e527f, 0xade682d1],
+      [0x9b05688c, 0x2b3e6c1f],
+      [0x1f83d9ab, 0xfb41bd6b],
+      [0x5be0cd19, 0x137e2179]
+    ];
+    break;
+  case 'sha384':
+    state.h = [
+      [0xcbbb9d5d, 0xc1059ed8],
+      [0x629a292a, 0x367cd507],
+      [0x9159015a, 0x3070dd17],
+      [0x152fecd8, 0xf70e5939],
+      [0x67332667, 0xffc00b31],
+      [0x8eb44a87, 0x68581511],
+      [0xdb0c2e0d, 0x64f98fa7],
+      [0x47b5481d, 0xbefa4fa4]
+    ];
+    break;
+  case 'sha512/256':
+    state.h = [
+      [0x22312194, 0xFC2BF72C],
+      [0x9F555FA3, 0xC84C64C2],
+      [0x2393B86B, 0x6F53B151],
+      [0x96387719, 0x5940EABD],
+      [0x96283EE2, 0xA88EFFE3],
+      [0xBE5E1E25, 0x53863992],
+      [0x2B0199FC, 0x2C85B8AA],
+      [0x0EB72DDC, 0x81C52CA2]
+    ];
+    break;
+  case 'sha512/224':
+    state.h = [
+      [0x8C3D37C8, 0x19544DA2],
+      [0x73E19966, 0x89DCD4D6],
+      [0x1DFAB7AE, 0x32FF9C82],
+      [0x679DD514, 0x582F9FCF],
+      [0x0F6D2B69, 0x7BD44DA8],
+      [0x77E36F73, 0x04C48942],
+      [0x3F9D85A8, 0x6A1D36C8],
+      [0x1112E6AD, 0x91D692A1]
+    ];
+    break;
+  }
 
-// sha-512 padding bytes not initialized yet
-var _padding = null;
-var _initialized = false;
+  return state;
+}
 
-// table of constants
+// shared state
 var _k = null;
-
-// initial hash states
-var _states = null;
+var _w = null;
+var _initialized = false;
 
 /**
  * Initializes the constant tables.
  */
 function _init() {
-  // create padding
-  _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 128);
-
   // create K table for SHA-512
   _k = [
     [0x428a2f98, 0xd728ae22], [0x71374491, 0x23ef65cd],
@@ -294,251 +395,17 @@ function _init() {
     [0x5fcb6fab, 0x3ad6faec], [0x6c44198c, 0x4a475817]
   ];
 
-  // initial hash states
-  _states = {};
-  _states['SHA-512'] = [
-    [0x6a09e667, 0xf3bcc908],
-    [0xbb67ae85, 0x84caa73b],
-    [0x3c6ef372, 0xfe94f82b],
-    [0xa54ff53a, 0x5f1d36f1],
-    [0x510e527f, 0xade682d1],
-    [0x9b05688c, 0x2b3e6c1f],
-    [0x1f83d9ab, 0xfb41bd6b],
-    [0x5be0cd19, 0x137e2179]
-  ];
-  _states['SHA-384'] = [
-    [0xcbbb9d5d, 0xc1059ed8],
-    [0x629a292a, 0x367cd507],
-    [0x9159015a, 0x3070dd17],
-    [0x152fecd8, 0xf70e5939],
-    [0x67332667, 0xffc00b31],
-    [0x8eb44a87, 0x68581511],
-    [0xdb0c2e0d, 0x64f98fa7],
-    [0x47b5481d, 0xbefa4fa4]
-  ];
-  _states['SHA-512/256'] = [
-    [0x22312194, 0xFC2BF72C],
-    [0x9F555FA3, 0xC84C64C2],
-    [0x2393B86B, 0x6F53B151],
-    [0x96387719, 0x5940EABD],
-    [0x96283EE2, 0xA88EFFE3],
-    [0xBE5E1E25, 0x53863992],
-    [0x2B0199FC, 0x2C85B8AA],
-    [0x0EB72DDC, 0x81C52CA2]
-  ];
-  _states['SHA-512/224'] = [
-    [0x8C3D37C8, 0x19544DA2],
-    [0x73E19966, 0x89DCD4D6],
-    [0x1DFAB7AE, 0x32FF9C82],
-    [0x679DD514, 0x582F9FCF],
-    [0x0F6D2B69, 0x7BD44DA8],
-    [0x77E36F73, 0x04C48942],
-    [0x3F9D85A8, 0x6A1D36C8],
-    [0x1112E6AD, 0x91D692A1]
-  ];
+  // now initialized
+  _initialized = true;
+
+  // used for 64-bit word storage
+  _w = new Array(80);
+  for(var i = 0; i < 80; ++i) {
+    _w[i] = new Array(2);
+  }
 
   // now initialized
   _initialized = true;
-}
-
-/**
- * Updates a SHA-512 state with the given byte buffer.
- *
- * @param s the SHA-512 state to update.
- * @param w the array to use to store words.
- * @param bytes the byte buffer to update with.
- */
-function _update(s, w, bytes) {
-  // consume 512 bit (128 byte) chunks
-  var t1_hi, t1_lo;
-  var t2_hi, t2_lo;
-  var s0_hi, s0_lo;
-  var s1_hi, s1_lo;
-  var ch_hi, ch_lo;
-  var maj_hi, maj_lo;
-  var a_hi, a_lo;
-  var b_hi, b_lo;
-  var c_hi, c_lo;
-  var d_hi, d_lo;
-  var e_hi, e_lo;
-  var f_hi, f_lo;
-  var g_hi, g_lo;
-  var h_hi, h_lo;
-  var i, hi, lo, w2, w7, w15, w16;
-  var len = bytes.length();
-  while(len >= 128) {
-    // the w array will be populated with sixteen 64-bit big-endian words
-    // and then extended into 64 64-bit words according to SHA-512
-    for(i = 0; i < 16; ++i) {
-      w[i][0] = bytes.getInt32() >>> 0;
-      w[i][1] = bytes.getInt32() >>> 0;
-    }
-    for(; i < 80; ++i) {
-      // for word 2 words ago: ROTR 19(x) ^ ROTR 61(x) ^ SHR 6(x)
-      w2 = w[i - 2];
-      hi = w2[0];
-      lo = w2[1];
-
-      // high bits
-      t1_hi = (
-        ((hi >>> 19) | (lo << 13)) ^ // ROTR 19
-        ((lo >>> 29) | (hi << 3)) ^ // ROTR 61/(swap + ROTR 29)
-        (hi >>> 6)) >>> 0; // SHR 6
-      // low bits
-      t1_lo = (
-        ((hi << 13) | (lo >>> 19)) ^ // ROTR 19
-        ((lo << 3) | (hi >>> 29)) ^ // ROTR 61/(swap + ROTR 29)
-        ((hi << 26) | (lo >>> 6))) >>> 0; // SHR 6
-
-      // for word 15 words ago: ROTR 1(x) ^ ROTR 8(x) ^ SHR 7(x)
-      w15 = w[i - 15];
-      hi = w15[0];
-      lo = w15[1];
-
-      // high bits
-      t2_hi = (
-        ((hi >>> 1) | (lo << 31)) ^ // ROTR 1
-        ((hi >>> 8) | (lo << 24)) ^ // ROTR 8
-        (hi >>> 7)) >>> 0; // SHR 7
-      // low bits
-      t2_lo = (
-        ((hi << 31) | (lo >>> 1)) ^ // ROTR 1
-        ((hi << 24) | (lo >>> 8)) ^ // ROTR 8
-        ((hi << 25) | (lo >>> 7))) >>> 0; // SHR 7
-
-      // sum(t1, word 7 ago, t2, word 16 ago) modulo 2^64 (carry lo overflow)
-      w7 = w[i - 7];
-      w16 = w[i - 16];
-      lo = (t1_lo + w7[1] + t2_lo + w16[1]);
-      w[i][0] = (t1_hi + w7[0] + t2_hi + w16[0] +
-        ((lo / 0x100000000) >>> 0)) >>> 0;
-      w[i][1] = lo >>> 0;
-    }
-
-    // initialize hash value for this chunk
-    a_hi = s[0][0];
-    a_lo = s[0][1];
-    b_hi = s[1][0];
-    b_lo = s[1][1];
-    c_hi = s[2][0];
-    c_lo = s[2][1];
-    d_hi = s[3][0];
-    d_lo = s[3][1];
-    e_hi = s[4][0];
-    e_lo = s[4][1];
-    f_hi = s[5][0];
-    f_lo = s[5][1];
-    g_hi = s[6][0];
-    g_lo = s[6][1];
-    h_hi = s[7][0];
-    h_lo = s[7][1];
-
-    // round function
-    for(i = 0; i < 80; ++i) {
-      // Sum1(e) = ROTR 14(e) ^ ROTR 18(e) ^ ROTR 41(e)
-      s1_hi = (
-        ((e_hi >>> 14) | (e_lo << 18)) ^ // ROTR 14
-        ((e_hi >>> 18) | (e_lo << 14)) ^ // ROTR 18
-        ((e_lo >>> 9) | (e_hi << 23))) >>> 0; // ROTR 41/(swap + ROTR 9)
-      s1_lo = (
-        ((e_hi << 18) | (e_lo >>> 14)) ^ // ROTR 14
-        ((e_hi << 14) | (e_lo >>> 18)) ^ // ROTR 18
-        ((e_lo << 23) | (e_hi >>> 9))) >>> 0; // ROTR 41/(swap + ROTR 9)
-
-      // Ch(e, f, g) (optimized the same way as SHA-1)
-      ch_hi = (g_hi ^ (e_hi & (f_hi ^ g_hi))) >>> 0;
-      ch_lo = (g_lo ^ (e_lo & (f_lo ^ g_lo))) >>> 0;
-
-      // Sum0(a) = ROTR 28(a) ^ ROTR 34(a) ^ ROTR 39(a)
-      s0_hi = (
-        ((a_hi >>> 28) | (a_lo << 4)) ^ // ROTR 28
-        ((a_lo >>> 2) | (a_hi << 30)) ^ // ROTR 34/(swap + ROTR 2)
-        ((a_lo >>> 7) | (a_hi << 25))) >>> 0; // ROTR 39/(swap + ROTR 7)
-      s0_lo = (
-        ((a_hi << 4) | (a_lo >>> 28)) ^ // ROTR 28
-        ((a_lo << 30) | (a_hi >>> 2)) ^ // ROTR 34/(swap + ROTR 2)
-        ((a_lo << 25) | (a_hi >>> 7))) >>> 0; // ROTR 39/(swap + ROTR 7)
-
-      // Maj(a, b, c) (optimized the same way as SHA-1)
-      maj_hi = ((a_hi & b_hi) | (c_hi & (a_hi ^ b_hi))) >>> 0;
-      maj_lo = ((a_lo & b_lo) | (c_lo & (a_lo ^ b_lo))) >>> 0;
-
-      // main algorithm
-      // t1 = (h + s1 + ch + _k[i] + _w[i]) modulo 2^64 (carry lo overflow)
-      lo = (h_lo + s1_lo + ch_lo + _k[i][1] + w[i][1]);
-      t1_hi = (h_hi + s1_hi + ch_hi + _k[i][0] + w[i][0] +
-        ((lo / 0x100000000) >>> 0)) >>> 0;
-      t1_lo = lo >>> 0;
-
-      // t2 = s0 + maj modulo 2^64 (carry lo overflow)
-      lo = s0_lo + maj_lo;
-      t2_hi = (s0_hi + maj_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-      t2_lo = lo >>> 0;
-
-      h_hi = g_hi;
-      h_lo = g_lo;
-
-      g_hi = f_hi;
-      g_lo = f_lo;
-
-      f_hi = e_hi;
-      f_lo = e_lo;
-
-      // e = (d + t1) modulo 2^64 (carry lo overflow)
-      lo = d_lo + t1_lo;
-      e_hi = (d_hi + t1_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-      e_lo = lo >>> 0;
-
-      d_hi = c_hi;
-      d_lo = c_lo;
-
-      c_hi = b_hi;
-      c_lo = b_lo;
-
-      b_hi = a_hi;
-      b_lo = a_lo;
-
-      // a = (t1 + t2) modulo 2^64 (carry lo overflow)
-      lo = t1_lo + t2_lo;
-      a_hi = (t1_hi + t2_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-      a_lo = lo >>> 0;
-    }
-
-    // update hash state (additional modulo 2^64)
-    lo = s[0][1] + a_lo;
-    s[0][0] = (s[0][0] + a_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[0][1] = lo >>> 0;
-
-    lo = s[1][1] + b_lo;
-    s[1][0] = (s[1][0] + b_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[1][1] = lo >>> 0;
-
-    lo = s[2][1] + c_lo;
-    s[2][0] = (s[2][0] + c_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[2][1] = lo >>> 0;
-
-    lo = s[3][1] + d_lo;
-    s[3][0] = (s[3][0] + d_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[3][1] = lo >>> 0;
-
-    lo = s[4][1] + e_lo;
-    s[4][0] = (s[4][0] + e_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[4][1] = lo >>> 0;
-
-    lo = s[5][1] + f_lo;
-    s[5][0] = (s[5][0] + f_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[5][1] = lo >>> 0;
-
-    lo = s[6][1] + g_lo;
-    s[6][0] = (s[6][0] + g_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[6][1] = lo >>> 0;
-
-    lo = s[7][1] + h_lo;
-    s[7][0] = (s[7][0] + h_hi + ((lo / 0x100000000) >>> 0)) >>> 0;
-    s[7][1] = lo >>> 0;
-
-    len -= 128;
-  }
 }
 
 } // end module implementation
