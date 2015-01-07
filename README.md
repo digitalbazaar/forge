@@ -705,7 +705,7 @@ setTimeout(step);
 
 // sign data with a private key and output DigestInfo DER-encoded bytes
 // (defaults to RSASSA PKCS#1 v1.5)
-var md = forge.md.sha1.create();
+var md = forge.md.createMessageDigest('sha1');
 md.update('sign this', 'utf8');
 var signature = privateKey.sign(md);
 
@@ -715,11 +715,11 @@ var verified = publicKey.verify(md.digest().bytes(), signature);
 
 // sign data using RSASSA-PSS where PSS uses a SHA-1 hash, a SHA-1 based
 // masking function MGF1, and a 20 byte salt
-var md = forge.md.sha1.create();
+var md = forge.md.createMessageDigest('sha1');
 md.update('sign this', 'utf8');
 var pss = forge.pss.create({
-  md: forge.md.sha1.create(),
-  mgf: forge.mgf.mgf1.create(forge.md.sha1.create()),
+  md: forge.md.createMessageDigest('sha1'),
+  mgf: forge.mgf.mgf1.create(forge.md.createMessageDigest('sha1')),
   saltLength: 20
   // optionally pass 'prng' with a custom PRNG implementation
   // optionalls pass 'salt' with a forge.util.ByteBuffer w/custom salt
@@ -728,12 +728,12 @@ var signature = privateKey.sign(md, pss);
 
 // verify RSASSA-PSS signature
 var pss = forge.pss.create({
-  md: forge.md.sha1.create(),
-  mgf: forge.mgf.mgf1.create(forge.md.sha1.create()),
+  md: forge.md.createMessageDigest('sha1')),
+  mgf: forge.mgf.mgf1.create(forge.md.createMessageDigest('sha1')),
   saltLength: 20
   // optionally pass 'prng' with a custom PRNG implementation
 });
-var md = forge.md.sha1.create();
+var md = forge.md.createMessageDigest('sha1');
 md.update('sign this', 'utf8');
 publicKey.verify(md.digest().getBytes(), signature, pss);
 
@@ -757,29 +757,29 @@ var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP');
 
 // encrypt data with a public key using RSAES-OAEP/SHA-256
 var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP', {
-  md: forge.md.sha256.create()
+  md: forge.md.createMessageDigest('sha256')
 });
 
 // decrypt data with a private key using RSAES-OAEP/SHA-256
 var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
-  md: forge.md.sha256.create()
+  md: forge.md.createMessageDigest('sha256')
 });
 
 // encrypt data with a public key using RSAES-OAEP/SHA-256/MGF1-SHA-1
 // compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding
 var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP', {
-  md: forge.md.sha256.create(),
+  md: forge.md.createMessageDigest('sha256'),
   mgf1: {
-    md: forge.md.sha1.create()
+    md: forge.md.createMessageDigest('sha1')
   }
 });
 
 // decrypt data with a private key using RSAES-OAEP/SHA-256/MGF1-SHA-1
 // compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding
 var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
-  md: forge.md.sha256.create(),
+  md: forge.md.createMessageDigest('sha256'),
   mgf1: {
-    md: forge.md.sha1.create()
+    md: forge.md.createMessageDigest('sha1')
   }
 });
 
@@ -798,7 +798,7 @@ forge.rsa.generateKeyPair({bits: 2048, workers: -1}, function(err, keypair) {
 });
 
 // generate and encapsulate a 16-byte secret key
-var kdf1 = new forge.kem.kdf1(forge.md.sha1.create());
+var kdf1 = new forge.kem.kdf1(forge.md.createMessageDigest('sha1'));
 var kem = forge.kem.rsa.create(kdf1);
 var result = kem.encrypt(keypair.publicKey, 16);
 // result has 'encapsulation' and 'key'
@@ -816,7 +816,7 @@ var tag = cipher.mode.tag.getBytes();
 // send 'encrypted', 'iv', 'tag', and result.encapsulation to recipient
 
 // decrypt encapsulated 16-byte secret key
-var kdf1 = new forge.kem.kdf1(forge.md.sha1.create());
+var kdf1 = new forge.kem.kdf1(forge.md.createMessageDigest('sha1'));
 var kem = forge.kem.rsa.create(kdf1);
 var key = kem.decrypt(keypair.privateKey, result.encapsulation, 16);
 
@@ -871,7 +871,7 @@ pki.getPublicKeyFingerprint(key, {
 
 // gets a hex-encoded, colon-delimited MD5 RSAPublicKey public key fingerprint
 pki.getPublicKeyFingerprint(key, {
-  md: forge.md.md5.create(),
+  md: forge.md.createMessageDigest('md5'),
   encoding: 'hex',
   delimiter: ':'
 });
@@ -892,7 +892,7 @@ pki.verifyCertificateChain(caStore, chain, customVerifyCallback);
 cert.sign(privateKey);
 
 // signs a certificate using SHA-256 instead of SHA-1
-cert.sign(privateKey, forge.md.sha256.create());
+cert.sign(privateKey, forge.md.createMessageDigest('sha256'));
 
 // verifies an issued certificate using the certificates public key
 var verified = issuer.verify(issued);
@@ -1315,7 +1315,7 @@ Provides [SHA-1][] message digests.
 __Examples__
 
 ```js
-var md = forge.md.sha1.create();
+var md = forge.md.createMessageDigest('sha1');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: 2fd4e1c67a2d28fced849ee1bb76e7391b93eb12
@@ -1329,7 +1329,7 @@ Provides [SHA-256][] message digests.
 __Examples__
 
 ```js
-var md = forge.md.sha256.create();
+var md = forge.md.createMessageDigest('sha256');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592
@@ -1343,7 +1343,7 @@ Provides [SHA-384][] message digests.
 __Examples__
 
 ```js
-var md = forge.md.sha384.create();
+var md = forge.md.createMessageDigest('sha384');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: ca737f1014a48f4c0b6dd43cb177b0afd9e5169367544c494011e3317dbf9a509cb1e5dc1e85a941bbee3d7f2afbc9b1
@@ -1358,19 +1358,19 @@ __Examples__
 
 ```js
 // SHA-512
-var md = forge.md.sha512.create();
+var md = forge.md.createMessageDigest('sha512');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: 07e547d9586f6a73f73fbac0435ed76951218fb7d0c8d788a309d785436bbb642e93a252a954f23912547d1e8a3b5ed6e1bfd7097821233fa0538f3db854fee6
 
 // SHA-512/224
-var md = forge.md.sha512.sha224.create();
+var md = forge.md.createMessageDigest('sha512/224');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: 944cd2847fb54558d4775db0485a50003111c8e5daa63fe722c6aa37
 
 // SHA-512/256
-var md = forge.md.sha512.sha256.create();
+var md = forge.md.createMessageDigest('sha512/256');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: dd9d67b371519c339ed8dbd25af90e976a1eeefd4ad3d889005e532fc5bef04d
@@ -1384,7 +1384,7 @@ Provides [MD5][] message digests.
 __Examples__
 
 ```js
-var md = forge.md.md5.create();
+var md = forge.md.createMessageDigest('md5');
 md.update('The quick brown fox jumps over the lazy dog');
 console.log(md.digest().toHex());
 // output: 9e107d9d372bb6826bd81d3542a419d6
