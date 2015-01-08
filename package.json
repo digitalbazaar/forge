@@ -69,7 +69,7 @@
   ],
   "scripts": {
     "bundle": "r.js -o minify.js optimize=none out=js/forge.bundle.js",
-    "minify": "r.js -o minify.js",
+    "minify": "r.js -o minify.js optimize=uglify2 uglify2.compress.unused=false",
     "jshint": "jshint *.js js/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
   }
 }
