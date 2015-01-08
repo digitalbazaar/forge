@@ -79,6 +79,7 @@ pss.create = function(options) {
    * @return the encoded message as a binary-encoded string of length
    *           ceil((modBits - 1) / 8).
    */
+  // TODO: change to function(key, input)
   pssobj.encode = function(md, modBits) {
     var i;
     var emBits = modBits - 1;
@@ -156,6 +157,7 @@ pss.create = function(options) {
    *
    * @return true if the signature was verified, false if not.
    */
+ // TODO: change to function(key, signature, input)
   pssobj.verify = function(mHash, em, modBits) {
     var i;
     var emBits = modBits - 1;

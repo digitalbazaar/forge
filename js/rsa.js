@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2015 Digital Bazaar, Inc.
  *
  * The only algorithm currently supported for PKI is RSA.
  *
@@ -83,217 +83,6 @@ var pki = forge.pki;
 
 // for finding primes, which are 30k+i for i = 1, 7, 11, 13, 17, 19, 23, 29
 var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
-
-// validator for a PrivateKeyInfo structure
-var privateKeyValidator = {
-  // PrivateKeyInfo
-  name: 'PrivateKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    // Version (INTEGER)
-    name: 'PrivateKeyInfo.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: 'privateKeyVersion'
-  }, {
-    // privateKeyAlgorithm
-    name: 'PrivateKeyInfo.privateKeyAlgorithm',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'AlgorithmIdentifier.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'privateKeyOid'
-    }]
-  }, {
-    // PrivateKey
-    name: 'PrivateKeyInfo',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OCTETSTRING,
-    constructed: false,
-    capture: 'privateKey'
-  }]
-};
-
-// validator for an RSA private key
-var rsaPrivateKeyValidator = {
-  // RSAPrivateKey
-  name: 'RSAPrivateKey',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    // Version (INTEGER)
-    name: 'RSAPrivateKey.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyVersion',
-      format: 'number'
-    }
-  }, {
-    // modulus (n)
-    name: 'RSAPrivateKey.modulus',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyModulus',
-      format: 'buffer'
-    }
-  }, {
-    // publicExponent (e)
-    name: 'RSAPrivateKey.publicExponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyPublicExponent',
-      format: 'buffer'
-    }
-  }, {
-    // privateExponent (d)
-    name: 'RSAPrivateKey.privateExponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyPrivateExponent',
-      format: 'buffer'
-    }
-  }, {
-    // prime1 (p)
-    name: 'RSAPrivateKey.prime1',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyPrime1',
-      format: 'buffer'
-    }
-  }, {
-    // prime2 (q)
-    name: 'RSAPrivateKey.prime2',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyPrime2',
-      format: 'buffer'
-    }
-  }, {
-    // exponent1 (d mod (p-1))
-    name: 'RSAPrivateKey.exponent1',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyExponent1',
-      format: 'buffer'
-    }
-  }, {
-    // exponent2 (d mod (q-1))
-    name: 'RSAPrivateKey.exponent2',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyExponent2',
-      format: 'buffer'
-    }
-  }, {
-    // coefficient ((inverse of q) mod p)
-    name: 'RSAPrivateKey.coefficient',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'privateKeyCoefficient',
-      format: 'buffer'
-    }
-  }]
-};
-
-// validator for an RSA public key
-var rsaPublicKeyValidator = {
-  // RSAPublicKey
-  name: 'RSAPublicKey',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  value: [{
-    // modulus (n)
-    name: 'RSAPublicKey.modulus',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'publicKeyModulus',
-      format: 'buffer'
-    }
-  }, {
-    // publicExponent (e)
-    name: 'RSAPublicKey.exponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
-    constructed: false,
-    capture: {
-      name: 'publicKeyExponent',
-      format: 'buffer'
-    }
-  }]
-};
-
-// validator for an SubjectPublicKeyInfo structure
-// Note: Currently only works with an RSA public key
-var publicKeyValidator = forge.pki.rsa.publicKeyValidator = {
-  name: 'SubjectPublicKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
-  constructed: true,
-  capture: {
-    name: 'subjectPublicKeyInfo',
-    format: 'asn1'
-  },
-  value: [{
-    name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
-    constructed: true,
-    value: [{
-      name: 'AlgorithmIdentifier.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'publicKeyOid'
-    }]
-  }, {
-    // subjectPublicKey
-    name: 'SubjectPublicKeyInfo.subjectPublicKey',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.BITSTRING,
-    constructed: false,
-    value: [{
-      // RSAPublicKey
-      name: 'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
-      constructed: true,
-      optional: true,
-      capture: {
-        name: 'rsaPublicKey',
-        format: 'asn1'
-      }
-    }]
-  }]
-};
 
 /**
  * Creates an RSA key-pair generation state object. It is used to allow
@@ -645,6 +434,8 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    * @return the encrypted data as a ByteBuffer.
    */
   key.encrypt = function(data, scheme, schemeOptions) {
+    // TODO: if scheme is not first, swap for backwards compatibility
+
     if(typeof scheme === 'string') {
       scheme = scheme.toUpperCase();
     } else if(scheme === undefined) {
@@ -713,6 +504,8 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
    * @return true if the signature was verified, false if not.
    */
   key.verify = function(data, signature, scheme) {
+    // TODO: if scheme is not first, swap for backwards compatibility
+
     /*if(!(data instanceof ByteBuffer)) {
       throw new TypeError('data must be a ByteBuffer.');
     }*/
@@ -802,6 +595,8 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    * @return the decrypted data as a ByteBuffer.
    */
   key.decrypt = function(data, scheme, schemeOptions) {
+    // TODO: if scheme is not first, swap for backwards compatibility
+
     /*if(!(data instanceof ByteBuffer)) {
       throw new TypeError('data must be a ByteBuffer.');
     }*/
@@ -870,7 +665,17 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    *
    * @return the signature as a ByteBuffer.
    */
+  // TODO: change this to use registered signature schemes, look up scheme
+  // based on scheme name or use scheme object ... scheme objects check
+  // the encoding input to make sure it's the right type, may take ByteBuffer
+  // or MessageDigest for instance...
+  // TODO: scheme may also take options?
   key.sign = function(input, scheme) {
+    // TODO: if scheme is not first, swap for backwards compatibility
+
+    // TODO: look up scheme if it's a string, fetch scheme API
+
+    // TODO: remove old hard-coded stuff entirely
     /* Note: The internal implementation of RSA operations is being
       transitioned away from a PKCS#1 v1.5 hard-coded scheme. Some legacy
       code like the use of an encoding block type identifier 'bt' will
@@ -1495,6 +1300,267 @@ function _getMillerRabinTests(bits) {
   return 2;
 }
 
+// register signature schemes
+var signatureSchemes = {};
+signatureSchemes.NONE = {
+  encode: function(key, input) {
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer');
+    }
+    return input;
+  },
+  verify: function(key, signature, input) {
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer');
+    }
+    // TODO: use compare/equals
+    return signature.getBytes() === input.getBytes();
+  }
+};
+signatureSchemes['RSASSA-PKCS1-V1_5'] = {
+  encode: function(key, input) {
+    if(!(input instanceof forge.md.MessageDigest)) {
+      throw new TypeError('input must be a MessageDigest');
+    }
+    return forge.pkcs1.encode_rsassa(key, input);
+  },
+  verify: function(key, signature, input) {
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer');
+    }
+    var decoded = forge.pkcs1.decode_rsassa(key, input);
+    // TODO: use compare/equals
+    return signature.getBytes() === decoded.getBytes();
+  }
+};
+signatureSchemes['EME-PKCS1-V1_5'] = {
+  encode: function(key, input) {
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer');
+    }
+    return forge.pkcs1.encode_eme_v1_5(key, input, 0x02);
+  },
+  verify: function(key, signature, input) {
+    if(!(input instanceof ByteBuffer)) {
+      throw new TypeError('input must be a ByteBuffer');
+    }
+    var decoded = forge.pkcs1.decode_eme_v1_5(key, input);
+    // TODO: use compare/equals
+    return signature.getBytes() === decoded.getBytes();
+  }
+};
+
+// validator for a PrivateKeyInfo structure
+var privateKeyValidator = {
+  // PrivateKeyInfo
+  name: 'PrivateKeyInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    // Version (INTEGER)
+    name: 'PrivateKeyInfo.version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'privateKeyVersion'
+  }, {
+    // privateKeyAlgorithm
+    name: 'PrivateKeyInfo.privateKeyAlgorithm',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true,
+    value: [{
+      name: 'AlgorithmIdentifier.algorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OID,
+      constructed: false,
+      capture: 'privateKeyOid'
+    }]
+  }, {
+    // PrivateKey
+    name: 'PrivateKeyInfo',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OCTETSTRING,
+    constructed: false,
+    capture: 'privateKey'
+  }]
+};
+
+// validator for an RSA private key
+var rsaPrivateKeyValidator = {
+  // RSAPrivateKey
+  name: 'RSAPrivateKey',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    // Version (INTEGER)
+    name: 'RSAPrivateKey.version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyVersion',
+      format: 'number'
+    }
+  }, {
+    // modulus (n)
+    name: 'RSAPrivateKey.modulus',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyModulus',
+      format: 'buffer'
+    }
+  }, {
+    // publicExponent (e)
+    name: 'RSAPrivateKey.publicExponent',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyPublicExponent',
+      format: 'buffer'
+    }
+  }, {
+    // privateExponent (d)
+    name: 'RSAPrivateKey.privateExponent',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyPrivateExponent',
+      format: 'buffer'
+    }
+  }, {
+    // prime1 (p)
+    name: 'RSAPrivateKey.prime1',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyPrime1',
+      format: 'buffer'
+    }
+  }, {
+    // prime2 (q)
+    name: 'RSAPrivateKey.prime2',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyPrime2',
+      format: 'buffer'
+    }
+  }, {
+    // exponent1 (d mod (p-1))
+    name: 'RSAPrivateKey.exponent1',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyExponent1',
+      format: 'buffer'
+    }
+  }, {
+    // exponent2 (d mod (q-1))
+    name: 'RSAPrivateKey.exponent2',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyExponent2',
+      format: 'buffer'
+    }
+  }, {
+    // coefficient ((inverse of q) mod p)
+    name: 'RSAPrivateKey.coefficient',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'privateKeyCoefficient',
+      format: 'buffer'
+    }
+  }]
+};
+
+// validator for an RSA public key
+var rsaPublicKeyValidator = {
+  // RSAPublicKey
+  name: 'RSAPublicKey',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    // modulus (n)
+    name: 'RSAPublicKey.modulus',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'publicKeyModulus',
+      format: 'buffer'
+    }
+  }, {
+    // publicExponent (e)
+    name: 'RSAPublicKey.exponent',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: {
+      name: 'publicKeyExponent',
+      format: 'buffer'
+    }
+  }]
+};
+
+// validator for an SubjectPublicKeyInfo structure
+// Note: Currently only works with an RSA public key
+var publicKeyValidator = forge.pki.rsa.publicKeyValidator = {
+  name: 'SubjectPublicKeyInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  capture: {
+    name: 'subjectPublicKeyInfo',
+    format: 'asn1'
+  },
+  value: [{
+    name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true,
+    value: [{
+      name: 'AlgorithmIdentifier.algorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OID,
+      constructed: false,
+      capture: 'publicKeyOid'
+    }]
+  }, {
+    // subjectPublicKey
+    name: 'SubjectPublicKeyInfo.subjectPublicKey',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.BITSTRING,
+    constructed: false,
+    value: [{
+      // RSAPublicKey
+      name: 'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      optional: true,
+      capture: {
+        name: 'rsaPublicKey',
+        format: 'asn1'
+      }
+    }]
+  }]
+};
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */
@@ -1549,6 +1615,7 @@ define([
   'module',
   './asn1',
   './jsbn',
+  './md',
   './oids',
   './pkcs1',
   './prime',
