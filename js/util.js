@@ -657,8 +657,9 @@ util.ByteStringBuffer.prototype.toHex = function() {
 };
 
 /**
- * Converts this buffer to a string, using the given encoding. If no
- * encoding is given, 'utf8' (UTF-8) is used.
+ * Converts this buffer to a string, using the given encoding. The encoding
+ * specifies how to interpret the bytes in this buffer as characters to
+ * put in the string output. If no encoding is given, 'utf8' (UTF-8) is used.
  *
  * @param [encoding] the encoding to use: 'binary', 'utf8', 'utf16', 'hex',
  *          'base64' (default: 'utf8').
