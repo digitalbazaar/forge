@@ -100,7 +100,7 @@ pkcs1.os2ip = function(b) {
  * @return the encoded message as a ByteBuffer.
  */
 pkcs1.encode_rsaes = function(key, message) {
-  return pkcs1.encode_eme_v1_5(key, message, 0x02).getBytes();
+  return pkcs1.encode_eme_v1_5(key, message, 0x02);
 };
 
 /**
@@ -128,7 +128,7 @@ pkcs1.decode_rsaes = function(key, em) {
 pkcs1.encode_rsassa = function(key, message) {
   // FIXME: encode_emsa_v1_5 expects a message digest object
   var em = pkcs1.encode_emsa_v1_5(message);
-  return pkcs1.encode_eme_v1_5(key, em, 0x01).getBytes();
+  return pkcs1.encode_eme_v1_5(key, em, 0x01);
 };
 
 /**
@@ -185,7 +185,7 @@ pkcs1.encode_emsa_v1_5 = function(md) {
   digestInfo.value.push(digest);
 
   // encode digest info
-  return asn1.toDer(digestInfo).getBytes();
+  return asn1.toDer(digestInfo);
 };
 
 /**
@@ -197,6 +197,10 @@ pkcs1.encode_emsa_v1_5 = function(md) {
  * @return the decoded message, as a ByteBuffer.
  */
 pkcs1.decode_emsa_v1_5 = function(em) {
+  if(!(em instanceof ByteBuffer)) {
+    throw new TypeError('em must be a ByteBuffer');
+  }
+
   // encoded is ASN.1 DER-encoded DigestInfo
   var obj = asn1.fromDer(em);
   // TODO: validate DigestInfo
@@ -217,6 +221,13 @@ pkcs1.decode_emsa_v1_5 = function(em) {
  * @return the encoded message as a ByteBuffer.
  */
 pkcs1.encode_eme_v1_5 = function(key, m, blockType) {
+  if(!(m instanceof ByteBuffer)) {
+    throw new TypeError('m must be a ByteBuffer');
+  }
+
+  // TODO: use buffers throughout
+  m = m.bytes();
+
   if(blockType !== 0x00 && blockType !== 0x01 && blockType !== 0x02) {
     throw new Error('blockType must be 0, 1, or 2.');
   }
@@ -331,6 +342,7 @@ pkcs1.decode_eme_v1_5 = function(key, em, ml) {
    */
 
   // parse the encryption block
+  // TODO: shouldn't need to copy here, consumer must copy if necessary
   var eb = em.copy();
   var first = eb.getByte();
   var bt = eb.getByte();
@@ -396,9 +408,16 @@ pkcs1.decode_eme_v1_5 = function(key, em, ml) {
  *          mgf1 optional mgf1 parameters:
  *            md the message digest object to use for MGF1.
  *
- * @return the encoded message bytes.
+ * @return the encoded message bytes as a ByteBuffer.
  */
 pkcs1.encode_rsa_oaep = function(key, message, options) {
+  if(!(message instanceof ByteBuffer)) {
+    throw new TypeError('message must be a ByteBuffer');
+  }
+
+  // TODO: use buffers throughout
+  message = message.bytes();
+
   // parse arguments
   var label;
   var seed;
@@ -457,16 +476,20 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var DB = lHash.getBytes() + PS + '\x01' + message;
 
   if(!seed) {
-    seed = forge.random.getBytes(md.digestLength);
-  } else if(seed.length !== md.digestLength) {
+    // TODO: return ByteBuffer from forge.random
+    seed = new ByteBuffer(forge.random.getBytes(md.digestLength), 'binary');
+  } else if(seed.length() !== md.digestLength) {
     var error = new Error(
       'Invalid RSAES-OAEP seed. The seed length must match the digest ' +
-      'length; seed length=' + seed.length +
+      'length; seed length=' + seed.length() +
       ', digest length=' + md.digestLength);
-    error.seedLength = seed.length;
+    error.seedLength = seed.length();
     error.digestLength = md.digestLength;
     throw error;
   }
+
+  // TODO: use buffer
+  seed = seed.bytes();
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
   var maskedDB = forge.util.xorBytes(DB, dbMask, DB.length);
@@ -475,7 +498,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var maskedSeed = forge.util.xorBytes(seed, seedMask, seed.length);
 
   // return encoded message
-  return '\x00' + maskedSeed + maskedDB;
+  return new ByteBuffer('\x00' + maskedSeed + maskedDB, 'binary');
 };
 
 /**
@@ -493,9 +516,16 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
  *          mgf1 optional mgf1 parameters:
  *            md the message digest object to use for MGF1.
  *
- * @return the decoded message bytes.
+ * @return the decoded message bytes as a ByteBuffer.
  */
 pkcs1.decode_rsa_oaep = function(key, em, options) {
+  if(!(em instanceof ByteBuffer)) {
+    throw new TypeError('em must be a ByteBuffer');
+  }
+
+  // TODO: use buffers throughout
+  em = em.bytes();
+
   // parse args
   var label;
   var md;
@@ -588,7 +618,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
     throw new Error('Invalid RSAES-OAEP padding.');
   }
 
-  return db.substring(index + 1);
+  return new ByteBuffer(db.substring(index + 1), 'binary');
 };
 
 function rsa_mgf1(seed, maskLength, hash) {

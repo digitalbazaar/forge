@@ -76,7 +76,7 @@ pss.create = function(options) {
    * @param md the message digest object with the hash to sign.
    * @param modsBits the length of the RSA modulus in bits.
    *
-   * @return the encoded message as a binary-encoded string of length
+   * @return the encoded message as a ByteBuffer of length
    *           ceil((modBits - 1) / 8).
    */
   // TODO: change to function(key, input)
@@ -142,7 +142,8 @@ pss.create = function(options) {
 
     /* 12. Let EM = maskedDB || H || 0xbc.
      * 13. Output EM. */
-    return maskedDB + h + String.fromCharCode(0xbc);
+    return forge.util.createBuffer(
+      maskedDB + h + String.fromCharCode(0xbc), 'binary');
   };
 
   /**
@@ -150,15 +151,18 @@ pss.create = function(options) {
    *
    * This function implements EMSA-PSS-VERIFY as per RFC 3447, section 9.1.2.
    *
-   * @param mHash the message digest hash, as a binary-encoded string, to
-   *         compare against the signature.
+   * @param mHash the message digest hash, as a ByteBuffer, to compare
+   *          against the signature.
    * @param em the encoded message, as a ByteBuffer (RSA decryption result).
    * @param modsBits the length of the RSA modulus in bits.
    *
    * @return true if the signature was verified, false if not.
    */
- // TODO: change to function(key, signature, input)
+  // TODO: change to function(key, signature, input)
   pssobj.verify = function(mHash, em, modBits) {
+    // TODO: use buffers throughout
+    mHash = mHash.bytes();
+
     var i;
     var emBits = modBits - 1;
     var emLen = Math.ceil(emBits / 8);

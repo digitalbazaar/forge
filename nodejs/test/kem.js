@@ -6,8 +6,8 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
     var bytes = UTIL.hexToBytes(str);
     this.getBytesSync = function(count) {
       // prepend zeros
-      return UTIL.fillString(String.fromCharCode(0), bytes.length - count) +
-        bytes;
+      return UTIL.fillString(
+        String.fromCharCode(0), bytes.length - count) + bytes;
     };
   }
 
@@ -23,7 +23,7 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         var key1 = result.key;
         var key2 = kem.decrypt(pair.privateKey, result.encapsulation, 256);
 
-        ASSERT.equal(UTIL.bytesToHex(key1), UTIL.bytesToHex(key2));
+        ASSERT.equal(key1.toString('hex'), key2.toString('hex'));
       }
     });
   });
@@ -51,11 +51,11 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
-      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+      ASSERT.equal(result.encapsulation.toString('hex'), C0);
+      ASSERT.equal(result.key.toString('hex'), K);
 
       var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
-      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+      ASSERT.equal(decryptedKey.toString('hex'), K);
     });
 
     it('should pass test vector C.6.2', function() {
@@ -76,11 +76,11 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
-      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+      ASSERT.equal(result.encapsulation.toString('hex'), C0);
+      ASSERT.equal(result.key.toString('hex'), K);
 
       var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
-      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+      ASSERT.equal(decryptedKey.toString('hex'), K);
     });
 
     it('should pass test vector C.6.3', function() {
@@ -101,11 +101,11 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n),null , new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
-      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+      ASSERT.equal(result.encapsulation.toString('hex'), C0);
+      ASSERT.equal(result.key.toString('hex'), K);
 
       var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
-      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+      ASSERT.equal(decryptedKey.toString('hex'), K);
     });
 
     it('should pass test vector C.6.4', function() {
@@ -126,11 +126,11 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
-      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+      ASSERT.equal(result.encapsulation.toString('hex'), C0);
+      ASSERT.equal(result.key.toString('hex'), K);
 
       var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
-      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+      ASSERT.equal(decryptedKey.toString('hex'), K);
     });
   });
 
@@ -153,11 +153,11 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
         new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
-      ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
-      ASSERT.equal(UTIL.bytesToHex(result.key), K);
+      ASSERT.equal(result.encapsulation.toString('hex'), C0);
+      ASSERT.equal(result.key.toString('hex'), K);
 
       var decryptedKey = kem.decrypt(rsaPrivateKey, result.encapsulation, 128);
-      ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
+      ASSERT.equal(decryptedKey.toString('hex'), K);
     });
   });
 }

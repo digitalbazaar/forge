@@ -226,7 +226,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       ASSERT.equal(p7.encryptedContent.content.length(), 32);
 
       // RSA encryption should yield 256 bytes
-      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length(), 256);
 
       // rewind Key & IV
       p7.encryptedContent.key.read = 0;
@@ -235,7 +235,9 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
         p7.recipients[0].encryptedContent.content);
-      ASSERT.equal(decryptedKey, p7.encryptedContent.key.bytes());
+      ASSERT.equal(
+        decryptedKey.toString('hex'),
+        p7.encryptedContent.key.toString('hex'));
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = CIPHER.createDecipher('AES-CBC', new ByteBuffer(decryptedKey));
@@ -267,7 +269,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       ASSERT.equal(p7.encryptedContent.content.length(), 24);
 
       // RSA encryption should yield 256 bytes
-      ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
+      ASSERT.equal(p7.recipients[0].encryptedContent.content.length(), 256);
 
       // rewind Key & IV
       p7.encryptedContent.key.read = 0;
@@ -276,7 +278,9 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
         p7.recipients[0].encryptedContent.content);
-      ASSERT.equal(decryptedKey, p7.encryptedContent.key.bytes());
+      ASSERT.equal(
+        decryptedKey.toString('hex'),
+        p7.encryptedContent.key.toString('hex'));
 
       // decryption of sym. encrypted data should reveal the content
       var ciph = CIPHER.createDecipher(

@@ -56,7 +56,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
       var signature = pair.privateKey.sign(md);
-      ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
+      ASSERT.ok(pair.publicKey.verify(md.digest(), signature));
     });
 
     it('should generate the same 512 bit key pair', function() {
@@ -76,7 +76,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
       var signature = pair.privateKey.sign(md);
-      ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
+      ASSERT.ok(pair.publicKey.verify(md.digest(), signature));
 
       // create same key pair by using same PRNG
       prng = RANDOM.createInstance();
@@ -141,8 +141,8 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var publicKey = PKI.publicKeyFromPem(_pem.publicKey);
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
-      var signature = UTIL.hexToBytes(_signature);
-      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+      var signature = new UTIL.ByteBuffer(_signature, 'hex');
+      ASSERT.ok(publicKey.verify(md.digest(), signature));
     });
 
     it('should sign and verify', function() {
@@ -151,7 +151,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
-      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+      ASSERT.ok(publicKey.verify(md.digest(), signature));
     });
 
     it('should generate missing CRT parameters, sign, and verify', function() {
@@ -166,7 +166,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
-      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+      ASSERT.ok(publicKey.verify(md.digest(), signature));
     });
 
     it('should sign and verify with a private key containing only e, n, and d parameters', function() {
@@ -182,7 +182,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       var md = MD.sha1.create();
       md.update('0123456789abcdef', 'utf8');
       var signature = privateKey.sign(md);
-      ASSERT.ok(publicKey.verify(md.digest().getBytes(), signature));
+      ASSERT.ok(publicKey.verify(md.digest(), signature));
     });
 
     (function() {
@@ -320,7 +320,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
         var key = PKI.publicKeyFromPem(tests[1].publicKeyPem);
         var message = UTIL.createBuffer().fillWithByte(0, 118);
         ASSERT.doesNotThrow(function() {
-          key.encrypt(message.getBytes());
+          key.encrypt(message);
         });
       });
 
@@ -362,7 +362,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           /* First step, do public key encryption */
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
-          var data = key.encrypt(message);
+          var data = key.encrypt(new UTIL.ByteBuffer(message, 'utf8'));
 
           /* Second step, use private key decryption to verify successful
             encryption. The encrypted message differs every time, since it is
@@ -370,13 +370,13 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             routine to work, which is tested seperately against an externally
             provided encrypted message. */
           key = PKI.privateKeyFromPem(params.privateKeyPem);
-          ASSERT.equal(key.decrypt(data), message);
+          ASSERT.equal(key.decrypt(data).toString(), message);
         });
 
         it('should rsa decrypt using a ' + keySize + '-bit key', function() {
-          var data = UTIL.decode64(params.encrypted);
+          var data = new UTIL.ByteBuffer(params.encrypted, 'base64');
           var key = PKI.privateKeyFromPem(params.privateKeyPem);
-          ASSERT.equal(key.decrypt(data), 'too many secrets\n');
+          ASSERT.equal(key.decrypt(data).toString(), 'too many secrets\n');
         });
 
         it('should rsa sign using a ' + keySize + '-bit key and PKCS#1 v1.5 padding', function() {
@@ -386,19 +386,18 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           md.start();
           md.update('just testing', 'utf8');
 
-          var signature = UTIL.decode64(params.signature);
-          ASSERT.equal(key.sign(md), signature);
+          ASSERT.equal(key.sign(md).toString('base64'), params.signature);
         });
 
         it('should verify an rsa signature using a ' + keySize + '-bit key and PKCS#1 v1.5 padding', function() {
-          var signature = UTIL.decode64(params.signature);
+          var signature = new UTIL.ByteBuffer(params.signature, 'base64');
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
 
           var md = MD.sha1.create();
           md.start();
           md.update('just testing', 'utf8');
 
-          ASSERT.equal(key.verify(md.digest().getBytes(), signature), true);
+          ASSERT.equal(key.verify(md.digest(), signature), true);
         });
 
         /* Note: signatures are *not* deterministic (the point of RSASSA-PSS),
@@ -421,12 +420,11 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           // verify signature
           md.start();
           md.update('just testing', 'utf8');
-          ASSERT.equal(
-            publicKey.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(publicKey.verify(md.digest(), signature, pss), true);
         });
 
         it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding', function() {
-          var signature = UTIL.decode64(params.signaturePss);
+          var signature = new UTIL.ByteBuffer(params.signaturePss, 'base64');
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
 
           var md = MD.sha1.create();
@@ -435,8 +433,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           var pss = PSS.create(
             MD.sha1.create(), MGF.mgf1.create(MD.sha1.create()), 20);
-          ASSERT.equal(
-            key.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(key.verify(md.digest(), signature, pss), true);
         });
 
         it('should rsa sign using a ' + keySize + '-bit key and PSS padding using pss named-param API', function() {
@@ -458,12 +455,11 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           // verify signature
           md.start();
           md.update('just testing', 'utf8');
-          ASSERT.equal(
-            publicKey.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(publicKey.verify(md.digest(), signature, pss), true);
         });
 
         it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using pss named-param API', function() {
-          var signature = UTIL.decode64(params.signaturePss);
+          var signature = new UTIL.ByteBuffer(params.signaturePss, 'base64');
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
 
           var md = MD.sha1.create();
@@ -475,8 +471,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             mgf: MGF.mgf1.create(MD.sha1.create()),
             saltLength: 20
           });
-          ASSERT.equal(
-            key.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(key.verify(md.digest(), signature, pss), true);
         });
 
         it('should rsa sign using a ' + keySize + '-bit key and PSS padding using salt "abc"', function() {
@@ -490,15 +485,16 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           var pss = PSS.create({
             md: MD.sha1.create(),
             mgf: MGF.mgf1.create(MD.sha1.create()),
-            salt: UTIL.createBuffer('abc')
+            salt: new UTIL.ByteBuffer('abc', 'utf8')
           });
           var signature = privateKey.sign(md, pss);
-          var b64 = UTIL.encode64(signature);
-          ASSERT.equal(b64, params.signatureWithAbcSalt);
+          ASSERT.equal(
+            signature.toString('base64'), params.signatureWithAbcSalt);
         });
 
         it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using salt "abc"', function() {
-          var signature = UTIL.decode64(params.signatureWithAbcSalt);
+          var signature = new UTIL.ByteBuffer(
+            params.signatureWithAbcSalt, 'base64');
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
 
           var md = MD.sha1.create();
@@ -510,8 +506,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             mgf: MGF.mgf1.create(MD.sha1.create()),
             saltLength: 3
           });
-          ASSERT.equal(
-            key.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(key.verify(md.digest(), signature, pss), true);
         });
 
         it('should rsa sign using a ' + keySize + '-bit key and PSS padding using custom PRNG', function() {
@@ -533,8 +528,8 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             prng: prng
           });
           var signature = privateKey.sign(md, pss);
-          var b64 = UTIL.encode64(signature);
-          ASSERT.equal(b64, params.signatureWithCustomPrng);
+          ASSERT.equal(
+            signature.toString('base64'), params.signatureWithCustomPrng);
         });
 
         it('should verify an rsa signature using a ' + keySize + '-bit key and PSS padding using custom PRNG', function() {
@@ -542,7 +537,8 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           prng.seedFileSync = function(needed) {
             return UTIL.fillString('a', needed);
           };
-          var signature = UTIL.decode64(params.signatureWithCustomPrng);
+          var signature = new UTIL.ByteBuffer(
+            params.signatureWithCustomPrng, 'base64');
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
 
           var md = MD.sha1.create();
@@ -555,8 +551,7 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             saltLength: 20,
             prng: prng
           });
-          ASSERT.equal(
-            key.verify(md.digest().getBytes(), signature, pss), true);
+          ASSERT.equal(key.verify(md.digest(), signature, pss), true);
         });
       }
     })();

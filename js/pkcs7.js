@@ -6,7 +6,7 @@
  * @author Dave Longley
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
- * Copyright (c) 2012-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2012-2015 Digital Bazaar, Inc.
  *
  * Currently this implementation only supports ContentType of either
  * EnvelopedData or EncryptedData on root level.  The top level elements may
@@ -655,8 +655,8 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.rsaEncryption:
           case forge.pki.oids.desCBC:
             var key = privKey.decrypt(
-              recipient.encryptedContent.content.bytes());
-            msg.encryptedContent.key = new ByteBuffer(key, 'binary');
+              recipient.encryptedContent.content.copy());
+            msg.encryptedContent.key = key;
             break;
 
           default:
@@ -778,7 +778,7 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.rsaEncryption:
             recipient.encryptedContent.content =
               recipient.encryptedContent.key.encrypt(
-                msg.encryptedContent.key.bytes());
+                msg.encryptedContent.key.copy());
             break;
 
           default:

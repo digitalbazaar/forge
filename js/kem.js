@@ -14,6 +14,7 @@ function initModule(forge) {
 forge.kem = forge.kem || {};
 
 var BigInteger = forge.jsbn.BigInteger;
+var ByteBuffer = forge.util.ByteBuffer;
 
 /**
  * The API for the RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
@@ -61,15 +62,17 @@ forge.kem.rsa.create = function(kdf, options) {
         16).mod(publicKey.n);
     } while(r.equals(BigInteger.ZERO));
 
+    // TODO: use buffer
     // prepend r with zeros
     r = forge.util.hexToBytes(r.toString(16));
     var zeros = byteLength - r.length;
     if(zeros > 0) {
       r = forge.util.fillString(String.fromCharCode(0), zeros) + r;
     }
+    r = new ByteBuffer(r, 'binary');
 
     // encrypt the random
-    var encapsulation = publicKey.encrypt(r, 'NONE');
+    var encapsulation = publicKey.encrypt(r.copy(), 'NONE');
 
     // generate the secret key
     var key = kdf.generate(r, keyLength);
@@ -82,10 +85,10 @@ forge.kem.rsa.create = function(kdf, options) {
    *
    * @param privateKey the RSA private key to decrypt with.
    * @param encapsulation the ciphertext for generating the secret key, as
-   *          a binary-encoded string of bytes.
+   *          a ByteBuffer.
    * @param keyLength the length, in bytes, of the secret key to generate.
    *
-   * @return the secret key as a binary-encoded string of bytes.
+   * @return the secret key as a ByteBuffer.
    */
   kem.decrypt = function(privateKey, encapsulation, keyLength) {
     // decrypt the encapsulation and generate the secret key
@@ -137,32 +140,34 @@ function _createKDF(kdf, md, counterStart, digestLength) {
   /**
    * Generate a key of the specified length.
    *
-   * @param x the binary-encoded byte string to generate a key from.
+   * @param x the ByteBuffer to generate a key from.
    * @param length the number of bytes to generate (the size of the key).
    *
-   * @return the key as a binary-encoded string.
+   * @return the key as a ByteBuffer.
    */
   kdf.generate = function(x, length) {
-    var key = new forge.util.ByteBuffer();
+    var key = new ByteBuffer();
 
     // run counter from counterStart to ceil(length / Hash.len)
     var k = Math.ceil(length / digestLength) + counterStart;
 
-    var c = new forge.util.ByteBuffer();
+    var c = new ByteBuffer();
     for(var i = counterStart; i < k; ++i) {
       // I2OSP(i, 4): convert counter to an octet string of 4 octets
       c.putInt32(i);
 
       // digest 'x' and the counter and add the result to the key
       md.start();
-      md.update(x + c.getBytes(), 'binary');
+      md.update(x.copy());
+      // TODO: should just be md.update(c) as it shouldn't copy internally
+      md.update(c.getBytes(), 'binary');
       var hash = md.digest();
       key.putBytes(hash.getBytes(digestLength));
     }
 
     // truncate to the correct key length
     key.truncate(key.length() - length);
-    return key.getBytes();
+    return key;
   };
 }
 

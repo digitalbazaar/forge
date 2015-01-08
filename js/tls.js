@@ -590,10 +590,8 @@ function TLS1_SignatureAndHashAlgorithm() {
         return callback(err);
       }
       var buffer = getVerifyData(connection.session);
-      // TODO: remove extra buffer once key.sign uses buffers
       try {
-        buffer = new ByteBuffer(
-          key.sign(buffer.getBytes(), 'EME-PKCS1-V1_5'), 'binary');
+        buffer = key.sign(buffer, 'EME-PKCS1-V1_5');
       } catch(e) {
         return callback(e);
       }
@@ -606,9 +604,7 @@ function TLS1_SignatureAndHashAlgorithm() {
     var rval = false;
     var buffer = getVerifyData(connection.session);
     try {
-      // TODO: remove `.getBytes()` once key.verify uses buffers
-      rval = key.verify(
-        buffer.getBytes(), signature.getBytes(), 'EME-PKCS1-V1_5');
+      rval = key.verify(buffer, signature, 'EME-PKCS1-V1_5');
     } catch(e) {
       return callback(e);
     }
@@ -783,7 +779,7 @@ tls.parseHelloMessage = function(c, record, length) {
 
             // add host name to server name list
             c.session.extensions.server_name.serverNameList.push(
-              readVector(snl, 2).getBytes());
+              readVector(snl, 2).toString('utf8'));
           }
         } else if(ext.type === tls.ExtensionType.signature_algorithms) {
           // signature_algorithms extension
@@ -1330,7 +1326,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
 
   var b = record.fragment;
   var msg = {
-    enc_pre_master_secret: readVector(b, 2).getBytes()
+    enc_pre_master_secret: readVector(b, 2)
   };
 
   // get private key
@@ -1378,8 +1374,8 @@ tls.handleClientKeyExchange = function(c, record, length) {
 
       // ensure client hello version matches first 2 bytes
       var version = c.session.clientHelloVersion;
-      if(version.major !== sp.pre_master_secret.charCodeAt(0) ||
-        version.minor !== sp.pre_master_secret.charCodeAt(1)) {
+      if(version.major !== sp.pre_master_secret.at(0) ||
+        version.minor !== sp.pre_master_secret.at(1)) {
         // error, do not send alert (see BLEI attack below)
         throw new Error('TLS version rollback attack detected.');
       }
@@ -1388,7 +1384,8 @@ tls.handleClientKeyExchange = function(c, record, length) {
         TLS server which is using PKCS#1 encoded RSA, so instead of
         failing here, we generate 48 random bytes and use that as
         the pre-master secret. */
-      sp.pre_master_secret = forge.random.getBytes(48);
+      sp.pre_master_secret = new ByteBuffer(
+        forge.random.getBytes(48), 'binary');
     }
 
     // expect a CertificateVerify message if a Certificate was received that
@@ -1541,13 +1538,13 @@ tls.handleCertificateVerify = function(c, record, length) {
     // TLS 1.0/1.1
     msg = {
       algorithm: [-1, -1],
-      signature: readVector(b, 2).getBytes()
+      signature: readVector(b, 2)
     };
   } else {
     // TLS 1.2+
     msg = {
       algorithm: [b.getByte(), b.getByte()],
-      signature: readVector(b, 2).getBytes()
+      signature: readVector(b, 2)
     };
   }
 
@@ -1567,10 +1564,9 @@ tls.handleCertificateVerify = function(c, record, length) {
   }
   c.session.signatureAndHashAlgorithm.clientCertificate = algorithm;
 
-  // TODO: remove once msg.signature is already buffer
   var publicKey = c.session.clientCertificate.publicKey;
-  var signature = new ByteBuffer(msg.signature, 'binary');
-  algorithm.signature.verify(c, publicKey, signature, function(err, result) {
+  algorithm.signature.verify(
+    c, publicKey, msg.signature, function(err, result) {
     if(err || !result) {
       return c.error(c, {
         message: err ? err.message : 'Bad signature in CertificateVerify.',
@@ -1859,7 +1855,7 @@ tls.handleFinished = function(c, record, length) {
   // verify_data_length given by cipher suite, default is 12
   var vdl = c.session.cipherSuite.verifyDataLength || 12;
   var prf = c.session.prf;
-  b = prf(sp.master_secret, label, b.getBytes(), vdl);
+  b = prf(sp.master_secret.copy(), label, b, vdl);
   if(b.getBytes() !== vd) {
     return c.error(c, {
       message: 'Invalid verify_data in Finished message.',
@@ -2467,25 +2463,27 @@ tls.generateKeys = function(c, sp) {
   var prf = c.session.prf;
 
   // concatenate server and client random
-  var random = sp.client_random + sp.server_random;
+  // TODO: use buffers for randoms
+  var random = new ByteBuffer(sp.client_random + sp.server_random, 'binary');
 
   // only create master secret if session is new
   if(!c.session.resuming) {
     // create master secret, clean up pre-master secret
     sp.master_secret = prf(
-      sp.pre_master_secret, 'master secret', random, 48).bytes();
+      sp.pre_master_secret, 'master secret', random, 48);
     sp.pre_master_secret = null;
   }
 
   // generate the amount of key material needed
-  random = sp.server_random + sp.client_random;
+  // TODO: use buffers for randoms
+  random = new ByteBuffer(sp.server_random + sp.client_random, 'binary');
   var length = 2 * sp.mac_key_length + 2 * sp.enc_key_length;
 
   // include IV for TLS/1.0
   if(is_tls_1_0(c.version)) {
     length += 2 * sp.fixed_iv_length;
   }
-  var km = prf(sp.master_secret, 'key expansion', random, length);
+  var km = prf(sp.master_secret.copy(), 'key expansion', random, length);
 
   // split the key material into the MAC and encryption keys
   var rval = {
@@ -3149,11 +3147,11 @@ tls.createClientKeyExchange = function(c) {
 
   // save pre-master secret
   var sp = c.session.sp;
-  sp.pre_master_secret = b.getBytes();
+  sp.pre_master_secret = b;
 
   // RSA-encrypt the pre-master secret
   var key = c.session.serverCertificate.publicKey;
-  b = key.encrypt(sp.pre_master_secret);
+  b = key.encrypt(sp.pre_master_secret.copy());
 
   /* Note: The encrypted pre-master secret will be stored in a
     public-key-encrypted opaque vector that has the length prefixed using
@@ -3161,15 +3159,15 @@ tls.createClientKeyExchange = function(c) {
     is done as a minor optimization instead of calling writeVector(). */
 
   // determine length of the handshake message
-  var length = b.length + 2;
+  var length = b.length() + 2;
 
   // build record fragment
   var rval = new ByteBuffer();
   rval.putByte(tls.HandshakeType.client_key_exchange);
   rval.putInt24(length);
   // add vector length bytes
-  rval.putInt16(b.length);
-  rval.putBytes(b);
+  rval.putInt16(b.length());
+  rval.putBuffer(b);
   return rval;
 };
 
@@ -3427,7 +3425,7 @@ tls.createFinished = function(c) {
   var vdl = c.session.cipherSuite.verifyDataLength || 12;
   var prf = c.session.prf;
   var label = client ? 'client finished' : 'server finished';
-  b = prf(sp.master_secret, label, b.getBytes(), vdl);
+  b = prf(sp.master_secret.copy(), label, b, vdl);
 
   // build record fragment
   var rval = new ByteBuffer();
@@ -4472,24 +4470,28 @@ forge.tls.createConnection = tls.createConnection;
  *   HMAC_hash(secret, HMAC_hash(secret, HMAC_hash(secret, seed)) + seed) +
  *   ...
  *
- * @param secret the secret to use.
+ * @param secret the secret to use, as a ByteBuffer.
  * @param label the label to use.
- * @param seed the seed value to use.
+ * @param seed the seed value to use, as a ByteBuffer.
  * @param length the number of bytes to generate.
  *
- * @return the pseudo random bytes in a byte buffer.
+ * @return the pseudo random bytes in a ByteBuffer.
  */
 function prf_TLS1(secret, label, seed, length) {
+  // TODO: use buffer
+  seed = seed.getBytes();
+
   var rval = new ByteBuffer();
 
   /* For TLS 1.0, the secret is split in half, into two secrets of equal
     length. If the secret has an odd length then the last byte of the first
     half will be the same as the first byte of the second. The length of the
     two secrets is half of the secret rounded up. */
-  var idx = (secret.length >> 1);
-  var slen = idx + (secret.length & 1);
-  var s1 = secret.substr(0, slen);
-  var s2 = secret.substr(idx, slen);
+  var idx = (secret.length() >> 1);
+  var slen = idx + (secret.length() & 1);
+  // TODO: use .slice()?
+  var s1 = new ByteBuffer(secret.getBytes(slen), 'binary');
+  var s2 = new ByteBuffer(secret.getBytes(), 'binary');
   var ai = new ByteBuffer();
   var hmac = forge.hmac.create();
   seed = label + seed;
@@ -4500,7 +4502,7 @@ function prf_TLS1(secret, label, seed, length) {
   var sha1itr = Math.ceil(length / 20);
 
   // do md5 iterations
-  hmac.start('MD5', new ByteBuffer(s1, 'binary'));
+  hmac.start('md5', s1);
   var md5bytes = new ByteBuffer();
   ai.putBytes(seed);
   for(var i = 0; i < md5itr; ++i) {
@@ -4516,7 +4518,7 @@ function prf_TLS1(secret, label, seed, length) {
   }
 
   // do sha1 iterations
-  hmac.start('SHA1', new ByteBuffer(s2, 'binary'));
+  hmac.start('sha1', s2);
   var sha1bytes = new ByteBuffer();
   ai.clear();
   ai.putBytes(seed);

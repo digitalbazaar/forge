@@ -1614,14 +1614,14 @@ pki.createCertificate = function() {
           };
         }
 
-        scheme = forge.pss.create(forge.md[hash].create(), mgf,
+        scheme = forge.pss.create(
+          forge.md[hash].create(), mgf,
           child.signatureParameters.saltLength);
         break;
       }
 
       // verify signature on cert using public key
-      rval = cert.publicKey.verify(
-        md.digest().getBytes(), child.signature, scheme);
+      rval = cert.publicKey.verify(md.digest(), child.signature.copy(), scheme);
     }
 
     return rval;
@@ -1763,7 +1763,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   // skip "unused bits" in signature value BITSTRING
   var signature = capture.certSignature;
   ++signature.read;
-  cert.signature = signature.getBytes();
+  cert.signature = signature.copy();
 
   var validity = [];
   if(capture.certValidity1UTCTime !== undefined) {
@@ -1907,7 +1907,7 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   // skip "unused bits" in signature value BITSTRING
   var signature = capture.csrSignature;
   ++signature.read;
-  csr.signature = signature.getBytes();
+  csr.signature = signature.copy();
 
   // keep CertificationRequestInfo to preserve signature when exporting
   csr.certificationRequestInfo = capture.certificationRequestInfo;
@@ -2152,8 +2152,7 @@ pki.createCertificationRequest = function() {
       }
 
       // verify signature on csr using its public key
-      rval = csr.publicKey.verify(
-        md.digest().getBytes(), csr.signature, scheme);
+      rval = csr.publicKey.verify(md.digest(), csr.signature.copy(), scheme);
     }
 
     return rval;
@@ -2569,7 +2568,7 @@ pki.certificateToAsn1 = function(cert) {
     ]),
     // SignatureValue
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-      new ByteBuffer().putByte(0x00).putBytes(cert.signature))
+      new ByteBuffer().putByte(0x00).putBytes(cert.signature.bytes()))
   ]);
 };
 
@@ -2598,7 +2597,7 @@ pki.certificationRequestToAsn1 = function(csr) {
     ]),
     // signature
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
-      new ByteBuffer().putByte(0x00).putBytes(csr.signature))
+      new ByteBuffer().putByte(0x00).putBytes(csr.signature.bytes()))
   ]);
 };
 

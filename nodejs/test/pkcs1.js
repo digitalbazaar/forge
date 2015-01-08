@@ -10,13 +10,14 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
       var keys = makeKey();
 
       // provide the seed to test the same input each time
-      var seed = UTIL.decode64('JRTfRpV1WmeyiOr0kFw27sZv0v0=');
+      var seed = new UTIL.ByteBuffer('JRTfRpV1WmeyiOr0kFw27sZv0v0=', 'base64');
 
       // test decrypting corrupted data: flip every bit (skip first byte to
       // avoid triggering other invalid encryption error) in the message this
       // tests the padding error handling
       var encoded = PKCS1.encode_rsa_oaep(
-        keys.publicKey, 'datadatadatadata', {seed: seed});
+        keys.publicKey, new UTIL.ByteBuffer('datadatadatadata', 'binary'),
+        {seed: seed});
       var encrypted = keys.publicKey.encrypt(encoded, null);
       var bitLength = encrypted.length * 8;
       // FIXME: test it too slow to run all the time -- temporary
@@ -26,10 +27,12 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
         var byteIndex = bit / 8;
         var bitInByte = bit % 8;
 
+        // TODO: use buffers
         var out = encrypted.substring(0, byteIndex);
         var mask = 0x1 << bitInByte;
         out += String.fromCharCode(encrypted.charCodeAt(byteIndex) ^ mask);
         out += encrypted.substring(byteIndex + 1);
+        out = UTIL.createBuffer(out, 'binary');
 
         try {
           var decrypted = keys.privateKey.decrypt(out, null);
@@ -46,12 +49,12 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
 
     it('should detect leading zero bytes', function() {
       var keys = makeKey();
-      var message = UTIL.fillString('\x00', 80);
+      var message = new UTIL.ByteBuffer().fillWithByte(0, 80);
       var encoded = PKCS1.encode_rsa_oaep(keys.publicKey, message);
       var ciphertext = keys.publicKey.encrypt(encoded, null);
       var decrypted = keys.privateKey.decrypt(ciphertext, null);
       var decoded = PKCS1.decode_rsa_oaep(keys.privateKey, decrypted);
-      ASSERT.equal(message, decoded);
+      ASSERT.equal(message.toHex(), decoded.toHex());
     });
 
     testOAEP();
@@ -1018,21 +1021,21 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
 
     function checkOAEPEncrypt(
       publicKey, privateKey, md, message, seed, expected) {
-      var message = UTIL.decode64(message);
-      var seed = UTIL.decode64(seed);
+      var message = new UTIL.ByteBuffer(message, 'base64');
+      var seed = new UTIL.ByteBuffer(seed, 'base64');
       var encoded = PKCS1.encode_rsa_oaep(
         publicKey, message, {seed: seed, md: md});
       var ciphertext = publicKey.encrypt(encoded, null);
-      ASSERT.equal(expected, UTIL.encode64(ciphertext));
+      ASSERT.equal(expected, ciphertext.toString('base64'));
 
       var decrypted = privateKey.decrypt(ciphertext, null);
       var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md});
-      ASSERT.equal(message, decoded);
+      ASSERT.equal(message.toString('base64'), decoded.toString('base64'));
 
       // test with higher-level API, default label, and generating a seed
       ciphertext = publicKey.encrypt(message, 'RSA-OAEP', {md: md});
       decoded = privateKey.decrypt(ciphertext, 'RSA-OAEP', {md: md});
-      ASSERT.equal(message, decoded);
+      ASSERT.equal(message.toString('base64'), decoded.toString('base64'));
     }
 
     function decodeBase64PublicKey(modulus, exponent) {
