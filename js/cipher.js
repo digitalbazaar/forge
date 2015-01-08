@@ -256,7 +256,6 @@ BlockCipher.prototype.finish = function(pad) {
   return true;
 };
 
-
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */
