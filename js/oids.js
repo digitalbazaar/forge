@@ -38,6 +38,8 @@ oids['1.2.840.113549.1.1.12'] = 'sha384WithRSAEncryption';
 oids['sha384WithRSAEncryption'] = '1.2.840.113549.1.1.12';
 oids['1.2.840.113549.1.1.13'] = 'sha512WithRSAEncryption';
 oids['sha512WithRSAEncryption'] = '1.2.840.113549.1.1.13';
+oids['1.2.840.113549.1.1.14'] = 'sha224WithRSAEncryption';
+oids['sha224WithRSAEncryption'] = '1.2.840.113549.1.1.14';
 
 oids['1.3.14.3.2.7'] = 'desCBC';
 oids['desCBC'] = '1.3.14.3.2.7';

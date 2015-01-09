@@ -508,42 +508,24 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       throw new TypeError('data must be a ByteBuffer.');
     }
 
-    if(typeof scheme === 'string') {
-      scheme = scheme.toUpperCase();
-    } else if(scheme === undefined) {
-      scheme = 'RSASSA-PKCS1-V1_5';
+    if(scheme === null) {
+      scheme = 'NONE';
     }
-
-    // TODO: simplify scheme.verify (change to scheme.decode)
-    if(scheme === 'RSASSA-PKCS1-V1_5') {
-      scheme = {
-        verify: function(input, decrypted) {
-          // FIXME: input to become a ByteBuffer, use ByteBuffer.equals?
-          return forge.pkcs1.decode_rsassa(
-            key, decrypted).getBytes() === input.getBytes();
-        }
-      };
-    } else if(scheme === 'EME-PKCS1-V1_5') {
-      scheme = {
-        verify: function(input, decrypted) {
-          return forge.pkcs1.decode_eme_v1_5(
-            key, decrypted).getBytes() === input.getBytes();
-        }
-      };
-    } else if(scheme === 'NONE' || scheme === null) {
-      scheme = {
-        verify: function(input, decrypted) {
-          // FIXME: input to become a ByteBuffer, use ByteBuffer.equals?
-          return decrypted.getBytes() === input.getBytes();
-        }
-      };
-    } else if(typeof scheme === 'string') {
-      throw new Error('Invalid signature scheme: ' + scheme);
+    if(typeof scheme === 'string') {
+      if(!(scheme in signatureSchemes)) {
+        throw new Error('Unsupported scheme: ' + scheme);
+      }
+      scheme = signatureSchemes[scheme];
+    } else if(typeof scheme !== 'object') {
+      throw new TypeError(
+        'scheme must be a string identifying a ' +
+        'registered signature scheme or an object that defines the ' +
+        'required scheme API.');
     }
 
     // RSA decrypt, then verify -- which does message decoding
     var decrypted = _rsaDecrypt(key, signature, _rsaPublicOp);
-    return scheme.verify(data, decrypted, key.n.bitLength());
+    return scheme.verify(key, decrypted, data);
   };
 
   return key;
@@ -657,63 +639,27 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
    *
    * @return the signature as a ByteBuffer.
    */
-  // TODO: change this to use registered signature schemes, look up scheme
-  // based on scheme name or use scheme object ... scheme objects check
-  // the encoding input to make sure it's the right type, may take ByteBuffer
-  // or MessageDigest for instance...
   // TODO: scheme may also take options?
   key.sign = function(input, scheme) {
     // TODO: if scheme is not first, swap for backwards compatibility
 
-    // TODO: look up scheme if it's a string, fetch scheme API
-
-    // TODO: remove old hard-coded stuff entirely
-    /* Note: The internal implementation of RSA operations is being
-      transitioned away from a PKCS#1 v1.5 hard-coded scheme. Some legacy
-      code like the use of an encoding block type identifier 'bt' will
-      eventually be removed. */
-    if(typeof scheme === 'string') {
-      scheme = scheme.toUpperCase();
-    } else if(scheme === undefined) {
-      // default
-      scheme = 'RSASSA-PKCS1-V1_5';
+    if(scheme === null) {
+      scheme = 'NONE';
     }
-
-    if(scheme === 'RSASSA-PKCS1-V1_5') {
-      // TODO: check against MessageDigest API
-      if(input instanceof ByteBuffer || typeof input !== 'object') {
-        throw new TypeError(
-          'input must be a message digest object to use the ' +
-          '"RSASSA-PKCS1-V1_5" signature scheme.');
+    if(typeof scheme === 'string') {
+      if(!(scheme in signatureSchemes)) {
+        throw new Error('Unsupported scheme: ' + scheme);
       }
-      scheme = {
-        encode: function(md) {
-          return forge.pkcs1.encode_rsassa(key, md);
-        }
-      };
-    } else if(scheme === 'EME-PKCS1-V1_5') {
-      if(!(input instanceof ByteBuffer)) {
-        throw new TypeError(
-          'input must be a ByteBuffer to use the ' +
-          '"EME-PKCS1-V1_5" signature scheme.');
-      }
-      scheme = {
-        encode: function(data) {
-          return forge.pkcs1.encode_eme_v1_5(key, data, 0x02);
-        }
-      };
-    } else if(scheme === 'NONE' || scheme === null) {
-      if(!(input instanceof ByteBuffer)) {
-        throw new TypeError(
-          'input must be a ByteBuffer to use raw RSA encryption.');
-      }
-      scheme = {encode: function() {return input;}};
-    } else if(typeof scheme === 'string') {
-      throw new Error('Invalid signature scheme: ' + scheme);
+      scheme = signatureSchemes[scheme];
+    } else if(typeof scheme !== 'object') {
+      throw new TypeError(
+        'scheme must be a string identifying a ' +
+        'registered signature scheme or an object that defines the ' +
+        'required scheme API.');
     }
 
     // encode message according to scheme and then RSA encrypt
-    var encoded = scheme.encode(input, key.n.bitLength());
+    var encoded = scheme.encode(key, input, scheme);
     return _rsaEncrypt(key, encoded, _rsaPrivateOp);
   };
 
@@ -1298,12 +1244,12 @@ signatureSchemes.NONE = {
     }
     return input;
   },
-  verify: function(key, signature, input) {
+  verify: function(key, encoded, input) {
     if(!(input instanceof ByteBuffer)) {
       throw new TypeError('input must be a ByteBuffer');
     }
     // TODO: use compare/equals
-    return signature.getBytes() === input.getBytes();
+    return encoded.getBytes() === input.getBytes();
   }
 };
 // TODO: move to pkcs1? will require dependency change in consumers
@@ -1314,13 +1260,13 @@ signatureSchemes['RSASSA-PKCS1-V1_5'] = {
     }
     return forge.pkcs1.encode_rsassa(key, input);
   },
-  verify: function(key, signature, input) {
+  verify: function(key, encoded, input) {
     if(!(input instanceof ByteBuffer)) {
       throw new TypeError('input must be a ByteBuffer');
     }
-    var decoded = forge.pkcs1.decode_rsassa(key, input);
+    var decoded = forge.pkcs1.decode_rsassa(key, encoded);
     // TODO: use compare/equals
-    return signature.getBytes() === decoded.getBytes();
+    return input.getBytes() === decoded.getBytes();
   }
 };
 signatureSchemes['EME-PKCS1-V1_5'] = {
@@ -1330,13 +1276,13 @@ signatureSchemes['EME-PKCS1-V1_5'] = {
     }
     return forge.pkcs1.encode_eme_v1_5(key, input, 0x02);
   },
-  verify: function(key, signature, input) {
+  verify: function(key, encoded, input) {
     if(!(input instanceof ByteBuffer)) {
       throw new TypeError('input must be a ByteBuffer');
     }
-    var decoded = forge.pkcs1.decode_eme_v1_5(key, input);
+    var decoded = forge.pkcs1.decode_eme_v1_5(key, encoded);
     // TODO: use compare/equals
-    return signature.getBytes() === decoded.getBytes();
+    return input.getBytes() === decoded.getBytes();
   }
 };
 

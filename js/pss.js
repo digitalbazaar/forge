@@ -12,6 +12,8 @@ function initModule(forge) {
 // shortcut for PSS API
 var pss = forge.pss = forge.pss || {};
 
+var MessageDigest = forge.md.MessageDigest;
+
 /**
  * Creates a PSS signature scheme object.
  *
@@ -73,16 +75,20 @@ pss.create = function(options) {
    *
    * This function implements EMSA-PSS-ENCODE as per RFC 3447, section 9.1.1.
    *
-   * @param md the message digest object with the hash to sign.
-   * @param modsBits the length of the RSA modulus in bits.
+   * @param key the private key to sign with.
+   * @param input the MessageDigest with the hash to sign.
    *
    * @return the encoded message as a ByteBuffer of length
    *           ceil((modBits - 1) / 8).
    */
-  // TODO: change to function(key, input)
-  pssobj.encode = function(md, modBits) {
+  pssobj.encode = function(key, input) {
+    if(!(input instanceof MessageDigest)) {
+      throw new TypeError('input must be a MessageDigest.');
+    }
+
+    var md = input;
     var i;
-    var emBits = modBits - 1;
+    var emBits = key.n.bitLength() - 1;
     var emLen = Math.ceil(emBits / 8);
 
     /* 2. Let mHash = Hash(M), an octet string of length hLen. */
@@ -151,20 +157,21 @@ pss.create = function(options) {
    *
    * This function implements EMSA-PSS-VERIFY as per RFC 3447, section 9.1.2.
    *
-   * @param mHash the message digest hash, as a ByteBuffer, to compare
-   *          against the signature.
-   * @param em the encoded message, as a ByteBuffer (RSA decryption result).
-   * @param modsBits the length of the RSA modulus in bits.
+   * @param key the public key for verifying the signature.
+   * @param encoded the encoded message, as a ByteBuffer; this is the
+   *          result of RSA-decrypting the signature.
+   * @param input the MessageDigest to compare against the result of
+   *          decoding the encoded message.
    *
    * @return true if the signature was verified, false if not.
    */
-  // TODO: change to function(key, signature, input)
-  pssobj.verify = function(mHash, em, modBits) {
+  pssobj.verify = function(key, encoded, input) {
     // TODO: use buffers throughout
-    mHash = mHash.bytes();
+    var mHash = input.bytes();
+    var em = encoded;
 
     var i;
-    var emBits = modBits - 1;
+    var emBits = key.n.bitLength() - 1;
     var emLen = Math.ceil(emBits / 8);
     em = em.bytes();
 
@@ -295,7 +302,7 @@ define = function(ids, factory) {
   define = tmpDefine;
   return define.apply(null, Array.prototype.slice.call(arguments, 0));
 };
-define(['require', 'module', './random', './util'], function() {
+define(['require', 'module', './random', './util', './md'], function() {
   defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
 });
 })();

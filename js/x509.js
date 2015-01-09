@@ -1518,7 +1518,7 @@ pki.createCertificate = function() {
 
     // digest and sign
     cert.md.update(der);
-    cert.signature = key.sign(cert.md);
+    cert.signature = key.sign(cert.md, 'RSASSA-PKCS1-V1_5');
   };
 
   /**
@@ -1579,8 +1579,13 @@ pki.createCertificate = function() {
       var scheme;
 
       switch(child.signatureOid) {
+      case oids.md5WithRSAEncryption:
       case oids.sha1WithRSAEncryption:
-        scheme = undefined;  /* use PKCS#1 v1.5 padding scheme */
+      case oids.sha256WithRSAEncryption:
+      case oids.sha384WithRSAEncryption:
+      case oids.sha512WithRSAEncryption:
+      case oids.sha224WithRSAEncryption:
+        scheme = 'RSASSA-PKCS1-V1_5';
         break;
       case oids['RSASSA-PSS']:
         var hash, mgf;
@@ -1618,6 +1623,9 @@ pki.createCertificate = function() {
           forge.md[hash].create(), mgf,
           child.signatureParameters.saltLength);
         break;
+      default:
+        throw new Error(
+          'Unsupported signature algorithm: ' + child.signatureOid);
       }
 
       // verify signature on cert using public key
@@ -2058,7 +2066,7 @@ pki.createCertificationRequest = function() {
 
     // digest and sign
     csr.md.update(der);
-    csr.signature = key.sign(csr.md);
+    csr.signature = key.sign(csr.md, 'RSASSA-PKCS1-V1_5');
   };
 
   /**
@@ -2112,8 +2120,13 @@ pki.createCertificationRequest = function() {
       var scheme;
 
       switch(csr.signatureOid) {
+      case oids.md5WithRSAEncryption:
       case oids.sha1WithRSAEncryption:
-        /* use PKCS#1 v1.5 padding scheme */
+      case oids.sha256WithRSAEncryption:
+      case oids.sha384WithRSAEncryption:
+      case oids.sha512WithRSAEncryption:
+      case oids.sha224WithRSAEncryption:
+        scheme = 'RSASSA-PKCS1-V1_5';
         break;
       case oids['RSASSA-PSS']:
         var hash, mgf;
@@ -2149,6 +2162,9 @@ pki.createCertificationRequest = function() {
         scheme = forge.pss.create(forge.md[hash].create(), mgf,
           csr.signatureParameters.saltLength);
         break;
+      default:
+        throw new Error(
+          'Unsupported signature algorithm: ' + csr.signatureOid);
       }
 
       // verify signature on csr using its public key
