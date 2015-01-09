@@ -309,7 +309,7 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
     }
 
     // update timing
-    t2 = +new Date();
+    t2 = new Date().getTime();
     total += t2 - t1;
     t1 = t2;
   }
