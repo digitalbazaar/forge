@@ -312,17 +312,17 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
           bytes.Together with the 11 extra bytes the encryption block needs to be
           at least 129 bytes long. This requires a key of 1025-bits. */
         var key = PKI.publicKeyFromPem(tests[0].publicKeyPem);
-        var message = UTIL.createBuffer().fillWithByte(0, 118);
+        var message = new UTIL.ByteBuffer().fillWithByte(0, 118);
         ASSERT.throws(function() {
-          key.encrypt(message.getBytes());
+          key.encrypt(message, 'RSAES-PKCS1-V1_5');
         });
       });
 
       it('should ensure maximum message length for a 1025-bit key is not exceeded', function() {
         var key = PKI.publicKeyFromPem(tests[1].publicKeyPem);
-        var message = UTIL.createBuffer().fillWithByte(0, 118);
+        var message = new UTIL.ByteBuffer().fillWithByte(0, 118);
         ASSERT.doesNotThrow(function() {
-          key.encrypt(message);
+          key.encrypt(message, 'RSAES-PKCS1-V1_5');
         });
       });
 
@@ -364,7 +364,8 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 
           /* First step, do public key encryption */
           var key = PKI.publicKeyFromPem(params.publicKeyPem);
-          var data = key.encrypt(new UTIL.ByteBuffer(message, 'utf8'));
+          var data = key.encrypt(
+            new UTIL.ByteBuffer(message, 'utf8'), 'RSAES-PKCS1-V1_5');
 
           /* Second step, use private key decryption to verify successful
             encryption. The encrypted message differs every time, since it is
@@ -372,13 +373,16 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
             routine to work, which is tested seperately against an externally
             provided encrypted message. */
           key = PKI.privateKeyFromPem(params.privateKeyPem);
-          ASSERT.equal(key.decrypt(data).toString(), message);
+          ASSERT.equal(
+            key.decrypt(data, 'RSAES-PKCS1-V1_5').toString(), message);
         });
 
         it('should rsa decrypt using a ' + keySize + '-bit key', function() {
           var data = new UTIL.ByteBuffer(params.encrypted, 'base64');
           var key = PKI.privateKeyFromPem(params.privateKeyPem);
-          ASSERT.equal(key.decrypt(data).toString(), 'too many secrets\n');
+          ASSERT.equal(
+            key.decrypt(data, 'RSAES-PKCS1-V1_5').toString(),
+            'too many secrets\n');
         });
 
         it('should rsa sign using a ' + keySize + '-bit key and PKCS#1 v1.5 padding', function() {

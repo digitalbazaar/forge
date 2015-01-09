@@ -436,33 +436,13 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
   key.encrypt = function(data, scheme, schemeOptions) {
     // TODO: if scheme is not first, swap for backwards compatibility
 
-    if(typeof scheme === 'string') {
-      scheme = scheme.toUpperCase();
-    } else if(scheme === undefined) {
-      scheme = 'RSAES-PKCS1-V1_5';
-    }
-
-    if(scheme === 'RSAES-PKCS1-V1_5') {
-      scheme = {
-        encode: function(m, key) {
-          return forge.pkcs1.encode_rsaes(key, m);
-        }
-      };
-    } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
-      scheme = {
-        encode: function(m, key) {
-          return forge.pkcs1.encode_rsa_oaep(key, m, schemeOptions);
-        }
-      };
-    } else if(scheme === 'NONE' || scheme === null) {
-      scheme = {encode: function(e) {return e;}};
-    } else if(typeof scheme === 'string') {
-      throw new Error('Unsupported encryption scheme: "' + scheme + '".');
+    if(!(data instanceof ByteBuffer)) {
+      throw new TypeError('data must be a ByteBuffer.');
     }
 
     // encode message according to scheme and then RSA encrypt
-    // TODO: remove `true` parameter
-    var encoded = scheme.encode(data, key, true);
+    scheme = _getEncryptionScheme(scheme);
+    var encoded = scheme.encode(key, data, schemeOptions);
     return _rsaEncrypt(key, encoded, _rsaPublicOp);
   };
 
@@ -508,22 +488,8 @@ pki.setRsaPublicKey = pki.rsa.setPublicKey = function(n, e) {
       throw new TypeError('data must be a ByteBuffer.');
     }
 
-    if(scheme === null) {
-      scheme = 'NONE';
-    }
-    if(typeof scheme === 'string') {
-      if(!(scheme in signatureSchemes)) {
-        throw new Error('Unsupported scheme: ' + scheme);
-      }
-      scheme = signatureSchemes[scheme];
-    } else if(typeof scheme !== 'object') {
-      throw new TypeError(
-        'scheme must be a string identifying a ' +
-        'registered signature scheme or an object that defines the ' +
-        'required scheme API.');
-    }
-
-    // RSA decrypt, then verify -- which does message decoding
+    // RSA decrypt, then verify according to scheme
+    scheme = _getSignatureScheme(scheme);
     var decrypted = _rsaDecrypt(key, signature, _rsaPublicOp);
     return scheme.verify(key, decrypted, data);
   };
@@ -579,34 +545,10 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
       throw new TypeError('data must be a ByteBuffer.');
     }
 
-    if(typeof scheme === 'string') {
-      scheme = scheme.toUpperCase();
-    } else if(scheme === undefined) {
-      scheme = 'RSAES-PKCS1-V1_5';
-    }
-
-    // RSA decrypt message
+    // RSA decrypt message then decode
+    scheme = _getEncryptionScheme(scheme);
     var decrypted = _rsaDecrypt(key, data, _rsaPrivateOp);
-
-    // decode message according to scheme
-    // TODO: simplify scheme.decode
-    if(scheme === 'RSAES-PKCS1-V1_5') {
-      scheme = {decode: function(decrypted, key) {
-        return forge.pkcs1.decode_rsaes(key, decrypted);
-      }};
-    } else if(scheme === 'RSA-OAEP' || scheme === 'RSAES-OAEP') {
-      scheme = {
-        decode: function(decrypted, key) {
-          return forge.pkcs1.decode_rsa_oaep(key, decrypted, schemeOptions);
-        }
-      };
-    } else if(scheme === 'NONE' || scheme === null) {
-      scheme = {decode: function(decrypted) {return decrypted;}};
-    } else {
-      throw new Error('Unsupported encryption scheme: "' + scheme + '".');
-    }
-    // TODO: remove `false` parameter
-    return scheme.decode(decrypted, key, false);
+    return scheme.decode(key, decrypted, schemeOptions);
   };
 
   /**
@@ -643,22 +585,8 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
   key.sign = function(input, scheme) {
     // TODO: if scheme is not first, swap for backwards compatibility
 
-    if(scheme === null) {
-      scheme = 'NONE';
-    }
-    if(typeof scheme === 'string') {
-      if(!(scheme in signatureSchemes)) {
-        throw new Error('Unsupported scheme: ' + scheme);
-      }
-      scheme = signatureSchemes[scheme];
-    } else if(typeof scheme !== 'object') {
-      throw new TypeError(
-        'scheme must be a string identifying a ' +
-        'registered signature scheme or an object that defines the ' +
-        'required scheme API.');
-    }
-
     // encode message according to scheme and then RSA encrypt
+    scheme = _getSignatureScheme(scheme);
     var encoded = scheme.encode(key, input, scheme);
     return _rsaEncrypt(key, encoded, _rsaPrivateOp);
   };
@@ -1237,6 +1165,23 @@ function _getMillerRabinTests(bits) {
 
 // register signature schemes
 var signatureSchemes = {};
+function _getSignatureScheme(scheme) {
+  if(scheme === null) {
+    scheme = 'NONE';
+  }
+  if(typeof scheme === 'string') {
+    if(!(scheme in signatureSchemes)) {
+      throw new Error('Unsupported scheme: ' + scheme);
+    }
+    scheme = signatureSchemes[scheme];
+  } else if(typeof scheme !== 'object') {
+    throw new TypeError(
+      'scheme must be a string identifying a ' +
+      'registered signature scheme or an object that defines the ' +
+      'required scheme API.');
+  }
+  return scheme;
+}
 signatureSchemes.NONE = {
   encode: function(key, input) {
     if(!(input instanceof ByteBuffer)) {
@@ -1245,9 +1190,6 @@ signatureSchemes.NONE = {
     return input;
   },
   verify: function(key, encoded, input) {
-    if(!(input instanceof ByteBuffer)) {
-      throw new TypeError('input must be a ByteBuffer');
-    }
     // TODO: use compare/equals
     return encoded.getBytes() === input.getBytes();
   }
@@ -1261,9 +1203,6 @@ signatureSchemes['RSASSA-PKCS1-V1_5'] = {
     return forge.pkcs1.encode_rsassa(key, input);
   },
   verify: function(key, encoded, input) {
-    if(!(input instanceof ByteBuffer)) {
-      throw new TypeError('input must be a ByteBuffer');
-    }
     var decoded = forge.pkcs1.decode_rsassa(key, encoded);
     // TODO: use compare/equals
     return input.getBytes() === decoded.getBytes();
@@ -1277,12 +1216,53 @@ signatureSchemes['EME-PKCS1-V1_5'] = {
     return forge.pkcs1.encode_eme_v1_5(key, input, 0x02);
   },
   verify: function(key, encoded, input) {
-    if(!(input instanceof ByteBuffer)) {
-      throw new TypeError('input must be a ByteBuffer');
-    }
     var decoded = forge.pkcs1.decode_eme_v1_5(key, encoded);
     // TODO: use compare/equals
     return input.getBytes() === decoded.getBytes();
+  }
+};
+
+// register encryption schemes
+var encryptionSchemes = {};
+function _getEncryptionScheme(scheme) {
+  if(scheme === null) {
+    scheme = 'NONE';
+  }
+  if(typeof scheme === 'string') {
+    if(!(scheme in encryptionSchemes)) {
+      throw new Error('Unsupported scheme: ' + scheme);
+    }
+    scheme = encryptionSchemes[scheme];
+  } else if(typeof scheme !== 'object') {
+    throw new TypeError(
+      'scheme must be a string identifying a ' +
+      'registered encryption scheme or an object that defines the ' +
+      'required scheme API.');
+  }
+  return scheme;
+}
+encryptionSchemes['RSAES-PKCS1-V1_5'] = {
+  encode: function(key, input, options) {
+    return forge.pkcs1.encode_rsaes(key, input, options);
+  },
+  decode: function(key, input, options) {
+    return forge.pkcs1.decode_rsaes(key, input, options);
+  }
+};
+encryptionSchemes['RSA-OAEP'] = encryptionSchemes['RSAES-OAEP'] = {
+  encode: function(key, input, options) {
+    return forge.pkcs1.encode_rsa_oaep(key, input, options);
+  },
+  decode: function(key, input, options) {
+    return forge.pkcs1.decode_rsa_oaep(key, input, options);
+  }
+};
+encryptionSchemes.NONE = {
+  encode: function(key, input) {
+    return input;
+  },
+  decode: function(key, input) {
+    return input;
   }
 };
 

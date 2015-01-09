@@ -655,7 +655,7 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.rsaEncryption:
           case forge.pki.oids.desCBC:
             var key = privKey.decrypt(
-              recipient.encryptedContent.content.copy());
+              recipient.encryptedContent.content.copy(), 'RSAES-PKCS1-V1_5');
             msg.encryptedContent.key = key;
             break;
 
@@ -778,7 +778,7 @@ p7.createEnvelopedData = function() {
           case forge.pki.oids.rsaEncryption:
             recipient.encryptedContent.content =
               recipient.encryptedContent.key.encrypt(
-                msg.encryptedContent.key.copy());
+                msg.encryptedContent.key.copy(), 'RSAES-PKCS1-V1_5');
             break;
 
           default:

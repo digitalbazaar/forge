@@ -234,7 +234,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
 
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
-        p7.recipients[0].encryptedContent.content);
+        p7.recipients[0].encryptedContent.content, 'RSAES-PKCS1-V1_5');
       ASSERT.equal(
         decryptedKey.toString('hex'),
         p7.encryptedContent.key.toString('hex'));
@@ -277,7 +277,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, CIPHER, UTIL) {
 
       // decryption of the asym. encrypted data should reveal the symmetric key
       var decryptedKey = privateKey.decrypt(
-        p7.recipients[0].encryptedContent.content);
+        p7.recipients[0].encryptedContent.content, 'RSAES-PKCS1-V1_5');
       ASSERT.equal(
         decryptedKey.toString('hex'),
         p7.encryptedContent.key.toString('hex'));

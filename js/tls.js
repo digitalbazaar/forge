@@ -1370,7 +1370,8 @@ tls.handleClientKeyExchange = function(c, record, length) {
     try {
       // decrypt 48-byte pre-master secret
       var sp = c.session.sp;
-      sp.pre_master_secret = key.decrypt(msg.enc_pre_master_secret);
+      sp.pre_master_secret = key.decrypt(
+        msg.enc_pre_master_secret, 'RSAES-PKCS1-V1_5');
 
       // ensure client hello version matches first 2 bytes
       var version = c.session.clientHelloVersion;
@@ -3151,7 +3152,7 @@ tls.createClientKeyExchange = function(c) {
 
   // RSA-encrypt the pre-master secret
   var key = c.session.serverCertificate.publicKey;
-  b = key.encrypt(sp.pre_master_secret.copy());
+  b = key.encrypt(sp.pre_master_secret.copy(), 'RSAES-PKCS1-V1_5');
 
   /* Note: The encrypted pre-master secret will be stored in a
     public-key-encrypted opaque vector that has the length prefixed using
