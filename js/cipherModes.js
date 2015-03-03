@@ -184,6 +184,7 @@ modes.cbc.prototype.unpad = function(output, options) {
 modes.cfb = function(options) {
   options = options || {};
   this.name = 'CFB';
+  this.byteStreamMode = true;
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
   this._blocks = this.blockSize / 4;
@@ -198,36 +199,43 @@ modes.cfb.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._cursor = this.blockSize;
 };
 
 modes.cfb.prototype.encrypt = function(input, output) {
-  // encrypt block
-  this.cipher.encrypt(this._inBlock, this._outBlock);
+  // encrypt block while cursor moves to the end of the block
+  if (this._cursor === this.blockSize) {
+    this._cursor = 0;
+    this.cipher.encrypt(this._inBlock, this._outBlock);
+    this._inBlock.length = 0;
+  }
 
   // XOR input with output, write input as output
-  for(var i = 0; i < this._blocks; ++i) {
-    this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
-    output.putInt32(this._inBlock[i]);
+  var endPos = Math.min(this.blockSize - this._cursor, input.length()) + this._cursor;
+  for (var i = this._cursor, offset, result; i < endPos; ++i, ++this._cursor) {
+    offset = (3 - (i % 4)) * 8;
+    result = input.getByte() ^ ((this._outBlock[i/4|0] & (0xFF << offset)) >>> offset);
+    this._inBlock[i/4|0] |= result << offset;
+    output.putByte(result);
   }
 };
 
 modes.cfb.prototype.decrypt = function(input, output) {
   // encrypt block (CFB always uses encryption mode)
-  this.cipher.encrypt(this._inBlock, this._outBlock);
+  if (this._cursor === this.blockSize) {
+    this._cursor = 0;
+    this.cipher.encrypt(this._inBlock, this._outBlock);
+    this._inBlock.length = 0;
+  }
 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
-    this._inBlock[i] = input.getInt32();
-    output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
+  var endPos = Math.min(this.blockSize - this._cursor, input.length()) + this._cursor;
+  for (var i = this._cursor, offset, cipherText; i < endPos; ++i, ++this._cursor) {
+    offset = (3 - (i % 4)) * 8;
+    cipherText = input.getByte();
+    this._inBlock[i/4|0] |= cipherText << offset;
+    output.putByte(cipherText ^ ((this._outBlock[i/4|0] & (0xFF << offset)) >>> offset));
   }
-};
-
-modes.cfb.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
 };
 
 /** Output feedback (OFB) **/
