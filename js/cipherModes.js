@@ -184,6 +184,7 @@ modes.cbc.prototype.unpad = function(output, options) {
 modes.cfb = function(options) {
   options = options || {};
   this.name = 'CFB';
+  this.byteStreamMode = true;
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
   this._blocks = this.blockSize / 4;
@@ -198,37 +199,89 @@ modes.cfb.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._cursor = this.blockSize * 8;
 };
 
 modes.cfb.prototype.encrypt = function(input, output) {
-  // encrypt block
-  this.cipher.encrypt(this._inBlock, this._outBlock);
+  // encrypt block while cursor moves to the end of the block
+  if (this._cursor === this.blockSize * 8) {
+    this._cursor = 0;
+    this.cipher.encrypt(this._inBlock, this._outBlock);
+    this._inBlock.length = 0;
+  }
+
+  var readLength = Math.min(this.blockSize * 8 - this._cursor, input.length() * 8),
+      startBlock = Math.floor(this._cursor / 32),
+      endBlock   = Math.ceil((this._cursor + readLength) / 32),
+      headOffset = this._cursor % 32,
+      headLength = Math.min(32 - headOffset, input.length() * 8),
+      headRemain = 32 - headOffset - headLength,
+      tailLength = (this._cursor + readLength) % 32 || 32,
+      tailOffset = 32 - tailLength;
 
   // XOR input with output, write input as output
-  for(var i = 0; i < this._blocks; ++i) {
-    this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
-    output.putInt32(this._inBlock[i]);
+  for (var i = startBlock, mask, plain, result; i < endBlock; ++i) {
+    if (i === startBlock && (!!headOffset || !!headRemain)) {
+      mask = ((1 << headLength) - 1) << headRemain;
+      plain = input["getInt" + headLength]();
+      result = plain ^ ((this._outBlock[i] & mask) >>> headRemain);
+      this._inBlock[i] |= result << headRemain;
+      output["putInt" + headLength](result);
+      this._cursor += headLength;
+    } else if (i === endBlock - 1 && !!tailOffset) {
+      mask = ((1 << tailLength) - 1) << tailOffset;
+      plain = input["getInt" + tailLength]();
+      result = plain ^ ((this._outBlock[i] & mask) >>> tailOffset);
+      this._inBlock[i] |= result << tailOffset;
+      output["putInt" + tailLength](result);
+      this._cursor += tailLength;
+    } else {
+      this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
+      output.putInt32(this._inBlock[i]);
+      this._cursor += 32;
+    }
   }
 };
 
 modes.cfb.prototype.decrypt = function(input, output) {
   // encrypt block (CFB always uses encryption mode)
-  this.cipher.encrypt(this._inBlock, this._outBlock);
+  if (this._cursor === this.blockSize * 8) {
+    this._cursor = 0;
+    this.cipher.encrypt(this._inBlock, this._outBlock);
+    this._inBlock.length = 0;
+  }
+
+  var readLength = Math.min(this.blockSize * 8 - this._cursor, input.length() * 8),
+      startBlock = Math.floor(this._cursor / 32),
+      endBlock   = Math.ceil((this._cursor + readLength) / 32),
+      headOffset = this._cursor % 32,
+      headLength = Math.min(32 - headOffset, input.length() * 8),
+      headRemain = 32 - headOffset - headLength,
+      tailLength = (this._cursor + readLength) % 32 || 32,
+      tailOffset = 32 - tailLength;
 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
-    this._inBlock[i] = input.getInt32();
-    output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
+  for (var i = startBlock, mask, cipherText; i < endBlock; ++i) {
+    if (i === startBlock && (!!headOffset || !!headRemain)) {
+      mask = ((1 << headLength) - 1) << headRemain;
+      cipherText = input["getInt" + headLength]();
+      this._inBlock[i] |= cipherText << headRemain;
+      output["putInt" + headLength](cipherText ^ ((this._outBlock[i] & mask) >>> headRemain));
+      this._cursor += headLength;
+    } else if (i === endBlock - 1 && !!tailOffset) {
+      mask = ((1 << tailLength) - 1) << tailOffset;
+      cipherText = input["getInt" + tailLength]();
+      this._inBlock[i] |= cipherText << tailOffset;
+      output["putInt" + tailLength](cipherText ^ ((this._outBlock[i] & mask) >>> tailOffset));
+      this._cursor += tailLength;
+    } else {
+      this._inBlock[i] = input.getInt32();
+      output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
+      this._cursor += 32;
+    }
   }
 };
 
-modes.cfb.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
-};
 
 /** Output feedback (OFB) **/
 

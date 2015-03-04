@@ -170,7 +170,7 @@ BlockCipher.prototype.update = function(input) {
 
   // do cipher operation while input contains full blocks or if finishing
   while(this._input.length() >= this.blockSize ||
-    (this._input.length() > 0 && this._finish)) {
+    (this._input.length() > 0 && (this._finish || this.mode.byteStreamMode))) {
     this._op.call(this.mode, this._input, this.output);
   }
 
