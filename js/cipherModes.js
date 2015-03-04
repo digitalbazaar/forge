@@ -220,21 +220,16 @@ modes.cfb.prototype.encrypt = function(input, output) {
       tailOffset = 32 - tailLength;
 
   // XOR input with output, write input as output
-  for (var i = startBlock, mask, plain, result; i < endBlock; ++i) {
-    if (i === startBlock && (!!headOffset || !!headRemain)) {
-      mask = ((1 << headLength) - 1) << headRemain;
-      plain = input["getInt" + headLength]();
-      result = plain ^ ((this._outBlock[i] & mask) >>> headRemain);
-      this._inBlock[i] |= result << headRemain;
-      output["putInt" + headLength](result);
-      this._cursor += headLength;
-    } else if (i === endBlock - 1 && !!tailOffset) {
-      mask = ((1 << tailLength) - 1) << tailOffset;
-      plain = input["getInt" + tailLength]();
-      result = plain ^ ((this._outBlock[i] & mask) >>> tailOffset);
-      this._inBlock[i] |= result << tailOffset;
-      output["putInt" + tailLength](result);
-      this._cursor += tailLength;
+  for (var i = startBlock, mask, plain, result, len, off; i < endBlock; ++i) {
+    if ((i === startBlock && (!!headOffset || !!headRemain)) || (i === endBlock - 1 && !!tailOffset)) {
+      len = (i === startBlock) ? headLength : tailLength;
+      off = (i === startBlock) ? headRemain : tailOffset;
+      mask = ((1 << len) - 1) << off;
+      plain = input["getInt" + len]();
+      result = plain ^ ((this._outBlock[i] & mask) >>> off);
+      this._inBlock[i] |= result << off;
+      output["putInt" + len](result);
+      this._cursor += len;
     } else {
       this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
       output.putInt32(this._inBlock[i]);
@@ -261,19 +256,15 @@ modes.cfb.prototype.decrypt = function(input, output) {
       tailOffset = 32 - tailLength;
 
   // XOR input with output
-  for (var i = startBlock, mask, cipherText; i < endBlock; ++i) {
-    if (i === startBlock && (!!headOffset || !!headRemain)) {
-      mask = ((1 << headLength) - 1) << headRemain;
-      cipherText = input["getInt" + headLength]();
-      this._inBlock[i] |= cipherText << headRemain;
-      output["putInt" + headLength](cipherText ^ ((this._outBlock[i] & mask) >>> headRemain));
-      this._cursor += headLength;
-    } else if (i === endBlock - 1 && !!tailOffset) {
-      mask = ((1 << tailLength) - 1) << tailOffset;
-      cipherText = input["getInt" + tailLength]();
-      this._inBlock[i] |= cipherText << tailOffset;
-      output["putInt" + tailLength](cipherText ^ ((this._outBlock[i] & mask) >>> tailOffset));
-      this._cursor += tailLength;
+  for (var i = startBlock, mask, cipherText, len, off; i < endBlock; ++i) {
+    if ((i === startBlock && (!!headOffset || !!headRemain)) || (i === endBlock - 1 && !!tailOffset)) {
+      len = (i === startBlock) ? headLength : tailLength;
+      off = (i === startBlock) ? headRemain : tailOffset;
+      mask = ((1 << len) - 1) << off;
+      cipherText = input["getInt" + len]();
+      this._inBlock[i] |= cipherText << off;
+      output["putInt" + len](cipherText ^ ((this._outBlock[i] & mask) >>> off));
+      this._cursor += len;
     } else {
       this._inBlock[i] = input.getInt32();
       output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
@@ -323,19 +314,16 @@ modes.ofb.prototype.encrypt = function(input, output) {
       headRemain = 32 - headOffset - headLength,
       tailLength = (this._cursor + readLength) % 32 || 32,
       tailOffset = 32 - tailLength;
- 
+
   // XOR input with output and update next input
-  for (var i = startBlock, out; i < endBlock; ++i) {
-    if (i === startBlock && (!!headOffset || !!headRemain)) {
-      out = this._outBlock[i] & (((1 << headLength) - 1) << headRemain);
-      output["putInt" + headLength](input["getInt" + headLength]() ^ (out >>> headRemain));
+  for (var i = startBlock, out, len, off; i < endBlock; ++i) {
+    if ((i === startBlock && (!!headOffset || !!headRemain)) || (i === endBlock - 1 && !!tailOffset)) {
+      len = (i === startBlock) ? headLength : tailLength;
+      off = (i === startBlock) ? headRemain : tailOffset;
+      out = this._outBlock[i] & (((1 << len) - 1) << off);
+      output["putInt" + len](input["getInt" + len]() ^ (out >>> off));
       this._inBlock[i] |= out;
-      this._cursor += headLength;
-    } else if (i === endBlock - 1 && !!tailOffset) {
-      out = this._outBlock[i] & (((1 << tailLength) - 1) << tailOffset);
-      output["putInt" + tailLength](input["getInt" + tailLength]() ^ (out >>> tailOffset));
-      this._inBlock[i] |= out;
-      this._cursor += tailLength;
+      this._cursor += len;
     } else {
       output.putInt32(input.getInt32() ^ this._outBlock[i]);
       this._inBlock[i] = this._outBlock[i];
@@ -389,17 +377,15 @@ modes.ctr.prototype.encrypt = function(input, output) {
       headRemain = 32 - headOffset - headLength,
       tailLength = (this._cursor + readLength) % 32 || 32,
       tailOffset = 32 - tailLength;
- 
+
   // XOR input with output
-  for (var i = startBlock, out; i < endBlock; ++i) {
-    if (i === startBlock && (!!headOffset || !!headRemain)) {
-      out = this._outBlock[i] & (((1 << headLength) - 1) << headRemain);
-      output["putInt" + headLength](input["getInt" + headLength]() ^ (out >>> headRemain));
-      this._cursor += headLength;
-    } else if (i === endBlock - 1 && !!tailOffset) {
-      out = this._outBlock[i] & (((1 << tailLength) - 1) << tailOffset);
-      output["putInt" + tailLength](input["getInt" + tailLength]() ^ (out >>> tailOffset));
-      this._cursor += tailLength;
+  for (var i = startBlock, out, len, off; i < endBlock; ++i) {
+    if ((i === startBlock && (!!headOffset || !!headRemain)) || (i === endBlock - 1 && !!tailOffset)) {
+      len = (i === startBlock) ? headLength : tailLength;
+      off = (i === startBlock) ? headRemain : tailOffset;
+      out = this._outBlock[i] & (((1 << len) - 1) << off);
+      output["putInt" + len](input["getInt" + len]() ^ (out >>> off));
+      this._cursor += len;
     } else {
       output.putInt32(input.getInt32() ^ this._outBlock[i]);
       this._cursor += 32;
