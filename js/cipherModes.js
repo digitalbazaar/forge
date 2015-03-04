@@ -352,6 +352,7 @@ modes.ofb.prototype.decrypt = modes.ofb.prototype.encrypt;
 modes.ctr = function(options) {
   options = options || {};
   this.name = 'CTR';
+  this.byteStreamMode = true;
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
   this._blocks = this.blockSize / 4;
@@ -366,30 +367,47 @@ modes.ctr.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._cursor = this.blockSize * 8;
 };
 
 modes.ctr.prototype.encrypt = function(input, output) {
-  // encrypt block (CTR always uses encryption mode)
-  this.cipher.encrypt(this._inBlock, this._outBlock);
+  // encrypt block while cursor moves to the end of the block
+  // (CTR always uses encryption mode)
+  if (this._cursor === this.blockSize * 8) {
+    this._cursor = 0;
+    this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // increment counter (input block)
-  inc32(this._inBlock);
+    // increment counter (input block)
+    inc32(this._inBlock);
+  }
 
+  var readLength = Math.min(this.blockSize * 8 - this._cursor, input.length() * 8),
+      startBlock = Math.floor(this._cursor / 32),
+      endBlock   = Math.ceil((this._cursor + readLength) / 32),
+      headOffset = this._cursor % 32,
+      headLength = Math.min(32 - headOffset, input.length() * 8),
+      headRemain = 32 - headOffset - headLength,
+      tailLength = (this._cursor + readLength) % 32 || 32,
+      tailOffset = 32 - tailLength;
+ 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
-    output.putInt32(input.getInt32() ^ this._outBlock[i]);
+  for (var i = startBlock, out; i < endBlock; ++i) {
+    if (i === startBlock && (!!headOffset || !!headRemain)) {
+      out = this._outBlock[i] & (((1 << headLength) - 1) << headRemain);
+      output["putInt" + headLength](input["getInt" + headLength]() ^ (out >>> headRemain));
+      this._cursor += headLength;
+    } else if (i === endBlock - 1 && !!tailOffset) {
+      out = this._outBlock[i] & (((1 << tailLength) - 1) << tailOffset);
+      output["putInt" + tailLength](input["getInt" + tailLength]() ^ (out >>> tailOffset));
+      this._cursor += tailLength;
+    } else {
+      output.putInt32(input.getInt32() ^ this._outBlock[i]);
+      this._cursor += 32;
+    }
   }
 };
 
 modes.ctr.prototype.decrypt = modes.ctr.prototype.encrypt;
-
-modes.ctr.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
-};
 
 
 /** Galois/Counter Mode (GCM) **/
