@@ -739,7 +739,7 @@ function transformIV(iv) {
     // convert iv byte array into byte buffer
     var tmp = iv;
     iv = forge.util.createBuffer();
-    for(var i = 0; i < iv.length; ++i) {
+    for(var i = 0; i < tmp.length; ++i) {
       iv.putByte(tmp[i]);
     }
   }
