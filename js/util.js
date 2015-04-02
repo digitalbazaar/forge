@@ -2266,12 +2266,12 @@ util.getQueryVariables = function(query) {
    if(typeof(query) === 'undefined') {
      // set cached variables if needed
      if(_queryVariables === null) {
-       if(typeof(window) === 'undefined') {
-          // no query variables available
-          _queryVariables = {};
-       } else {
+       if(typeof(window) !== 'undefined' && window.location && window.location.search) {
           // parse window search query
           _queryVariables = parse(window.location.search.substring(1));
+       } else {
+          // no query variables available
+          _queryVariables = {};
        }
      }
      rval = _queryVariables;
