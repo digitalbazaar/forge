@@ -29,7 +29,12 @@ modes.ecb = function(options) {
 
 modes.ecb.prototype.start = function(options) {};
 
-modes.ecb.prototype.encrypt = function(input, output) {
+modes.ecb.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // get next block
   for(var i = 0; i < this._blocks; ++i) {
     this._inBlock[i] = input.getInt32();
@@ -44,7 +49,12 @@ modes.ecb.prototype.encrypt = function(input, output) {
   }
 };
 
-modes.ecb.prototype.decrypt = function(input, output) {
+modes.ecb.prototype.decrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // get next block
   for(var i = 0; i < this._blocks; ++i) {
     this._inBlock[i] = input.getInt32();
@@ -117,7 +127,12 @@ modes.cbc.prototype.start = function(options) {
   }
 };
 
-modes.cbc.prototype.encrypt = function(input, output) {
+modes.cbc.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // get next block
   // CBC XOR's IV (or previous block) with plaintext
   for(var i = 0; i < this._blocks; ++i) {
@@ -134,7 +149,12 @@ modes.cbc.prototype.encrypt = function(input, output) {
   this._prev = this._outBlock;
 };
 
-modes.cbc.prototype.decrypt = function(input, output) {
+modes.cbc.prototype.decrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // get next block
   for(var i = 0; i < this._blocks; ++i) {
     this._inBlock[i] = input.getInt32();
@@ -200,7 +220,12 @@ modes.cfb.prototype.start = function(options) {
   this._inBlock = this._iv.slice(0);
 };
 
-modes.cfb.prototype.encrypt = function(input, output) {
+modes.cfb.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
@@ -211,7 +236,12 @@ modes.cfb.prototype.encrypt = function(input, output) {
   }
 };
 
-modes.cfb.prototype.decrypt = function(input, output) {
+modes.cfb.prototype.decrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block (CFB always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
@@ -251,7 +281,12 @@ modes.ofb.prototype.start = function(options) {
   this._inBlock = this._iv.slice(0);
 };
 
-modes.ofb.prototype.encrypt = function(input, output) {
+modes.ofb.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block (OFB always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
@@ -294,7 +329,12 @@ modes.ctr.prototype.start = function(options) {
   this._inBlock = this._iv.slice(0);
 };
 
-modes.ctr.prototype.encrypt = function(input, output) {
+modes.ctr.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block (CTR always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
@@ -431,7 +471,12 @@ modes.gcm.prototype.start = function(options) {
   }
 };
 
-modes.gcm.prototype.encrypt = function(input, output) {
+modes.gcm.prototype.encrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
@@ -475,7 +520,12 @@ modes.gcm.prototype.encrypt = function(input, output) {
   this._s = this.ghash(this._hashSubkey, this._s, this._outBlock);
 };
 
-modes.gcm.prototype.decrypt = function(input, output) {
+modes.gcm.prototype.decrypt = function(input, output, finish) {
+  // not enough input to encrypt
+  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+    return true;
+  }
+
   // encrypt block (GCM always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 

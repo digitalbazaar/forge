@@ -163,16 +163,13 @@ BlockCipher.prototype.start = function(options) {
  * @param input the buffer to read from.
  */
 BlockCipher.prototype.update = function(input) {
-  if(!this._finish) {
-    // not finishing, so fill the input buffer with more input
+  if(input) {
+    // input given, so empty it into the input buffer
     this._input.putBuffer(input);
   }
 
-  // do cipher operation while input contains full blocks or if finishing
-  while(this._input.length() >= this.blockSize ||
-    (this._input.length() > 0 && this._finish)) {
-    this._op.call(this.mode, this._input, this.output);
-  }
+  // do cipher operation until it indicates it needs more input
+  while(!this._op.call(this.mode, this._input, this.output, this._finish)) {}
 
   // free consumed memory from input buffer
   this._input.compact();
