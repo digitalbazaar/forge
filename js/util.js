@@ -320,7 +320,8 @@ util.ByteStringBuffer.prototype.putInt32Le = function(i) {
  *
  * @return this buffer.
  */
-util.ByteStringBuffer.prototype.putInt = function(i, n) {
+util.ByteStringBuffer.prototype.putInt  =
+util.ByteStringBuffer.prototype.putInt8 = function(i, n) {
   var bytes = '';
   do {
     n -= 8;
@@ -463,7 +464,8 @@ util.ByteStringBuffer.prototype.getInt32Le = function() {
  *
  * @return the integer.
  */
-util.ByteStringBuffer.prototype.getInt = function(n) {
+util.ByteStringBuffer.prototype.getInt  =
+util.ByteStringBuffer.prototype.getInt8 = function(n) {
   var rval = 0;
   do {
     rval = (rval << 8) + this.data.charCodeAt(this.read++);
