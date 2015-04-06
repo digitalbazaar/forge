@@ -22,9 +22,9 @@ modes.ecb = function(options) {
   this.name = 'ECB';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
-  this._inBlock = new Array(this._blocks);
-  this._outBlock = new Array(this._blocks);
+  this._ints = this.blockSize / 4;
+  this._inBlock = new Array(this._ints);
+  this._outBlock = new Array(this._ints);
 };
 
 modes.ecb.prototype.start = function(options) {};
@@ -36,7 +36,7 @@ modes.ecb.prototype.encrypt = function(input, output, finish) {
   }
 
   // get next block
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = input.getInt32();
   }
 
@@ -44,7 +44,7 @@ modes.ecb.prototype.encrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // write output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._outBlock[i]);
   }
 };
@@ -56,7 +56,7 @@ modes.ecb.prototype.decrypt = function(input, output, finish) {
   }
 
   // get next block
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = input.getInt32();
   }
 
@@ -64,7 +64,7 @@ modes.ecb.prototype.decrypt = function(input, output, finish) {
   this.cipher.decrypt(this._inBlock, this._outBlock);
 
   // write output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._outBlock[i]);
   }
 };
@@ -104,9 +104,9 @@ modes.cbc = function(options) {
   this.name = 'CBC';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
-  this._inBlock = new Array(this._blocks);
-  this._outBlock = new Array(this._blocks);
+  this._ints = this.blockSize / 4;
+  this._inBlock = new Array(this._ints);
+  this._outBlock = new Array(this._ints);
 };
 
 modes.cbc.prototype.start = function(options) {
@@ -135,7 +135,7 @@ modes.cbc.prototype.encrypt = function(input, output, finish) {
 
   // get next block
   // CBC XOR's IV (or previous block) with plaintext
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = this._prev[i] ^ input.getInt32();
   }
 
@@ -143,7 +143,7 @@ modes.cbc.prototype.encrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // write output, save previous block
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._outBlock[i]);
   }
   this._prev = this._outBlock;
@@ -156,7 +156,7 @@ modes.cbc.prototype.decrypt = function(input, output, finish) {
   }
 
   // get next block
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = input.getInt32();
   }
 
@@ -165,7 +165,7 @@ modes.cbc.prototype.decrypt = function(input, output, finish) {
 
   // write output, save previous ciphered block
   // CBC XOR's IV (or previous block) with ciphertext
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._prev[i] ^ this._outBlock[i]);
   }
   this._prev = this._inBlock.slice(0);
@@ -206,9 +206,10 @@ modes.cfb = function(options) {
   this.name = 'CFB';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
+  this._ints = this.blockSize / 4;
   this._inBlock = null;
-  this._outBlock = new Array(this._blocks);
+  this._outBlock = new Array(this._ints);
+  this._partialBlock = new Array(this._ints);
 };
 
 modes.cfb.prototype.start = function(options) {
@@ -230,7 +231,7 @@ modes.cfb.prototype.encrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // XOR input with output, write input as output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
     output.putInt32(this._inBlock[i]);
   }
@@ -246,7 +247,7 @@ modes.cfb.prototype.decrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._inBlock[i] = input.getInt32();
     output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
   }
@@ -267,9 +268,9 @@ modes.ofb = function(options) {
   this.name = 'OFB';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
+  this._ints = this.blockSize / 4;
   this._inBlock = null;
-  this._outBlock = new Array(this._blocks);
+  this._outBlock = new Array(this._ints);
 };
 
 modes.ofb.prototype.start = function(options) {
@@ -291,7 +292,7 @@ modes.ofb.prototype.encrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // XOR input with output and update next input
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(input.getInt32() ^ this._outBlock[i]);
     this._inBlock[i] = this._outBlock[i];
   }
@@ -315,9 +316,9 @@ modes.ctr = function(options) {
   this.name = 'CTR';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
+  this._ints = this.blockSize / 4;
   this._inBlock = null;
-  this._outBlock = new Array(this._blocks);
+  this._outBlock = new Array(this._ints);
 };
 
 modes.ctr.prototype.start = function(options) {
@@ -342,7 +343,7 @@ modes.ctr.prototype.encrypt = function(input, output, finish) {
   inc32(this._inBlock);
 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(input.getInt32() ^ this._outBlock[i]);
   }
 };
@@ -365,9 +366,9 @@ modes.gcm = function(options) {
   this.name = 'GCM';
   this.cipher = options.cipher;
   this.blockSize = options.blockSize || 16;
-  this._blocks = this.blockSize / 4;
-  this._inBlock = new Array(this._blocks);
-  this._outBlock = new Array(this._blocks);
+  this._ints = this.blockSize / 4;
+  this._inBlock = new Array(this._ints);
+  this._outBlock = new Array(this._ints);
 
   // R is actually this value concatenated with 120 more zero bits, but
   // we only XOR against R so the other zeros have no effect -- we just
@@ -411,14 +412,14 @@ modes.gcm.prototype.start = function(options) {
   }
 
   // create tmp storage for hash calculation
-  this._hashBlock = new Array(this._blocks);
+  this._hashBlock = new Array(this._ints);
 
   // no tag generated yet
   this.tag = null;
 
   // generate hash subkey
   // (apply block cipher to "zero" block)
-  this._hashSubkey = new Array(this._blocks);
+  this._hashSubkey = new Array(this._ints);
   this.cipher.encrypt([0, 0, 0, 0], this._hashSubkey);
 
   // generate table M
@@ -487,7 +488,7 @@ modes.gcm.prototype.encrypt = function(input, output, finish) {
   var inputLength = input.length();
 
   // XOR input with output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this._outBlock[i] ^= input.getInt32();
   }
 
@@ -512,7 +513,7 @@ modes.gcm.prototype.encrypt = function(input, output, finish) {
     this._cipherLength += this.blockSize;
   }
 
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._outBlock[i]);
   }
 
@@ -543,7 +544,7 @@ modes.gcm.prototype.decrypt = function(input, output, finish) {
   this._s = this.ghash(this._hashSubkey, this._s, this._hashBlock);
 
   // XOR hash input with output
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     output.putInt32(this._outBlock[i] ^ this._hashBlock[i]);
   }
 
@@ -575,7 +576,7 @@ modes.gcm.prototype.afterFinish = function(output, options) {
   // do GCTR(J_0, S)
   var tag = [];
   this.cipher.encrypt(this._j0, tag);
-  for(var i = 0; i < this._blocks; ++i) {
+  for(var i = 0; i < this._ints; ++i) {
     this.tag.putInt32(this._s[i] ^ tag[i]);
   }
 
