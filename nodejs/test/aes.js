@@ -363,6 +363,37 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
               cipher.output.toHex() : cipher.output.getBytes();
             ASSERT.equal(out, inputs[i]);
           });
+
+          it('should aes-128-cfb encrypt (one byte at a time): ' + inputs[i], function() {
+            // encrypt
+            var cipher = CIPHER.createCipher('AES-CFB', key);
+            cipher.start({iv: iv});
+            input = UTIL.createBuffer(input);
+            var out = UTIL.createBuffer();
+            while(input.length() > 0) {
+              cipher.update(UTIL.createBuffer(input.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            ASSERT.equal(out.toHex(), outputs[i]);
+          });
+
+          it('should aes-128-cfb decrypt (one byte at a time): ' + outputs[i], function() {
+            // decrypt
+            var cipher = CIPHER.createDecipher('AES-CFB', key);
+            cipher.start({iv: iv});
+            output = UTIL.createBuffer(output);
+            var out = UTIL.createBuffer();
+            while(output.length() > 0) {
+              cipher.update(UTIL.createBuffer(output.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            var out = (i !== 5) ? out.toHex() : out.getBytes();
+            ASSERT.equal(out, inputs[i]);
+          });
         })(i);
       }
     })();

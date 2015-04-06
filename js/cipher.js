@@ -168,8 +168,9 @@ BlockCipher.prototype.update = function(input) {
     this._input.putBuffer(input);
   }
 
-  // do cipher operation until it indicates it needs more input
-  while(!this._op.call(this.mode, this._input, this.output, this._finish)) {}
+  // do cipher operation until it needs more input and not finished
+  while(!this._op.call(this.mode, this._input, this.output, this._finish) &&
+    !this._finish) {}
 
   // free consumed memory from input buffer
   this._input.compact();

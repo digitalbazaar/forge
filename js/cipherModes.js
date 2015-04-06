@@ -210,6 +210,8 @@ modes.cfb = function(options) {
   this._inBlock = null;
   this._outBlock = new Array(this._ints);
   this._partialBlock = new Array(this._ints);
+  this._partialOutput = forge.util.createBuffer();
+  this._partialBytes = 0;
 };
 
 modes.cfb.prototype.start = function(options) {
@@ -223,34 +225,120 @@ modes.cfb.prototype.start = function(options) {
 
 modes.cfb.prototype.encrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  if(input.length() === 0) {
     return true;
   }
 
   // encrypt block
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // XOR input with output, write input as output
-  for(var i = 0; i < this._ints; ++i) {
-    this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
-    output.putInt32(this._inBlock[i]);
+  // handle full block
+  if(this._partialBytes === 0 && input.length() >= this.blockSize) {
+    // XOR input with output, write input as output
+    for(var i = 0; i < this._ints; ++i) {
+      this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
+      output.putInt32(this._inBlock[i]);
+    }
+    return;
   }
+
+  // handle partial block
+  var partialBytes = (this.blockSize - input.length()) % this.blockSize;
+  if(partialBytes > 0) {
+    partialBytes = this.blockSize - partialBytes;
+  }
+
+  // XOR input with output, write input as partial output
+  this._partialOutput.clear();
+  for(var i = 0; i < this._ints; ++i) {
+    this._partialBlock[i] = input.getInt32() ^ this._outBlock[i];
+    this._partialOutput.putInt32(this._partialBlock[i]);
+  }
+
+  if(partialBytes > 0) {
+    // block still incomplete, restore input buffer
+    input.read -= this.blockSize;
+  } else {
+    // block complete, update input block
+    for(var i = 0; i < this._ints; ++i) {
+      this._inBlock[i] = this._partialBlock[i];
+    }
+  }
+
+  // skip any previous partial bytes
+  if(this._partialBytes > 0) {
+    this._partialOutput.getBytes(this._partialBytes);
+  }
+
+  if(partialBytes > 0 && !finish) {
+    output.putBytes(this._partialOutput.getBytes(
+      partialBytes - this._partialBytes));
+    this._partialBytes = partialBytes;
+  } else {
+    this._partialBytes = 0;
+    output.putBuffer(this._partialOutput);
+  }
+
+  return !finish && partialBytes > 0;
 };
 
 modes.cfb.prototype.decrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  if(input.length() === 0) {
     return true;
   }
 
   // encrypt block (CFB always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // XOR input with output
-  for(var i = 0; i < this._ints; ++i) {
-    this._inBlock[i] = input.getInt32();
-    output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
+  // handle full block
+  if(this._partialBytes === 0 && input.length() >= this.blockSize) {
+    // XOR input with output, write input as output
+    for(var i = 0; i < this._ints; ++i) {
+      this._inBlock[i] = input.getInt32();
+      output.putInt32(this._inBlock[i] ^ this._outBlock[i]);
+    }
+    return;
   }
+
+  // handle partial block
+  var partialBytes = (this.blockSize - input.length()) % this.blockSize;
+  if(partialBytes > 0) {
+    partialBytes = this.blockSize - partialBytes;
+  }
+
+  // XOR input with output, write input as partial output
+  this._partialOutput.clear();
+  for(var i = 0; i < this._ints; ++i) {
+    this._partialBlock[i] = input.getInt32();
+    this._partialOutput.putInt32(this._partialBlock[i] ^ this._outBlock[i]);
+  }
+
+  if(partialBytes > 0) {
+    // block still incomplete, restore input buffer
+    input.read -= this.blockSize;
+  } else {
+    // block complete, update input block
+    for(var i = 0; i < this._ints; ++i) {
+      this._inBlock[i] = this._partialBlock[i];
+    }
+  }
+
+  // skip any previous partial bytes
+  if(this._partialBytes > 0) {
+    this._partialOutput.getBytes(this._partialBytes);
+  }
+
+  if(partialBytes > 0 && !finish) {
+    output.putBytes(this._partialOutput.getBytes(
+      partialBytes - this._partialBytes));
+    this._partialBytes = partialBytes;
+  } else {
+    this._partialBytes = 0;
+    output.putBuffer(this._partialOutput);
+  }
+
+  return !finish && partialBytes > 0;
 };
 
 modes.cfb.prototype.afterFinish = function(output, options) {
