@@ -368,10 +368,10 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // encrypt
             var cipher = CIPHER.createCipher('AES-CFB', key);
             cipher.start({iv: iv});
-            input = UTIL.createBuffer(input);
+            var input_ = UTIL.createBuffer(input);
             var out = UTIL.createBuffer();
-            while(input.length() > 0) {
-              cipher.update(UTIL.createBuffer(input.getBytes(1)));
+            while(input_.length() > 0) {
+              cipher.update(UTIL.createBuffer(input_.getBytes(1)));
               ASSERT.equal(cipher.output.length(), 1);
               out.putByte(cipher.output.getByte());
             }
@@ -383,15 +383,15 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-CFB', key);
             cipher.start({iv: iv});
-            output = UTIL.createBuffer(output);
+            var output_ = UTIL.createBuffer(output);
             var out = UTIL.createBuffer();
-            while(output.length() > 0) {
-              cipher.update(UTIL.createBuffer(output.getBytes(1)));
+            while(output_.length() > 0) {
+              cipher.update(UTIL.createBuffer(output_.getBytes(1)));
               ASSERT.equal(cipher.output.length(), 1);
               out.putByte(cipher.output.getByte());
             }
             cipher.finish();
-            var out = (i !== 5) ? out.toHex() : out.getBytes();
+            out = (i !== 5) ? out.toHex() : out.getBytes();
             ASSERT.equal(out, inputs[i]);
           });
         })(i);
@@ -508,24 +508,28 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
     (function() {
       var keys = [
         '00000000000000000000000000000000',
+        '00000000000000000000000000000000',
         '00000000000000000000000000000000'
       ];
 
       var ivs = [
         '80000000000000000000000000000000',
-        'c8ca0d6a35dbeac776e911ee16bea7d3'
+        'c8ca0d6a35dbeac776e911ee16bea7d3',
+        '80000000000000000000000000000000'
       ];
 
       var inputs = [
         '00000000000000000000000000000000',
-        'This is a 48-byte message (exactly 3 AES blocks)'
+        'This is a 48-byte message (exactly 3 AES blocks)',
+        '0000'
       ];
 
       var outputs = [
         '3ad78e726c1ec02b7ebfe92b23d9ec34',
         '39c0190727a76b2a90963426f63689cf' +
           'cdb8a2be8e20c5e877a81a724e3611f6' +
-          '2ecc386f2e941b2441c838906002be19'
+          '2ecc386f2e941b2441c838906002be19',
+        '3ad7'
       ];
 
       for(var i = 0; i < keys.length; ++i) {
@@ -552,6 +556,37 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             cipher.finish();
             var out = (i !== 1) ?
               cipher.output.toHex() : cipher.output.getBytes();
+            ASSERT.equal(out, inputs[i]);
+          });
+
+          it('should aes-128-ofb encrypt (one byte at a time): ' + inputs[i], function() {
+            // encrypt
+            var cipher = CIPHER.createCipher('AES-OFB', key);
+            cipher.start({iv: iv});
+            var input_ = UTIL.createBuffer(input);
+            var out = UTIL.createBuffer();
+            while(input_.length() > 0) {
+              cipher.update(UTIL.createBuffer(input_.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            ASSERT.equal(out.toHex(), outputs[i]);
+          });
+
+          it('should aes-128-ofb decrypt (one byte at a time): ' + outputs[i], function() {
+            // decrypt
+            var cipher = CIPHER.createDecipher('AES-OFB', key);
+            cipher.start({iv: iv});
+            var output_ = UTIL.createBuffer(output);
+            var out = UTIL.createBuffer();
+            while(output_.length() > 0) {
+              cipher.update(UTIL.createBuffer(output_.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            out = (i !== 1) ? out.toHex() : out.getBytes();
             ASSERT.equal(out, inputs[i]);
           });
         })(i);
@@ -680,24 +715,28 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
     (function() {
       var keys = [
         '2b7e151628aed2a6abf7158809cf4f3c',
-        '00000000000000000000000000000000'
+        '00000000000000000000000000000000',
+        '2b7e151628aed2a6abf7158809cf4f3c'
       ];
 
       var ivs = [
         'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff',
-        '650cdb80ff9fc758342d2bd99ee2abcf'
+        '650cdb80ff9fc758342d2bd99ee2abcf',
+        'f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff'
       ];
 
       var inputs = [
         '6bc1bee22e409f96e93d7e117393172a',
-        'This is a 48-byte message (exactly 3 AES blocks)'
+        'This is a 48-byte message (exactly 3 AES blocks)',
+        '6bc1be'
       ];
 
       var outputs = [
         '874d6191b620e3261bef6864990db6ce',
         '5ede11d00e9a76ec1d5e7e811ea3dd1c' +
           'e09ee941210f825d35718d3282796f1c' +
-          '07c3f1cb424f2b365766ab5229f5b5a4'
+          '07c3f1cb424f2b365766ab5229f5b5a4',
+        '874d61'
       ];
 
       for(var i = 0; i < keys.length; ++i) {
@@ -724,6 +763,37 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             cipher.finish();
             var out = (i !== 1) ?
               cipher.output.toHex() : cipher.output.getBytes();
+            ASSERT.equal(out, inputs[i]);
+          });
+
+          it('should aes-128-ctr encrypt (one byte at a time): ' + inputs[i], function() {
+            // encrypt
+            var cipher = CIPHER.createCipher('AES-CTR', key);
+            cipher.start({iv: iv});
+            var input_ = UTIL.createBuffer(input);
+            var out = UTIL.createBuffer();
+            while(input_.length() > 0) {
+              cipher.update(UTIL.createBuffer(input_.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            ASSERT.equal(out.toHex(), outputs[i]);
+          });
+
+          it('should aes-128-ctr decrypt (one byte at a time): ' + outputs[i], function() {
+            // decrypt
+            var cipher = CIPHER.createDecipher('AES-CTR', key);
+            cipher.start({iv: iv});
+            var output_ = UTIL.createBuffer(output);
+            var out = UTIL.createBuffer();
+            while(output_.length() > 0) {
+              cipher.update(UTIL.createBuffer(output_.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            out = (i !== 1) ? out.toHex() : out.getBytes();
             ASSERT.equal(out, inputs[i]);
           });
         })(i);
@@ -844,7 +914,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         'feffe9928665731c6d6a8f9467308308',
         'feffe9928665731c6d6a8f9467308308',
         'feffe9928665731c6d6a8f9467308308',
-        'feffe9928665731c6d6a8f9467308308'
+        'feffe9928665731c6d6a8f9467308308',
+        '00000000000000000000000000000000'
       ];
 
       var ivs = [
@@ -856,7 +927,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         '9313225df88406e555909c5aff5269aa' +
           '6a7a9538534f7da1e4c303d2a318a728' +
           'c3c0c95156809539fcf0e2429a6b5254' +
-          '16aedbf5a0de6a57a637b39b'
+          '16aedbf5a0de6a57a637b39b',
+        '000000000000000000000000'
       ];
 
       var adatas = [
@@ -868,7 +940,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         'feedfacedeadbeeffeedfacedeadbeef' +
           'abaddad2',
         'feedfacedeadbeeffeedfacedeadbeef' +
-          'abaddad2'
+          'abaddad2',
+        ''
       ];
 
       var inputs = [
@@ -889,7 +962,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         'd9313225f88406e5a55909c5aff5269a' +
           '86a7a9531534f7da2e4c303d8a318a72' +
           '1c3c0c95956809532fcf0e2449a6b525' +
-          'b16aedf5aa0de657ba637b39'
+          'b16aedf5aa0de657ba637b39',
+        '0000'
       ];
 
       var outputs = [
@@ -910,7 +984,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         '8ce24998625615b603a033aca13fb894' +
           'be9112a5c3a211a8ba262a3cca7e2ca7' +
           '01e4a9a4fba43c90ccdcb281d48c7c6f' +
-          'd62875d2aca417034c34aee5'
+          'd62875d2aca417034c34aee5',
+        '0388'
       ];
 
       var tags = [
@@ -919,7 +994,8 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
         '4d5c2af327cd64a62cf35abd2ba6fab4',
         '5bc94fbc3221a5db94fae95ae7121a47',
         '3612d2e79e3b0785561be14aaca2fccb',
-        '619cc5aefffe0bfa462af43c1699d050'
+        '619cc5aefffe0bfa462af43c1699d050',
+        '93dcdd26f79ec1dd9bff57204d9b33f5'
       ];
 
       for(var i = 0; i < keys.length; ++i) {
@@ -953,6 +1029,22 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
             ASSERT.equal(pass, true);
             ASSERT.equal(cipher.output.toHex(), inputs[i]);
+          });
+
+          it('should aes-128-gcm encrypt (one byte at a time): ' + inputs[i], function() {
+            // encrypt
+            var cipher = CIPHER.createCipher('AES-GCM', key);
+            cipher.start({iv: iv, additionalData: adata});
+            var input_ = UTIL.createBuffer(input);
+            var out = UTIL.createBuffer();
+            while(input_.length() > 0) {
+              cipher.update(UTIL.createBuffer(input_.getBytes(1)));
+              ASSERT.equal(cipher.output.length(), 1);
+              out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            ASSERT.equal(out.toHex(), outputs[i]);
+            ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
           });
         })(i);
       }

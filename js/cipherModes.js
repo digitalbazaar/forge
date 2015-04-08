@@ -50,7 +50,7 @@ modes.ecb.prototype.encrypt = function(input, output, finish) {
 };
 
 modes.ecb.prototype.decrypt = function(input, output, finish) {
-  // not enough input to encrypt
+  // not enough input to decrypt
   if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
     return true;
   }
@@ -150,7 +150,7 @@ modes.cbc.prototype.encrypt = function(input, output, finish) {
 };
 
 modes.cbc.prototype.decrypt = function(input, output, finish) {
-  // not enough input to encrypt
+  // not enough input to decrypt
   if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
     return true;
   }
@@ -221,11 +221,13 @@ modes.cfb.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._partialBytes = 0;
 };
 
 modes.cfb.prototype.encrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() === 0) {
+  var inputLength = input.length();
+  if(inputLength === 0) {
     return true;
   }
 
@@ -233,7 +235,7 @@ modes.cfb.prototype.encrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // handle full block
-  if(this._partialBytes === 0 && input.length() >= this.blockSize) {
+  if(this._partialBytes === 0 && inputLength >= this.blockSize) {
     // XOR input with output, write input as output
     for(var i = 0; i < this._ints; ++i) {
       this._inBlock[i] = input.getInt32() ^ this._outBlock[i];
@@ -243,7 +245,7 @@ modes.cfb.prototype.encrypt = function(input, output, finish) {
   }
 
   // handle partial block
-  var partialBytes = (this.blockSize - input.length()) % this.blockSize;
+  var partialBytes = (this.blockSize - inputLength) % this.blockSize;
   if(partialBytes > 0) {
     partialBytes = this.blockSize - partialBytes;
   }
@@ -274,17 +276,18 @@ modes.cfb.prototype.encrypt = function(input, output, finish) {
     output.putBytes(this._partialOutput.getBytes(
       partialBytes - this._partialBytes));
     this._partialBytes = partialBytes;
-  } else {
-    this._partialBytes = 0;
-    output.putBuffer(this._partialOutput);
+    return true;
   }
 
-  return !finish && partialBytes > 0;
+  output.putBytes(this._partialOutput.getBytes(
+    inputLength - this._partialBytes));
+  this._partialBytes = 0;
 };
 
 modes.cfb.prototype.decrypt = function(input, output, finish) {
-  // not enough input to encrypt
-  if(input.length() === 0) {
+  // not enough input to decrypt
+  var inputLength = input.length();
+  if(inputLength === 0) {
     return true;
   }
 
@@ -292,7 +295,7 @@ modes.cfb.prototype.decrypt = function(input, output, finish) {
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
   // handle full block
-  if(this._partialBytes === 0 && input.length() >= this.blockSize) {
+  if(this._partialBytes === 0 && inputLength >= this.blockSize) {
     // XOR input with output, write input as output
     for(var i = 0; i < this._ints; ++i) {
       this._inBlock[i] = input.getInt32();
@@ -302,7 +305,7 @@ modes.cfb.prototype.decrypt = function(input, output, finish) {
   }
 
   // handle partial block
-  var partialBytes = (this.blockSize - input.length()) % this.blockSize;
+  var partialBytes = (this.blockSize - inputLength) % this.blockSize;
   if(partialBytes > 0) {
     partialBytes = this.blockSize - partialBytes;
   }
@@ -333,20 +336,12 @@ modes.cfb.prototype.decrypt = function(input, output, finish) {
     output.putBytes(this._partialOutput.getBytes(
       partialBytes - this._partialBytes));
     this._partialBytes = partialBytes;
-  } else {
-    this._partialBytes = 0;
-    output.putBuffer(this._partialOutput);
+    return true;
   }
 
-  return !finish && partialBytes > 0;
-};
-
-modes.cfb.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
+  output.putBytes(this._partialOutput.getBytes(
+    inputLength - this._partialBytes));
+  this._partialBytes = 0;
 };
 
 /** Output feedback (OFB) **/
@@ -359,6 +354,8 @@ modes.ofb = function(options) {
   this._ints = this.blockSize / 4;
   this._inBlock = null;
   this._outBlock = new Array(this._ints);
+  this._partialOutput = forge.util.createBuffer();
+  this._partialBytes = 0;
 };
 
 modes.ofb.prototype.start = function(options) {
@@ -368,33 +365,69 @@ modes.ofb.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._partialBytes = 0;
 };
 
 modes.ofb.prototype.encrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  var inputLength = input.length();
+  if(input.length() === 0) {
     return true;
   }
 
   // encrypt block (OFB always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // XOR input with output and update next input
-  for(var i = 0; i < this._ints; ++i) {
-    output.putInt32(input.getInt32() ^ this._outBlock[i]);
-    this._inBlock[i] = this._outBlock[i];
+  // handle full block
+  if(this._partialBytes === 0 && inputLength >= this.blockSize) {
+    // XOR input with output and update next input
+    for(var i = 0; i < this._ints; ++i) {
+      output.putInt32(input.getInt32() ^ this._outBlock[i]);
+      this._inBlock[i] = this._outBlock[i];
+    }
+    return;
   }
+
+  // handle partial block
+  var partialBytes = (this.blockSize - inputLength) % this.blockSize;
+  if(partialBytes > 0) {
+    partialBytes = this.blockSize - partialBytes;
+  }
+
+  // XOR input with output
+  this._partialOutput.clear();
+  for(var i = 0; i < this._ints; ++i) {
+    this._partialOutput.putInt32(input.getInt32() ^ this._outBlock[i]);
+  }
+
+  if(partialBytes > 0) {
+    // block still incomplete, restore input buffer
+    input.read -= this.blockSize;
+  } else {
+    // block complete, update input block
+    for(var i = 0; i < this._ints; ++i) {
+      this._inBlock[i] = this._outBlock[i];
+    }
+  }
+
+  // skip any previous partial bytes
+  if(this._partialBytes > 0) {
+    this._partialOutput.getBytes(this._partialBytes);
+  }
+
+  if(partialBytes > 0 && !finish) {
+    output.putBytes(this._partialOutput.getBytes(
+      partialBytes - this._partialBytes));
+    this._partialBytes = partialBytes;
+    return true;
+  }
+
+  output.putBytes(this._partialOutput.getBytes(
+    inputLength - this._partialBytes));
+  this._partialBytes = 0;
 };
 
 modes.ofb.prototype.decrypt = modes.ofb.prototype.encrypt;
-
-modes.ofb.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
-};
 
 
 /** Counter (CTR) **/
@@ -407,6 +440,8 @@ modes.ctr = function(options) {
   this._ints = this.blockSize / 4;
   this._inBlock = null;
   this._outBlock = new Array(this._ints);
+  this._partialOutput = forge.util.createBuffer();
+  this._partialBytes = 0;
 };
 
 modes.ctr.prototype.start = function(options) {
@@ -416,35 +451,65 @@ modes.ctr.prototype.start = function(options) {
   // use IV as first input
   this._iv = transformIV(options.iv);
   this._inBlock = this._iv.slice(0);
+  this._partialBytes = 0;
 };
 
 modes.ctr.prototype.encrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  var inputLength = input.length();
+  if(inputLength === 0) {
     return true;
   }
 
   // encrypt block (CTR always uses encryption mode)
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // increment counter (input block)
-  inc32(this._inBlock);
+  // handle full block
+  if(this._partialBytes === 0 && inputLength >= this.blockSize) {
+    // XOR input with output
+    for(var i = 0; i < this._ints; ++i) {
+      output.putInt32(input.getInt32() ^ this._outBlock[i]);
+    }
+  } else {
+    // handle partial block
+    var partialBytes = (this.blockSize - inputLength) % this.blockSize;
+    if(partialBytes > 0) {
+      partialBytes = this.blockSize - partialBytes;
+    }
 
-  // XOR input with output
-  for(var i = 0; i < this._ints; ++i) {
-    output.putInt32(input.getInt32() ^ this._outBlock[i]);
+    // XOR input with output
+    this._partialOutput.clear();
+    for(var i = 0; i < this._ints; ++i) {
+      this._partialOutput.putInt32(input.getInt32() ^ this._outBlock[i]);
+    }
+
+    if(partialBytes > 0) {
+      // block still incomplete, restore input buffer
+      input.read -= this.blockSize;
+    }
+
+    // skip any previous partial bytes
+    if(this._partialBytes > 0) {
+      this._partialOutput.getBytes(this._partialBytes);
+    }
+
+    if(partialBytes > 0 && !finish) {
+      output.putBytes(this._partialOutput.getBytes(
+        partialBytes - this._partialBytes));
+      this._partialBytes = partialBytes;
+      return true;
+    }
+
+    output.putBytes(this._partialOutput.getBytes(
+      inputLength - this._partialBytes));
+    this._partialBytes = 0;
   }
+
+  // block complete, increment counter (input block)
+  inc32(this._inBlock);
 };
 
 modes.ctr.prototype.decrypt = modes.ctr.prototype.encrypt;
-
-modes.ctr.prototype.afterFinish = function(output, options) {
-  // handle stream mode truncation
-  if(options.overflow > 0) {
-    output.truncate(this.blockSize - options.overflow);
-  }
-  return true;
-};
 
 
 /** Galois/Counter Mode (GCM) **/
@@ -457,6 +522,8 @@ modes.gcm = function(options) {
   this._ints = this.blockSize / 4;
   this._inBlock = new Array(this._ints);
   this._outBlock = new Array(this._ints);
+  this._partialOutput = forge.util.createBuffer();
+  this._partialBytes = 0;
 
   // R is actually this value concatenated with 120 more zero bits, but
   // we only XOR against R so the other zeros have no effect -- we just
@@ -539,6 +606,7 @@ modes.gcm.prototype.start = function(options) {
   // generate ICB (initial counter block)
   this._inBlock = this._j0.slice(0);
   inc32(this._inBlock);
+  this._partialBytes = 0;
 
   // consume authentication data
   additionalData = forge.util.createBuffer(additionalData);
@@ -562,56 +630,84 @@ modes.gcm.prototype.start = function(options) {
 
 modes.gcm.prototype.encrypt = function(input, output, finish) {
   // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  var inputLength = input.length();
+  if(inputLength === 0) {
     return true;
   }
 
   // encrypt block
   this.cipher.encrypt(this._inBlock, this._outBlock);
 
-  // increment counter (input block)
-  inc32(this._inBlock);
-
-  // save input length
-  var inputLength = input.length();
-
-  // XOR input with output
-  for(var i = 0; i < this._ints; ++i) {
-    this._outBlock[i] ^= input.getInt32();
-  }
-
-  // handle overflow prior to hashing
-  if(inputLength < this.blockSize) {
-    // get block overflow
-    var overflow = inputLength % this.blockSize;
-    this._cipherLength += overflow;
-
-    // truncate for hash function
-    var tmp = forge.util.createBuffer();
-    tmp.putInt32(this._outBlock[0]);
-    tmp.putInt32(this._outBlock[1]);
-    tmp.putInt32(this._outBlock[2]);
-    tmp.putInt32(this._outBlock[3]);
-    tmp.truncate(this.blockSize - overflow);
-    this._outBlock[0] = tmp.getInt32();
-    this._outBlock[1] = tmp.getInt32();
-    this._outBlock[2] = tmp.getInt32();
-    this._outBlock[3] = tmp.getInt32();
-  } else {
+  // handle full block
+  if(this._partialBytes === 0 && inputLength >= this.blockSize) {
+    // XOR input with output
+    for(var i = 0; i < this._ints; ++i) {
+      output.putInt32(this._outBlock[i] ^= input.getInt32());
+    }
     this._cipherLength += this.blockSize;
-  }
+  } else {
+    // handle partial block
+    var partialBytes = (this.blockSize - inputLength) % this.blockSize;
+    if(partialBytes > 0) {
+      partialBytes = this.blockSize - partialBytes;
+    }
 
-  for(var i = 0; i < this._ints; ++i) {
-    output.putInt32(this._outBlock[i]);
+    // XOR input with output
+    this._partialOutput.clear();
+    for(var i = 0; i < this._ints; ++i) {
+      this._partialOutput.putInt32(input.getInt32() ^ this._outBlock[i]);
+    }
+
+    if(partialBytes === 0 || finish) {
+      // handle overflow prior to hashing
+      if(finish) {
+        // get block overflow
+        var overflow = inputLength % this.blockSize;
+        this._cipherLength += overflow;
+        // truncate for hash function
+        this._partialOutput.truncate(this.blockSize - overflow);
+      } else {
+        this._cipherLength += this.blockSize;
+      }
+
+      // get output block for hashing
+      for(var i = 0; i < this._ints; ++i) {
+        this._outBlock[i] = this._partialOutput.getInt32();
+      }
+      this._partialOutput.read -= this.blockSize;
+    }
+
+    // skip any previous partial bytes
+    if(this._partialBytes > 0) {
+      this._partialOutput.getBytes(this._partialBytes);
+    }
+
+    if(partialBytes > 0 && !finish) {
+      // block still incomplete, restore input buffer, get partial output,
+      // and return early
+      input.read -= this.blockSize;
+      output.putBytes(this._partialOutput.getBytes(
+        partialBytes - this._partialBytes));
+      this._partialBytes = partialBytes;
+      return true;
+    }
+
+    output.putBytes(this._partialOutput.getBytes(
+      inputLength - this._partialBytes));
+    this._partialBytes = 0;
   }
 
   // update hash block S
   this._s = this.ghash(this._hashSubkey, this._s, this._outBlock);
+
+  // increment counter (input block)
+  inc32(this._inBlock);
 };
 
 modes.gcm.prototype.decrypt = function(input, output, finish) {
-  // not enough input to encrypt
-  if(input.length() < this.blockSize && !(finish && input.length() > 0)) {
+  // not enough input to decrypt
+  var inputLength = input.length();
+  if(inputLength < this.blockSize && !(finish && inputLength > 0)) {
     return true;
   }
 
@@ -620,9 +716,6 @@ modes.gcm.prototype.decrypt = function(input, output, finish) {
 
   // increment counter (input block)
   inc32(this._inBlock);
-
-  // save input length
-  var inputLength = input.length();
 
   // update hash block S
   this._hashBlock[0] = input.getInt32();
@@ -648,7 +741,7 @@ modes.gcm.prototype.afterFinish = function(output, options) {
   var rval = true;
 
   // handle overflow
-  if(options.overflow) {
+  if(options.decrypt && options.overflow) {
     output.truncate(this.blockSize - options.overflow);
   }
 
