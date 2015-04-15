@@ -1335,6 +1335,18 @@ var bags = p12.getBags({
   bagType: forge.pki.oids.certBag
 });
 
+// get key bags
+var bags = p12.getBags({bagType: forge.pki.oids.keyBag});
+// get key
+var key = bag.key;
+// if the key is in a format unrecognized by forge then
+// bag.key will be `null`, use bag.asn1 to get the ASN.1
+// representation of the key
+if(bag.key === null) {
+  var keyAsn1 = bag.asn1;
+  // can now convert back to DER/PEM/etc for export
+}
+
 // generate a p12 using AES (default)
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');

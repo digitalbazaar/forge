@@ -665,7 +665,13 @@ function _decodeSafeContents(safeContents, strict, password) {
         /* A PKCS#12 keyBag is a simple PrivateKeyInfo as understood by our
            PKI module, hence we don't have to do validation/capturing here,
            just pass what we already got. */
-        bag.key = pki.privateKeyFromAsn1(bagAsn1);
+        try {
+          bag.key = pki.privateKeyFromAsn1(bagAsn1);
+        } catch(e) {
+          // ignore unknown key type, pass asn1 value
+          bag.key = null;
+          bag.asn1 = bagAsn1;
+        }
         continue;  /* Nothing more to do. */
 
       case pki.oids.certBag:
