@@ -116,7 +116,7 @@ need to be accessible from the browser if any WebWorkers are used.
 
 A test server for [node.js][] can be found at `./nodejs`. The following are included:
 
-  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://visionmedia.github.io/mocha/) test.
+  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://mochajs.org/) test.
   * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
 
 To run:
