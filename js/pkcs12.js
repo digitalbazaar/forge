@@ -688,8 +688,14 @@ function _decodeSafeContents(safeContents, strict, password) {
           }
 
           // true=produce cert hash
-          bag.cert = pki.certificateFromAsn1(
-            asn1.fromDer(capture.cert, strict), true);
+          var certAsn1 = asn1.fromDer(capture.cert, strict);
+          try {
+            bag.cert = pki.certificateFromAsn1(certAsn1, true);
+          } catch(e) {
+            // ignore unknown cert type, pass asn1 value
+            bag.cert = null;
+            bag.asn1 = certAsn1;
+          }
         };
         break;
 

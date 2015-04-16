@@ -4,6 +4,7 @@ function Tests(ASSERT, FORGE) {
   var forge = FORGE();
   var PKCS12 = forge.pkcs12;
   var ASN1 = forge.asn1;
+  var PEM = forge.pem;
   var PKI = forge.pki;
   var UTIL = forge.util;
 
@@ -266,6 +267,26 @@ function Tests(ASSERT, FORGE) {
       var expected = '03e46727268575c6ebd6bff828d0d09b0c914201263ca543';
       var key = PKCS12.generateKey('123456', salt, 1, 1024, 24);
       ASSERT.equal(key.toHex(), expected);
+    });
+
+    it('should load a PKCS#12 with an ECDSA key in a certificate (unsupported key format)', function() {
+      var p12Der = UTIL.decode64(_data.p12ecdsa);
+      var p12Asn1 = ASN1.fromDer(p12Der);
+      var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123321');
+      var bags = p12.getBags({bagType: PKI.oids.certBag});
+
+      ASSERT.equal(bags[PKI.oids.certBag].length, 1);
+      var bag = bags[PKI.oids.certBag][0];
+      ASSERT.equal(bag.cert, null);
+      ASSERT.equal('asn1' in bag, true);
+
+      // convert to ASN.1, then DER, then PEM-encode
+      var msg = {
+        type: 'CERTIFICATE',
+        body: ASN1.toDer(bag.asn1).getBytes()
+      };
+      var pem = PEM.encode(msg);
+      ASSERT.equal(pem, _data.p12ecdsaCert);
     });
   });
 
@@ -625,7 +646,23 @@ function Tests(ASSERT, FORGE) {
       '4E2vS4IWoCmy59lGxV6UEfsjEGxC+pDv33xX69aDf8vN6VON8B4ooHwdg+GMe2Us\r\n' +
       'N7sQkhf1ykdR0tmJnG8yr0DfGfxbcJArEv8wcZh89M0oOY7iKx/hq4n4DSVHLmDg\r\n' +
       'obV4S2+c5aRrVFWQiw+/OjA9MCEwCQYFKw4DAhoFAAQUXolDwewLkmOH6dGcPdhJ\r\n' +
-      'JeUrAz0EFHRZbCAQ2bUo5B8DAFM8VJLi/+A2AgIEAA=='
+      'JeUrAz0EFHRZbCAQ2bUo5B8DAFM8VJLi/+A2AgIEAA==',
+    p12ecdsa: 'MIIEwQIBAzCCBIcGCSqGSIb3DQEHAaCCBHgEggR0MIIEcDCCAy8GCSqGSIb3DQEHBqCCAyAwggMcAgEAMIIDFQYJKoZIhvcNAQcBMBwGCiqGSIb3DQEMAQYwDgQIxn3OksiScggCAggAgIIC6OB2GSW2p7zaoD4FS5+8kVRF8yTPFpNfV49YCQk49DzPEJoa2tKUE8dMh48jKEh3NRm4kemaN+CKZczTPB5xk21P/+PtLWzfFYFS8/wt/UJ+5NEbRHlVkI2GDj4HYwP+7E0ad0qi54UsuyxIeph7046Jag3keqfoKYinAoiEe3mvbWlICKTWj0PpuDQ2gxb7axwOnqsGfNC3J4HivnbcDPNL+/JReC5SgK/xEQpyBc4Fz49YA9qIGC6gQxNiIC9mQvq7M8hKDumYgkFWH25HXWzj6/pBT+4C8kQxkuLi+KWh9KWj8UXc2YaeqMR6MeJUJ7YMNELVGxU+a3ZY8NFkJf4jLAPy76u4JMEbX6meHtfmOAzqaGG6pnfuqZUWRHrTxYGWIWuTkSFfqCsB08McB6HYqEYm7juHqO7lqnIvRwh++TV7F/DJupOcS8sm4Q0+pI/Ug9lex27d/TVfFL2ICRfCVOvOtv65K+6fqNkPDrctQVl/kqS8tkWZoH+yfS/qDzICk9/fnAnO7bl4yiFGYp6ISbjAnki2NnRVdyGPQIO4B51VqqMeVzN3689ppJQZCajgw7afyq1rDt1dCqiD0OdnKXkARZEp2UeIqmMCMhVPRCeY1N+Z8yF8yWUv77SkGlwtMtyvhGYlrM3Wq/rweW6P20DfeSoLu9pU/ZxXe0X9a4ko/lXjKp/+ksJRZJcxWcRDxFRLtrHIWqrzIEdWilN/ld59HP6JU2+fhBkg+waWXd+lxEmIaVw6YY7WVmQT4riC17GGKjzyrNKQp0q4BDRZKJiJm1LSDBkGYUhWTkiHaZnihuwkidnXGaM6RshPu8c7nA29EoyoZjs4Vtj9dxQzwu6RvA+UvO3v+PMxxa0O/UKjU1XPLdhaxnc5KIUQGechjsgCooHQFOQ8hxEZPUQaBnebTRjq0W7Q+DhKv1EyGFWWRNG2cJRx1EDUO+A02nBvLck5DKOdIcJlsKiHWB0/ntCRqtQ7XzCCATkGCSqGSIb3DQEHAaCCASoEggEmMIIBIjCCAR4GCyqGSIb3DQEMCgECoIG0MIGxMBwGCiqGSIb3DQEMAQMwDgQI3Q+0WbOjf/0CAggABIGQhW8EaZfJhr+MTd4xjkUcubSPjzspoLeLtGLxmKxTBnbwBrKJBJ3bzXvU7we7qvvJGhWQfsRSHXEE841WS8I14veJJLWBJfN5V0AYz2aYkoApDQ61/o7mvgaAIn5rQQh20jp0EFXZM1TRqAT17pjBcBTaZ/s0wpUi2dbYqzhIgEYsQFQfHbW576eht5NlND3tMVgwIwYJKoZIhvcNAQkVMRYEFJ6dpRl6qwj5OZg36y8v5EVowEENMDEGCSqGSIb3DQEJFDEkHiIARQBDAEQAUwBBACAAYwBlAHIAdABpAGYAaQBjAGEAdABlMDEwITAJBgUrDgMCGgUABBSMcup2jX5JqMU5lqH8d/A0/kOu+wQI5FJlbGEnxF4CAggA',
+    p12ecdsaCert: '-----BEGIN CERTIFICATE-----\r\n' +
+      'MIICVzCCAf6gAwIBAgIJAO8k1Go1w/58MAkGByqGSM49BAEwgYgxCzAJBgNVBAYT\r\n' +
+      'AkZSMQ4wDAYDVQQIDAVwYXJpczEMMAoGA1UEBwwDSWxlMQ0wCwYDVQQKDARlcmRm\r\n' +
+      'MSIwIAYDVQQDDBluaXphci5hYmRlbm5lYmlAZ21haWwuY29tMSgwJgYJKoZIhvcN\r\n' +
+      'AQkBFhluaXphci5hYmRlbm5lYmlAZ21haWwuY29tMB4XDTE0MDczMDE2MTYyMloX\r\n' +
+      'DTE1MDczMDE2MTYyMlowgYgxCzAJBgNVBAYTAkZSMQ4wDAYDVQQIDAVwYXJpczEM\r\n' +
+      'MAoGA1UEBwwDSWxlMQ0wCwYDVQQKDARlcmRmMSIwIAYDVQQDDBluaXphci5hYmRl\r\n' +
+      'bm5lYmlAZ21haWwuY29tMSgwJgYJKoZIhvcNAQkBFhluaXphci5hYmRlbm5lYmlA\r\n' +
+      'Z21haWwuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAELqy3xekJMWlXzq5g\r\n' +
+      '5ao7Z8PH3iL0I2Tj28SGrDIdZ07f5x/rAbwjbcfp2YsJecEJOoaE3/jgbI8/mc1p\r\n' +
+      'wWJtm6NQME4wHQYDVR0OBBYEFINzYXPWdpiaoDaLBiObKSezqjYSMB8GA1UdIwQY\r\n' +
+      'MBaAFINzYXPWdpiaoDaLBiObKSezqjYSMAwGA1UdEwQFMAMBAf8wCQYHKoZIzj0E\r\n' +
+      'AQNIADBFAiEA9Q+TJyUHEn7lhjEkF1OUb0hEwejAWny+mvqQ0XNHup4CIAeOLjEs\r\n' +
+      'mthwYiI/c1op4Y+H0xLUp2v8iLWHIDqAZA89\r\n' +
+      '-----END CERTIFICATE-----\r\n'
   };
 }
 

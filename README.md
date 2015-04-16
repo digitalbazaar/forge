@@ -1338,6 +1338,7 @@ var bags = p12.getBags({
 // get key bags
 var bags = p12.getBags({bagType: forge.pki.oids.keyBag});
 // get key
+var bag = bags[forge.pki.oids.keyBag][0];
 var key = bag.key;
 // if the key is in a format unrecognized by forge then
 // bag.key will be `null`, use bag.asn1 to get the ASN.1
