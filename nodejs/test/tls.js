@@ -240,15 +240,33 @@ function Tests(ASSERT, forge) {
     it('should test TLS 1.2 PRF', function() {
       // Note: This test vector is originally from:
       // https://www.ietf.org/mail-archive/web/tls/current/msg03416.html
-      var secret = new forge.util.ByteBuffer('9bbe436ba940f017b17652849a71db35', 'hex');
-      var seed = new forge.util.ByteBuffer('a0ba9f936cda311827a6f796ffd5198c', 'hex');
-      var bytes = forge.tls.prf_sha256(secret, 'test label', seed, 100);
-      var expect =
+      var hashesToTest = [ 'sha256', 'sha512' ];
+      var secretsToTest = [ '9bbe436ba940f017b17652849a71db35',
+        'b0323523c1853599584d88568bbb05eb' ];
+      var seedsToTest = [ 'a0ba9f936cda311827a6f796ffd5198c',
+        'd4640e12e4bcdbfb437f03e6ae418ee5' ];
+      var byteLengthsToTest = [ 100, 196 ];
+      var expectedOutputs = [
         'e3f229ba727be17b8d122620557cd453c2aab21d07c3d495329b52d4e61edb5a' +
         '6b301791e90d35c9c9a46b4e14baf9af0fa022f7077def17abfd3797c0564bab' +
         '4fbc91666e9def9b97fce34f796789baa48082d122ee42c5a72e5a5110fff701' +
-        '87347b66';
-      ASSERT.equal(bytes.toString('hex'), expect);
+        '87347b66',
+        '1261f588c798c5c201ff036e7a9cb5edcd7fe3f94c669a122a4638d7d508b283' +
+        '042df6789875c7147e906d868bc75c45e20eb40c1cf4a1713b27371f68432592' +
+        'f7dc8ea8ef223e12ea8507841311bf68653d0cfc4056d811f025c45ddfa6e6fe' +
+        'c702f054b409d6f28dd0a3233e498da41a3e75c5630eedbe22fe254e33a1b0e9' +
+        'f6b9826675bec7d01a845658dc9c397545401d40b9f46c7a400ee1b8f81ca0a6' +
+        '0d1a397a1028bff5d2ef5066126842fb8da4197632bdb54ff6633f86bbc836e6' +
+        '40d4d898'
+        ];
+      for(var i = 0; i < hashesToTest.length; i++ ) {
+        var hashAlgorithm = hashesToTest[i];
+        var secret = new forge.util.ByteBuffer(secretsToTest[i], 'hex');
+        var seed = new forge.util.ByteBuffer(seedsToTest[i], 'hex');
+        var byteLength = byteLengthsToTest[i];
+        var bytes = forge.tls.prf_TLS_1_2(hashAlgorithm, secret, 'test label', seed, byteLength);
+        ASSERT.equal(bytes.toString('hex'), expectedOutputs[i]);
+      }
     });
 
     // TODO: add session resumption test

@@ -4328,8 +4328,8 @@ for(var key in tls) {
 
 // expose prf_tls1 for testing
 forge.tls.prf_tls1 = prf_TLS1;
-// expose prf_tls256 for testing
-forge.tls.prf_sha256 = prf_sha256;
+// expose prf_TLS_1_2 for testing
+forge.tls.prf_TLS_1_2 = prf_TLS_1_2;
 
 // expose hmac method and factory
 forge.tls.hmac = tls_hmac;
@@ -4554,7 +4554,7 @@ function prf_TLS1(secret, label, seed, length) {
  *
  * @return the pseudo random bytes in a byte buffer.
  */
-function prf_sha256(secret, label, seed, length) {
+function prf_TLS_1_2(hashAlgorithm, secret, label, seed, length) {
   var rval = new ByteBuffer();
   var ai = new ByteBuffer();
   var hmac = forge.hmac.create();
@@ -4562,12 +4562,13 @@ function prf_sha256(secret, label, seed, length) {
   seed = ByteBuffer.concat([labelBuffer, seed]);
 
   // determine the number of iterations that must be performed to generate
-  // enough output bytes, sha256 creates 32 bytes.
-  var md256itr = Math.ceil(length / 32);
-  hmac.start('sha256', secret);
-  var md256bytes = new ByteBuffer();
+  // enough output bytes
+  var digestLength = forge.md.getAlgorithm(hashAlgorithm).digestLength;
+  var requiredItr = Math.ceil(length / digestLength);
+  hmac.start(hashAlgorithm, secret);
+  var mdBytes = new ByteBuffer();
   ai.putBytes(seed.bytes(), 'binary');
-  for(var i = 0; i < md256itr; ++i) {
+  for(var i = 0; i < requiredItr; ++i) {
     // HMAC_hash(secret, A(i-1))
     hmac.start(null, null);
     hmac.update(ai.getBytes(), 'binary');
@@ -4576,9 +4577,9 @@ function prf_sha256(secret, label, seed, length) {
     hmac.start(null, null);
     hmac.update(ai.bytes(), 'binary');
     hmac.update(seed.bytes(), 'binary');
-    md256bytes.putBuffer(hmac.digest());
+    mdBytes.putBuffer(hmac.digest());
   }
-  rval.putBytes(md256bytes.getBytes(length));
+  rval.putBytes(mdBytes.getBytes(length));
   return rval;
 }
 
