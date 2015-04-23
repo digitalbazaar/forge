@@ -237,6 +237,20 @@ function Tests(ASSERT, forge) {
       end.client.handshake();
     });
 
+    it('should test TLS 1.2 PRF', function() {
+      // Note: This test vector is originally from:
+      // https://www.ietf.org/mail-archive/web/tls/current/msg03416.html
+      var secret = new forge.util.ByteBuffer('9bbe436ba940f017b17652849a71db35', 'hex');
+      var seed = new forge.util.ByteBuffer('a0ba9f936cda311827a6f796ffd5198c', 'hex');
+      var bytes = forge.tls.prf_sha256(secret, 'test label', seed, 100);
+      var expect =
+        'e3f229ba727be17b8d122620557cd453c2aab21d07c3d495329b52d4e61edb5a' +
+        '6b301791e90d35c9c9a46b4e14baf9af0fa022f7077def17abfd3797c0564bab' +
+        '4fbc91666e9def9b97fce34f796789baa48082d122ee42c5a72e5a5110fff701' +
+        '87347b66';
+      ASSERT.equal(bytes.toString('hex'), expect);
+    });
+
     // TODO: add session resumption test
   });
 }
