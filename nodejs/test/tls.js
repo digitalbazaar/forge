@@ -240,17 +240,24 @@ function Tests(ASSERT, forge) {
     it('should test TLS 1.2 PRF', function() {
       // Note: This test vector is originally from:
       // https://www.ietf.org/mail-archive/web/tls/current/msg03416.html
-      var hashesToTest = [ 'sha256', 'sha512' ];
+      var hashesToTest = [ 'sha256', 'sha384', 'sha512' ];
       var secretsToTest = [ '9bbe436ba940f017b17652849a71db35',
+        'b80b733d6ceefcdc71566ea48e5567df',
         'b0323523c1853599584d88568bbb05eb' ];
       var seedsToTest = [ 'a0ba9f936cda311827a6f796ffd5198c',
+        'cd665cf6a8447dd6ff8b27555edb7465',
         'd4640e12e4bcdbfb437f03e6ae418ee5' ];
-      var byteLengthsToTest = [ 100, 196 ];
+      var byteLengthsToTest = [ 100, 148, 196 ];
       var expectedOutputs = [
         'e3f229ba727be17b8d122620557cd453c2aab21d07c3d495329b52d4e61edb5a' +
         '6b301791e90d35c9c9a46b4e14baf9af0fa022f7077def17abfd3797c0564bab' +
         '4fbc91666e9def9b97fce34f796789baa48082d122ee42c5a72e5a5110fff701' +
         '87347b66',
+        '7b0c18e9ced410ed1804f2cfa34a336a1c14dffb4900bb5fd7942107e81c83cd' +
+        'e9ca0faa60be9fe34f82b1233c9146a0e534cb400fed2700884f9dc236f80edd' +
+        '8bfa961144c9e8d792eca722a7b32fc3d416d473ebc2c5fd4abfdad05d918425' +
+        '9b5bf8cd4d90fa0d31e2dec479e4f1a26066f2eea9a69236a3e52655c9e9aee6' +
+        '91c8f3a26854308d5eaa3be85e0990703d73e56f',
         '1261f588c798c5c201ff036e7a9cb5edcd7fe3f94c669a122a4638d7d508b283' +
         '042df6789875c7147e906d868bc75c45e20eb40c1cf4a1713b27371f68432592' +
         'f7dc8ea8ef223e12ea8507841311bf68653d0cfc4056d811f025c45ddfa6e6fe' +
