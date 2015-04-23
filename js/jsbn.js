@@ -1198,7 +1198,7 @@ function bnGetPrng() {
     // x is an array to fill with bytes
     nextBytes: function(x) {
       for(var i = 0; i < x.length; ++i) {
-        x[i] = Math.floor(Math.random() * 0xFF);
+        x[i] = Math.floor(Math.random() * 0x0100);
       }
     }
   };
