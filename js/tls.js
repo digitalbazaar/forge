@@ -4558,14 +4558,18 @@ function prf_sha256(secret, label, seed, length) {
   var rval = new ByteBuffer();
   var ai = new ByteBuffer();
   var hmac = forge.hmac.create();
-  seed = label + seed;
+  var labelBuffer = new ByteBuffer(label, 'utf8');
+  console.log('****  labelBuffer:', labelBuffer.toHex());
+  console.log('****         seed:', seed.toHex());
+  seed = ByteBuffer.concat([labelBuffer, seed]);
+  console.log('****        seed2:', seed.toHex());
 
   // determine the number of iterations that must be performed to generate
-  // enough output bytes, sha256 creates 64 bytes.
-  var md256itr = Math.ceil(length / 64);
+  // enough output bytes, sha256 creates 32 bytes.
+  var md256itr = Math.ceil(length / 32);
   hmac.start('sha256', secret);
   var md256bytes = new ByteBuffer();
-  ai.putBytes(seed);
+  ai.putBuffer(seed);
   for(var i = 0; i < md256itr; ++i) {
     // HMAC_hash(secret, A(i-1))
     hmac.start(null, null);
