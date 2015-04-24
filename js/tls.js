@@ -2448,8 +2448,8 @@ tls.generateKeys = function(c, sp) {
 
   // determine the PRF
   if(is_tls_1_0(c.version) || is_tls_1_1(c.version)) {
-    // TLS 1.0/1.1 always use prf_TLS1
-    c.session.prf = prf_TLS1;
+    // TLS 1.0/1.1 always use prf_TLS_1_0
+    c.session.prf = prf_TLS_1_0;
   } else {
     // TLS 1.2+ allows specified PRF
     switch(sp.prf_algorithm) {
@@ -4327,9 +4327,9 @@ for(var key in tls) {
 }
 
 // expose prf_tls1 for testing
-forge.tls.prf_tls1 = prf_TLS1;
-// expose prf_TLS_1_2 for testing
-forge.tls.prf_TLS_1_2 = prf_TLS_1_2;
+forge.tls.prf_tls_1_0 = prf_TLS_1_0;
+// expose prf_tls_1_2 for testing
+forge.tls.prf_tls_1_2 = prf_TLS_1_2;
 
 // expose hmac method and factory
 forge.tls.hmac = tls_hmac;
@@ -4480,7 +4480,7 @@ forge.tls.createConnection = tls.createConnection;
  *
  * @return the pseudo random bytes in a ByteBuffer.
  */
-function prf_TLS1(secret, label, seed, length) {
+function prf_TLS_1_0(secret, label, seed, length) {
   // TODO: use buffer
   seed = seed.getBytes();
 
