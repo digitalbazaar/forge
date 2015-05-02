@@ -591,6 +591,14 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     return _rsaEncrypt(key, encoded, _rsaPrivateOp);
   };
 
+  key.toPublicPem = function(maxline) {
+    var pubKey = {
+      n: key.n,
+      e: key.e
+    }
+    return pki.publicKeyToPem(pubKey, maxline);
+  };
+
   return key;
 };
 
