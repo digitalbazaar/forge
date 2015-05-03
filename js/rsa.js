@@ -591,6 +591,14 @@ pki.setRsaPrivateKey = pki.rsa.setPrivateKey = function(
     return _rsaEncrypt(key, encoded, _rsaPrivateOp);
   };
 
+  /**
+   * Creates a RSA public key from the modulus (n) and the public exponent (e)
+   * then converts the key to PEM format.
+   *
+   * @param maxline the maximum characters per line, defaults to 64.
+   *
+   * @return the PEM-formatted public key.
+   */
   key.toPublicPem = function(maxline) {
     var pubKey = {
       n: key.n,

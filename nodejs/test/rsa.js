@@ -104,6 +104,11 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       ASSERT.equal(PKI.publicKeyToPem(publicKey), _pem.publicKey);
     });
 
+    it('should convert private key to public PEM', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+      ASSERT.equal(privateKey.toPublicPem(), _pem.publicKey);
+    });
+
     it('should convert a PKCS#8 PrivateKeyInfo to/from PEM', function() {
       var privateKey = PKI.privateKeyFromPem(_pem.privateKeyInfo);
       var rsaPrivateKey = PKI.privateKeyToAsn1(privateKey);
