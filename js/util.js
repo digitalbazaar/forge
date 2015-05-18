@@ -45,44 +45,8 @@ util.isArrayBuffer = function(x) {
 };
 
 // define isArrayBufferView
-var _arrayBufferViews = [];
-if(typeof DataView !== 'undefined') {
-  _arrayBufferViews.push(DataView);
-}
-if(typeof Int8Array !== 'undefined') {
-  _arrayBufferViews.push(Int8Array);
-}
-if(typeof Uint8Array !== 'undefined') {
-  _arrayBufferViews.push(Uint8Array);
-}
-if(typeof Uint8ClampedArray !== 'undefined') {
-  _arrayBufferViews.push(Uint8ClampedArray);
-}
-if(typeof Int16Array !== 'undefined') {
-  _arrayBufferViews.push(Int16Array);
-}
-if(typeof Uint16Array !== 'undefined') {
-  _arrayBufferViews.push(Uint16Array);
-}
-if(typeof Int32Array !== 'undefined') {
-  _arrayBufferViews.push(Int32Array);
-}
-if(typeof Uint32Array !== 'undefined') {
-  _arrayBufferViews.push(Uint32Array);
-}
-if(typeof Float32Array !== 'undefined') {
-  _arrayBufferViews.push(Float32Array);
-}
-if(typeof Float64Array !== 'undefined') {
-  _arrayBufferViews.push(Float64Array);
-}
 util.isArrayBufferView = function(x) {
-  for(var i = 0; i < _arrayBufferViews.length; ++i) {
-    if(x instanceof _arrayBufferViews[i]) {
-      return true;
-    }
-  }
-  return false;
+  return x && util.isArrayBuffer(x.buffer) && x.byteLength !== undefined;
 };
 
 // TODO: set ByteBuffer to best available backing
@@ -1741,7 +1705,7 @@ util.binary.base64.decode = function(input, output, offset) {
       }
     }
   }
-  
+
   // make sure result is the exact decoded length
   return output ?
          (j - offset) :
