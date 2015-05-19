@@ -13,26 +13,97 @@ function initModule(forge) {
 var util = forge.util = forge.util || {};
 
 // define setImmediate and nextTick
-if(typeof process === 'undefined' || !process.nextTick) {
+(function() {
+  // use native nextTick
+  if(typeof process !== 'undefined' && process.nextTick) {
+    util.nextTick = process.nextTick;
+    if(typeof setImmediate === 'function') {
+      util.setImmediate = setImmediate;
+    } else {
+      // polyfill setImmediate with nextTick, older versions of node
+      // (those w/o setImmediate) won't totally starve IO
+      util.setImmediate = util.nextTick;
+    }
+    return;
+  }
+
+  // polyfill nextTick with native setImmediate
   if(typeof setImmediate === 'function') {
     util.setImmediate = setImmediate;
     util.nextTick = function(callback) {
       return setImmediate(callback);
     };
-  } else {
+    return;
+  }
+
+  /* Note: A polyfill upgrade pattern is used here to allow combining
+  polyfills. For example, MutationObserver is fast, but blocks UI updates,
+  so it needs to allow UI updates periodically, so it falls back on
+  postMessage or setTimeout. */
+
+  // polyfill with setTimeout
+  util.setImmediate = function(callback) {
+    setTimeout(callback, 0);
+  };
+
+  // upgrade polyfill to use postMessage
+  if(typeof window !== 'undefined' &&
+    typeof window.postMessage === 'function') {
+    var msg = 'forge.setImmediate';
+    var callbacks = [];
     util.setImmediate = function(callback) {
-      setTimeout(callback, 0);
+      callbacks.push(callback);
+      // only send message when one hasn't been sent in
+      // the current turn of the event loop
+      if(callbacks.length === 1) {
+        window.postMessage(msg, '*');
+      }
     };
-    util.nextTick = util.setImmediate;
+    function handler(event) {
+      if(event.source === window && event.data === msg) {
+        event.stopPropagation();
+        var copy = callbacks.slice();
+        callbacks.length = 0;
+        copy.forEach(function(callback) {
+          callback();
+        });
+      }
+    }
+    window.addEventListener('message', handler, true);
   }
-} else {
-  util.nextTick = process.nextTick;
-  if(typeof setImmediate === 'function') {
-    util.setImmediate = setImmediate;
-  } else {
-    util.setImmediate = util.nextTick;
+
+  // upgrade polyfill to use MutationObserver
+  if(typeof MutationObserver !== 'undefined') {
+    // polyfill with MutationObserver
+    var now = Date.now();
+    var attr = true;
+    var div = document.createElement('div');
+    var callbacks = [];
+    new MutationObserver(function() {
+      var copy = callbacks.slice();
+      callbacks.length = 0;
+      copy.forEach(function(callback) {
+        callback();
+      });
+    }).observe(div, {attributes: true});
+    var oldSetImmediate = util.setImmediate;
+    util.setImmediate = function(callback) {
+      if(Date.now() - now > 15) {
+        now = Date.now();
+        oldSetImmediate(callback);
+      } else {
+        callbacks.push(callback);
+        // only trigger observer when it hasn't been triggered in
+        // the current turn of the event loop
+        if(callbacks.length === 1) {
+          div.setAttribute('a', attr = !attr);
+        }
+      }
+    };
   }
-}
+
+  util.nextTick = util.setImmediate;
+})();
 
 // define isArray
 util.isArray = Array.isArray || function(x) {
