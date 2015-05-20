@@ -39,6 +39,13 @@ function Tests(ASSERT, PBKDF2, MD, UTIL) {
       ASSERT.equal(dkHex, '9da8a5f4ae605f35e82e5beac5f362df15c4255d88f738d641466a4107f9970238e768e72af29ac89a1b16ff277b31d2');
     });
 
+    it('should derive a password with hmac-sha-256 (passed as an algorithm identifier) c=1000', function() {
+      // Note: might be too slow on old browsers
+      var salt = '4bcda0d1c689fe465c5b8a817f0ddf3d';
+      var dkHex = UTIL.bytesToHex(PBKDF2('password', salt, 1000, 48, 'sha256'));
+      ASSERT.equal(dkHex, '9da8a5f4ae605f35e82e5beac5f362df15c4255d88f738d641466a4107f9970238e768e72af29ac89a1b16ff277b31d2');
+    });
+
     it('should asynchronously derive a password with hmac-sha-1 c=1', function(done) {
       PBKDF2('password', 'salt', 1, 20, function(err, dk) {
         var dkHex = UTIL.bytesToHex(dk);
@@ -88,6 +95,16 @@ function Tests(ASSERT, PBKDF2, MD, UTIL) {
       var salt = '4bcda0d1c689fe465c5b8a817f0ddf3d';
       var md = MD.sha256.create();
       PBKDF2('password', salt, 1000, 48, md, function(err, dk) {
+        var dkHex = UTIL.bytesToHex(dk);
+        ASSERT.equal(dkHex, '9da8a5f4ae605f35e82e5beac5f362df15c4255d88f738d641466a4107f9970238e768e72af29ac89a1b16ff277b31d2');
+        done();
+      });
+    });
+
+    it('should asynchronously derive a password with hmac-sha-256 (passed as an algorithm identifier) c=1000', function(done) {
+      // Note: might be too slow on old browsers
+      var salt = '4bcda0d1c689fe465c5b8a817f0ddf3d';
+      PBKDF2('password', salt, 1000, 48, 'sha256', function(err, dk) {
         var dkHex = UTIL.bytesToHex(dk);
         ASSERT.equal(dkHex, '9da8a5f4ae605f35e82e5beac5f362df15c4255d88f738d641466a4107f9970238e768e72af29ac89a1b16ff277b31d2');
         done();
