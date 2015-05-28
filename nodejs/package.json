@@ -1,17 +1,17 @@
 {
-    "name": "forge-nodejs-example",
-    "version": "0.1.0",
-    "private": true,
-    "main": "server.js",
-    "dependencies": {
-        "express": "~3.1.0",
-        "mocha": "~1.21.5",
-        "chai": "~1.10.0",
-        "grunt": "~0.4.5",
-        "grunt-mocha": "~0.4.12"
-    },
-    "scripts": {
-        "test": "mocha -t 20000 -R spec test/*.js",
-        "run": "node server"
-    }
+  "name": "forge-nodejs-example",
+  "version": "0.1.0",
+  "private": true,
+  "main": "server.js",
+  "dependencies": {
+    "express": "~3.1.0",
+    "mocha": "~1.21.5",
+    "chai": "~1.10.0",
+    "grunt": "~0.4.5",
+    "grunt-mocha": "~0.4.12"
+  },
+  "scripts": {
+    "test": "mocha -t 20000 -R spec test/*.js",
+    "run": "node server"
+  }
 }
