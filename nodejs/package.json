@@ -14,7 +14,7 @@
     "run": "node server",
     "test": "mocha -t 20000 -R spec test/*.js",
     "coverage": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -u exports -t 20000 -R spec test/*.js",
-    "coverage-lcov": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- -u exports -t 20000 -R spec test/*.js"
+    "coverage-lcov": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- -u exports -t 20000 -R spec test/*.js",
     "coverage-report": "./node_modules/.bin/istanbul report"
   },
   "devDependencies": {
