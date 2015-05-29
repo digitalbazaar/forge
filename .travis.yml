@@ -1,6 +1,8 @@
 language: node_js
 node_js:
   - "0.10"
+  - "0.12"
+  - iojs
 install: (cd nodejs && npm install)
 script: 
   - (cd nodejs && npm test)
