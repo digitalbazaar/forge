@@ -399,7 +399,7 @@ p7.createSignedData = function() {
 
       var certs = [];
       for(var i = 0; i < msg.certificates.length; ++i) {
-        certs.push(forge.pki.certificateToAsn1(msg.certificates[0]));
+        certs.push(forge.pki.certificateToAsn1(msg.certificates[i]));
       }
 
       var crls = [];
