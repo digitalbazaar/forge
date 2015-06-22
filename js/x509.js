@@ -2751,6 +2751,8 @@ pki.certificateError = {
  * @param chain the certificate chain to verify, with the root or highest
  *          authority at the end (an array of certificates).
  * @param verify called for every certificate in the chain.
+ * @param the options to use.
+ *        [skipValidityPeriod] whether to skip the validity period check
  *
  * The verify callback has the following signature:
  *
@@ -2766,7 +2768,7 @@ pki.certificateError = {
  *
  * @return true if successful, error thrown if not.
  */
-pki.verifyCertificateChain = function(caStore, chain, verify) {
+pki.verifyCertificateChain = function(caStore, chain, verify, options) {
   /* From: RFC3280 - Internet X.509 Public Key Infrastructure Certificate
     Section 6: Certification Path Validation
     See inline parentheticals related to this particular implementation.
@@ -2896,6 +2898,12 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
        CAs that may appear below a CA before only end-entity certificates
        may be issued. */
 
+  // validation options
+  options = options||{};
+  var opts = {
+    skipValidityPeriod: options.skipValidityPeriod===true
+  };
+
   // copy cert chain references to another array to protect against changes
   // in verify callback
   chain = chain.slice(0);
@@ -2915,7 +2923,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     var selfSigned = false;
 
     // 1. check valid time
-    if(now < cert.validity.notBefore || now > cert.validity.notAfter) {
+    if(!opts.skipValidityPeriod && (now < cert.validity.notBefore || now > cert.validity.notAfter)) {
       error = {
         message: 'Certificate is not valid yet or has expired.',
         error: pki.certificateError.certificate_expired,
