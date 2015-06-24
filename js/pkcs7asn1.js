@@ -1,6 +1,5 @@
 /**
- * Javascript implementation of PKCS#7 v1.5.  Currently only certain parts of
- * PKCS#7 are implemented, especially the enveloped-data content type.
+ * Javascript implementation of ASN.1 validators for PKCS#7 v1.5.
  *
  * @author Stefan Siegl
  *
@@ -13,22 +12,57 @@
  * contain any number of further ContentInfo nested into it.
  *
  * ContentInfo ::= SEQUENCE {
- *    contentType                ContentType,
- *    content               [0]  EXPLICIT ANY DEFINED BY contentType OPTIONAL
+ *   contentType                ContentType,
+ *   content               [0]  EXPLICIT ANY DEFINED BY contentType OPTIONAL
  * }
  *
  * ContentType ::= OBJECT IDENTIFIER
  *
  * EnvelopedData ::= SEQUENCE {
- *    version                    Version,
- *    recipientInfos             RecipientInfos,
- *    encryptedContentInfo       EncryptedContentInfo
+ *   version                    Version,
+ *   recipientInfos             RecipientInfos,
+ *   encryptedContentInfo       EncryptedContentInfo
  * }
  *
  * EncryptedData ::= SEQUENCE {
- *    version                    Version,
- *    encryptedContentInfo       EncryptedContentInfo
+ *   version                    Version,
+ *   encryptedContentInfo       EncryptedContentInfo
  * }
+ *
+ * id-signedData OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+ *   us(840) rsadsi(113549) pkcs(1) pkcs7(7) 2 }
+ *
+ * SignedData ::= SEQUENCE {
+ *   version           INTEGER,
+ *   digestAlgorithms  DigestAlgorithmIdentifiers,
+ *   contentInfo       ContentInfo,
+ *   certificates      [0] IMPLICIT Certificates OPTIONAL,
+ *   crls              [1] IMPLICIT CertificateRevocationLists OPTIONAL,
+ *   signerInfos       SignerInfos
+ * }
+ *
+ * SignerInfos ::= SET OF SignerInfo
+ *
+ * SignerInfo ::= SEQUENCE {
+ *   version                    Version,
+ *   issuerAndSerialNumber      IssuerAndSerialNumber,
+ *   digestAlgorithm            DigestAlgorithmIdentifier,
+ *   authenticatedAttributes    [0] IMPLICIT Attributes OPTIONAL,
+ *   digestEncryptionAlgorithm  DigestEncryptionAlgorithmIdentifier,
+ *   encryptedDigest            EncryptedDigest,
+ *   unauthenticatedAttributes  [1] IMPLICIT Attributes OPTIONAL
+ * }
+ *
+ * EncryptedDigest ::= OCTET STRING
+ *
+ * Attributes ::= SET OF Attribute
+ *
+ * Attribute ::= SEQUENCE {
+ *   attrType    OBJECT IDENTIFIER,
+ *   attrValues  SET OF AttributeValue
+ * }
+ *
+ * AttributeValue ::= ANY
  *
  * Version ::= INTEGER
  *
@@ -207,44 +241,72 @@ var signerValidator = {
   type: asn1.Type.SEQUENCE,
   constructed: true,
   value: [{
-    name: 'SignerInfo.Version',
+    name: 'SignerInfo.version',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.INTEGER,
     constructed: false
   }, {
-    name: 'SignerInfo.IssuerAndSerialNumber',
+    name: 'SignerInfo.issuerAndSerialNumber',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
-    constructed: true
+    constructed: true,
+    value: [{
+      name: 'SignerInfo.issuerAndSerialNumber.issuer',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      captureAsn1: 'issuer'
+    }, {
+      name: 'SignerInfo.issuerAndSerialNumber.serialNumber',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.INTEGER,
+      constructed: false,
+      capture: 'serial'
+    }]
   }, {
-    name: 'SignerInfo.DigestAlgorithm',
+    name: 'SignerInfo.digestAlgorithm',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
-    constructed: true
+    constructed: true,
+    value: [{
+      name: 'SignerInfo.digestAlgorithm.algorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OID,
+      constructed: false,
+      capture: 'digestAlgorithm'
+    }, {
+      name: 'SignerInfo.digestAlgorithm.parameter',
+      tagClass: asn1.Class.UNIVERSAL,
+      constructed: false,
+      captureAsn1: 'digestParameter',
+      optional: true
+    }]
   }, {
-    name: 'SignerInfo.AuthenticatedAttributes',
+    name: 'SignerInfo.authenticatedAttributes',
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 0,
     constructed: true,
     optional: true,
     capture: 'authenticatedAttributes'
   }, {
-    name: 'SignerInfo.DigestEncryptionAlgorithm',
+    name: 'SignerInfo.digestEncryptionAlgorithm',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.SEQUENCE,
-    constructed: true
+    constructed: true,
+    capture: 'signatureAlgorithm'
   }, {
-    name: 'SignerInfo.EncryptedDigest',
+    name: 'SignerInfo.encryptedDigest',
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.OCTETSTRING,
     constructed: false,
     capture: 'signature'
   }, {
-    name: 'SignerInfo.UnauthenticatedAttributes',
+    name: 'SignerInfo.unauthenticatedAttributes',
     tagClass: asn1.Class.CONTEXT_SPECIFIC,
     type: 1,
     constructed: true,
-    optional: true
+    optional: true,
+    capture: 'unauthenticatedAttributes'
   }]
 };
 
