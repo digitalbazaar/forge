@@ -251,6 +251,7 @@ forge.aes._updateBlock = _updateBlock;
 
 /** Register AES algorithms **/
 
+registerAlgorithm('AES-ECB', forge.cipher.modes.ecb);
 registerAlgorithm('AES-CBC', forge.cipher.modes.cbc);
 registerAlgorithm('AES-CFB', forge.cipher.modes.cfb);
 registerAlgorithm('AES-OFB', forge.cipher.modes.ofb);

@@ -128,6 +128,8 @@ var BlockCipher = forge.cipher.BlockCipher = function(options) {
  * bytes, then it must be Nb (16) bytes in length. If the IV is given in as
  * 32-bit integers, then it must be 4 integers long.
  *
+ * Note: an IV is not required or used in ECB mode.
+ *
  * For GCM-mode, the IV must be given as a binary-encoded string of bytes or
  * a byte buffer. The number of bytes should be 12 (96 bits) as recommended
  * by NIST SP-800-38D but another length may be given.
@@ -187,7 +189,7 @@ BlockCipher.prototype.update = function(input) {
 BlockCipher.prototype.finish = function(pad) {
   // backwards-compatibility w/deprecated padding API
   // Note: will overwrite padding functions even after another start() call
-  if(pad && this.mode.name === 'CBC') {
+  if(pad && (this.mode.name === 'ECB' || this.mode.name === 'CBC')) {
     this.mode.pad = function(input) {
       return pad(this.blockSize, input, false);
     };
