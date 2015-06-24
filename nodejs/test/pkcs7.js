@@ -100,6 +100,63 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       'WLH1ODBrBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECD5EWJMv1fd7gEj1w3WM1KsM\r\n' +
       'L8GDk9JoqA8t9v3oXCT0nAMXoNpHZMnv+0UHHVljlSXBTQxwUP5VMY/ddquJ5O3N\r\n' +
       'rDEqqJuHB+KPIsW1kxrdplU=\r\n' +
+      '-----END PKCS7-----\r\n',
+    degenerateP7: '-----BEGIN PKCS7-----\r\n' +
+      'MIID4wYJKoZIhvcNAQcCoIID1DCCA9ACAQExADALBgkqhkiG9w0BBwGgggO4MIID\r\n' +
+      'tDCCApwCCQDUVBxA2DXi8zANBgkqhkiG9w0BAQUFADCBmzELMAkGA1UEBhMCREUx\r\n' +
+      'EjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UECgwM\r\n' +
+      'U3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNVBAMMDUdlaWVy\r\n' +
+      'bGVpbiBERVYxIzAhBgkqhkiG9w0BCQEWFHN0ZXNpZUBicm9rZW5waXBlLmRlMB4X\r\n' +
+      'DTEyMDMxODIyNTc0M1oXDTEzMDMxODIyNTc0M1owgZsxCzAJBgNVBAYTAkRFMRIw\r\n' +
+      'EAYDVQQIDAlGcmFuY29uaWExEDAOBgNVBAcMB0Fuc2JhY2gxFTATBgNVBAoMDFN0\r\n' +
+      'ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1HZWllcmxl\r\n' +
+      'aW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5kZTCCASIw\r\n' +
+      'DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMsAbQ4fWevHqP1K1y/ewpMS3vYo\r\n' +
+      'vBto7IsKBq0v3NmC2kPf3NhyaSKfjOOS5uAPONLffLck+iGdOLLFia6OSpM60tyQ\r\n' +
+      'IV9lHoRh7fOEYORab0Z+aBUZcEGT9yotBOraX1YbKc5f9XO+80eG4XYvb5ua1NHr\r\n' +
+      'xWqe4w2p3zGJCKO+wHpvGkbKz0nfu36jwWz5aihfHi9hp/xs8mfH86mIKiD7f2X2\r\n' +
+      'KeZ1PK9RvppA0X3lLb2VLOqMt+FHWicyZ/wjhQZ4oW55ln2yYJUQ+adlgaYnPrtn\r\n' +
+      'sxmbTxM+99oF0F2/HmGrNs8nLZSva1Vy+hmjmWz6/O8ZxhiIj7oBRqYcAocCAwEA\r\n' +
+      'ATANBgkqhkiG9w0BAQUFAAOCAQEAvfvtu31GFBO5+mFjPAoR4BlzKq/H3EPOqS8c\r\n' +
+      'm/TjHgDRALwSnwKYCFs/bXqE4iOTD6otV4TusX3EPbqL2vzZQEcZn6paU/oZZVXw\r\n' +
+      'QqMqY5tf2teQiNxqxNmSIEPRHOr2QVBVIx2YF4Po89KGUqJ9u/3/10lDqRwpsRei\r\n' +
+      'jr5UKv5aygEcnwcW8+Ne4rTx934UDsutKG20dr5trZfWQRVS9fS9CFwJehEXHAMU\r\n' +
+      'c/0++80NhfQthmWZWlWM1R3dr4TrIPtWdn5z0MtGeDvqBk7HjGrhcVS6kAsyZ9y/\r\n' +
+      'lfLPjBuxlQAHztEJCWgI4TW3/RLhgfg2gI1noM2n84CdmisfkjEA\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataNoAttrs: '-----BEGIN PKCS7-----\r\n' +
+      'MIIF1gYJKoZIhvcNAQcCoIIFxzCCBcMCAQExDzANBglghkgBZQMEAgEFADAYBgkq\r\n' +
+      'hkiG9w0BBwGgCwQJdW5kZWZpbmVkoIIDuDCCA7QwggKcAgkA1FQcQNg14vMwDQYJ\r\n' +
+      'KoZIhvcNAQEFBQAwgZsxCzAJBgNVBAYTAkRFMRIwEAYDVQQIDAlGcmFuY29uaWEx\r\n' +
+      'EDAOBgNVBAcMB0Fuc2JhY2gxFTATBgNVBAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UE\r\n' +
+      'CwwJR2VpZXJsZWluMRYwFAYDVQQDDA1HZWllcmxlaW4gREVWMSMwIQYJKoZIhvcN\r\n' +
+      'AQkBFhRzdGVzaWVAYnJva2VucGlwZS5kZTAeFw0xMjAzMTgyMjU3NDNaFw0xMzAz\r\n' +
+      'MTgyMjU3NDNaMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNvbmlhMRAw\r\n' +
+      'DgYDVQQHDAdBbnNiYWNoMRUwEwYDVQQKDAxTdGVmYW4gU2llZ2wxEjAQBgNVBAsM\r\n' +
+      'CUdlaWVybGVpbjEWMBQGA1UEAwwNR2VpZXJsZWluIERFVjEjMCEGCSqGSIb3DQEJ\r\n' +
+      'ARYUc3Rlc2llQGJyb2tlbnBpcGUuZGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\r\n' +
+      'ggEKAoIBAQDLAG0OH1nrx6j9Stcv3sKTEt72KLwbaOyLCgatL9zZgtpD39zYcmki\r\n' +
+      'n4zjkubgDzjS33y3JPohnTiyxYmujkqTOtLckCFfZR6EYe3zhGDkWm9GfmgVGXBB\r\n' +
+      'k/cqLQTq2l9WGynOX/VzvvNHhuF2L2+bmtTR68VqnuMNqd8xiQijvsB6bxpGys9J\r\n' +
+      '37t+o8Fs+WooXx4vYaf8bPJnx/OpiCog+39l9inmdTyvUb6aQNF95S29lSzqjLfh\r\n' +
+      'R1onMmf8I4UGeKFueZZ9smCVEPmnZYGmJz67Z7MZm08TPvfaBdBdvx5hqzbPJy2U\r\n' +
+      'r2tVcvoZo5ls+vzvGcYYiI+6AUamHAKHAgMBAAEwDQYJKoZIhvcNAQEFBQADggEB\r\n' +
+      'AL377bt9RhQTufphYzwKEeAZcyqvx9xDzqkvHJv04x4A0QC8Ep8CmAhbP216hOIj\r\n' +
+      'kw+qLVeE7rF9xD26i9r82UBHGZ+qWlP6GWVV8EKjKmObX9rXkIjcasTZkiBD0Rzq\r\n' +
+      '9kFQVSMdmBeD6PPShlKifbv9/9dJQ6kcKbEXoo6+VCr+WsoBHJ8HFvPjXuK08fd+\r\n' +
+      'FA7LrShttHa+ba2X1kEVUvX0vQhcCXoRFxwDFHP9PvvNDYX0LYZlmVpVjNUd3a+E\r\n' +
+      '6yD7VnZ+c9DLRng76gZOx4xq4XFUupALMmfcv5Xyz4wbsZUAB87RCQloCOE1t/0S\r\n' +
+      '4YH4NoCNZ6DNp/OAnZorH5IxggHVMIIB0QIBATCBqTCBmzELMAkGA1UEBhMCREUx\r\n' +
+      'EjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UECgwM\r\n' +
+      'U3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNVBAMMDUdlaWVy\r\n' +
+      'bGVpbiBERVYxIzAhBgkqhkiG9w0BCQEWFHN0ZXNpZUBicm9rZW5waXBlLmRlAgkA\r\n' +
+      '1FQcQNg14vMwDQYJYIZIAWUDBAIBBQAwDQYJKoZIhvcNAQEBBQAEggEAH0PuQntt\r\n' +
+      'sAP+TZVwIXMEMHkkm3aVyxKfK5v7sY5pWcPoKT5QsVcs1qOfO1uxc/kXdhFAC59J\r\n' +
+      'CbVQIwojWQzc5JDAoJVYwC9ob9tuqW6gsg8jsydgWTpa/ZIwICrxPi6jXuGu1bNK\r\n' +
+      'cZNKyIhskI3zPGwuTkv0qBK3Tu5dFHUYM2jUQcnJDT1VZPjb8z5Dc1ZwyG5Hhbmx\r\n' +
+      'R708JZxOOumzOOIsTaNaPcuRjdxqSJL27nosWbT5OruUerOItJkT31vT6sinhCan\r\n' +
+      '/IojfA1jL7L8EtAuDAsblx6Z5FWhOK26bdxfGfyNXR/lPKmWIBhlybxn/KPINK7n\r\n' +
+      'Z6eFXKrBm6fxBQ==\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -313,6 +370,30 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         p7.decrypt(key);
         ASSERT.equal(p7.content.toHex(), result);
       });
+    });
+
+    it('should create a degenerate PKCS#7 certificate container', function() {
+      var p7 = PKCS7.createSignedData();
+      p7.addCertificate(_pem.certificate);
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.degenerateP7);
+    });
+
+    it('should create PKCS#7 SignedData with no attributes', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataNoAttrs);
     });
   });
 }
