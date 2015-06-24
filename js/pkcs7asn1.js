@@ -1,8 +1,10 @@
 /**
  * Javascript implementation of ASN.1 validators for PKCS#7 v1.5.
  *
+ * @author Dave Longley
  * @author Stefan Siegl
  *
+ * Copyright (c) 2012-2015 Digital Bazaar, Inc.
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of PKCS#7 is as follows
