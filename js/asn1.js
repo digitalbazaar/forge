@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2015 Digital Bazaar, Inc.
  *
  * An API for storing data using the Abstract Syntax Notation Number One
  * format using DER (Distinguished Encoding Rules) encoding. This encoding is
@@ -216,15 +216,16 @@ asn1.create = function(tagClass, type, constructed, value) {
 };
 
 /**
- * Gets the length of an ASN.1 value.
+ * Gets the length of a BER-encoded ASN.1 value.
  *
  * In case the length is not specified, undefined is returned.
  *
- * @param b the ASN.1 byte buffer.
+ * @param b the BER-encoded ASN.1 byte buffer, starting with the first
+ *          length byte.
  *
- * @return the length of the ASN.1 value.
+ * @return the length of the BER-encoded ASN.1 value or undefined.
  */
-var _getValueLength = function(b) {
+var _getValueLength = asn1.getBerValueLength = function(b) {
   var b2 = b.getByte();
   if(b2 === 0x80) {
     return undefined;
@@ -715,7 +716,6 @@ asn1.generalizedTimeToDate = function(gentime) {
   return date;
 };
 
-
 /**
  * Converts a date to a UTCTime value.
  *
@@ -731,6 +731,42 @@ asn1.dateToUtcTime = function(date) {
   var rval = '';
 
   // create format YYMMDDhhmmssZ
+  var format = [];
+  format.push(('' + date.getUTCFullYear()).substr(2));
+  format.push('' + (date.getUTCMonth() + 1));
+  format.push('' + date.getUTCDate());
+  format.push('' + date.getUTCHours());
+  format.push('' + date.getUTCMinutes());
+  format.push('' + date.getUTCSeconds());
+
+  // ensure 2 digits are used for each format entry
+  for(var i = 0; i < format.length; ++i) {
+    if(format[i].length < 2) {
+      rval += '0';
+    }
+    rval += format[i];
+  }
+  rval += 'Z';
+
+  return rval;
+};
+
+/**
+ * Converts a date to a GeneralizedTime value.
+ *
+ * @param date the date to convert.
+ *
+ * @return the GeneralizedTime value as a string.
+ */
+asn1.dateToGeneralizedTime = function(date) {
+  // TODO: validate; currently assumes proper format
+  if(typeof date === 'string') {
+    return date;
+  }
+
+  var rval = '';
+
+  // create format YYYYMMDDHHMMSSZ
   var format = [];
   format.push(('' + date.getUTCFullYear()).substr(2));
   format.push('' + (date.getUTCMonth() + 1));
