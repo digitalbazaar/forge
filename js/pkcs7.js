@@ -221,7 +221,7 @@ p7.createSignedData = function() {
      *     type: forge.pki.oids.messageDigest
      *   }]
      * });
-     * 
+     *
      * TODO: Support [subjectKeyIdentifier] as signer's ID.
      *
      * @param signer the signer information:
@@ -1037,10 +1037,12 @@ function _attributeToAsn1(attr) {
     var jan_1_2050 = new Date('Jan 1, 2050 00:00:00Z');
 
     if(attr.value >= jan_1_1950 && attr.value < jan_1_2050) {
-      value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+      value = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
         asn1.dateToUtcTime(attr.value));
     } else {
-      value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+      value = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.GENERALIZEDTIME, false,
         asn1.dateToGeneralizedTime(attr.value));
     }
   }
