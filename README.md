@@ -1146,6 +1146,31 @@ var p7 = forge.pkcs7.createSignedData();
 p7.addCertificate(certOrCertPem1);
 p7.addCertificate(certOrCertPem2);
 var pem = forge.pkcs7.messageToPem(p7);
+
+// create PKCS#7 signed data with authenticatedAttributes
+// attributes include: PKCS#9 content-type, message-digest, and signing-time
+var p7 = forge.pkcs7.createSignedData();
+p7.content = forge.util.createBuffer('Some content to be signed.', 'utf8');
+p7.addCertificate(certOrCertPem);
+p7.addSigner({
+  key: privateKeyAssociatedWithCert,
+  certificate: certificate,
+  digestAlgorithm: forge.pki.oids.sha256,
+  authenticatedAttributes: [{
+    type: forge.pki.oids.contentType,
+    value: forge.pki.oids.data
+  }, {
+    type: forge.pki.oids.messageDigest
+    // value will be auto-populated at signing time
+  }, {
+    type: forge.pki.oids.signingTime,
+    // value can also be auto-populated at signing time
+    value: new Date()
+  }]
+});
+p7.sign();
+var pem = forge.pkcs7.messageToPem(p7);
+
 ```
 
 <a name="pkcs8" />
