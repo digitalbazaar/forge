@@ -221,6 +221,8 @@ p7.createSignedData = function() {
      *     type: forge.pki.oids.messageDigest
      *   }]
      * });
+     * 
+     * TODO: Support [subjectKeyIdentifier] as signer's ID.
      *
      * @param signer the signer information:
      *          key the signer's private key.
