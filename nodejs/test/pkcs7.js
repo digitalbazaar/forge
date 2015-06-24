@@ -125,38 +125,110 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       'lfLPjBuxlQAHztEJCWgI4TW3/RLhgfg2gI1noM2n84CdmisfkjEA\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataNoAttrs: '-----BEGIN PKCS7-----\r\n' +
-      'MIIF1gYJKoZIhvcNAQcCoIIFxzCCBcMCAQExDzANBglghkgBZQMEAgEFADAYBgkq\r\n' +
-      'hkiG9w0BBwGgCwQJdW5kZWZpbmVkoIIDuDCCA7QwggKcAgkA1FQcQNg14vMwDQYJ\r\n' +
-      'KoZIhvcNAQEFBQAwgZsxCzAJBgNVBAYTAkRFMRIwEAYDVQQIDAlGcmFuY29uaWEx\r\n' +
-      'EDAOBgNVBAcMB0Fuc2JhY2gxFTATBgNVBAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UE\r\n' +
-      'CwwJR2VpZXJsZWluMRYwFAYDVQQDDA1HZWllcmxlaW4gREVWMSMwIQYJKoZIhvcN\r\n' +
-      'AQkBFhRzdGVzaWVAYnJva2VucGlwZS5kZTAeFw0xMjAzMTgyMjU3NDNaFw0xMzAz\r\n' +
-      'MTgyMjU3NDNaMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNvbmlhMRAw\r\n' +
-      'DgYDVQQHDAdBbnNiYWNoMRUwEwYDVQQKDAxTdGVmYW4gU2llZ2wxEjAQBgNVBAsM\r\n' +
-      'CUdlaWVybGVpbjEWMBQGA1UEAwwNR2VpZXJsZWluIERFVjEjMCEGCSqGSIb3DQEJ\r\n' +
-      'ARYUc3Rlc2llQGJyb2tlbnBpcGUuZGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw\r\n' +
-      'ggEKAoIBAQDLAG0OH1nrx6j9Stcv3sKTEt72KLwbaOyLCgatL9zZgtpD39zYcmki\r\n' +
-      'n4zjkubgDzjS33y3JPohnTiyxYmujkqTOtLckCFfZR6EYe3zhGDkWm9GfmgVGXBB\r\n' +
-      'k/cqLQTq2l9WGynOX/VzvvNHhuF2L2+bmtTR68VqnuMNqd8xiQijvsB6bxpGys9J\r\n' +
-      '37t+o8Fs+WooXx4vYaf8bPJnx/OpiCog+39l9inmdTyvUb6aQNF95S29lSzqjLfh\r\n' +
-      'R1onMmf8I4UGeKFueZZ9smCVEPmnZYGmJz67Z7MZm08TPvfaBdBdvx5hqzbPJy2U\r\n' +
-      'r2tVcvoZo5ls+vzvGcYYiI+6AUamHAKHAgMBAAEwDQYJKoZIhvcNAQEFBQADggEB\r\n' +
-      'AL377bt9RhQTufphYzwKEeAZcyqvx9xDzqkvHJv04x4A0QC8Ep8CmAhbP216hOIj\r\n' +
-      'kw+qLVeE7rF9xD26i9r82UBHGZ+qWlP6GWVV8EKjKmObX9rXkIjcasTZkiBD0Rzq\r\n' +
-      '9kFQVSMdmBeD6PPShlKifbv9/9dJQ6kcKbEXoo6+VCr+WsoBHJ8HFvPjXuK08fd+\r\n' +
-      'FA7LrShttHa+ba2X1kEVUvX0vQhcCXoRFxwDFHP9PvvNDYX0LYZlmVpVjNUd3a+E\r\n' +
-      '6yD7VnZ+c9DLRng76gZOx4xq4XFUupALMmfcv5Xyz4wbsZUAB87RCQloCOE1t/0S\r\n' +
-      '4YH4NoCNZ6DNp/OAnZorH5IxggHVMIIB0QIBATCBqTCBmzELMAkGA1UEBhMCREUx\r\n' +
-      'EjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UECgwM\r\n' +
-      'U3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNVBAMMDUdlaWVy\r\n' +
-      'bGVpbiBERVYxIzAhBgkqhkiG9w0BCQEWFHN0ZXNpZUBicm9rZW5waXBlLmRlAgkA\r\n' +
-      '1FQcQNg14vMwDQYJYIZIAWUDBAIBBQAwDQYJKoZIhvcNAQEBBQAEggEAH0PuQntt\r\n' +
-      'sAP+TZVwIXMEMHkkm3aVyxKfK5v7sY5pWcPoKT5QsVcs1qOfO1uxc/kXdhFAC59J\r\n' +
-      'CbVQIwojWQzc5JDAoJVYwC9ob9tuqW6gsg8jsydgWTpa/ZIwICrxPi6jXuGu1bNK\r\n' +
-      'cZNKyIhskI3zPGwuTkv0qBK3Tu5dFHUYM2jUQcnJDT1VZPjb8z5Dc1ZwyG5Hhbmx\r\n' +
-      'R708JZxOOumzOOIsTaNaPcuRjdxqSJL27nosWbT5OruUerOItJkT31vT6sinhCan\r\n' +
-      '/IojfA1jL7L8EtAuDAsblx6Z5FWhOK26bdxfGfyNXR/lPKmWIBhlybxn/KPINK7n\r\n' +
-      'Z6eFXKrBm6fxBQ==\r\n' +
+      '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\r\n' +
+      'JYiOgKdXRs1MdQqnl0Q=\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithAttrsUTCTime: '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'gwbBcDl+50dPc2TncPe0uPfHgo5/Pr2ckA==\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithAttrsGeneralizedTime: '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'rkawnh3JeN3iT9zv519x5a0ofgcPznLNMA==\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -395,6 +467,65 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataNoAttrs);
     });
+
+    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+      'and signing-time attributes using UTCTime', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as UTC time
+          value: new Date('Jan 1, 1950 00:00:00Z')
+        }]
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataWithAttrsUTCTime);
+    });
+
+    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+      'and signing-time attributes using GeneralizedTime', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as generalized time
+          value: new Date('Jan 1, 2050 00:00:00Z')
+        }]
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
+    });
+
   });
 }
 
