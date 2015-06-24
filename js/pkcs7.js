@@ -1,18 +1,19 @@
 /**
- * Javascript implementation of PKCS#7 v1.5. Currently only certain parts of
- * PKCS#7 are implemented, especially the enveloped-data content type.
+ * Javascript implementation of PKCS#7 v1.5.
  *
  * @author Stefan Siegl
+ * @author Dave Longley
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2012-2015 Digital Bazaar, Inc.
  *
- * Currently this implementation only supports ContentType of either
- * EnvelopedData or EncryptedData on root level.  The top level elements may
- * contain only a ContentInfo of ContentType Data, i.e. plain data.  Further
+ * Currently this implementation only supports ContentType of EnvelopedData,
+ * EncryptedData, or SignedData at the root level. The top level elements may
+ * contain only a ContentInfo of ContentType Data, i.e. plain data. Further
  * nesting is not (yet) supported.
  *
  * The Forge validators for PKCS #7's ASN.1 structures are available from
- * a seperate file pkcs7asn1.js, since those are referenced from other
+ * a separate file pkcs7asn1.js, since those are referenced from other
  * PKCS standards like PKCS #12.
  */
 (function() {
@@ -112,251 +113,6 @@ p7.messageFromAsn1 = function(obj) {
   return msg;
 };
 
-/**
- * Converts a single RecipientInfo from an ASN.1 object.
- *
- * @param obj The ASN.1 representation of a RecipientInfo.
- *
- * @return The recipientInfo object.
- */
-var _recipientInfoFromAsn1 = function(obj) {
-  // Validate EnvelopedData content block and capture data.
-  var capture = {};
-  var errors = [];
-  if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors))
-  {
-    var error = new Error('Cannot read PKCS#7 message. ' +
-      'ASN.1 object is not an PKCS#7 EnvelopedData.');
-    error.errors = errors;
-    throw error;
-  }
-
-  return {
-    version: capture.version.charCodeAt(0),
-    issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
-    serialNumber: forge.util.createBuffer(capture.serial).toHex(),
-    encryptedContent: {
-      algorithm: asn1.derToOid(capture.encAlgorithm),
-      parameter: capture.encParameter.value,
-      content: capture.encKey
-    }
-  };
-};
-
-/**
- * Converts a single recipientInfo object to an ASN.1 object.
- *
- * @param obj The recipientInfo object.
- *
- * @return The ASN.1 representation of a RecipientInfo.
- */
-var _recipientInfoToAsn1 = function(obj) {
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-    // Version
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-      asn1.integerToDer(obj.version).getBytes()),
-    // IssuerAndSerialNumber
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // Name
-      forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
-      // Serial
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-        forge.util.hexToBytes(obj.serialNumber))
-    ]),
-    // KeyEncryptionAlgorithmIdentifier
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // Algorithm
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
-      // Parameter, force NULL, only RSA supported for now.
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-    ]),
-    // EncryptedKey
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-      obj.encryptedContent.content)
-  ]);
-};
-
-/**
- * Map a set of RecipientInfo ASN.1 objects to recipientInfo objects.
- *
- * @param objArr Array of ASN.1 representations RecipientInfo (i.e. SET OF).
- *
- * @return array of recipientInfo objects.
- */
-var _recipientInfosFromAsn1 = function(objArr) {
-  var ret = [];
-  for(var i = 0; i < objArr.length; i ++) {
-    ret.push(_recipientInfoFromAsn1(objArr[i]));
-  }
-  return ret;
-};
-
-/**
- * Map an array of recipientInfo objects to ASN.1 objects.
- *
- * @param recipientsArr Array of recipientInfo objects.
- *
- * @return Array of ASN.1 representations RecipientInfo.
- */
-var _recipientInfosToAsn1 = function(recipientsArr) {
-  var ret = [];
-  for(var i = 0; i < recipientsArr.length; i ++) {
-    ret.push(_recipientInfoToAsn1(recipientsArr[i]));
-  }
-  return ret;
-};
-
-/**
- * Map messages encrypted content to ASN.1 objects.
- *
- * @param ec The encryptedContent object of the message.
- *
- * @return ASN.1 representation of the encryptedContent object (SEQUENCE).
- */
-var _encryptedContentToAsn1 = function(ec) {
-  return [
-    // ContentType, always Data for the moment
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-      asn1.oidToDer(forge.pki.oids.data).getBytes()),
-    // ContentEncryptionAlgorithmIdentifier
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      // Algorithm
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-        asn1.oidToDer(ec.algorithm).getBytes()),
-      // Parameters (IV)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-        ec.parameter.getBytes())
-    ]),
-    // [0] EncryptedContent
-    asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-        ec.content.getBytes())
-    ])
-  ];
-};
-
-/**
- * Reads the "common part" of an PKCS#7 content block (in ASN.1 format)
- *
- * This function reads the "common part" of the PKCS#7 content blocks
- * EncryptedData and EnvelopedData, i.e. version number and symmetrically
- * encrypted content block.
- *
- * The result of the ASN.1 validate and capture process is returned
- * to allow the caller to extract further data, e.g. the list of recipients
- * in case of a EnvelopedData object.
- *
- * @param msg the PKCS#7 object to read the data to.
- * @param obj the ASN.1 representation of the content block.
- * @param validator the ASN.1 structure validator object to use.
- *
- * @return the value map captured by validator object.
- */
-var _fromAsn1 = function(msg, obj, validator) {
-  var capture = {};
-  var errors = [];
-  if(!asn1.validate(obj, validator, capture, errors)) {
-    var error = new Error('Cannot read PKCS#7 message. ' +
-      'ASN.1 object is not a supported PKCS#7 message.');
-    error.errors = error;
-    throw error;
-  }
-
-  // Check contentType, so far we only support (raw) Data.
-  var contentType = asn1.derToOid(capture.contentType);
-  if(contentType !== forge.pki.oids.data) {
-    throw new Error('Unsupported PKCS#7 message. ' +
-      'Only wrapped ContentType Data supported.');
-  }
-
-  if(capture.encryptedContent) {
-    var content = '';
-    if(forge.util.isArray(capture.encryptedContent)) {
-      for(var i = 0; i < capture.encryptedContent.length; ++i) {
-        if(capture.encryptedContent[i].type !== asn1.Type.OCTETSTRING) {
-          throw new Error('Malformed PKCS#7 message, expecting encrypted ' +
-            'content constructed of only OCTET STRING objects.');
-        }
-        content += capture.encryptedContent[i].value;
-      }
-    } else {
-      content = capture.encryptedContent;
-    }
-    msg.encryptedContent = {
-      algorithm: asn1.derToOid(capture.encAlgorithm),
-      parameter: forge.util.createBuffer(capture.encParameter.value),
-      content: forge.util.createBuffer(content)
-    };
-  }
-
-  if(capture.content) {
-    var content = '';
-    if(forge.util.isArray(capture.content)) {
-      for(var i = 0; i < capture.content.length; ++i) {
-        if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
-          throw new Error('Malformed PKCS#7 message, expecting ' +
-            'content constructed of only OCTET STRING objects.');
-        }
-        content += capture.content[i].value;
-      }
-    } else {
-      content = capture.content;
-    }
-    msg.content = forge.util.createBuffer(content);
-  }
-
-  msg.version = capture.version.charCodeAt(0);
-  msg.rawCapture = capture;
-
-  return capture;
-};
-
-/**
- * Decrypt the symmetrically encrypted content block of the PKCS#7 message.
- *
- * Decryption is skipped in case the PKCS#7 message object already has a
- * (decrypted) content attribute.  The algorithm, key and cipher parameters
- * (probably the iv) are taken from the encryptedContent attribute of the
- * message object.
- *
- * @param The PKCS#7 message object.
- */
-var _decryptContent = function (msg) {
-  if(msg.encryptedContent.key === undefined) {
-    throw new Error('Symmetric key not available.');
-  }
-
-  if(msg.content === undefined) {
-    var ciph;
-
-    switch(msg.encryptedContent.algorithm) {
-      case forge.pki.oids['aes128-CBC']:
-      case forge.pki.oids['aes192-CBC']:
-      case forge.pki.oids['aes256-CBC']:
-        ciph = forge.aes.createDecryptionCipher(msg.encryptedContent.key);
-        break;
-
-      case forge.pki.oids['desCBC']:
-      case forge.pki.oids['des-EDE3-CBC']:
-        ciph = forge.des.createDecryptionCipher(msg.encryptedContent.key);
-        break;
-
-      default:
-        throw new Error('Unsupported symmetric cipher, OID ' +
-          msg.encryptedContent.algorithm);
-    }
-    ciph.start(msg.encryptedContent.parameter);
-    ciph.update(msg.encryptedContent.content);
-
-    if(!ciph.finish()) {
-      throw new Error('Symmetric decryption failed.');
-    }
-
-    msg.content = ciph.output;
-  }
-};
-
 p7.createSignedData = function() {
   var msg = null;
   msg = {
@@ -364,6 +120,8 @@ p7.createSignedData = function() {
     version: 1,
     certificates: [],
     crls: [],
+    // TODO: add json-formatted signer stuff here?
+    signers: [],
     // populated during sign()
     digestAlgorithmIdentifiers: [],
     contentInfo: null,
@@ -387,11 +145,6 @@ p7.createSignedData = function() {
     },
 
     toAsn1: function() {
-      // TODO: add support for more data types here
-      if('content' in msg) {
-        throw new Error('Signing PKCS#7 content not yet implemented.');
-      }
-
       // degenerate case with no content
       if(!msg.contentInfo) {
         msg.sign();
@@ -405,6 +158,35 @@ p7.createSignedData = function() {
       var crls = [];
       // TODO: implement CRLs
 
+      // [0] SignedData
+      var signedData = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          // Version
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            asn1.integerToDer(msg.version).getBytes()),
+          // DigestAlgorithmIdentifiers
+          asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SET, true,
+            msg.digestAlgorithmIdentifiers),
+          // ContentInfo
+          msg.contentInfo
+        ])
+      ]);
+      if(certs.length > 0) {
+        // [0] IMPLICIT ExtendedCertificatesAndCertificates OPTIONAL
+        signedData.value[0].value.push(
+          asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, certs));
+      }
+      if(crls.length > 0) {
+        // [1] IMPLICIT CertificateRevocationLists OPTIONAL
+        signedData.value[0].value.push(
+          asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, crls));
+      }
+      // SignerInfos
+      signedData.value[0].value.push(
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
+          msg.signerInfos));
+
       // ContentInfo
       return asn1.create(
         asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -412,42 +194,126 @@ p7.createSignedData = function() {
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
             asn1.oidToDer(msg.type).getBytes()),
           // [0] SignedData
-          asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-              // Version
-              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
-                asn1.integerToDer(msg.version).getBytes()),
-              // DigestAlgorithmIdentifiers
-              asn1.create(
-                asn1.Class.UNIVERSAL, asn1.Type.SET, true,
-                msg.digestAlgorithmIdentifiers),
-              // ContentInfo
-              msg.contentInfo,
-              // [0] IMPLICIT ExtendedCertificatesAndCertificates
-              asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, certs),
-              // [1] IMPLICIT CertificateRevocationLists
-              asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, crls),
-              // SignerInfos
-              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
-                msg.signerInfos)
-            ])
-          ])
-      ]);
+          signedData
+        ]);
+    },
+
+    /**
+     * Add (another) entity to list of signers.
+     *
+     * Note: If authenticatedAttributes are provided, then, per RFC 2315,
+     * they must include at least two attributes: content type and
+     * message digest. The message digest attribute value will be
+     * auto-calculated during signing and will be ignored if provided.
+     *
+     * Here's an example of providing these two attributes:
+     *
+     * forge.pkcs7.createSignedData();
+     * p7.addSigner({
+     *   issuer: cert.issuer.attributes,
+     *   serialNumber: cert.serialNumber,
+     *   key: privateKey,
+     *   digestAlgorithm: forge.pki.oids.sha1,
+     *   authenticatedAttributes: [{
+     *     type: forge.pki.oids.contentType,
+     *     value: forge.pki.oids.data
+     *   }, {
+     *     type: forge.pki.oids.messageDigest
+     *   }]
+     * });
+     *
+     * @param signer the signer information:
+     *          key the signer's private key.
+     *          [certificate] a certificate containing the public key
+     *            associated with the signer's private key; use this option as
+     *            an alternative to specifying signer.issuer and
+     *            signer.serialNumber.
+     *          [issuer] the issuer attributes (eg: cert.issuer.attributes).
+     *          [serialNumber] the signer's certificate's serial number in
+     *           hexadecimal (eg: cert.serialNumber).
+     *          [digestAlgorithm] the message digest OID, as a string, to use
+     *            (eg: forge.pki.oids.sha1).
+     *          [authenticatedAttributes] an optional array of attributes
+     *            to also sign along with the content.
+     */
+    addSigner: function(signer) {
+      var issuer = signer.issuer;
+      var serialNumber = signer.serialNumber;
+      if(signer.certificate) {
+        var cert = signer.certificate;
+        if(typeof cert === 'string') {
+          cert = forge.pki.certificateFromPem(cert);
+        }
+        issuer = cert.issuer.attributes;
+        serialNumber = cert.serialNumber;
+      }
+
+      // ensure OID known for digest algorithm
+      var digestAlgorithm = signer.digestAlgorithm || forge.pki.oids.sha1;
+      switch(digestAlgorithm) {
+      case forge.pki.oids.sha1:
+      case forge.pki.oids.sha256:
+      case forge.pki.oids.sha384:
+      case forge.pki.oids.sha512:
+      case forge.pki.oids.md5:
+        break;
+      default:
+        throw new Error(
+          'Could not add PKCS#7 signer; unknown message digest algorithm: ' +
+          digestAlgorithm);
+      }
+
+      // if authenticatedAttributes is present, then the attributes
+      // must contain at least PKCS #9 content-type and message-digest
+      var authenticatedAttributes = signer.authenticatedAttributes || [];
+      if(authenticatedAttributes.length > 0) {
+        var contentType = false;
+        var messageDigest = false;
+        for(var i = 0; i < authenticatedAttributes.length; ++i) {
+          var attr = authenticatedAttributes[i];
+          if(!contentType && attr.type === forge.pki.oids.contentType) {
+            contentType = true;
+            if(messageDigest) {
+              break;
+            }
+            continue;
+          }
+          if(!messageDigest && attr.type === forge.pki.oids.messageDigest) {
+            messageDigest = true;
+            if(contentType) {
+              break;
+            }
+            continue;
+          }
+        }
+
+        if(!contentType || !messageDigest) {
+          throw new Error('Invalid signer.authenticatedAttributes. If ' +
+            'signer.authenticatedAttributes is specified, then it must ' +
+            'contain at least two attributes, PKCS #9 content-type and ' +
+            'PKCS #9 message-digest.');
+        }
+      }
+
+      msg.signers.push({
+        key: signer.key,
+        version: 1,
+        issuer: issuer,
+        serialNumber: serialNumber,
+        digestAlgorithm: digestAlgorithm,
+        signatureAlgorithm: forge.pki.oids.rsaEncryption,
+        signature: null,
+        authenticatedAttributes: authenticatedAttributes,
+        unauthenticatedAttributes: []
+      });
     },
 
     /**
      * Signs the content.
-     *
-     * @param signer the signer (or array of signers) to sign as, for each:
-     *          key the private key to sign with.
-     *          [md] the message digest to use, defaults to sha-1.
      */
-    sign: function(signer) {
-      if('content' in msg) {
-        throw new Error('PKCS#7 signing not yet implemented.');
-      }
-
-      if(typeof msg.content !== 'object') {
+    sign: function() {
+      // auto-generate content info
+      if(typeof msg.content !== 'object' || msg.contentInfo === null) {
         // use Data ContentInfo
         msg.contentInfo = asn1.create(
           asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
@@ -458,18 +324,32 @@ p7.createSignedData = function() {
 
         // add actual content, if present
         if('content' in msg) {
+          var content;
+          if(msg.content instanceof forge.util.ByteBuffer) {
+            content = msg.content.bytes();
+          } else if(typeof msg.content === 'string') {
+            content = forge.util.encodeUtf8(msg.content);
+          }
+
           msg.contentInfo.value.push(
             // [0] EXPLICIT content
             asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
               asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
-                msg.content)
+                content)
             ]));
         }
       }
 
-      // TODO: generate digest algorithm identifiers
+      // no signers, return early (degenerate case for certificate container)
+      if(msg.signers.length === 0) {
+        return;
+      }
 
-      // TODO: generate signerInfos
+      // generate digest algorithm identifiers
+      var mds = addDigestAlgorithmIds();
+
+      // generate signerInfos
+      addSignerInfos(mds);
     },
 
     verify: function() {
@@ -499,6 +379,132 @@ p7.createSignedData = function() {
     }
   };
   return msg;
+
+  function addDigestAlgorithmIds() {
+    var mds = {};
+
+    for(var i = 0; i < msg.signers.length; ++i) {
+      var signer = msg.signers[i];
+      var oid = signer.digestAlgorithm;
+      if(!(oid in mds)) {
+        // content digest
+        mds[oid] = forge.md[forge.pki.oids[oid]].create();
+      }
+      if(signer.authenticatedAttributes.length === 0) {
+        // no custom attributes to digest; use content message digest
+        signer.md = mds[oid];
+      } else {
+        // custom attributes to be digested; use own message digest
+        // TODO: optimize to just copy message digest state if that
+        // feature is ever supported with message digests
+        signer.md = forge.md[forge.pki.oids[oid]].create();
+      }
+    }
+
+    // add unique digest algorithm identifiers
+    msg.digestAlgorithmIdentifiers = [];
+    for(var oid in mds) {
+      msg.digestAlgorithmIdentifiers.push(
+        // AlgorithmIdentifier
+        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          // algorithm
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(oid).getBytes()),
+          // parameters (null)
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+        ]));
+    }
+
+    return mds;
+  }
+
+  function addSignerInfos(mds) {
+    // Note: ContentInfo is a SEQUENCE with 2 values, second value is
+    // the content field and is optional for a ContentInfo but required here
+    // since signers are present
+    if(msg.contentInfo.value.length < 2) {
+      throw new Error(
+        'Could not sign PKCS#7 message; there is no content to sign.');
+    }
+
+    // get ContentInfo content type
+    var contentType = asn1.derToOid(msg.contentInfo.value[0].value);
+
+    // get ContentInfo content
+    var content = msg.contentInfo.value[1];
+    // skip [0] EXPLICIT content wrapper
+    content = content.value[0];
+
+    // serialize content
+    var bytes = asn1.toDer(content);
+
+    // skip identifier and length per RFC 2315 9.3
+    // skip identifier (1 byte)
+    bytes.getByte();
+    // read and discard length bytes
+    asn1.getBerValueLength(bytes);
+    bytes = bytes.getBytes();
+
+    // digest content DER value bytes
+    for(var oid in mds) {
+      mds[oid].start().update(bytes);
+    }
+
+    // sign content
+    var signingTime = new Date();
+    for(var i = 0; i < msg.signers.length; ++i) {
+      var signer = msg.signers[i];
+
+      if(signer.authenticatedAttributes.length === 0) {
+        // if ContentInfo content type is not "Data", then
+        // authenticatedAttributes must be present per RFC 2315
+        if(contentType !== forge.pki.oids.data) {
+          throw new Error(
+            'Invalid signer; authenticatedAttributes must be present ' +
+            'when the ContentInfo content type is not PKCS#7 Data.');
+        }
+      } else {
+        // process authenticated attributes
+        // [0] IMPLICIT
+        signer.authenticatedAttributesAsn1 = asn1.create(
+          asn1.Class.CONTEXT_SPECIFIC, 0, true, []);
+
+        // per RFC 2315, attributes are to be digested using a SET container
+        // not the above [0] IMPLICIT container
+        var attrsAsn1 = asn1.create(
+          asn1.Class.UNIVERSAL, asn1.Type.SET, true, []);
+
+        for(var i = 0; i < signer.authenticatedAttributes.length; ++i) {
+          var attr = signer.authenticatedAttributes[i];
+          if(attr.type === forge.pki.oids.messageDigest) {
+            // use content message digest as value
+            attr.value = mds[signer.digestAlgorithm].digest();
+          } else if(attr.type === forge.pki.oids.signingTime) {
+            // auto-populate signing time if not already set
+            if(!attr.value) {
+              attr.value = signingTime;
+            }
+          }
+
+          // convert to ASN.1 and push onto Attributes SET (for signing) and
+          // onto authenticatedAttributesAsn1 to complete SignedData ASN.1
+          // TODO: optimize away duplication
+          attrsAsn1.value.push(_attributeToAsn1(attr));
+          signer.authenticatedAttributesAsn1.value.push(_attributeToAsn1(attr));
+        }
+
+        // DER-serialize and digest SET OF attributes only
+        bytes = asn1.toDer(attrsAsn1).getBytes();
+        signer.md.start().update(bytes);
+      }
+
+      // sign digest
+      signer.signature = signer.key.sign(signer.md, 'RSASSA-PKCS1-V1_5');
+    }
+
+    // add signer info
+    msg.signerInfos = _signersToAsn1(msg.signers);
+  }
 };
 
 /**
@@ -563,7 +569,7 @@ p7.createEnvelopedData = function() {
     fromAsn1: function(obj) {
       // validate EnvelopedData content block and capture data
       var capture = _fromAsn1(msg, obj, p7.asn1.envelopedDataValidator);
-      msg.recipients = _recipientInfosFromAsn1(capture.recipientInfos.value);
+      msg.recipients = _recipientsFromAsn1(capture.recipientInfos.value);
     },
 
     toAsn1: function() {
@@ -580,7 +586,7 @@ p7.createEnvelopedData = function() {
               asn1.integerToDer(msg.version).getBytes()),
             // RecipientInfos
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true,
-              _recipientInfosToAsn1(msg.recipients)),
+              _recipientsToAsn1(msg.recipients)),
             // EncryptedContentInfo
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
               _encryptedContentToAsn1(msg.encryptedContent))
@@ -774,6 +780,432 @@ p7.createEnvelopedData = function() {
   };
   return msg;
 };
+
+/**
+ * Converts a single recipient from an ASN.1 object.
+ *
+ * @param obj the ASN.1 RecipientInfo.
+ *
+ * @return the recipient object.
+ */
+function _recipientFromAsn1(obj) {
+  // validate EnvelopedData content block and capture data
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors)) {
+    var error = new Error('Cannot read PKCS#7 RecipientInfo. ' +
+      'ASN.1 object is not an PKCS#7 RecipientInfo.');
+    error.errors = errors;
+    throw error;
+  }
+
+  return {
+    version: capture.version.charCodeAt(0),
+    issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
+    serialNumber: forge.util.createBuffer(capture.serial).toHex(),
+    encryptedContent: {
+      algorithm: asn1.derToOid(capture.encAlgorithm),
+      parameter: capture.encParameter.value,
+      content: capture.encKey
+    }
+  };
+}
+
+/**
+ * Converts a single recipient object to an ASN.1 object.
+ *
+ * @param obj the recipient object.
+ *
+ * @return the ASN.1 RecipientInfo.
+ */
+function _recipientToAsn1(obj) {
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // Version
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      asn1.integerToDer(obj.version).getBytes()),
+    // IssuerAndSerialNumber
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // Name
+      forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
+      // Serial
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+        forge.util.hexToBytes(obj.serialNumber))
+    ]),
+    // KeyEncryptionAlgorithmIdentifier
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // Algorithm
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
+      // Parameter, force NULL, only RSA supported for now.
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+    ]),
+    // EncryptedKey
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+      obj.encryptedContent.content)
+  ]);
+}
+
+/**
+ * Map a set of RecipientInfo ASN.1 objects to recipient objects.
+ *
+ * @param infos an array of ASN.1 representations RecipientInfo (i.e. SET OF).
+ *
+ * @return an array of recipient objects.
+ */
+function _recipientsFromAsn1(infos) {
+  var ret = [];
+  for(var i = 0; i < infos.length; ++i) {
+    ret.push(_recipientFromAsn1(infos[i]));
+  }
+  return ret;
+}
+
+/**
+ * Map an array of recipient objects to ASN.1 RecipientInfo objects.
+ *
+ * @param recipients an array of recipientInfo objects.
+ *
+ * @return an array of ASN.1 RecipientInfos.
+ */
+function _recipientsToAsn1(recipients) {
+  var ret = [];
+  for(var i = 0; i < recipients.length; ++i) {
+    ret.push(_recipientToAsn1(recipients[i]));
+  }
+  return ret;
+}
+
+/**
+ * Converts a single signer from an ASN.1 object.
+ *
+ * @param obj the ASN.1 representation of a SignerInfo.
+ *
+ * @return the signer object.
+ */
+function _signerFromAsn1(obj) {
+  // validate EnvelopedData content block and capture data
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, p7.asn1.signerInfoValidator, capture, errors)) {
+    var error = new Error('Cannot read PKCS#7 SignerInfo. ' +
+      'ASN.1 object is not an PKCS#7 SignerInfo.');
+    error.errors = errors;
+    throw error;
+  }
+
+  var rval = {
+    version: capture.version.charCodeAt(0),
+    issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
+    serialNumber: forge.util.createBuffer(capture.serial).toHex(),
+    digestAlgorithm: asn1.derToOid(capture.digestAlgorithm),
+    signatureAlgorithm: asn1.derToOid(capture.signatureAlgorithm),
+    signature: capture.signature,
+    authenticatedAttributes: [],
+    unauthenticatedAttributes: []
+  };
+
+  // TODO: convert attributes
+  var authenticatedAttributes = capture.authenticatedAttributes || [];
+  var unauthenticatedAttributes = capture.unauthenticatedAttributes || [];
+
+  return rval;
+}
+
+/**
+ * Converts a single signerInfo object to an ASN.1 object.
+ *
+ * @param obj the signerInfo object.
+ *
+ * @return the ASN.1 representation of a SignerInfo.
+ */
+function _signerToAsn1(obj) {
+  // SignerInfo
+  var rval = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // version
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      asn1.integerToDer(obj.version).getBytes()),
+    // issuerAndSerialNumber
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // name
+      forge.pki.distinguishedNameToAsn1({attributes: obj.issuer}),
+      // serial
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+        forge.util.hexToBytes(obj.serialNumber))
+    ]),
+    // digestAlgorithm
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // algorithm
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.oidToDer(obj.digestAlgorithm).getBytes()),
+      // parameters (null)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+    ])
+  ]);
+
+  // authenticatedAttributes (OPTIONAL)
+  if(obj.authenticatedAttributesAsn1) {
+    // add ASN.1 previously generated during signing
+    rval.value.push(obj.authenticatedAttributesAsn1);
+  }
+
+  // digestEncryptionAlgorithm
+  rval.value.push(asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // algorithm
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(obj.signatureAlgorithm).getBytes()),
+    // parameters (null)
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+  ]));
+
+  // encryptedDigest
+  rval.value.push(asn1.create(
+    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, obj.signature));
+
+  // unauthenticatedAttributes (OPTIONAL)
+  if(obj.unauthenticatedAttributes.length > 0) {
+    // [1] IMPLICIT
+    var attrsAsn1 = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, []);
+    for(var i = 0; i < obj.unauthenticatedAttributes.length; ++i) {
+      var attr = obj.unauthenticatedAttributes[i];
+      attrsAsn1.values.push(_attributeToAsn1(attr));
+    }
+    rval.value.push(attrsAsn1);
+  }
+
+  return rval;
+}
+
+/**
+ * Map a set of SignerInfo ASN.1 objects to an array of signer objects.
+ *
+ * @param signerInfoAsn1s an array of ASN.1 SignerInfos (i.e. SET OF).
+ *
+ * @return an array of signers objects.
+ */
+function _signersFromAsn1(signerInfoAsn1s) {
+  var ret = [];
+  for(var i = 0; i < signerInfoAsn1s.length; i ++) {
+    ret.push(_signerFromAsn1(signerInfoAsn1s[i]));
+  }
+  return ret;
+}
+
+/**
+ * Map an array of signer objects to ASN.1 objects.
+ *
+ * @param signers an array of signer objects.
+ *
+ * @return an array of ASN.1 SignerInfos.
+ */
+function _signersToAsn1(signers) {
+  var ret = [];
+  for(var i = 0; i < signers.length; i ++) {
+    ret.push(_signerToAsn1(signers[i]));
+  }
+  return ret;
+}
+
+/**
+ * Convert an attribute object to an ASN.1 Attribute.
+ *
+ * @param attr the attribute object.
+ *
+ * @return the ASN.1 Attribute.
+ */
+function _attributeToAsn1(attr) {
+  var value;
+
+  // TODO: generalize to support more attributes
+  if(attr.type === forge.pki.oids.contentType) {
+    value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(attr.value).getBytes());
+  } else if(attr.type === forge.pki.oids.messageDigest) {
+    value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+      attr.value.bytes());
+  } else if(attr.type === forge.pki.oids.signingTime) {
+    /* Note per RFC 2985: Dates between 1 January 1950 and 31 December 2049
+      (inclusive) MUST be encoded as UTCTime. Any dates with year values
+      before 1950 or after 2049 MUST be encoded as GeneralizedTime. [Further,]
+      UTCTime values MUST be expressed in Greenwich Mean Time (Zulu) and MUST
+      include seconds (i.e., times are YYMMDDHHMMSSZ), even where the
+      number of seconds is zero.  Midnight (GMT) must be represented as
+      "YYMMDD000000Z". */
+    var jan_1_1950 = new Date('Jan 1, 1950 00:00:00Z');
+    var jan_1_2050 = new Date('Jan 1, 2050 00:00:00Z');
+
+    if(attr.value >= jan_1_1950 && attr.value < jan_1_2050) {
+      value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+        asn1.dateToUtcTime(attr.value));
+    } else {
+      value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
+        asn1.dateToGeneralizedTime(attr.value));
+    }
+  }
+
+  // TODO: expose as common API call
+  // create a RelativeDistinguishedName set
+  // each value in the set is an AttributeTypeAndValue first
+  // containing the type (an OID) and second the value
+  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    // AttributeType
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(attr.type).getBytes()),
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+      // AttributeValue
+      value
+    ])
+  ]);
+}
+
+/**
+ * Map messages encrypted content to ASN.1 objects.
+ *
+ * @param ec The encryptedContent object of the message.
+ *
+ * @return ASN.1 representation of the encryptedContent object (SEQUENCE).
+ */
+function _encryptedContentToAsn1(ec) {
+  return [
+    // ContentType, always Data for the moment
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(forge.pki.oids.data).getBytes()),
+    // ContentEncryptionAlgorithmIdentifier
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      // Algorithm
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.oidToDer(ec.algorithm).getBytes()),
+      // Parameters (IV)
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+        ec.parameter.getBytes())
+    ]),
+    // [0] EncryptedContent
+    asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+        ec.content.getBytes())
+    ])
+  ];
+}
+
+/**
+ * Reads the "common part" of an PKCS#7 content block (in ASN.1 format)
+ *
+ * This function reads the "common part" of the PKCS#7 content blocks
+ * EncryptedData and EnvelopedData, i.e. version number and symmetrically
+ * encrypted content block.
+ *
+ * The result of the ASN.1 validate and capture process is returned
+ * to allow the caller to extract further data, e.g. the list of recipients
+ * in case of a EnvelopedData object.
+ *
+ * @param msg the PKCS#7 object to read the data to.
+ * @param obj the ASN.1 representation of the content block.
+ * @param validator the ASN.1 structure validator object to use.
+ *
+ * @return the value map captured by validator object.
+ */
+function _fromAsn1(msg, obj, validator) {
+  var capture = {};
+  var errors = [];
+  if(!asn1.validate(obj, validator, capture, errors)) {
+    var error = new Error('Cannot read PKCS#7 message. ' +
+      'ASN.1 object is not a supported PKCS#7 message.');
+    error.errors = error;
+    throw error;
+  }
+
+  // Check contentType, so far we only support (raw) Data.
+  var contentType = asn1.derToOid(capture.contentType);
+  if(contentType !== forge.pki.oids.data) {
+    throw new Error('Unsupported PKCS#7 message. ' +
+      'Only wrapped ContentType Data supported.');
+  }
+
+  if(capture.encryptedContent) {
+    var content = '';
+    if(forge.util.isArray(capture.encryptedContent)) {
+      for(var i = 0; i < capture.encryptedContent.length; ++i) {
+        if(capture.encryptedContent[i].type !== asn1.Type.OCTETSTRING) {
+          throw new Error('Malformed PKCS#7 message, expecting encrypted ' +
+            'content constructed of only OCTET STRING objects.');
+        }
+        content += capture.encryptedContent[i].value;
+      }
+    } else {
+      content = capture.encryptedContent;
+    }
+    msg.encryptedContent = {
+      algorithm: asn1.derToOid(capture.encAlgorithm),
+      parameter: forge.util.createBuffer(capture.encParameter.value),
+      content: forge.util.createBuffer(content)
+    };
+  }
+
+  if(capture.content) {
+    var content = '';
+    if(forge.util.isArray(capture.content)) {
+      for(var i = 0; i < capture.content.length; ++i) {
+        if(capture.content[i].type !== asn1.Type.OCTETSTRING) {
+          throw new Error('Malformed PKCS#7 message, expecting ' +
+            'content constructed of only OCTET STRING objects.');
+        }
+        content += capture.content[i].value;
+      }
+    } else {
+      content = capture.content;
+    }
+    msg.content = forge.util.createBuffer(content);
+  }
+
+  msg.version = capture.version.charCodeAt(0);
+  msg.rawCapture = capture;
+
+  return capture;
+}
+
+/**
+ * Decrypt the symmetrically encrypted content block of the PKCS#7 message.
+ *
+ * Decryption is skipped in case the PKCS#7 message object already has a
+ * (decrypted) content attribute.  The algorithm, key and cipher parameters
+ * (probably the iv) are taken from the encryptedContent attribute of the
+ * message object.
+ *
+ * @param The PKCS#7 message object.
+ */
+function _decryptContent(msg) {
+  if(msg.encryptedContent.key === undefined) {
+    throw new Error('Symmetric key not available.');
+  }
+
+  if(msg.content === undefined) {
+    var ciph;
+
+    switch(msg.encryptedContent.algorithm) {
+      case forge.pki.oids['aes128-CBC']:
+      case forge.pki.oids['aes192-CBC']:
+      case forge.pki.oids['aes256-CBC']:
+        ciph = forge.aes.createDecryptionCipher(msg.encryptedContent.key);
+        break;
+
+      case forge.pki.oids['desCBC']:
+      case forge.pki.oids['des-EDE3-CBC']:
+        ciph = forge.des.createDecryptionCipher(msg.encryptedContent.key);
+        break;
+
+      default:
+        throw new Error('Unsupported symmetric cipher, OID ' +
+          msg.encryptedContent.algorithm);
+    }
+    ciph.start(msg.encryptedContent.parameter);
+    ciph.update(msg.encryptedContent.content);
+
+    if(!ciph.finish()) {
+      throw new Error('Symmetric decryption failed.');
+    }
+
+    msg.content = ciph.output;
+  }
+}
 
 } // end module implementation
 

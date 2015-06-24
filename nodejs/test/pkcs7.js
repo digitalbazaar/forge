@@ -399,6 +399,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
 }
 
 // check for AMD
+var forge = {};
 if(typeof define === 'function') {
   define([
     'forge/pkcs7',
@@ -410,22 +411,22 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKCS7(),
-      PKI(),
-      AES(),
-      DES(),
-      UTIL()
+      PKCS7(forge),
+      PKI(forge),
+      AES(forge),
+      DES(forge),
+      UTIL(forge)
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pkcs7')(),
-    require('../../js/pki')(),
-    require('../../js/aes')(),
-    require('../../js/des')(),
-    require('../../js/util')());
+    require('../../js/pkcs7')(forge),
+    require('../../js/pki')(forge),
+    require('../../js/aes')(forge),
+    require('../../js/des')(forge),
+    require('../../js/util')(forge));
 }
 
 })();
