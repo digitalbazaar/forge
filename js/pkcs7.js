@@ -152,7 +152,7 @@ p7.createSignedData = function() {
 
       var certs = [];
       for(var i = 0; i < msg.certificates.length; ++i) {
-        certs.push(forge.pki.certificateToAsn1(msg.certificates[0]));
+        certs.push(forge.pki.certificateToAsn1(msg.certificates[i]));
       }
 
       var crls = [];
@@ -484,8 +484,8 @@ p7.createSignedData = function() {
         var attrsAsn1 = asn1.create(
           asn1.Class.UNIVERSAL, asn1.Type.SET, true, []);
 
-        for(var i = 0; i < signer.authenticatedAttributes.length; ++i) {
-          var attr = signer.authenticatedAttributes[i];
+        for(var ai = 0; ai < signer.authenticatedAttributes.length; ++ai) {
+          var attr = signer.authenticatedAttributes[ai];
           if(attr.type === forge.pki.oids.messageDigest) {
             // use content message digest as value
             attr.value = mds[signer.digestAlgorithm].digest();
@@ -766,7 +766,7 @@ p7.createEnvelopedData = function() {
       }
 
       // Part 2: asymmetric encryption for each recipient
-      for(var i = 0; i < msg.recipients.length; i ++) {
+      for(var i = 0; i < msg.recipients.length; ++i) {
         var recipient = msg.recipients[i];
 
         // Nothing to do, encryption already done.
@@ -994,7 +994,7 @@ function _signerToAsn1(obj) {
  */
 function _signersFromAsn1(signerInfoAsn1s) {
   var ret = [];
-  for(var i = 0; i < signerInfoAsn1s.length; i ++) {
+  for(var i = 0; i < signerInfoAsn1s.length; ++i) {
     ret.push(_signerFromAsn1(signerInfoAsn1s[i]));
   }
   return ret;
@@ -1009,7 +1009,7 @@ function _signersFromAsn1(signerInfoAsn1s) {
  */
 function _signersToAsn1(signers) {
   var ret = [];
-  for(var i = 0; i < signers.length; i ++) {
+  for(var i = 0; i < signers.length; ++i) {
     ret.push(_signerToAsn1(signers[i]));
   }
   return ret;
