@@ -249,6 +249,14 @@ p7.createSignedData = function() {
         issuer = cert.issuer.attributes;
         serialNumber = cert.serialNumber;
       }
+      var key = signer.key;
+      if(!key) {
+        throw new Error(
+          'Could not add PKCS#7 signer; no private key specified.');
+      }
+      if(typeof key === 'string') {
+        key = forge.pki.privateKeyFromPem(key);
+      }
 
       // ensure OID known for digest algorithm
       var digestAlgorithm = signer.digestAlgorithm || forge.pki.oids.sha1;
@@ -298,7 +306,7 @@ p7.createSignedData = function() {
       }
 
       msg.signers.push({
-        key: signer.key,
+        key: key,
         version: 1,
         issuer: issuer,
         serialNumber: serialNumber,

@@ -525,6 +525,34 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
     });
+    
+    it('should create PKCS#7 SignedData with PEM-encoded private key', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: _pem.privateKey,
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as generalized time
+          value: new Date('Jan 1, 2050 00:00:00Z')
+        }]
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
+    });
 
   });
 }
