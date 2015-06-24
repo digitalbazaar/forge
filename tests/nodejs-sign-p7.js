@@ -1,36 +1,30 @@
 var forge = require('../js/forge');
 
 try {
-  // generate a keypair
-  console.log('Generating 1024-bit key-pair...');
-  var keys = forge.pki.rsa.generateKeyPair(1024);
-  console.log('Key-pair created:');
-  console.log(forge.pki.privateKeyToPem(keys.privateKey));
-  console.log(forge.pki.publicKeyToPem(keys.publicKey));
-
-  // create a certificate
-  var certificate = createCertificate(keys);
-
   // create PKCS#7 signed data
   var p7 = forge.pkcs7.createSignedData();
   p7.content = forge.util.createBuffer('Some content to be signed.', 'utf8');
-  p7.addCertificate(certificate);
-  p7.addSigner({
-    key: keys.privateKey,
-    certificate: certificate,
-    digestAlgorithm: forge.pki.oids.sha256,
-    authenticatedAttributes: [{
-      type: forge.pki.oids.contentType,
-      value: forge.pki.oids.data
-    }, {
-      type: forge.pki.oids.messageDigest
-      // value will be auto-populated at signing time
-    }, {
-      type: forge.pki.oids.signingTime,
-      // value can also be auto-populated at signing time
-      value: new Date()
-    }]
-  });
+  var signers = ['a', 'b'];
+  for(var i = 0; i < signers.length; ++i) {
+    var signer = createSigner(signers[i]);
+    p7.addCertificate(signer.certificate);
+    p7.addSigner({
+      key: signer.keys.privateKey,
+      certificate: signer.certificate,
+      digestAlgorithm: forge.pki.oids.sha256,
+      authenticatedAttributes: [{
+        type: forge.pki.oids.contentType,
+        value: forge.pki.oids.data
+      }, {
+        type: forge.pki.oids.messageDigest
+        // value will be auto-populated at signing time
+      }, {
+        type: forge.pki.oids.signingTime,
+        // value will be auto-populated at signing time
+        //value: new Date('Jan 1, 2050 00:00:00Z')
+      }]
+    });
+  }
 
   p7.sign();
 
@@ -44,7 +38,28 @@ try {
   }
 }
 
-function createCertificate(keys) {
+function createSigner(name) {
+  console.log('Creating signer "' + name + '"...');
+
+  // generate a keypair
+  console.log('Generating 1024-bit key-pair...');
+  var keys = forge.pki.rsa.generateKeyPair(1024);
+  console.log('Key-pair created:');
+  console.log(forge.pki.privateKeyToPem(keys.privateKey));
+  console.log(forge.pki.publicKeyToPem(keys.publicKey));
+
+  // create a certificate
+  var certificate = createCertificate(name, keys);
+  console.log('Signer "' + name + '" created.');
+
+  return {
+    name: name,
+    keys: keys,
+    certificate: certificate
+  };
+}
+
+function createCertificate(name, keys) {
   // create a certificate
   console.log('Creating self-signed certificate...');
   var cert = forge.pki.createCertificate();
@@ -55,7 +70,7 @@ function createCertificate(keys) {
   cert.validity.notAfter.setFullYear(cert.validity.notBefore.getFullYear() + 1);
   var attrs = [{
     name: 'commonName',
-    value: 'example.org'
+    value: name
   }, {
     name: 'countryName',
     value: 'US'
