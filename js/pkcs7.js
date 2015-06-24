@@ -1030,6 +1030,7 @@ function _attributeToAsn1(attr) {
       include seconds (i.e., times are YYMMDDHHMMSSZ), even where the
       number of seconds is zero.  Midnight (GMT) must be represented as
       "YYMMDD000000Z". */
+    // TODO: make these module-level constants
     var jan_1_1950 = new Date('Jan 1, 1950 00:00:00Z');
     var jan_1_2050 = new Date('Jan 1, 2050 00:00:00Z');
 
