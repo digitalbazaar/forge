@@ -1154,7 +1154,7 @@ p7.content = forge.util.createBuffer('Some content to be signed.', 'utf8');
 p7.addCertificate(certOrCertPem);
 p7.addSigner({
   key: privateKeyAssociatedWithCert,
-  certificate: certificate,
+  certificate: certOrCertPem,
   digestAlgorithm: forge.pki.oids.sha256,
   authenticatedAttributes: [{
     type: forge.pki.oids.contentType,
