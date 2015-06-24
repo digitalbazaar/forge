@@ -226,6 +226,8 @@ asn1.create = function(tagClass, type, constructed, value) {
  * @return the length of the BER-encoded ASN.1 value or undefined.
  */
 var _getValueLength = asn1.getBerValueLength = function(b) {
+  // TODO: move this function and related DER/BER functions to a der.js
+  // file; better abstract ASN.1 away from der/ber.
   var b2 = b.getByte();
   if(b2 === 0x80) {
     return undefined;
