@@ -1,6 +1,6 @@
 {
   "name": "forge",
-  "version": "0.6.31",
+  "version": "0.6.32-dev",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
   "moduleType": ["amd"],
   "authors": [
