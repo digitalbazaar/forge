@@ -2092,7 +2092,7 @@ function _fillMissingExtensionFields(e, options) {
   }
 
   if(typeof e.value !== 'undefined') {
-    return;
+    return e;
   }
 
   // handle missing value:
