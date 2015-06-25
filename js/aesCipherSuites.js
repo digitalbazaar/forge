@@ -3,7 +3,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2009-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2009-2015 Digital Bazaar, Inc.
  *
  */
 (function() {
@@ -232,11 +232,9 @@ function decrypt_aes_cbc_sha1(record, s) {
   // last 20 bytes          = MAC
   var macLen = s.macLength;
 
-  // create a zero'd out mac
-  var mac = '';
-  for(var i = 0; i < macLen; ++i) {
-    mac += String.fromCharCode(0);
-  }
+  // create a random MAC to check against should the mac length check fail
+  // Note: do this regardless of the failure to keep timing consistent
+  var mac = forge.random.getBytesSync(macLen);
 
   // get fragment and mac
   var len = cipher.output.length();
@@ -253,8 +251,36 @@ function decrypt_aes_cbc_sha1(record, s) {
   // see if data integrity checks out, update sequence number
   var mac2 = s.macFunction(s.macKey, s.sequenceNumber, record);
   s.updateSequenceNumber();
-  rval = (mac2 === mac) && rval;
+  rval = compareMacs(s.macKey, mac, mac2) && rval;
   return rval;
+}
+
+/**
+ * Safely compare two MACs. This function will compare two MACs in a way
+ * that protects against timing attacks.
+ *
+ * TODO: Expose elsewhere as a utility API.
+ *
+ * See: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2011/february/double-hmac-verification/
+ *
+ * @param key the MAC key to use.
+ * @param mac1 as a binary-encoded string of bytes.
+ * @param mac2 as a binary-encoded string of bytes.
+ *
+ * @return true if the MACs are the same, false if not.
+ */
+function compareMacs(key, mac1, mac2) {
+  var hmac = forge.hmac.create();
+
+  hmac.start('SHA1', key);
+  hmac.update(mac1);
+  mac1 = hmac.digest().getBytes();
+
+  hmac.start(null, null);
+  hmac.update(mac2);
+  mac2 = hmac.digest().getBytes();
+
+  return mac1 === mac2;
 }
 
 } // end module implementation
