@@ -209,6 +209,20 @@ function Tests(ASSERT, ASN1, UTIL) {
 
     (function() {
       var tests = [{
+        in: 'Fri Dec 31 2049 19:00:00 GMT-0500',
+        out: '20500101000000Z'
+      }];
+      for(var i = 0; i < tests.length; ++i) {
+        var test = tests[i];
+        it('should convert date "' + test.in + '" to generalized time', function() {
+          var d = ASN1.dateToGeneralizedTime(new Date(test.in));
+          ASSERT.equal(d, test.out);
+        });
+      }
+    })();
+
+    (function() {
+      var tests = [{
         in: '1102231234Z', // Wed Feb 23 12:34:00 UTC 2011
         out: 1298464440000
       }, {
@@ -232,6 +246,20 @@ function Tests(ASSERT, ASN1, UTIL) {
         it('should convert utc time "' + test.in + '" to a Date', function() {
           var d = ASN1.utcTimeToDate(test.in);
           ASSERT.equal(d.getTime(), test.out);
+        });
+      }
+    })();
+
+    (function() {
+      var tests = [{
+        in: 'Sat Dec 31 1949 19:00:00 GMT-0500',
+        out: '500101000000Z'
+      }];
+      for(var i = 0; i < tests.length; ++i) {
+        var test = tests[i];
+        it('should convert date "' + test.in + '" to utc time', function() {
+          var d = ASN1.dateToUtcTime(new Date(test.in));
+          ASSERT.equal(d, test.out);
         });
       }
     })();

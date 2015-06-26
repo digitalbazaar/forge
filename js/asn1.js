@@ -730,6 +730,11 @@ asn1.generalizedTimeToDate = function(gentime) {
  * @return the UTCTime value.
  */
 asn1.dateToUtcTime = function(date) {
+  // TODO: validate; currently assumes proper format
+  if(typeof date === 'string') {
+    return date;
+  }
+
   var rval = '';
 
   // create format YYMMDDhhmmssZ
@@ -770,7 +775,7 @@ asn1.dateToGeneralizedTime = function(date) {
 
   // create format YYYYMMDDHHMMSSZ
   var format = [];
-  format.push(('' + date.getUTCFullYear()).substr(2));
+  format.push('' + date.getUTCFullYear());
   format.push('' + (date.getUTCMonth() + 1));
   format.push('' + date.getUTCDate());
   format.push('' + date.getUTCHours());
