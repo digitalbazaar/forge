@@ -240,6 +240,9 @@ function Tests(ASSERT, ASN1, UTIL) {
       }, {
         in: '110223123456-0200', // Wed Feb 23 14:34:56 UTC 2011
         out: 1298471696000
+      }, {
+        in: '500101000000Z',
+        out: -631152000000
       }];
       for(var i = 0; i < tests.length; ++i) {
         var test = tests[i];
