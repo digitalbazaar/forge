@@ -208,9 +208,11 @@ function Tests(ASSERT, ASN1, UTIL) {
     })();
 
     (function() {
+      // TODO: add a test for Jan 1 2050 once phantomjs 2.0 is out and
+      // its date bugs are fixed
       var tests = [{
-        in: 'Fri Dec 31 2049 19:00:00 GMT-0500',
-        out: '20500101000000Z'
+        in: 'Jan 1 1949 00:00:00 GMT',
+        out: '19490101000000Z'
       }];
       for(var i = 0; i < tests.length; ++i) {
         var test = tests[i];
