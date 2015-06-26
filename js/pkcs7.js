@@ -1043,15 +1043,29 @@ function _attributeToAsn1(attr) {
     // TODO: make these module-level constants
     var jan_1_1950 = new Date('Jan 1, 1950 00:00:00Z');
     var jan_1_2050 = new Date('Jan 1, 2050 00:00:00Z');
+    var date = attr.value;
+    if(typeof date === 'string') {
+      // try to parse date
+      var timestamp = Date.parse(date);
+      if(!isNaN(timestamp)) {
+        date = new Date(timestamp);
+      } else if(date.length === 13) {
+        // YYMMDDHHMMSSZ (13 chars for UTCTime)
+        date = asn1.utcTimeToDate(date);
+      } else {
+        // assume generalized time
+        date = asn1.generalizedTimeToDate(date);
+      }
+    }
 
-    if(attr.value >= jan_1_1950 && attr.value < jan_1_2050) {
+    if(date >= jan_1_1950 && date < jan_1_2050) {
       value = asn1.create(
         asn1.Class.UNIVERSAL, asn1.Type.UTCTIME, false,
-        asn1.dateToUtcTime(attr.value));
+        asn1.dateToUtcTime(date));
     } else {
       value = asn1.create(
         asn1.Class.UNIVERSAL, asn1.Type.GENERALIZEDTIME, false,
-        asn1.dateToGeneralizedTime(attr.value));
+        asn1.dateToGeneralizedTime(date));
     }
   }
 

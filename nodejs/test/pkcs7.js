@@ -195,7 +195,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       'gwbBcDl+50dPc2TncPe0uPfHgo5/Pr2ckA==\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataWithAttrsGeneralizedTime: '-----BEGIN PKCS7-----\r\n' +
-      'MIIGRQYJKoZIhvcNAQcCoIIGNjCCBjICAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
+      'MIIGRwYJKoZIhvcNAQcCoIIGODCCBjQCAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
       'hkiG9w0BBwGgDwQNVG8gYmUgc2lnbmVkLqCCA7gwggO0MIICnAIJANRUHEDYNeLz\r\n' +
       'MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNv\r\n' +
       'bmlhMRAwDgYDVQQHDAdBbnNiYWNoMRUwEwYDVQQKDAxTdGVmYW4gU2llZ2wxEjAQ\r\n' +
@@ -216,19 +216,19 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       'Q9Ec6vZBUFUjHZgXg+jz0oZSon27/f/XSUOpHCmxF6KOvlQq/lrKARyfBxbz417i\r\n' +
       'tPH3fhQOy60obbR2vm2tl9ZBFVL19L0IXAl6ERccAxRz/T77zQ2F9C2GZZlaVYzV\r\n' +
       'Hd2vhOsg+1Z2fnPQy0Z4O+oGTseMauFxVLqQCzJn3L+V8s+MG7GVAAfO0QkJaAjh\r\n' +
-      'Nbf9EuGB+DaAjWegzafzgJ2aKx+SMYICQDCCAjwCAQEwgakwgZsxCzAJBgNVBAYT\r\n' +
+      'Nbf9EuGB+DaAjWegzafzgJ2aKx+SMYICQjCCAj4CAQEwgakwgZsxCzAJBgNVBAYT\r\n' +
       'AkRFMRIwEAYDVQQIDAlGcmFuY29uaWExEDAOBgNVBAcMB0Fuc2JhY2gxFTATBgNV\r\n' +
       'BAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1H\r\n' +
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
-      'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
+      'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGswGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
       'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHAYJKoZIhvcNAQkFMQ8YDTUwMDEwMTAwMDAwMFowDQYJKoZIhvcN\r\n' +
-      'AQEBBQAEggEAaihttWeQ/6yXCMHC6sVaPhh7Q1dD14d0t15TFzI9Q2JTJLgJNK+x\r\n' +
-      '3MYINciXRe10zlIo/u6ZJuPdcZAW5BFy9VqtiXDq105Bb90GURPXSBvfoMpv3+jg\r\n' +
-      'qtx3NWThxlguxUFaXRf1Z0NGan3Xy+SknwXHvj9nzmIMJxhUBavzmIwVz01iN76k\r\n' +
-      'OfD/PVg/l9c+/c2EaVMhkdkBDKkXu1QTNzI61P9mJC6z0xweSEKDgmM4wmoLsods\r\n' +
-      'aKBYHwEbZiQRLAojvO+PPlgJuhs2ht/n2pOwLmtyhFuiBStl4R1j00hC0XyWqvh7\r\n' +
-      'rkawnh3JeN3iT9zv519x5a0ofgcPznLNMA==\r\n' +
+      'LFvTa+Sr82MwHgYJKoZIhvcNAQkFMREYDzE5NDkxMjMxMjM1OTU5WjANBgkqhkiG\r\n' +
+      '9w0BAQEFAASCAQCNB13woMM5xYY5B0k/2dDF1flyAs5JaahqXSIH04ea+qgyFkgZ\r\n' +
+      'uRoialeVzXXXpSPmpgEubQimFMYFslle9Ozpu6ECrXtw53wWm1GAlj8T6w50lKyd\r\n' +
+      '6Ip/wclO/lPIB9qk7Ki3kN+ISBWXSgUMTTo94IdyZH3lbBqW3xsak1FM6STrGiUS\r\n' +
+      'CoinmPKajIbIQBUORZ9eF9qN5erdpKwYNMB43yLle5jNGIeq6ztbL9en9boFp04q\r\n' +
+      'PU+/ZeNY2QJhnoGQVYfHkK+8X6/ZKX1fRnca2L+DUUb9g7Tc0oeW5zwB3wzIEpTN\r\n' +
+      'JxV3HaZ/Jvfnx9uH9wpFYg5yFX6PBLxlHarf\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -488,7 +488,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
           // value will be auto-populated at signing time
         }, {
           type: forge.pki.oids.signingTime,
-          // will be encoded as UTC time
+          // will be encoded as UTC time because it's >= 1950
           value: new Date('Jan 1, 1950 00:00:00Z')
         }]
       });
@@ -517,15 +517,18 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
           // value will be auto-populated at signing time
         }, {
           type: forge.pki.oids.signingTime,
-          // will be encoded as generalized time
-          value: new Date('Jan 1, 2050 00:00:00Z')
+          // will be encoded as generalized time because it's before 1950
+          value: new Date('Dec 31, 1949 23:59:59Z')
         }]
       });
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
     });
-    
+
+    // TODO: add a test for Jan 1 2050 once phantomjs 2.0 is out and
+    // its date bugs are fixed (generalized time should be used for >= 2050)
+
     it('should create PKCS#7 SignedData with PEM-encoded private key', function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \
@@ -545,8 +548,8 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
           // value will be auto-populated at signing time
         }, {
           type: forge.pki.oids.signingTime,
-          // will be encoded as generalized time
-          value: new Date('Jan 1, 2050 00:00:00Z')
+          // will be encoded as generalized time because it's before 1950
+          value: new Date('Dec 31, 1949 23:59:59Z')
         }]
       });
       p7.sign();
