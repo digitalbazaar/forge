@@ -289,6 +289,20 @@ p7v.signedDataValidator = {
   }]
 };
 
+p7v.recipientInfoVersionValidator = {
+  name: 'RecipientInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'RecipientInfo.version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'version'
+  }]
+}
+
 p7v.recipientInfoValidator = {
   name: 'RecipientInfo',
   tagClass: asn1.Class.UNIVERSAL,
@@ -318,6 +332,49 @@ p7v.recipientInfoValidator = {
       constructed: false,
       capture: 'serial'
     }]
+  }, {
+    name: 'RecipientInfo.keyEncryptionAlgorithm',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.SEQUENCE,
+    constructed: true,
+    value: [{
+      name: 'RecipientInfo.keyEncryptionAlgorithm.algorithm',
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.OID,
+      constructed: false,
+      capture: 'encAlgorithm'
+    }, {
+      name: 'RecipientInfo.keyEncryptionAlgorithm.parameter',
+      tagClass: asn1.Class.UNIVERSAL,
+      constructed: false,
+      captureAsn1: 'encParameter'
+    }]
+  }, {
+    name: 'RecipientInfo.encryptedKey',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.OCTETSTRING,
+    constructed: false,
+    capture: 'encKey'
+  }]
+};
+
+p7v.recipientInfoValidatorSKI = {
+  name: 'RecipientInfo',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'RecipientInfo.version',
+    tagClass: asn1.Class.UNIVERSAL,
+    type: asn1.Type.INTEGER,
+    constructed: false,
+    capture: 'version'
+  }, {
+    name: 'RecipientInfo.subjectKeyIdentifier',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: asn1.Type.NONE,
+    constructed: false,
+    capture: 'subjectKeyIdentifier'
   }, {
     name: 'RecipientInfo.keyEncryptionAlgorithm',
     tagClass: asn1.Class.UNIVERSAL,
