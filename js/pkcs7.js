@@ -360,8 +360,10 @@ var _decryptContent = function (msg) {
 p7.createSignedData = function() {
   var msg = null;
   msg = {
+    contentType: forge.pki.oids.data,
     type: forge.pki.oids.signedData,
     version: 1,
+    signerInfoVersion: 1,
     certificates: [],
     crls: [],
     // populated during sign()
@@ -388,9 +390,6 @@ p7.createSignedData = function() {
 
     toAsn1: function() {
       // TODO: add support for more data types here
-      if('content' in msg) {
-        throw new Error('Signing PKCS#7 content not yet implemented.');
-      }
 
       // degenerate case with no content
       if(!msg.contentInfo) {
@@ -439,21 +438,18 @@ p7.createSignedData = function() {
      * Signs the content.
      *
      * @param signer the signer (or array of signers) to sign as, for each:
+     *          cert the certificate to sign with.
      *          key the private key to sign with.
      *          [md] the message digest to use, defaults to sha-1.
      */
     sign: function(signer) {
-      if('content' in msg) {
-        throw new Error('PKCS#7 signing not yet implemented.');
-      }
-
       if(typeof msg.content !== 'object') {
         // use Data ContentInfo
         msg.contentInfo = asn1.create(
           asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // ContentType
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(forge.pki.oids.data).getBytes())
+              asn1.oidToDer(msg.contentType).getBytes())
           ]);
 
         // add actual content, if present
@@ -467,9 +463,109 @@ p7.createSignedData = function() {
         }
       }
 
-      // TODO: generate digest algorithm identifiers
+      // TODO: loop over signer if it is an array and collect unique digest algs
+      var md = signer.md || forge.md.sha1.create();
+      var digestAlgId = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(forge.pki.oids[md.algorithm]).getBytes()),
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+        ]);
+      msg.digestAlgorithmIdentifiers.push(digestAlgId);
 
-      // TODO: generate signerInfos
+      md.start();
+      md.update(msg.content);
+      var digest = md.digest();
+
+      var contentTypeAttr = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(forge.pki.oids.contentType).getBytes()),
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(msg.contentType).getBytes())
+            ])
+        ]);
+
+      var messageDigestAttr = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(forge.pki.oids.messageDigest).getBytes()),
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+              digest.getBytes()) // TODO make a hash digestAlg -> digest
+            ])
+        ]);
+
+      // digest and sign this per https://tools.ietf.org/html/rfc5652#section-5.4
+      var attrSet = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
+          contentTypeAttr,
+          messageDigestAttr
+        ]);
+      var attrSetBytes = asn1.toDer(attrSet).getBytes();
+
+      md.start();
+      md.update(attrSetBytes);
+      var sig = signer.key.sign(md);
+
+      // https://tools.ietf.org/html/rfc5652#section-5.3
+      // version 1 means issuerAndSerialNumber, 3 means subjectKeyIdentifier
+      // TODO: loop over signer if it is an array
+      var signerIdentifier;
+      switch(msg.signerInfoVersion) {
+        case 1:
+          signerIdentifier = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+              // Name
+              forge.pki.distinguishedNameToAsn1(signer.cert.issuer),
+              // Serial
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+                forge.util.hexToBytes(signer.cert.serialNumber))
+            ]);
+          break;
+
+        case 3:
+          signerIdentifier = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+              signer.cert.generateSubjectKeyIdentifier().getBytes())
+            ]);
+          break;
+
+        default:
+          throw new Error('unknown PKCS#7 SignerInfo version');
+      }
+
+      // TODO: loop over signer if it is an array
+      var signerInfo = asn1.create(
+        asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          // Version
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            asn1.integerToDer(msg.signerInfoVersion).getBytes()),
+          // SignerIdentifier
+          signerIdentifier,
+          // DigestAlgorithmIdentifier specific to this signer
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(forge.pki.oids[md.algorithm]).getBytes()), // TODO
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+            ]),
+          // SignedAttributes
+          asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+            // XXX add a SET here?  https://tools.ietf.org/html/rfc5652#section-5.3
+            contentTypeAttr,
+            messageDigestAttr
+            ]), // end of SignedAttributes
+          // SignatureAlgorithmIdentifier
+          asn1.create(
+            asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+                asn1.oidToDer(forge.pki.oids.rsaEncryption).getBytes()), // TODO get alg from cert/key
+              asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+            ]),
+          // SignatureValue
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, sig)
+        ]); // end of SignerInfo SEQUENCE
+      msg.signerInfos.push(signerInfo);
     },
 
     verify: function() {
