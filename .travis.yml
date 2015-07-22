@@ -3,6 +3,7 @@ node_js:
   - "0.10"
   - "0.12"
   - iojs
+sudo: false
 install: (cd nodejs && npm install)
 script: 
   - (cd nodejs && npm test)
