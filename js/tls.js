@@ -1101,8 +1101,7 @@ tls.handleClientHello = function(c, record, length) {
       }
     }
     if(version === null) {
-      // TODO RBM: remove log
-      console.log('ERROR: Could not find TLS version compatible with ClientHello!');
+      throw new Error('Could not find TLS version compatible with version in Hello message.');
     }
     c.version = {major: version.major, minor: version.minor};
     c.session.version = c.version;
