@@ -110,63 +110,219 @@ function Tests(ASSERT, forge) {
           ASSERT.equal(error.message, undefined);
         }
       });
-
       end.client.handshake();
-
-      function createCertificate(cn, data) {
-        var keys = forge.pki.rsa.generateKeyPair(512);
-        var cert = forge.pki.createCertificate();
-        cert.publicKey = keys.publicKey;
-        cert.serialNumber = '01';
-        cert.validity.notBefore = new Date();
-        cert.validity.notAfter = new Date();
-        cert.validity.notAfter.setFullYear(
-          cert.validity.notBefore.getFullYear() + 1);
-        var attrs = [{
-          name: 'commonName',
-          value: cn
-        }, {
-          name: 'countryName',
-          value: 'US'
-        }, {
-          shortName: 'ST',
-          value: 'Virginia'
-        }, {
-          name: 'localityName',
-          value: 'Blacksburg'
-        }, {
-          name: 'organizationName',
-          value: 'Test'
-        }, {
-          shortName: 'OU',
-          value: 'Test'
-        }];
-        cert.setSubject(attrs);
-        cert.setIssuer(attrs);
-        cert.setExtensions([{
-          name: 'basicConstraints',
-          cA: true
-        }, {
-          name: 'keyUsage',
-          keyCertSign: true,
-          digitalSignature: true,
-          nonRepudiation: true,
-          keyEncipherment: true,
-          dataEncipherment: true
-        }, {
-          name: 'subjectAltName',
-          altNames: [{
-            type: 6, // URI
-            value: 'https://myuri.com/webid#me'
-          }]
-        }]);
-        cert.sign(keys.privateKey);
-        data[cn] = {
-          cert: forge.pki.certificateToPem(cert),
-          privateKey: forge.pki.privateKeyToPem(keys.privateKey)
-        };
-      }
     });
+
+    it('Client should abort handshake on disabled TLS version', function(done) {
+      var end = {};
+      var data = {};
+      data.server = {};
+      data.client = {};
+      data.client.connection = {};
+      data.server.connection = {};
+
+      var clientAborted = false;
+      var serverAborted = false;
+
+      end.client = forge.tls.createConnection({
+        server: false,
+        sessionCache: {},
+        minSupportedVersion: forge.tls.Versions.TLS_1_1,
+        virtualHost: 'server',
+        tlsDataReady: function(c) {
+          end.server.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+          done();
+        },
+        error: function(c, error) {
+          clientAborted = true;
+        }
+      });
+
+      end.server = forge.tls.createConnection({
+        server: true,
+        sessionCache: {},
+        tlsDataReady: function(c) {
+          // Set the Hello to TLS_1_0
+          c.tlsData.setAt(1, forge.tls.Versions.TLS_1_0.major);
+          c.tlsData.setAt(2, forge.tls.Versions.TLS_1_0.minor);
+          c.tlsData.setAt(9, forge.tls.Versions.TLS_1_0.major);
+          c.tlsData.setAt(10, forge.tls.Versions.TLS_1_0.minor);
+
+          end.client.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+        },
+        error: function(c, error) {
+          serverAborted = true;
+          ASSERT.equal(error.message, 'Unsupported protocol version.');
+        }
+      });
+      end.client.handshake();
+      ASSERT.equal(clientAborted, true, 'client should be aborted');
+      ASSERT.equal(serverAborted, true, 'server should be aborted');
+    });
+
+    it('Server should abort handshake on disabled TLS version', function(done) {
+      var end = {};
+      var data = {};
+      data.server = {};
+      data.client = {};
+      data.client.connection = {};
+      data.server.connection = {};
+
+      var clientAborted = false;
+      var serverAborted = false;
+
+      end.client = forge.tls.createConnection({
+        server: false,
+        sessionCache: {},
+        tlsDataReady: function(c) {
+          // Set the Hello to TLS_1_0
+          c.tlsData.setAt(1, forge.tls.Versions.TLS_1_0.major);
+          c.tlsData.setAt(2, forge.tls.Versions.TLS_1_0.minor);
+          c.tlsData.setAt(9, forge.tls.Versions.TLS_1_0.major);
+          c.tlsData.setAt(10, forge.tls.Versions.TLS_1_0.minor);          
+          end.server.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+        },
+        error: function(c, error) {
+          clientAborted = true;
+          ASSERT.equal(error.message, 'Unsupported protocol version.');
+          done();
+        }
+      });
+
+      end.server = forge.tls.createConnection({
+        server: true,
+        sessionCache: {},
+        verifyClient: false,
+        minSupportedVersion: forge.tls.Versions.TLS_1_1,
+        tlsDataReady: function(c) {
+          end.client.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+          
+        },
+        error: function(c, error) {
+          serverAborted = true;
+        }
+      });
+      end.client.handshake();
+      ASSERT.equal(clientAborted, true, 'client should be aborted');
+      ASSERT.equal(serverAborted, true, 'server should be aborted');
+    });
+
+    it('Handshake should succeed', function(done) {
+      // client.minSupportedVersion = TLS_1_1 and server support both
+      var end = {};
+      var data = {};
+      createCertificate('server', data);
+      createCertificate('client', data);
+      data.client.connection = {};
+      data.server.connection = {};
+
+      end.client = forge.tls.createConnection({
+        server: false,
+        caStore: [data.server.cert],
+        sessionCache: {},
+        minSupportedVersion: forge.tls.Versions.TLS_1_1,
+        virtualHost: 'server',
+        connected: function(c) {
+          done();
+        },
+        tlsDataReady: function(c) {
+          end.server.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+          throw new Error("Unexpected error");
+        },
+        error: function(c, error) {
+          throw new Error("Unexpected error");
+        }
+      });
+
+      end.server = forge.tls.createConnection({
+        server: true,
+        sessionCache: {},
+        verifyClient: false,
+        connected: function(c) {
+        },
+        getCertificate: function(c, hint) {
+          data.server.connection.certHint = hint[0];
+          return data.server.cert;
+        },
+        getPrivateKey: function(c, cert) {
+          return data.server.privateKey;
+        },
+        tlsDataReady: function(c) {
+          end.client.process(c.tlsData.getBytes());
+        },
+        closed: function(c) {
+          throw new Error("Unexpected error");
+        },
+        error: function(c, error) {
+          throw new Error("Unexpected error");
+        }
+      });
+      end.client.handshake();
+    });
+
+    createCertificate = function(cn, data) {
+      var keys = forge.pki.rsa.generateKeyPair(512);
+      var cert = forge.pki.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '01';
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notBefore.getFullYear() + 1);
+      var attrs = [{
+        name: 'commonName',
+        value: cn
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      cert.setSubject(attrs);
+      cert.setIssuer(attrs);
+      cert.setExtensions([{
+        name: 'basicConstraints',
+        cA: true
+      }, {
+        name: 'keyUsage',
+        keyCertSign: true,
+        digitalSignature: true,
+        nonRepudiation: true,
+        keyEncipherment: true,
+        dataEncipherment: true
+      }, {
+        name: 'subjectAltName',
+        altNames: [{
+          type: 6, // URI
+          value: 'https://myuri.com/webid#me'
+        }]
+      }]);
+      cert.sign(keys.privateKey);
+      data[cn] = {
+        cert: forge.pki.certificateToPem(cert),
+        privateKey: forge.pki.privateKeyToPem(keys.privateKey)
+      };
+    }
   });
 }
 
