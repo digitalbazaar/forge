@@ -1,7 +1,7 @@
 # Forge
 
-[![Build Status][travis-ci-png]][travis-ci-site]
-[travis-ci-png]: https://travis-ci.org/digitalbazaar/forge.png?branch=master
+[![Build Status][travis-ci-svg]][travis-ci-site]
+[travis-ci-svg]: https://travis-ci.org/digitalbazaar/forge.svg?branch=master
 [travis-ci-site]: https://travis-ci.org/digitalbazaar/forge
 
 A native implementation of [TLS][] (and various other cryptographic tools) in
