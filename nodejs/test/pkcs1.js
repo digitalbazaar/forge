@@ -53,8 +53,8 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
       ASSERT.equal(message, decoded);
     });
 
-    testOAEP();
-    testOAEPSHA256();
+    describe('RSAES-OAEP encryption examples with SHA-1 digest', testOAEP);
+    describe('RSAES-OAEP encryption examples with SHA-256 digest', testOAEPSHA256);
 
     function testOAEP() {
       var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey;
