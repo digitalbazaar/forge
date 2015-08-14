@@ -1069,6 +1069,130 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
 
       return {publicKey: pubkey, privateKey: privateKey};
     }
+
+    describe('encode_rsa_oaep', function() {
+        var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey;
+
+        // Example 1: A 1024-bit RSA Key Pair
+        // Components of the RSA Key Pair
+        modulus = 'qLOyhK+OtQs4cDSoYPFGxJGfMYdjzWxVmMiuSBGh4KvEx+CwgtaTpef87Wdc9GaFEncsDLxkp0LGxjD1M8jMcvYq6DPEC/JYQumEu3i9v5fAEH1VvbZi9cTg+rmEXLUUjvc5LdOq/5OuHmtme7PUJHYW1PW6ENTP0ibeiNOfFvs=';
+        exponent = 'AQAB';
+        d = 'UzOc/befyEZqZVxzFqyoXFX9j23YmP2vEZUX709S6P2OJY35P+4YD6DkqylpPNg7FSpVPUrE0YEri5+lrw5/Vf5zBN9BVwkm8zEfFcTWWnMsSDEW7j09LQrzVJrZv3y/t4rYhPhNW+sEck3HNpsx3vN9DPU56c/N095lNynq1dE=';
+        p = '0yc35yZ//hNBstXA0VCoG1hvsxMr7S+NUmKGSpy58wrzi+RIWY1BOhcu+4AsIazxwRxSDC8mpHHcrSEurHyjnQ==';
+        q = 'zIhT0dVNpjD6wAT0cfKBx7iYLYIkpJDtvrM9Pj1cyTxHZXA9HdeRZC8fEWoN2FK+JBmyr3K/6aAw6GCwKItddw==';
+        dP = 'DhK/FxjpzvVZm6HDiC/oBGqQh07vzo8szCDk8nQfsKM6OEiuyckwX77L0tdoGZZ9RnGsxkMeQDeWjbN4eOaVwQ==';
+        dQ = 'lSl7D5Wi+mfQBwfWCd/U/AXIna/C721upVvsdx6jM3NNklHnkILs2oZu/vE8RZ4aYxOGt+NUyJn18RLKhdcVgw==';
+        qInv = 'T0VsUCSTvcDtKrdWo6btTWc1Kml9QhbpMhKxJ6Y9VBHOb6mNXb79cyY+NygUJ0OBgWbtfdY2h90qjKHS9PvY4Q==';
+        pubkey = decodeBase64PublicKey(modulus, exponent);
+        privateKey = decodeBase64PrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv);
+
+        it('should create mgf1 itself, unless provided', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8Yt3bqIQadaXdqM+k=');
+            var encrypted = 'W1QN+A1CKWotV6aZW7NYnUy7SmZd34SiX0jiPiLj9+8sZW6O/L7793+IFFSO3VKbPWhrjJPyR3ZmZ+yHDCzTDkRth+s5FN3nuFtlD3XQmmh0+x60PvAUiXJnAMcwxV96wHKjsUNPSnE1fsrCPBpIO5ZRaJ1pIF6R25IeuMwDujo=';
+
+            var md = MD.sha256.create();
+            var encoded = PKCS1.encode_rsa_oaep(
+              pubkey, message, {seed: seed, md: md});
+            var ciphertext = pubkey.encrypt(encoded, null);
+            ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
+        });
+
+        it('should support legacy label, seed, md argumets', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8Yt3bqIQadaXdqM+k=');
+            var encrypted = 'W1QN+A1CKWotV6aZW7NYnUy7SmZd34SiX0jiPiLj9+8sZW6O/L7793+IFFSO3VKbPWhrjJPyR3ZmZ+yHDCzTDkRth+s5FN3nuFtlD3XQmmh0+x60PvAUiXJnAMcwxV96wHKjsUNPSnE1fsrCPBpIO5ZRaJ1pIF6R25IeuMwDujo=';
+
+            var md = MD.sha256.create();
+            var encoded = PKCS1.encode_rsa_oaep(
+              pubkey, message, '', seed, md);
+            var ciphertext = pubkey.encrypt(encoded, null);
+            ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
+        });
+
+        it('should handle legacy options.mgf1.md argument', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8=');
+            var encrypted = 'NU/me0oSbV01/jbHd3kaP3uhPe9ITi05CK/3IvrUaPshaW3pXQvpEcLTF0+K/MIBA197bY5pQC3lRRYYwhpTX6nXv8W43Z/CQ/jPkn2zEyLW6IHqqRqZYXDmV6BaJmQm2YyIAD+Ed8EicJSg2foejEAkMJzh7My1IQA11HrHLoo=';
+
+            var md = MD.sha1.create();
+            var encoded = PKCS1.encode_rsa_oaep(
+              pubkey, message, {seed: seed, md: md, mgf1: { md: md }});
+            var ciphertext = pubkey.encrypt(encoded, null);
+            ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
+        });
+
+        it('should handle different digest via legacy options.mgf1.md', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8=');
+            var encrypted = 'lYWO+NacwIhkuixMMVULZjw9FYwWce3cl/YqnhfrBsab57btsvXfYa3TV1VJ+G++DqpqLpftMfUnODlI4FSDMHZsQqa5Da+G07S3p8eJ0DqzAum3euO+Cbi74Do2wOzIHLL31EN70/SUuVAn5PTBZPyOM6hGHz+EZmIsL0rB0v0=';
+
+            var md = MD.sha1.create();
+            var mgfMd = MD.sha256.create();
+            var encoded = PKCS1.encode_rsa_oaep(
+              pubkey, message, {seed: seed, md: md, mgf1: { md: mgfMd }});
+            var ciphertext = pubkey.encrypt(encoded, null);
+            ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
+        });
+    });
+
+    describe('decode_rsa_oaep', function() {
+        var modulus, exponent, d, p, q, dP, dQ, qInv, pubkey, privateKey;
+
+        // Example 1: A 1024-bit RSA Key Pair
+        // Components of the RSA Key Pair
+        modulus = 'qLOyhK+OtQs4cDSoYPFGxJGfMYdjzWxVmMiuSBGh4KvEx+CwgtaTpef87Wdc9GaFEncsDLxkp0LGxjD1M8jMcvYq6DPEC/JYQumEu3i9v5fAEH1VvbZi9cTg+rmEXLUUjvc5LdOq/5OuHmtme7PUJHYW1PW6ENTP0ibeiNOfFvs=';
+        exponent = 'AQAB';
+        d = 'UzOc/befyEZqZVxzFqyoXFX9j23YmP2vEZUX709S6P2OJY35P+4YD6DkqylpPNg7FSpVPUrE0YEri5+lrw5/Vf5zBN9BVwkm8zEfFcTWWnMsSDEW7j09LQrzVJrZv3y/t4rYhPhNW+sEck3HNpsx3vN9DPU56c/N095lNynq1dE=';
+        p = '0yc35yZ//hNBstXA0VCoG1hvsxMr7S+NUmKGSpy58wrzi+RIWY1BOhcu+4AsIazxwRxSDC8mpHHcrSEurHyjnQ==';
+        q = 'zIhT0dVNpjD6wAT0cfKBx7iYLYIkpJDtvrM9Pj1cyTxHZXA9HdeRZC8fEWoN2FK+JBmyr3K/6aAw6GCwKItddw==';
+        dP = 'DhK/FxjpzvVZm6HDiC/oBGqQh07vzo8szCDk8nQfsKM6OEiuyckwX77L0tdoGZZ9RnGsxkMeQDeWjbN4eOaVwQ==';
+        dQ = 'lSl7D5Wi+mfQBwfWCd/U/AXIna/C721upVvsdx6jM3NNklHnkILs2oZu/vE8RZ4aYxOGt+NUyJn18RLKhdcVgw==';
+        qInv = 'T0VsUCSTvcDtKrdWo6btTWc1Kml9QhbpMhKxJ6Y9VBHOb6mNXb79cyY+NygUJ0OBgWbtfdY2h90qjKHS9PvY4Q==';
+        pubkey = decodeBase64PublicKey(modulus, exponent);
+        privateKey = decodeBase64PrivateKey(modulus, exponent, d, p, q, dP, dQ, qInv);
+
+        it('should create mgf1 itself, unless provided', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var encrypted = UTIL.decode64('W1QN+A1CKWotV6aZW7NYnUy7SmZd34SiX0jiPiLj9+8sZW6O/L7793+IFFSO3VKbPWhrjJPyR3ZmZ+yHDCzTDkRth+s5FN3nuFtlD3XQmmh0+x60PvAUiXJnAMcwxV96wHKjsUNPSnE1fsrCPBpIO5ZRaJ1pIF6R25IeuMwDujo=');
+
+            var md = MD.sha256.create();
+            var decrypted = privateKey.decrypt(encrypted, null);
+            var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md});
+            ASSERT.equal(message, decoded);
+        });
+
+        it('should support legacy label, md argumets', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var encrypted = UTIL.decode64('W1QN+A1CKWotV6aZW7NYnUy7SmZd34SiX0jiPiLj9+8sZW6O/L7793+IFFSO3VKbPWhrjJPyR3ZmZ+yHDCzTDkRth+s5FN3nuFtlD3XQmmh0+x60PvAUiXJnAMcwxV96wHKjsUNPSnE1fsrCPBpIO5ZRaJ1pIF6R25IeuMwDujo=');
+
+            var md = MD.sha256.create();
+            var decrypted = privateKey.decrypt(encrypted, null);
+            var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, '', md);
+            ASSERT.equal(message, decoded);
+        });
+
+        it('should handle legacy options.mgf1.md argument', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var encrypted = UTIL.decode64('NU/me0oSbV01/jbHd3kaP3uhPe9ITi05CK/3IvrUaPshaW3pXQvpEcLTF0+K/MIBA197bY5pQC3lRRYYwhpTX6nXv8W43Z/CQ/jPkn2zEyLW6IHqqRqZYXDmV6BaJmQm2YyIAD+Ed8EicJSg2foejEAkMJzh7My1IQA11HrHLoo=');
+
+            var md = MD.sha1.create();
+            var decrypted = privateKey.decrypt(encrypted, null);
+            var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md, mgf1: {md: md}});
+            ASSERT.equal(message, decoded);
+        });
+
+        it('should handle different digest via legacy options.mgf1.md', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var encrypted = UTIL.decode64('lYWO+NacwIhkuixMMVULZjw9FYwWce3cl/YqnhfrBsab57btsvXfYa3TV1VJ+G++DqpqLpftMfUnODlI4FSDMHZsQqa5Da+G07S3p8eJ0DqzAum3euO+Cbi74Do2wOzIHLL31EN70/SUuVAn5PTBZPyOM6hGHz+EZmIsL0rB0v0=');
+
+            var md = MD.sha1.create();
+            var mgfMd = MD.sha256.create();
+            var decrypted = privateKey.decrypt(encrypted, null);
+            var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md, mgf1: {md: mgfMd}});
+            ASSERT.equal(message, decoded);
+        });
+    });
   });
 }
 
