@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
+function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL, MGF1) {
   var BigInteger = JSBN.BigInteger;
 
   // RSA's test vectors for Forge's RSA-OAEP implementation:
@@ -1134,6 +1134,19 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
             var ciphertext = pubkey.encrypt(encoded, null);
             ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
         });
+
+        it('should allow to pass own mgf', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8=');
+            var encrypted = 'lYWO+NacwIhkuixMMVULZjw9FYwWce3cl/YqnhfrBsab57btsvXfYa3TV1VJ+G++DqpqLpftMfUnODlI4FSDMHZsQqa5Da+G07S3p8eJ0DqzAum3euO+Cbi74Do2wOzIHLL31EN70/SUuVAn5PTBZPyOM6hGHz+EZmIsL0rB0v0=';
+
+            var md = MD.sha1.create();
+            var mgf = MGF1.create(MD.sha256.create());
+            var encoded = PKCS1.encode_rsa_oaep(
+              pubkey, message, {seed: seed, md: md, mgf: mgf });
+            var ciphertext = pubkey.encrypt(encoded, null);
+            ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
+        });
     });
 
     describe('decode_rsa_oaep', function() {
@@ -1192,6 +1205,17 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
             var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md, mgf1: {md: mgfMd}});
             ASSERT.equal(message, decoded);
         });
+
+        it('should allow to pass own mgf', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var encrypted = UTIL.decode64('lYWO+NacwIhkuixMMVULZjw9FYwWce3cl/YqnhfrBsab57btsvXfYa3TV1VJ+G++DqpqLpftMfUnODlI4FSDMHZsQqa5Da+G07S3p8eJ0DqzAum3euO+Cbi74Do2wOzIHLL31EN70/SUuVAn5PTBZPyOM6hGHz+EZmIsL0rB0v0=');
+
+            var md = MD.sha1.create();
+            var mgf = MGF1.create(MD.sha256.create());
+            var decrypted = privateKey.decrypt(encrypted, null);
+            var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md, mgf: mgf});
+            ASSERT.equal(message, decoded);
+        });
     });
   });
 }
@@ -1203,8 +1227,9 @@ if(typeof define === 'function') {
     'forge/pkcs1',
     'forge/md',
     'forge/jsbn',
-    'forge/util'
-  ], function(PKI, PKCS1, MD, JSBN, UTIL) {
+    'forge/util',
+    'forge/mgf1'
+  ], function(PKI, PKCS1, MD, JSBN, UTIL, MGF1) {
     Tests(
       // Global provided by test harness
       ASSERT,
@@ -1212,7 +1237,8 @@ if(typeof define === 'function') {
       PKCS1(),
       MD(),
       JSBN(),
-      UTIL()
+      UTIL(),
+      MGF1()
     );
   });
 } else if(typeof module === 'object' && module.exports) {
@@ -1223,7 +1249,8 @@ if(typeof define === 'function') {
     require('../../js/pkcs1')(),
     require('../../js/md')(),
     require('../../js/jsbn')(),
-    require('../../js/util')());
+    require('../../js/util')(),
+    require('../../js/mgf1')());
 }
 
 })();
