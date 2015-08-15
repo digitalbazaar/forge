@@ -673,17 +673,26 @@ p7.createEnvelopedData = function() {
      * Add (another) entity to list of recipients.
      *
      * @param cert The certificate of the entity to add.
+     * @param options the options to use:
+     *          algorithm the algorithm to use for key encryption, undefined for RSA
+     *          schemeOptions the the options for key encryption algorithm (RSA-OAEP)
      */
-    addRecipient: function(cert) {
+    addRecipient: function(cert, options) {
+      var algorithm;
+      var schemeOptions;
+
+      if(options) {
+	algorithm = options.algorithm || undefined;
+	schemeOptions = options.schemeOptions || undefined;
+      }
+
       msg.recipients.push({
         version: 0,
         issuer: cert.issuer.attributes,
         serialNumber: cert.serialNumber,
         encryptedContent: {
-          // We simply assume rsaEncryption here, since forge.pki only
-          // supports RSA so far.  If the PKI module supports other
-          // ciphers one day, we need to modify this one as well.
-          algorithm: forge.pki.oids.rsaEncryption,
+          algorithm: algorithm || forge.pki.oids.rsaEncryption,
+	  schemeOptions: schemeOptions || {},
           key: cert.publicKey
         }
       });
@@ -781,6 +790,13 @@ p7.createEnvelopedData = function() {
                 msg.encryptedContent.key.data);
             break;
 
+	  case forge.pki.oids['RSAES-OAEP']:
+            recipient.encryptedContent.content =
+              recipient.encryptedContent.key.encrypt(
+                msg.encryptedContent.key.data, 'RSAES-OAEP',
+		recipient.encryptedContent.schemeOptions);
+            break;
+
           default:
             throw new Error('Unsupported asymmetric cipher, OID ' +
               recipient.encryptedContent.algorithm);
@@ -846,13 +862,50 @@ function _recipientToAsn1(obj) {
       // Algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
-      // Parameter, force NULL, only RSA supported for now.
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      // Parameters
+      _encAlgorithmParametersToAsn1(obj.encryptedContent)
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
       obj.encryptedContent.content)
   ]);
+}
+
+function _encAlgorithmParametersToAsn1(encryptedContent) {
+  switch(encryptedContent.algorithm) {
+    case forge.pki.oids.rsaEncryption:
+      // rsaEncryption has no parameters -> NULL
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '');
+
+    case forge.pki.oids['RSAES-OAEP']:
+      var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+
+      // add hashFunc (= AlgorithmIdentifier)
+      if(encryptedContent.schemeOptions.md
+	  && encryptedContent.schemeOptions.md.algorithm
+	  && encryptedContent.schemeOptions.md.algorithm !== 'sha1') {
+	seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+	  // Algorithm
+	  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+	    asn1.oidToDer(
+	      forge.oids[encryptedContent.schemeOptions.md.algorithm]
+	    ).getBytes()),
+	  // Parameter
+	  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+	]));
+      }
+
+      // forge currently supports MGF1 only, which is the default, and RFC 4055
+      // states that the field must be omitted if it would state MGF1.
+
+      // TODO write label
+
+      return seq;
+
+    default:
+      throw new Error('Unsupported asymmetric cipher, OID ' +
+	encryptedContent.algorithm);
+  }
 }
 
 /**
