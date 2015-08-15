@@ -1147,6 +1147,28 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL, MGF1) {
             var ciphertext = pubkey.encrypt(encoded, null);
             ASSERT.equal(encrypted, UTIL.encode64(ciphertext));
         });
+
+        it('should throw if message is too long', function() {
+            // key = 128 bytes, digest = 32 bytes * 2, 2 bytes extra -> max length = 62 bytes
+            // -> providing 63 bytes must throw
+            var message = '123456789012345678901234567890123456789012345678901234567890123';
+            var seed = UTIL.decode64('GLd26iEGnWl3ajPpa61I4d2gpe8Yt3bqIQadaXdqM+k=');
+
+            var md = MD.sha256.create();
+            ASSERT.throws(function() {
+                PKCS1.encode_rsa_oaep(pubkey, message, {seed: seed, md: md});
+              }, Error);
+        });
+
+        it('should throw if seed length != digest length', function() {
+            var message = UTIL.decode64('ZigZThIHPbA7qUzanvlTI5fVDbp5uYcASv7+NA==');
+            var seed = 'hello world';
+
+            var md = MD.sha256.create();
+            ASSERT.throws(function() {
+                PKCS1.encode_rsa_oaep(pubkey, message, {seed: seed, md: md});
+              }, Error);
+        });
     });
 
     describe('decode_rsa_oaep', function() {
@@ -1215,6 +1237,14 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL, MGF1) {
             var decrypted = privateKey.decrypt(encrypted, null);
             var decoded = PKCS1.decode_rsa_oaep(privateKey, decrypted, {md: md, mgf: mgf});
             ASSERT.equal(message, decoded);
+        });
+
+        it('should throw if input length != key length', function() {
+            var message = 'anything not 128 chars long';
+
+            ASSERT.throws(function() {
+                PKCS1.decode_rsa_oaep(privateKey, message);
+              }, Error);
         });
     });
   });
