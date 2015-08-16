@@ -4,7 +4,7 @@
  * @author Stefan Siegl
  * @author Dave Longley
  *
- * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2012, 2015 Stefan Siegl <stesie@brokenpipe.de>
  * Copyright (c) 2012-2015 Digital Bazaar, Inc.
  *
  * Currently this implementation only supports ContentType of EnvelopedData,
@@ -660,6 +660,12 @@ p7.createEnvelopedData = function() {
             msg.encryptedContent.key = forge.util.createBuffer(key);
             break;
 
+          case forge.pki.oids['RSAES-OAEP']:
+            var key = privKey.decrypt(recipient.encryptedContent.content,
+              'RSAES-OAEP', recipient.encryptedContent.schemeOptions);
+            msg.encryptedContent.key = forge.util.createBuffer(key);
+            break;
+
           default:
             throw new Error('Unsupported asymmetric cipher, ' +
               'OID ' + recipient.encryptedContent.algorithm);
@@ -825,16 +831,60 @@ function _recipientFromAsn1(obj) {
     throw error;
   }
 
+  var schemeOpts = {};
+  if(asn1.derToOid(capture.encAlgorithm) === forge.pki.oids['RSAES-OAEP']) {
+    var oaepCapture = {};
+    if(!asn1.validate(capture.encParameter, p7.asn1.oaepParametersValidator,
+        oaepCapture, errors)) {
+      var error = new Error('Cannot read RSAES-OAEP Parameters. ' +
+        'ASN.1 object is not a RSAES-OAEP Parameters object.');
+      error.errors = errors;
+      throw error;
+    }
+
+    if(oaepCapture.digestAlgorithm) {
+      var digestOid = asn1.derToOid(oaepCapture.digestAlgorithm);
+
+      if(forge.md[forge.pki.oids[digestOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP hashFunc OID.');
+        error.oid = digestOid;
+        throw error;
+      }
+
+      schemeOpts.md = forge.md[forge.pki.oids[digestOid]].create();
+    };
+
+    if(oaepCapture.mgfAlgorithm) {
+      var mgfDigestOid = asn1.derToOid(oaepCapture.mgfDigestAlgorithm);
+      if(forge.md[forge.pki.oids[mgfDigestOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP maskGenFunc digest OID.');
+        error.oid = mgfDigestOid;
+        throw error;
+      }
+      var mgfMd = forge.md[forge.pki.oids[mgfDigestOid]].create();
+
+      var mgfOid = asn1.derToOid(oaepCapture.mgfAlgorithm);
+      if(forge.mgf[forge.pki.oids[mgfOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP maskGenFunc OID.');
+        error.oid = mgfOid;
+        throw error;
+      }
+      schemeOpts.mgf = forge.mgf[forge.pki.oids[mgfOid]].create(mgfMd);
+    }
+  }
+
   return {
     version: capture.version.charCodeAt(0),
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
     serialNumber: forge.util.createBuffer(capture.serial).toHex(),
     encryptedContent: {
       algorithm: asn1.derToOid(capture.encAlgorithm),
+      schemeOptions: schemeOpts,
       parameter: capture.encParameter.value,
       content: capture.encKey
     }
   };
+
 }
 
 /**

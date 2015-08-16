@@ -488,6 +488,25 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, MGF1, MD, UTIL) {
         ASSERT.equal(hashFunc[1].type, forge.asn1.Type.NULL);
       });
 
+      it('should export message to PEM', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        p7.addRecipient(PKI.certificateFromPem(_pem.certificate), {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: {
+            md: MD.sha256.create(),
+            mgf: MGF1.create(MD.sha256.create())
+          }
+        });
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var pem = PKCS7.messageToPem(p7);
+
+        // convert back from PEM to new PKCS#7 object, decrypt, and test
+        p7 = PKCS7.messageFromPem(pem);
+        p7.decrypt(p7.recipients[0], PKI.privateKeyFromPem(_pem.privateKey));
+        ASSERT.equal(p7.content, 'Just a little test');
+      });
     });
 
     it('should aes-encrypt a message', function() {
