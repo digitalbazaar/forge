@@ -871,6 +871,13 @@ function _recipientToAsn1(obj) {
   ]);
 }
 
+/**
+ * Converts key encryption algorithm parameters to an ASN.1 object.
+ *
+ * @param encryptedContent the key encryption parameter object.
+ *
+ * @return the ASN.1 RecipientInfo.
+ */
 function _encAlgorithmParametersToAsn1(encryptedContent) {
   switch(encryptedContent.algorithm) {
     case forge.pki.oids.rsaEncryption:
@@ -882,21 +889,27 @@ function _encAlgorithmParametersToAsn1(encryptedContent) {
 
       // add hashFunc (= AlgorithmIdentifier)
       if(encryptedContent.schemeOptions.md
-	  && encryptedContent.schemeOptions.md.algorithm
-	  && encryptedContent.schemeOptions.md.algorithm !== 'sha1') {
-	seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
-	  // Algorithm
-	  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-	    asn1.oidToDer(
-	      forge.oids[encryptedContent.schemeOptions.md.algorithm]
-	    ).getBytes()),
-	  // Parameter
-	  asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
-	]));
+          && encryptedContent.schemeOptions.md.algorithm
+          && encryptedContent.schemeOptions.md.algorithm !== 'sha1') {
+        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true,
+          _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.md)));
       }
 
-      // forge currently supports MGF1 only, which is the default, and RFC 4055
-      // states that the field must be omitted if it would state MGF1.
+      if(encryptedContent.schemeOptions.mgf
+          && encryptedContent.schemeOptions.mgf.algorithm
+          && (encryptedContent.schemeOptions.mgf.algorithm !== 'mgf1'
+              || encryptedContent.schemeOptions.mgf.md.algorithm != 'sha1')) {
+        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+          // Algorithm
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.oidToDer(
+              forge.oids[encryptedContent.schemeOptions.mgf.algorithm]
+            ).getBytes()),
+          // Parameter
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+            _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.mgf.md))
+        ]));
+      }
 
       // TODO write label
 
@@ -906,6 +919,25 @@ function _encAlgorithmParametersToAsn1(encryptedContent) {
       throw new Error('Unsupported asymmetric cipher, OID ' +
 	encryptedContent.algorithm);
   }
+}
+
+/**
+ * Converts message digest algorithm parameters to an ASN.1 object.
+ *
+ * @param md the message digest object.
+ *
+ * @return the ASN.1 RecipientInfo.
+ */
+function _encodeMdAlgorithmToAsn1(md) {
+  return [
+    // Algorithm
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(
+        forge.oids[md.algorithm]
+      ).getBytes()),
+    // Parameter
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+  ];
 }
 
 /**
