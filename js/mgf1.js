@@ -23,6 +23,9 @@ var mgf1 = forge.mgf.mgf1 = forge.mgf1 = forge.mgf1 || {};
  */
 mgf1.create = function(md) {
   var mgf = {
+    algorithm: 'mgf1',
+    md: md,
+
     /**
      * Generate mask of specified length.
      *
