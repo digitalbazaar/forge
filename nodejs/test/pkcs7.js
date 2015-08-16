@@ -380,7 +380,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, MGF1, MD, UTIL) {
 
         // hashFunc is SHA-256, i.e. not default -> expect [0]
         ASSERT.equal(options.value[0].tagClass, forge.asn1.Class.CONTEXT_SPECIFIC);
-        var hashFunc = options.value[0].value;
+        var hashFunc = options.value[0].value[0].value;
 
         // AlgorithmIdentifier.Algorithm must be SHA-256
         ASSERT.equal(forge.asn1.derToOid(hashFunc[0].value),
@@ -464,9 +464,11 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, MGF1, MD, UTIL) {
         ASSERT.equal(options.type, forge.asn1.Type.SEQUENCE);
         ASSERT.equal(options.value.length, 2); // Digest + MGF option
 
-        // maskGenFunc is MGF1(SHA-256), i.e. not default -> expect [1]
+        // maskGenFunc is MGF1(SHA-256), i.e. not default -> expect [1] SEQUENCE
         ASSERT.equal(options.value[1].tagClass, forge.asn1.Class.CONTEXT_SPECIFIC);
-        var maskGenFunc = options.value[1].value;
+        ASSERT.equal(options.value[1].value[0].type, forge.asn1.Type.SEQUENCE);
+
+        var maskGenFunc = options.value[1].value[0].value;
         ASSERT.equal(maskGenFunc.length, 2);
 
         // AlgorithmIdentifier.Algorithm must be MGF1

@@ -941,8 +941,11 @@ function _encAlgorithmParametersToAsn1(encryptedContent) {
       if(encryptedContent.schemeOptions.md
           && encryptedContent.schemeOptions.md.algorithm
           && encryptedContent.schemeOptions.md.algorithm !== 'sha1') {
-        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true,
-          _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.md)));
+        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+            _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.md)
+          )
+        ]));
       }
 
       if(encryptedContent.schemeOptions.mgf
@@ -950,14 +953,16 @@ function _encAlgorithmParametersToAsn1(encryptedContent) {
           && (encryptedContent.schemeOptions.mgf.algorithm !== 'mgf1'
               || encryptedContent.schemeOptions.mgf.md.algorithm != 'sha1')) {
         seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
-          // Algorithm
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(
-              forge.oids[encryptedContent.schemeOptions.mgf.algorithm]
-            ).getBytes()),
-          // Parameter
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
-            _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.mgf.md))
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // Algorithm
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(
+                forge.oids[encryptedContent.schemeOptions.mgf.algorithm]
+              ).getBytes()),
+            // Parameter
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+              _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.mgf.md))
+          ])
         ]));
       }
 

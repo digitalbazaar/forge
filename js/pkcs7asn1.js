@@ -419,11 +419,16 @@ p7v.oaepParametersValidator = {
     constructed: true,
     optional: true,
     value: [{
-      name: 'hashFunc.Algorithm',
       tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'digestAlgorithm'
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+        name: 'hashFunc.Algorithm',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.OID,
+        constructed: false,
+        capture: 'digestAlgorithm'
+      }]
     }]
   }, {
     name: 'maskGenFunc',
@@ -432,22 +437,27 @@ p7v.oaepParametersValidator = {
     constructed: true,
     optional: true,
     value: [{
-      name: 'maskGenFunc.Algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
-      constructed: false,
-      capture: 'mgfAlgorithm'
-    }, {
-      name: 'maskGenFunc.Parameters',
       tagClass: asn1.Class.UNIVERSAL,
       type: asn1.Type.SEQUENCE,
       constructed: true,
       value: [{
-        name: 'maskGenFunc.Parameters.Algorithm',
+        name: 'maskGenFunc.Algorithm',
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.OID,
         constructed: false,
-        capture: 'mgfDigestAlgorithm'
+        capture: 'mgfAlgorithm'
+      }, {
+        name: 'maskGenFunc.Parameters',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.SEQUENCE,
+        constructed: true,
+        value: [{
+          name: 'maskGenFunc.Parameters.Algorithm',
+          tagClass: asn1.Class.UNIVERSAL,
+          type: asn1.Type.OID,
+          constructed: false,
+          capture: 'mgfDigestAlgorithm'
+        }]
       }]
     }]
   }]
