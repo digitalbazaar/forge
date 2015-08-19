@@ -688,8 +688,8 @@ p7.createEnvelopedData = function() {
       var schemeOptions;
 
       if(options) {
-	algorithm = options.algorithm || undefined;
-	schemeOptions = options.schemeOptions || undefined;
+        algorithm = options.algorithm || undefined;
+        schemeOptions = options.schemeOptions || undefined;
       }
 
       msg.recipients.push({
@@ -698,7 +698,7 @@ p7.createEnvelopedData = function() {
         serialNumber: cert.serialNumber,
         encryptedContent: {
           algorithm: algorithm || forge.pki.oids.rsaEncryption,
-	  schemeOptions: schemeOptions || {},
+          schemeOptions: schemeOptions || {},
           key: cert.publicKey
         }
       });
@@ -796,11 +796,11 @@ p7.createEnvelopedData = function() {
                 msg.encryptedContent.key.data);
             break;
 
-	  case forge.pki.oids['RSAES-OAEP']:
+          case forge.pki.oids['RSAES-OAEP']:
             recipient.encryptedContent.content =
               recipient.encryptedContent.key.encrypt(
                 msg.encryptedContent.key.data, 'RSAES-OAEP',
-		recipient.encryptedContent.schemeOptions);
+                recipient.encryptedContent.schemeOptions);
             break;
 
           default:
@@ -972,7 +972,7 @@ function _encAlgorithmParametersToAsn1(encryptedContent) {
 
     default:
       throw new Error('Unsupported asymmetric cipher, OID ' +
-	encryptedContent.algorithm);
+        encryptedContent.algorithm);
   }
 }
 
