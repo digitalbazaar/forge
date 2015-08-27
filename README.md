@@ -1,5 +1,7 @@
 # Forge
 
+[![npm package](https://nodei.co/npm/node-forge.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/node-forge/)
+
 [![Build Status][travis-ci-svg]][travis-ci-site]
 [travis-ci-svg]: https://travis-ci.org/digitalbazaar/forge.svg?branch=master
 [travis-ci-site]: https://travis-ci.org/digitalbazaar/forge
