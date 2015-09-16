@@ -2,7 +2,9 @@ language: node_js
 node_js:
   - "0.10"
   - "0.12"
-  - iojs
+  - "4.0"
+  - "node"
+  - "iojs"
 sudo: false
 install: (cd nodejs && npm install)
 script: 
