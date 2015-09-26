@@ -407,9 +407,11 @@ var _modPow = function(x, key, pub) {
     so we add p until this is true (since we will be mod'ing with
     p anyway). Then, there is a known timing attack on algorithms
     using the CRT. To mitigate this risk, "cryptographic blinding"
-    should be used. This requires simply generating a random number r between
-    0 and n-1 and its inverse and multiplying x by r^e before calculating y
-    and then multiplying y by r^-1 afterwards.
+    should be used. This requires simply generating a random number r
+    between 0 and n-1 and its inverse and multiplying x by r^e before
+    calculating y and then multiplying y by r^-1 afterwards. Note that
+    r must be coprime with n (gcd(r, n) === 1) in order to have an
+    inverse.
   */
 
   // cryptographic blinding
@@ -417,8 +419,8 @@ var _modPow = function(x, key, pub) {
   do {
     r = new BigInteger(
       forge.util.bytesToHex(forge.random.getBytes(key.n.bitLength() / 8)),
-      16).mod(key.n);
-  } while(r.equals(BigInteger.ZERO));
+      16);
+  } while(r.compareTo(key.n) >= 0 || !r.gcd(key.n).equals(BigInteger.ONE));
   x = x.multiply(r.modPow(key.e, key.n)).mod(key.n);
 
   // calculate xp and xq
