@@ -1073,6 +1073,9 @@ pki.createCertificate = function() {
         case 'sha256WithRSAEncryption':
           md = forge.md.sha256.create();
           break;
+        case 'sha512WithRSAEncryption':
+          md = forge.md.sha512.create();
+          break;
         case 'RSASSA-PSS':
           md = forge.md.sha256.create();
           break;
@@ -1336,6 +1339,9 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
         break;
       case 'sha256WithRSAEncryption':
         cert.md = forge.md.sha256.create();
+        break;
+      case 'sha512WithRSAEncryption':
+        cert.md = forge.md.sha512.create();
         break;
       case 'RSASSA-PSS':
         cert.md = forge.md.sha256.create();
@@ -1687,6 +1693,9 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
       case 'sha256WithRSAEncryption':
         csr.md = forge.md.sha256.create();
         break;
+      case 'sha512WithRSAEncryption':
+        csr.md = forge.md.sha512.create();
+        break;
       case 'RSASSA-PSS':
         csr.md = forge.md.sha256.create();
         break;
@@ -1839,6 +1848,7 @@ pki.createCertificationRequest = function() {
     if(md === null) {
       // check signature OID for supported signature types
       if(csr.signatureOid in oids) {
+        // TODO: create DRY `OID to md` function
         var oid = oids[csr.signatureOid];
         switch(oid) {
         case 'sha1WithRSAEncryption':
@@ -1849,6 +1859,9 @@ pki.createCertificationRequest = function() {
           break;
         case 'sha256WithRSAEncryption':
           md = forge.md.sha256.create();
+          break;
+        case 'sha512WithRSAEncryption':
+          md = forge.md.sha512.create();
           break;
         case 'RSASSA-PSS':
           md = forge.md.sha256.create();

@@ -44,14 +44,161 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       '-----END CERTIFICATE-----\r\n'
   };
 
+  var _pem_sha256 = {
+    privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+      'MIIEpAIBAAKCAQEAgqu7/2ntXa9rzqiUvDD2swStK8w7MFtha/OiwzEDJng7mZUs\r\n' +
+      'uy7Neqh5S1Z+nWq7NP51ol//tnNCrWM6VozrJKTAEC2qj3k+bMWnjuTU7sTJHpoZ\r\n' +
+      '9wdCqS9q7oOJhqwBxS7M9l8LNA+6I4Qj1bY1g2XeZsxEjJfCvILa3yBzztL3CxSF\r\n' +
+      'R36FoOo9IpzYlVcE9mqTdJgTwR43ZsFNCRAkfSqJjLKy1A2+aDxUcrom2OrLSITI\r\n' +
+      'CWqz5R1hFIIIB0aprjpz5F2MunciUAhTjUqrQPCtw17wmwmaeXZsu0zoq9P/VtKE\r\n' +
+      'AxtQkS4tqgnodBzmmgM8YemjkJAVHQzkH8jiGQIDAQABAoIBAQAMuYiPMNOKogCP\r\n' +
+      'mV8SjHoZqMTsVPEWnm94QbuB4o35+w9iv2IhwEcGQM2/BmdCERi16mmuLEcMj2DY\r\n' +
+      '3abastJbOSfy61+GpTntAbp1cddCgStMrZkFs1FMhG+XVnvX/3wUpaAUBeFjanyn\r\n' +
+      '5MBQmXPQneTwgcfTIRw3m06RF+nvI/ssIz6oHTDTTwRanTa64KYCww/fcX0XCLGw\r\n' +
+      'D4GYaRrBLvglp27omQCLuCBp1Dedwx5+JRnybyQm1ZYVJ0kirD/qVDRJqQN6z2N/\r\n' +
+      '3XmvOc6yNnzNQwKDlFFs6VxLG/i/sv+TekiPIP2LIQ1V/0ojUJriRdPAe/dhER5E\r\n' +
+      'ku2n+k75AoGBAPDUZNyqPqFTUaLj6mdTEIvLbG0Dx0/EZTalUohFUBpJSxSUuNIS\r\n' +
+      '6z+2dohTO5qj6Mv1JpXqXEWmRQisBl8ibizD5KJkgQW0EptmJf5BU9bnqYllgjZj\r\n' +
+      'jJsBixFFcwbFUwD4vg7NjYrxEv2Wjv8II0rVNbEh61F35vMNdmgMsu0TAoGBAIrm\r\n' +
+      '7NbFDDBWREyFZKZdVhTo2AR8JyWuWdOO7EFbv+mzHy7TkgscwYlV4yeU/+TG6KLG\r\n' +
+      'WPo5AX2mWL/zI2Zjd2Quw002e6Y9ZIO8CUK8iocrvhNy+Bfli2XyjYZxRIILQeKX\r\n' +
+      'ID/h+gyzViKOXFclbUkubnm/kEGwWO8hRQvh/TWjAoGAUwbGZxUCVpfk8yVkMI8A\r\n' +
+      'i1FsZgEBe8yXoElKtNRAk29lRQko1rPTCrobD1CyodOUdIxl6xVLDnAOKLk10SKL\r\n' +
+      'nT9D2YCQwqicKZsDyi43e0WOu2GVjK6xUNctXJz21QS+Yv1eeLgA7j/Cbk6zqdTi\r\n' +
+      'ZfAvfIvXFtUhd/XSNnj6TqUCgYBKGrE4U6ARGbUObgwohZsrRJ4apnHsNHxP1exN\r\n' +
+      'Yjmc4Kc+QDmmHA1Uy7GIqIFs+IGcdd16gXc+JcUrgvfb5C0KEbi4NNz67730WhlG\r\n' +
+      'tXfibX/WuHuLpDceiKzgkQVPq9nWnXHjIxhYNkU54mF5TMplRJRD9+NqaD7KNSG1\r\n' +
+      'GTgRqQKBgQCSJ2W29p2uOrl+OcogFMSfZYkwJsKR25S/c7BAvsH7dVdtqSdBsRg2\r\n' +
+      'zWEwWAGyd7BJsZd0gVCea9CHfZYwDoCC4nA7sRFVLAqWfRsmrALORIiXHBYD6SrL\r\n' +
+      'H1G4nr6HK6/Ur0WTQQmwyz1Yw+ZhyShVRo+9NN2a3gA1n25wP3n6gQ==\r\n' +
+      '-----END RSA PRIVATE KEY-----\r\n',
+    publicKey: '-----BEGIN PUBLIC KEY-----\r\n' +
+      'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgqu7/2ntXa9rzqiUvDD2\r\n' +
+      'swStK8w7MFtha/OiwzEDJng7mZUsuy7Neqh5S1Z+nWq7NP51ol//tnNCrWM6Vozr\r\n' +
+      'JKTAEC2qj3k+bMWnjuTU7sTJHpoZ9wdCqS9q7oOJhqwBxS7M9l8LNA+6I4Qj1bY1\r\n' +
+      'g2XeZsxEjJfCvILa3yBzztL3CxSFR36FoOo9IpzYlVcE9mqTdJgTwR43ZsFNCRAk\r\n' +
+      'fSqJjLKy1A2+aDxUcrom2OrLSITICWqz5R1hFIIIB0aprjpz5F2MunciUAhTjUqr\r\n' +
+      'QPCtw17wmwmaeXZsu0zoq9P/VtKEAxtQkS4tqgnodBzmmgM8YemjkJAVHQzkH8ji\r\n' +
+      'GQIDAQAB\r\n' +
+      '-----END PUBLIC KEY-----\r\n',
+    certificate: '-----BEGIN CERTIFICATE-----\r\n' +
+      'MIIECTCCAvGgAwIBAgIBATANBgkqhkiG9w0BAQsFADBpMRQwEgYDVQQDEwtleGFt\r\n' +
+      'cGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYDVQQH\r\n' +
+      'EwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MB4XDTE1\r\n' +
+      'MTAwOTE3NTc1NloXDTE2MTAwOTE3NTc1NlowaTEUMBIGA1UEAxMLZXhhbXBsZS5v\r\n' +
+      'cmcxCzAJBgNVBAYTAlVTMREwDwYDVQQIEwhWaXJnaW5pYTETMBEGA1UEBxMKQmxh\r\n' +
+      'Y2tzYnVyZzENMAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDCCASIwDQYJKoZI\r\n' +
+      'hvcNAQEBBQADggEPADCCAQoCggEBAIKru/9p7V2va86olLww9rMErSvMOzBbYWvz\r\n' +
+      'osMxAyZ4O5mVLLsuzXqoeUtWfp1quzT+daJf/7ZzQq1jOlaM6ySkwBAtqo95PmzF\r\n' +
+      'p47k1O7EyR6aGfcHQqkvau6DiYasAcUuzPZfCzQPuiOEI9W2NYNl3mbMRIyXwryC\r\n' +
+      '2t8gc87S9wsUhUd+haDqPSKc2JVXBPZqk3SYE8EeN2bBTQkQJH0qiYyystQNvmg8\r\n' +
+      'VHK6Jtjqy0iEyAlqs+UdYRSCCAdGqa46c+RdjLp3IlAIU41Kq0DwrcNe8JsJmnl2\r\n' +
+      'bLtM6KvT/1bShAMbUJEuLaoJ6HQc5poDPGHpo5CQFR0M5B/I4hkCAwEAAaOBuzCB\r\n' +
+      'uDAMBgNVHRMEBTADAQH/MAsGA1UdDwQEAwIC9DA7BgNVHSUENDAyBggrBgEFBQcD\r\n' +
+      'AQYIKwYBBQUHAwIGCCsGAQUFBwMDBggrBgEFBQcDBAYIKwYBBQUHAwgwEQYJYIZI\r\n' +
+      'AYb4QgEBBAQDAgD3MCwGA1UdEQQlMCOGG2h0dHA6Ly9leGFtcGxlLm9yZy93ZWJp\r\n' +
+      'ZCNtZYcEfwAAATAdBgNVHQ4EFgQUyX839dHHD+pAfU9F5t/rpQaq3LQwDQYJKoZI\r\n' +
+      'hvcNAQELBQADggEBAGfr9yMwTXoHbZAj/8bRCfKUUg/xIbQY0RtuDwGKBnzVcz7r\r\n' +
+      'NpocyEBUFvlbsXK4Dwpql41nYPwEpmm486gpWDqSBB0p0jF3HNHihKhCcR0LDQLt\r\n' +
+      'hBP7SbX76uL4cHoJkbAVbc4FGARCkE7eVZ0sBWUPmLqVh2JmzlC3geq7Obs7HCvq\r\n' +
+      'eStorsBlDZt27/N+xhvxdUTGJgiTBxk6BrRLGxUeor9TLRpZ2wsoMSnkIcQyooZ4\r\n' +
+      'iGAZsqUyanWODz0o6R02kSpTA3zx6LssLuLdnxfi1EmHMSM27Lxuw308XzirTxM2\r\n' +
+      '/N0H5AwUc057+HoygLPfddxOfxHGXz4VmEKMcJ8=\r\n' +
+      '-----END CERTIFICATE-----\r\n'
+  };
+
+  var _pem_sha512 = {
+    privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+      'MIIEowIBAAKCAQEAmy+xwQpZMYkMWHhw+kh2TDGbG+AF1w6BFVQ6CduEjUzD5d/j\r\n' +
+      'URtkaeb0RO/uba+J92DMgJJLWlcTe5FpQMb2lxOrNoYP+suWnNxU7QD5vQ4OiJ+i\r\n' +
+      '3nTMly9LMB3BEEea2ZJRpVboJxRBeGl6pKz4obFfoFxqtSww38Cw8h5Nplt+LXR/\r\n' +
+      'wq8yCpmN9hTE4CSw8iioIqxOZem3sz4//jcMHJ5/aiTjXwseE8eWjaVfvpDESuwQ\r\n' +
+      'MNjfJYYP0onzEZmTtztyAspsyf0GZBjd1ew2nVCY0cCkQ1+tqYk7H9rjlj1PxduC\r\n' +
+      'a4aGVKZjIBFnZXhCE23znOgVt9PxFMPUrmHwqwIDAQABAoIBAC68UWMak7wIUxB9\r\n' +
+      'zUCC/CV8NwNRF1EqDBP5VrVLSAMp4EFliNcPUdFW/a+ZNowP9pPqsgvygwEFAlgP\r\n' +
+      'dcxNX0wmX0S/YSadk5FQBb+OsKeQCS56LRmjwU2yr4khHNijR+5IU5BguO+z+Pej\r\n' +
+      'hIz9jq9bdLoduwEu+tUX+fIg0C/OGfxKQrOXIW3hiJDilx2Bt+eyUYrtIxBhwNC9\r\n' +
+      'jwwMCUFlcbvQSwq+Vx50v2LVjqalJMdMLQiULsF9nPw7EdUJz+aoM4STv7l4miXi\r\n' +
+      'utkF4xlAl8lnJKOycsFPbqBBaypZoY3O3mKkWtSFRjD4oNW/juBGHTimPWRYgW3V\r\n' +
+      'Q+IVHpkCgYEA75+vMp2Expq+iCa+UoV48HIVdiCaCk4vRedVe4IHyWxEkaliCHga\r\n' +
+      'e9wAsxWipDxROv3yoLxlbddnZSD2YaYaIALH/xpSWlcBHZupyq6jNF7R+14Yx155\r\n' +
+      '88iGyoYKNE2VrcVlL164LIqaEB4lxYanhotwqcC5O6IOhpZZ7jSC/H8CgYEApcq9\r\n' +
+      '/G5po1BgYVZ2hdxTqdx8wniWaQNd7EVpogBhJ4KLC+tN42+vBHJT6BQp/PFRWjY5\r\n' +
+      'fiC1zwI8ufL12F4T8+ZcQVZkHpLjKporYolYmQm/T8wNDwOziYB67Jp9M2EHdei/\r\n' +
+      'HNo2FUsXRm+Tb1utiQn7AyJ6PHwwJAU1LbtYpdUCgYEAg4R/YiZ2c5MHNC8fkqdT\r\n' +
+      'Q5U6FkW6hiF3bMSVdF5f67uSvufauI9C6exMLf6X79BzPQ+YlYQRn4H0a9r1n47N\r\n' +
+      'E/iy0F8gCBlssVV4kZfcV6gbU/3HV9WQ1a6f3JRJEX/rwR5wdNll+HxyJpqFXK6V\r\n' +
+      'UBFEWsc+Y26EznXDEiycH/0CgYBxwfMqSfhh/ryjDVi18L/XRVq1dVh/JbhEbjxU\r\n' +
+      '1D3VhlUyEHqZHADS5D9+dpd433wakipQyND3AWn5jSPzGlpGeEHE8yovcEo+6Rnr\r\n' +
+      'uqH4ICAM+M3dB4UhS+8MedR+dI1R8ilv+qoxYhzOT7CyMA2agiaht/53kh7WGFys\r\n' +
+      'zGe/IQKBgALJnE5CVQLaJgFcWGH2rnD6hWVh1DdV8ockzLg7ulUW0U5gueHWnaWv\r\n' +
+      'PhP/P0YWF250IWmEm73LCZi3Cv3gBIwvn5pV3GHjMUexTQ3iODsGC8SdL0svnUTc\r\n' +
+      '5/VlSjAKS4Mn9gwutcXX9/Y2AJa4O6S/QfAQeU5aqkk/Fs+31ose\r\n' +
+      '-----END RSA PRIVATE KEY-----\r\n',
+    publicKey: '-----BEGIN PUBLIC KEY-----\r\n' +
+      'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmy+xwQpZMYkMWHhw+kh2\r\n' +
+      'TDGbG+AF1w6BFVQ6CduEjUzD5d/jURtkaeb0RO/uba+J92DMgJJLWlcTe5FpQMb2\r\n' +
+      'lxOrNoYP+suWnNxU7QD5vQ4OiJ+i3nTMly9LMB3BEEea2ZJRpVboJxRBeGl6pKz4\r\n' +
+      'obFfoFxqtSww38Cw8h5Nplt+LXR/wq8yCpmN9hTE4CSw8iioIqxOZem3sz4//jcM\r\n' +
+      'HJ5/aiTjXwseE8eWjaVfvpDESuwQMNjfJYYP0onzEZmTtztyAspsyf0GZBjd1ew2\r\n' +
+      'nVCY0cCkQ1+tqYk7H9rjlj1PxduCa4aGVKZjIBFnZXhCE23znOgVt9PxFMPUrmHw\r\n' +
+      'qwIDAQAB\r\n' +
+      '-----END PUBLIC KEY-----\r\n',
+    certificate: '-----BEGIN CERTIFICATE-----\r\n' +
+      'MIIECTCCAvGgAwIBAgIBATANBgkqhkiG9w0BAQ0FADBpMRQwEgYDVQQDEwtleGFt\r\n' +
+      'cGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYDVQQH\r\n' +
+      'EwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MB4XDTE1\r\n' +
+      'MTAwOTE4MDEwOVoXDTE2MTAwOTE4MDEwOVowaTEUMBIGA1UEAxMLZXhhbXBsZS5v\r\n' +
+      'cmcxCzAJBgNVBAYTAlVTMREwDwYDVQQIEwhWaXJnaW5pYTETMBEGA1UEBxMKQmxh\r\n' +
+      'Y2tzYnVyZzENMAsGA1UEChMEVGVzdDENMAsGA1UECxMEVGVzdDCCASIwDQYJKoZI\r\n' +
+      'hvcNAQEBBQADggEPADCCAQoCggEBAJsvscEKWTGJDFh4cPpIdkwxmxvgBdcOgRVU\r\n' +
+      'OgnbhI1Mw+Xf41EbZGnm9ETv7m2vifdgzICSS1pXE3uRaUDG9pcTqzaGD/rLlpzc\r\n' +
+      'VO0A+b0ODoifot50zJcvSzAdwRBHmtmSUaVW6CcUQXhpeqSs+KGxX6BcarUsMN/A\r\n' +
+      'sPIeTaZbfi10f8KvMgqZjfYUxOAksPIoqCKsTmXpt7M+P/43DByef2ok418LHhPH\r\n' +
+      'lo2lX76QxErsEDDY3yWGD9KJ8xGZk7c7cgLKbMn9BmQY3dXsNp1QmNHApENframJ\r\n' +
+      'Ox/a45Y9T8XbgmuGhlSmYyARZ2V4QhNt85zoFbfT8RTD1K5h8KsCAwEAAaOBuzCB\r\n' +
+      'uDAMBgNVHRMEBTADAQH/MAsGA1UdDwQEAwIC9DA7BgNVHSUENDAyBggrBgEFBQcD\r\n' +
+      'AQYIKwYBBQUHAwIGCCsGAQUFBwMDBggrBgEFBQcDBAYIKwYBBQUHAwgwEQYJYIZI\r\n' +
+      'AYb4QgEBBAQDAgD3MCwGA1UdEQQlMCOGG2h0dHA6Ly9leGFtcGxlLm9yZy93ZWJp\r\n' +
+      'ZCNtZYcEfwAAATAdBgNVHQ4EFgQUaC1StQewfZ4bMUDUsnpzy/4+CZ8wDQYJKoZI\r\n' +
+      'hvcNAQENBQADggEBAGy58GzpSG3KAv0DILJPWhtxTRvbnd02AWO6fhCdx+siyQ02\r\n' +
+      'aKgkf1sAS0MGDDMGiwMKvBTz8+8HnfFx6cA7NG7xtuw9m8yb1LeNLbOc3/TCrG/U\r\n' +
+      'A27ZediP+hCqElB9MtNHyOx/vv+gdKXTFDG4PlykNFmFsGjrA+sA0OtwKRLPQCxp\r\n' +
+      'rUtGw+cw+xy3O68/unCl86wc8PA5r4uAaQBXdWThpAL0KJI1ky7auUwpsR+aWILJ\r\n' +
+      '0x6a9LOUnCMbbOTN31vRweFxD0qS2J8QMDkfNflvEWmpIZHF4UEoietXk+suP9tc\r\n' +
+      '87rtT63BEY6KcZJJ+oDnKiZuAujmf1iezC+YORs=\r\n' +
+      '-----END CERTIFICATE-----\r\n'
+  };
+
+
   describe('x509', function() {
-    it('should convert certificate to/from PEM', function() {
+    it('should convert SHA-1 based certificate to/from PEM', function() {
       var certificate = PKI.certificateFromPem(_pem.certificate);
       ASSERT.equal(PKI.certificateToPem(certificate), _pem.certificate);
     });
 
-    it('should verify self-signed certificate', function() {
+    it('should convert SHA-256 based certificate to/from PEM', function() {
+      var certificate = PKI.certificateFromPem(_pem_sha256.certificate);
+      ASSERT.equal(PKI.certificateToPem(certificate), _pem_sha256.certificate);
+    });
+
+    it('should convert SHA-512 based certificate to/from PEM', function() {
+      var certificate = PKI.certificateFromPem(_pem_sha512.certificate);
+      ASSERT.equal(PKI.certificateToPem(certificate), _pem_sha512.certificate);
+    });
+
+    it('should verify SHA-1 based self-signed certificate', function() {
       var certificate = PKI.certificateFromPem(_pem.certificate);
+      ASSERT.ok(certificate.verify(certificate));
+    });
+
+    it('should verify SHA-256 based self-signed certificate', function() {
+      var certificate = PKI.certificateFromPem(_pem_sha256.certificate);
+      ASSERT.ok(certificate.verify(certificate));
+    });
+
+    it('should verify SHA-512 based self-signed certificate', function() {
+      var certificate = PKI.certificateFromPem(_pem_sha512.certificate);
       ASSERT.ok(certificate.verify(certificate));
     });
 
@@ -553,6 +700,8 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.ok(issuer.verify(cert));
     });
   });
+
+  // TODO: add sha-512 and sha-256 fingerprint tests
 
   describe('public key fingerprints', function() {
     it('should get a SHA-1 RSAPublicKey fingerprint', function() {
