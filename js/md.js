@@ -36,6 +36,10 @@ forge.md.createMessageDigest = function(algorithm) {
     throw new Error('Unsupported algorithm: ' + algorithm);
   }
 
+  // TODO: initialize _padding elsewhere, this method is only called
+  // in backwards-compatibility mode and _padding is needed regardless of
+  // entry point
+  
   // TODO: change _padding to buffer
   if(!_padding || _padding.length < api.blockSize) {
     // create shared padding
