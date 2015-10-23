@@ -39,7 +39,7 @@ forge.md.createMessageDigest = function(algorithm) {
   // TODO: initialize _padding elsewhere, this method is only called
   // in backwards-compatibility mode and _padding is needed regardless of
   // entry point
-  
+
   // TODO: change _padding to buffer
   if(!_padding || _padding.length < api.blockSize) {
     // create shared padding
@@ -149,8 +149,8 @@ MessageDigest.prototype.update = function(msg, encoding) {
   }
 
   // update message length
-  this.messageLength += msg.length();
   var len = msg.length();
+  this.messageLength += len;
   len = [(len / 0x100000000) >>> 0, len >>> 0];
   for(var i = this.fullMessageLength.length - 1; i >= 0; --i) {
     this.fullMessageLength[i] += len[1];
@@ -225,12 +225,16 @@ MessageDigest.prototype.digest = function() {
   finalBlock.putBytes(_padding.substr(0, this._algorithm.blockSize - overflow));
 
   // serialize message length in bits in big-endian order; since length
-  // is stored in bytes we multiply by 8 (left shift by 3 and merge in
-  // remainder from )
+  // is stored in bytes we multiply by 8 and add carry from next int
   var messageLength = new ByteBuffer();
+  var next, carry;
+  var bits = this.fullMessageLength[0] * 8;
   for(var i = 0; i < this.fullMessageLength.length; ++i) {
-    messageLength.putInt32((this.fullMessageLength[i] << 3) |
-      (this.fullMessageLength[i + 1] >>> 28));
+    next = this.fullMessageLength[i + 1] * 8;
+    carry = (next / 0x100000000) >>> 0;
+    bits += carry;
+    messageLength.putInt32(bits >>> 0);
+    bits = next;
   }
 
   // write the length of the message (algorithm-specific)
