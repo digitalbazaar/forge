@@ -5,7 +5,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2010-2014 Digital Bazaar, Inc.
+ * Copyright (c) 2010-2015 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -43,8 +43,10 @@ sha256.create = function() {
     digestLength: 32,
     // 56-bit length of message so far (does not including padding)
     messageLength: 0,
-    // true 64-bit message length as two 32-bit ints
-    messageLength64: [0, 0]
+    // true message length
+    fullMessageLength: null,
+    // size of message length in bytes
+    messageLengthSize: 8
   };
 
   /**
@@ -53,8 +55,15 @@ sha256.create = function() {
    * @return this digest object.
    */
   md.start = function() {
+    // up to 56-bit message length for convenience
     md.messageLength = 0;
-    md.messageLength64 = [0, 0];
+
+    // full message length (set md.messageLength64 for backwards-compatibility)
+    md.fullMessageLength = md.messageLength64 = [];
+    var int32s = md.messageLengthSize / 4;
+    for(var i = 0; i < int32s; ++i) {
+      md.fullMessageLength.push(0);
+    }
     _input = forge.util.createBuffer();
     _state = {
       h0: 0x6A09E667,
@@ -87,9 +96,15 @@ sha256.create = function() {
     }
 
     // update message length
-    md.messageLength += msg.length;
-    md.messageLength64[0] += (msg.length / 0x100000000) >>> 0;
-    md.messageLength64[1] += msg.length >>> 0;
+    var len = msg.length;
+    md.messageLength += len;
+    len = [(len / 0x100000000) >>> 0, len >>> 0];
+    for(var i = md.fullMessageLength.length - 1; i >= 0; --i) {
+      md.fullMessageLength[i] += len[1];
+      len[1] = len[0] + ((md.fullMessageLength[i] / 0x100000000) >>> 0);
+      md.fullMessageLength[i] = md.fullMessageLength[i] >>> 0;
+      len[0] = ((len[1] / 0x100000000) >>> 0);
+    }
 
     // add bytes to input buffer
     _input.putBytes(msg);
@@ -131,21 +146,33 @@ sha256.create = function() {
     must *always* be present, so if the message length is already
     congruent to 448 mod 512, then 512 padding bits must be added. */
 
-    // 512 bits == 64 bytes, 448 bits == 56 bytes, 64 bits = 8 bytes
-    // _padding starts with 1 byte with first bit is set in it which
-    // is byte value 128, then there may be up to 63 other pad bytes
-    var padBytes = forge.util.createBuffer();
-    padBytes.putBytes(_input.bytes());
-    // 64 - (remaining msg + 8 bytes msg length) mod 64
-    padBytes.putBytes(
-      _padding.substr(0, 64 - ((md.messageLength64[1] + 8) & 0x3F)));
+    var finalBlock = forge.util.createBuffer();
+    finalBlock.putBytes(_input.bytes());
 
-    /* Now append length of the message. The length is appended in bits
-    as a 64-bit number in big-endian order. Since we store the length in
-    bytes, we must multiply the 64-bit length by 8 (or left shift by 3). */
-    padBytes.putInt32(
-      (md.messageLength64[0] << 3) | (md.messageLength64[0] >>> 28));
-    padBytes.putInt32(md.messageLength64[1] << 3);
+    // compute remaining size to be digested (include message length size)
+    var remaining = (
+      md.fullMessageLength[md.fullMessageLength.length - 1] +
+      md.messageLengthSize);
+
+    // add padding for overflow blockSize - overflow
+    // _padding starts with 1 byte with first bit is set (byte value 128), then
+    // there may be up to (blockSize - 1) other pad bytes
+    var overflow = remaining & (md.blockLength - 1);
+    finalBlock.putBytes(_padding.substr(0, md.blockLength - overflow));
+
+    // serialize message length in bits in big-endian order; since length
+    // is stored in bytes we multiply by 8 and add carry from next int
+    var messageLength = forge.util.createBuffer();
+    var next, carry;
+    var bits = md.fullMessageLength[0] * 8;
+    for(var i = 0; i < md.fullMessageLength.length; ++i) {
+      next = md.fullMessageLength[i + 1] * 8;
+      carry = (next / 0x100000000) >>> 0;
+      bits += carry;
+      finalBlock.putInt32(bits >>> 0);
+      bits = next;
+    }
+
     var s2 = {
       h0: _state.h0,
       h1: _state.h1,
@@ -156,7 +183,7 @@ sha256.create = function() {
       h6: _state.h6,
       h7: _state.h7
     };
-    _update(s2, _w, padBytes);
+    _update(s2, _w, finalBlock);
     var rval = forge.util.createBuffer();
     rval.putInt32(s2.h0);
     rval.putInt32(s2.h1);

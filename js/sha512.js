@@ -8,7 +8,7 @@
  *
  * @author Dave Longley
  *
- * Copyright (c) 2014 Digital Bazaar, Inc.
+ * Copyright (c) 2014-2015 Digital Bazaar, Inc.
  */
 (function() {
 /* ########## Begin module implementation ########## */
@@ -89,8 +89,10 @@ sha512.create = function(algorithm) {
     digestLength: 64,
     // 56-bit length of message so far (does not including padding)
     messageLength: 0,
-    // true 128-bit message length as four 32-bit ints
-    messageLength128: [0, 0, 0, 0]
+    // true message length
+    fullMessageLength: null,
+    // size of message length in bytes
+    messageLengthSize: 16
   };
 
   /**
@@ -99,8 +101,15 @@ sha512.create = function(algorithm) {
    * @return this digest object.
    */
   md.start = function() {
+    // up to 56-bit message length for convenience
     md.messageLength = 0;
-    md.messageLength128 = [0, 0, 0, 0];
+
+    // full message length (set md.messageLength128 for backwards-compatibility)
+    md.fullMessageLength = md.messageLength128 = [];
+    var int32s = md.messageLengthSize / 4;
+    for(var i = 0; i < int32s; ++i) {
+      md.fullMessageLength.push(0);
+    }
     _input = forge.util.createBuffer();
     _h = new Array(_state.length);
     for(var i = 0; i < _state.length; ++i) {
@@ -127,13 +136,13 @@ sha512.create = function(algorithm) {
     }
 
     // update message length
-    md.messageLength += msg.length;
     var len = msg.length;
+    md.messageLength += len;
     len = [(len / 0x100000000) >>> 0, len >>> 0];
-    for(var i = 3; i >= 0; --i) {
-      md.messageLength128[i] += len[1];
-      len[1] = len[0] + ((md.messageLength128[i] / 0x100000000) >>> 0);
-      md.messageLength128[i] = md.messageLength128[i] >>> 0;
+    for(var i = md.fullMessageLength.length - 1; i >= 0; --i) {
+      md.fullMessageLength[i] += len[1];
+      len[1] = len[0] + ((md.fullMessageLength[i] / 0x100000000) >>> 0);
+      md.fullMessageLength[i] = md.fullMessageLength[i] >>> 0;
       len[0] = ((len[1] / 0x100000000) >>> 0);
     }
 
@@ -177,34 +186,38 @@ sha512.create = function(algorithm) {
     must *always* be present, so if the message length is already
     congruent to 896 mod 1024, then 1024 padding bits must be added. */
 
-    // 1024 bits == 128 bytes, 896 bits == 112 bytes, 128 bits = 16 bytes
-    // _padding starts with 1 byte with first bit is set in it which
-    // is byte value 128, then there may be up to 127 other pad bytes
-    var padBytes = forge.util.createBuffer();
-    padBytes.putBytes(_input.bytes());
-    // 128 - (remaining msg + 16 bytes msg length) mod 128
-    padBytes.putBytes(
-      _padding.substr(0, 128 - ((md.messageLength128[3] + 16) & 0x7F)));
+    var finalBlock = forge.util.createBuffer();
+    finalBlock.putBytes(_input.bytes());
 
-    /* Now append length of the message. The length is appended in bits
-    as a 128-bit number in big-endian order. Since we store the length in
-    bytes, we must multiply the 128-bit length by 8 (or left shift by 3). */
-    var bitLength = [];
-    for(var i = 0; i < 3; ++i) {
-      bitLength[i] = ((md.messageLength128[i] << 3) |
-        (md.messageLength128[i - 1] >>> 28));
+    // compute remaining size to be digested (include message length size)
+    var remaining = (
+      md.fullMessageLength[md.fullMessageLength.length - 1] +
+      md.messageLengthSize);
+
+    // add padding for overflow blockSize - overflow
+    // _padding starts with 1 byte with first bit is set (byte value 128), then
+    // there may be up to (blockSize - 1) other pad bytes
+    var overflow = remaining & (md.blockLength - 1);
+    finalBlock.putBytes(_padding.substr(0, md.blockLength - overflow));
+
+    // serialize message length in bits in big-endian order; since length
+    // is stored in bytes we multiply by 8 and add carry from next int
+    var messageLength = forge.util.createBuffer();
+    var next, carry;
+    var bits = md.fullMessageLength[0] * 8;
+    for(var i = 0; i < md.fullMessageLength.length; ++i) {
+      next = md.fullMessageLength[i + 1] * 8;
+      carry = (next / 0x100000000) >>> 0;
+      bits += carry;
+      finalBlock.putInt32(bits >>> 0);
+      bits = next;
     }
-    // shift the last integer normally
-    bitLength[3] = md.messageLength128[3] << 3;
-    padBytes.putInt32(bitLength[0]);
-    padBytes.putInt32(bitLength[1]);
-    padBytes.putInt32(bitLength[2]);
-    padBytes.putInt32(bitLength[3]);
+
     var h = new Array(_h.length);
     for(var i = 0; i < _h.length; ++i) {
       h[i] = _h[i].slice(0);
     }
-    _update(h, _w, padBytes);
+    _update(h, _w, finalBlock);
     var rval = forge.util.createBuffer();
     var hlen;
     if(algorithm === 'SHA-512') {
