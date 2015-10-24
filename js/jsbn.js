@@ -170,7 +170,7 @@ function bnpFromInt(x) {
   this.t = 1;
   this.s = (x<0)?-1:0;
   if(x > 0) this.data[0] = x;
-  else if(x < -1) this.data[0] = x+this.DV;
+  else if(x <= -1) this.data[0] = x+this.DV;
   else this.t = 0;
 }
 
@@ -361,7 +361,7 @@ function bnpSubTo(a,r) {
     c -= a.s;
   }
   r.s = (c<0)?-1:0;
-  if(c < -1) r.data[i++] = this.DV+c;
+  if(c <= -1) r.data[i++] = this.DV+c;
   else if(c > 0) r.data[i++] = c;
   r.t = i;
   r.clamp();
@@ -881,7 +881,7 @@ if(a.t < this.t) {
 }
 r.s = (c<0)?-1:0;
 if(c > 0) r.data[i++] = c;
-else if(c < -1) r.data[i++] = this.DV+c;
+else if(c <= -1) r.data[i++] = this.DV+c;
 r.t = i;
 r.clamp();
 }
