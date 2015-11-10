@@ -382,6 +382,38 @@ function Tests(ASSERT, UTIL) {
       var addr = UTIL.bytesToIP(bytes);
       ASSERT.equal(addr, '2001:db8:0:1:1:1:1:1');
     });
+
+    it('should convert "foo" to its UTF-16 representation', function() {
+      var result = UTIL.text.utf16.encode('foo');
+      ASSERT.equal(result.byteLength, 6);
+      ASSERT.equal(result[0], 102);
+      ASSERT.equal(result[1], 0);
+      ASSERT.equal(result[2], 111);
+      ASSERT.equal(result[3], 0);
+      ASSERT.equal(result[4], 111);
+      ASSERT.equal(result[5], 0);
+    });
+
+    it('should convert "foo" from its UTF-16 representation', function() {
+      var bytes = new Uint8Array([102, 0, 111, 0, 111, 0]);
+      var result = UTIL.text.utf16.decode(bytes);
+      ASSERT.equal(result, 'foo');
+    });
+
+    it('should convert "\ud83c\udc00" to its UTF-16 representation', function() {
+      var result = UTIL.text.utf16.encode('\ud83c\udc00');
+      ASSERT.equal(result.byteLength, 4);
+      ASSERT.equal(result[0], 60);
+      ASSERT.equal(result[1], 216);
+      ASSERT.equal(result[2], 0);
+      ASSERT.equal(result[3], 220);
+    });
+
+    it('should convert "\ud83c\udc00" from its UTF-16 representation', function() {
+      var bytes = new Uint8Array([60, 216, 0, 220]);
+      var result = UTIL.text.utf16.decode(bytes);
+      ASSERT.equal(result, '\ud83c\udc00');
+    });
   });
 }
 
