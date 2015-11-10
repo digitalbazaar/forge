@@ -2,7 +2,7 @@
   "name": "node-forge",
   "version": "0.6.39-dev",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
-  "homepage": "http://github.com/digitalbazaar/forge",
+  "homepage": "https://github.com/digitalbazaar/forge",
   "author": {
     "name": "Digital Bazaar, Inc.",
     "email": "support@digitalbazaar.com",
@@ -29,7 +29,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/digitalbazaar/forge"
+    "url": "https://github.com/digitalbazaar/forge"
   },
   "bugs": {
     "url": "https://github.com/digitalbazaar/forge/issues",
