@@ -383,7 +383,63 @@ function Tests(ASSERT, UTIL) {
       ASSERT.equal(addr, '2001:db8:0:1:1:1:1:1');
     });
 
+    it('should convert "foo" to its UTF-8 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var result = UTIL.text.utf8.encode('foo');
+      ASSERT.equal(result.byteLength, 3);
+      ASSERT.equal(result[0], 102);
+      ASSERT.equal(result[1], 111);
+      ASSERT.equal(result[2], 111);
+    });
+
+    it('should convert "foo" from its UTF-8 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var bytes = new Uint8Array([102, 111, 111]);
+      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
+      // or a fallback is implemented
+      try {
+        var result = UTIL.text.utf8.decode(bytes);
+        ASSERT.equal(result, 'foo');
+      } catch(e) {
+        ASSERT.isTrue(e instanceof TypeError);
+      }
+    });
+
+    it('should convert "\ud83c\udc00" to its UTF-8 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var result = UTIL.text.utf8.encode('\ud83c\udc00');
+      ASSERT.equal(result.byteLength, 4);
+      ASSERT.equal(result[0], 240);
+      ASSERT.equal(result[1], 159);
+      ASSERT.equal(result[2], 128);
+      ASSERT.equal(result[3], 128);
+    });
+
+    it('should convert "\ud83c\udc00" from its UTF-8 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var bytes = new Uint8Array([240, 159, 128, 128]);
+      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
+      // or a fallback is implemented
+      try {
+        var result = UTIL.text.utf8.decode(bytes);
+        ASSERT.equal(result, '\ud83c\udc00');
+      } catch(e) {
+        ASSERT.isTrue(e instanceof TypeError);
+      }
+    });
+
     it('should convert "foo" to its UTF-16 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
       var result = UTIL.text.utf16.encode('foo');
       ASSERT.equal(result.byteLength, 6);
       ASSERT.equal(result[0], 102);
@@ -395,12 +451,24 @@ function Tests(ASSERT, UTIL) {
     });
 
     it('should convert "foo" from its UTF-16 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
       var bytes = new Uint8Array([102, 0, 111, 0, 111, 0]);
-      var result = UTIL.text.utf16.decode(bytes);
-      ASSERT.equal(result, 'foo');
+      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
+      // or a fallback is implemented
+      try {
+        var result = UTIL.text.utf16.decode(bytes);
+        ASSERT.equal(result, 'foo');
+      } catch(e) {
+        ASSERT.isTrue(e instanceof TypeError);
+      }
     });
 
     it('should convert "\ud83c\udc00" to its UTF-16 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
       var result = UTIL.text.utf16.encode('\ud83c\udc00');
       ASSERT.equal(result.byteLength, 4);
       ASSERT.equal(result[0], 60);
@@ -410,9 +478,18 @@ function Tests(ASSERT, UTIL) {
     });
 
     it('should convert "\ud83c\udc00" from its UTF-16 representation', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
       var bytes = new Uint8Array([60, 216, 0, 220]);
-      var result = UTIL.text.utf16.decode(bytes);
-      ASSERT.equal(result, '\ud83c\udc00');
+      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
+      // or a fallback is implemented
+      try {
+        var result = UTIL.text.utf16.decode(bytes);
+        ASSERT.equal(result, '\ud83c\udc00');
+      } catch(e) {
+        ASSERT.isTrue(e instanceof TypeError);
+      }
     });
   });
 }
