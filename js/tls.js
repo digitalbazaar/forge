@@ -1095,14 +1095,26 @@ tls.handleClientHello = function(c, record, length) {
     // use highest compatible minor version
     var version = null;
     for(var i = 0; i < tls.SupportedVersions.length; ++i) {
-      if(tls.SupportedVersions[i].minor === msg.version.minor) {
-        version = tls.SupportedVersions[i];
-        break;
+      // If msg major and minor are lower than the supported version, that supported version cannot be used.
+      if ((msg.version.major >= tls.SupportedVersions[i].major) && (msg.version.minor >= tls.SupportedVersions[i].minor)) {
+        // If version is null this is the first supported version we find that is supported by the client.
+        // Otherwise if version is not null but either its major or minor is lower than the found supported version,
+        // this means we have found a higher supported version and should use that instead.
+        if (version === null || ((version.major < tls.SupportedVersions.major) || (version.minor < tls.SupportedVersions[i].minor))) {
+          version = tls.SupportedVersions[i];
+        }
       }
     }
     if(version === null) {
-      // TODO RBM: remove log
-      console.log('ERROR: Could not find TLS version compatible with ClientHello!');
+      // If no supported version is found, we should return a error for a incompatible TLS version.
+      return c.error(c, {
+        message: 'Incompatible TLS version.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.protocol_version
+        }
+      });
     }
     c.version = {major: version.major, minor: version.minor};
     c.session.version = c.version;
