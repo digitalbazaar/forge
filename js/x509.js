@@ -2732,6 +2732,7 @@ pki.certificateError = {
  * @param chain the certificate chain to verify, with the root or highest
  *          authority at the end (an array of certificates).
  * @param verify called for every certificate in the chain.
+ * @param date optional date to check for validity. Defaults to current date.
  *
  * The verify callback has the following signature:
  *
@@ -2747,7 +2748,7 @@ pki.certificateError = {
  *
  * @return true if successful, error thrown if not.
  */
-pki.verifyCertificateChain = function(caStore, chain, verify) {
+pki.verifyCertificateChain = function(caStore, chain, verify, date) {
   /* From: RFC3280 - Internet X.509 Public Key Infrastructure Certificate
     Section 6: Certification Path Validation
     See inline parentheticals related to this particular implementation.
@@ -2877,7 +2878,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
   var certs = chain.slice(0);
 
   // get current date
-  var now = new Date();
+  var signDate = date || new Date();
 
   // verify each cert in the chain using its parent, where the parent
   // is either the next in the chain or from the CA store
@@ -2889,13 +2890,13 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
     var cert = chain.shift();
 
     // 1. check valid time
-    if(now < cert.validity.notBefore || now > cert.validity.notAfter) {
+    if(signDate < cert.validity.notBefore || signDate > cert.validity.notAfter) {
       error = {
         message: 'Certificate is not valid yet or has expired.',
         error: pki.certificateError.certificate_expired,
         notBefore: cert.validity.notBefore,
         notAfter: cert.validity.notAfter,
-        now: now
+        now: signDate
       };
     } else {
       // 2. verify with parent
