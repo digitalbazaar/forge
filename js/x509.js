@@ -2284,22 +2284,31 @@ function _fillMissingExtensionFields(e, options) {
     var seq = e.value.value;
 
     if(e.keyIdentifier) {
-      var keyIdentifier = e.keyIdentifier === true ? options.cert.generateSubjectKeyIdentifier().getBytes() : e.keyIdentifier;
-      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false, keyIdentifier));
+      var keyIdentifier = (e.keyIdentifier === true ?
+        options.cert.generateSubjectKeyIdentifier().getBytes() :
+        e.keyIdentifier);
+      seq.push(
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false, keyIdentifier));
     }
 
     if(e.authorityCertIssuer) {
       var authorityCertIssuer = [
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 4, true, [
-          _dnToAsn1({attributes: e.authorityCertIssuer === true ? options.cert.issuer.attributes : e.authorityCertIssuer})
+          _dnToAsn1({
+            attributes: (e.authorityCertIssuer === true ?
+              options.cert.issuer.attributes : e.authorityCertIssuer)
+            })
         ])
       ];
-      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, authorityCertIssuer));
+      seq.push(
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, authorityCertIssuer));
     }
 
     if(e.serialNumber) {
-      var serialNumber = forge.util.hexToBytes(e.serialNumber === true ? options.cert.serialNumber : e.serialNumber);
-      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, false, serialNumber));
+      var serialNumber = forge.util.hexToBytes(e.serialNumber === true ?
+        options.cert.serialNumber : e.serialNumber);
+      seq.push(
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, false, serialNumber));
     }
   }
 

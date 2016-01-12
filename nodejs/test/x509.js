@@ -250,7 +250,12 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.ok(index !== -1);
       var ext = cert.extensions[index];
       ASSERT.equal(ext.name, 'authorityKeyIdentifier');
-      ASSERT.equal(ext.value, '0\u0014õucàÇ]n\u0003úý²ýr4#\u0003\u0003\u0000¡m¤k0i1\u00140\u0012\u0006\u0003U\u0004\u0003\u0013\u000bexample.org1\u000b0\t\u0006\u0003U\u0004\u0006\u0013\u0002US1\u00110\u000f\u0006\u0003U\u0004\b\u0013\bVirginia1\u00130\u0011\u0006\u0003U\u0004\u0007\u0013\nBlacksburg1\r0\u000b\u0006\u0003U\u0004\n\u0013\u0004Test1\r0\u000b\u0006\u0003U\u0004\u000b\u0013\u0004Test\u0001\u0001');
+      ASSERT.equal(ext.value, UTIL.hexToBytes(
+        '3081888014f57563e0c75d6e9b03fafdb2fd72349f23030300a16da46b30693114' +
+        '30120603550403130b6578616d706c652e6f7267310b3009060355040613025553' +
+        '3111300f0603550408130856697267696e6961311330110603550407130a426c61' +
+        '636b7362757267310d300b060355040a130454657374310d300b060355040b1304' +
+        '54657374820101'));
 
       // verify certificate chain
       var caStore = PKI.createCaStore();
