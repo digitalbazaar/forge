@@ -2294,10 +2294,8 @@ function _fillMissingExtensionFields(e, options) {
     if(e.authorityCertIssuer) {
       var authorityCertIssuer = [
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 4, true, [
-          _dnToAsn1({
-            attributes: (e.authorityCertIssuer === true ?
-              options.cert.issuer.attributes : e.authorityCertIssuer)
-            })
+          _dnToAsn1(e.authorityCertIssuer === true ?
+            options.cert.issuer : e.authorityCertIssuer)
         ])
       ];
       seq.push(
