@@ -202,6 +202,66 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       ASSERT.ok(certificate.verify(certificate));
     });
 
+    it('should generate a certificate with authorityKeyIdentifier extension', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        extensions: [{
+          name: 'authorityKeyIdentifier',
+          keyIdentifier: true,
+          authorityCertIssuer: true,
+          serialNumber: true
+        }],
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      // verify certificate encoding/parsing
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+
+      // verify authorityKeyIdentifier extension
+      var index = findIndex(cert.extensions, {id: '2.5.29.35'});
+      ASSERT.ok(index !== -1);
+      var ext = cert.extensions[index];
+      ASSERT.equal(ext.name, 'authorityKeyIdentifier');
+      ASSERT.equal(ext.value, '0\u0014õucàÇ]n\u0003úý²ýr4#\u0003\u0003\u0000¡m¤k0i1\u00140\u0012\u0006\u0003U\u0004\u0003\u0013\u000bexample.org1\u000b0\t\u0006\u0003U\u0004\u0006\u0013\u0002US1\u00110\u000f\u0006\u0003U\u0004\b\u0013\bVirginia1\u00130\u0011\u0006\u0003U\u0004\u0007\u0013\nBlacksburg1\r0\u000b\u0006\u0003U\u0004\n\u0013\u0004Test1\r0\u000b\u0006\u0003U\u0004\u000b\u0013\u0004Test\u0001\u0001');
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
+        ASSERT.equal(vfd, true);
+        ASSERT.ok(cert.verifySubjectKeyIdentifier());
+        return true;
+      });
+    });
+
     it('should generate and verify a self-signed certificate', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
@@ -791,6 +851,19 @@ function Tests(ASSERT, PKI, MD, UTIL) {
     });
   });
 
+  function findIndex(array, predicateObj) {
+    var result = -1;
+    array.forEach(function(el, index) {
+      var match = Object.keys(predicateObj).reduce(function(soFar, key) {
+        return soFar && el[key] === predicateObj[key];
+      }, true);
+      if(match) {
+        result = index;
+      }
+    });
+    return result;
+  }
+
   function createCertificate(options) {
     var publicKey = options.publicKey;
     var signingKey = options.signingKey;
@@ -808,7 +881,7 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       cert.validity.notBefore.getFullYear() + 1);
     cert.setSubject(subject);
     cert.setIssuer(issuer);
-    var extensions = [];
+    var extensions = options.extensions || [];
     if(isCA) {
       extensions.push({
         name: 'basicConstraints',
