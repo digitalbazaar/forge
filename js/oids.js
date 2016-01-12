@@ -196,6 +196,7 @@ oids['2.5.29.32'] = 'certificatePolicies';
 oids['2.5.29.33'] = 'policyMappings';
 oids['2.5.29.34'] = 'policyConstraints'; // deprecated use .36
 oids['2.5.29.35'] = 'authorityKeyIdentifier';
+oids['authorityKeyIdentifier'] = '2.5.29.35';
 oids['2.5.29.36'] = 'policyConstraints';
 oids['2.5.29.37'] = 'extKeyUsage';
 oids['extKeyUsage'] = '2.5.29.37';

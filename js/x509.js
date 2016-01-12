@@ -2278,6 +2278,29 @@ function _fillMissingExtensionFields(e, options) {
     // OCTETSTRING w/digest
     e.value = asn1.create(
       asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, ski.getBytes());
+  } else if(e.name === 'authorityKeyIdentifier' && options.cert) {
+    // SYNTAX SEQUENCE
+    e.value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    var seq = e.value.value;
+
+    if(e.keyIdentifier) {
+      var keyIdentifier = e.keyIdentifier === true ? options.cert.generateSubjectKeyIdentifier().getBytes() : e.keyIdentifier;
+      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, false, keyIdentifier));
+    }
+
+    if(e.authorityCertIssuer) {
+      var authorityCertIssuer = [
+        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 4, true, [
+          _dnToAsn1({attributes: e.authorityCertIssuer === true ? options.cert.issuer.attributes : e.authorityCertIssuer})
+        ])
+      ];
+      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, authorityCertIssuer));
+    }
+
+    if(e.serialNumber) {
+      var serialNumber = forge.util.hexToBytes(e.serialNumber === true ? options.cert.serialNumber : e.serialNumber);
+      seq.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, false, serialNumber));
+    }
   }
 
   // ensure value has been defined by now
