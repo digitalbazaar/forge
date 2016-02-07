@@ -5,10 +5,7 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-var forge = require("./forge");
-
-forge.pki = forge.pki || {};
-var oids = forge.pki.oids = forge.oids = forge.oids || {};
+var oids = {};
 
 module.exports = oids;
 

@@ -9,6 +9,8 @@
 var pem = require("./pem");
 var util = require("./util");
 var asn1 = require("./asn1");
+var x509 = require("./x509");
+var rsa = require("./rsa");
 
 /* Public Key Infrastructure (PKI) implementation. */
 var pki = {};
@@ -91,3 +93,6 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
   };
   return pem.encode(msg, {maxline: maxline});
 };
+
+for (var i of ["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"])
+  pki[i] = rsa[i];

@@ -26,6 +26,7 @@ var jsbn = require("./jsbn");
 var asn1 = require("./asn1");
 var pki = require("./pki");
 var pkcs5 = require("./pbkdf2");
+var oids = require("./oids");
 
 var BigInteger = jsbn.BigInteger;
 
@@ -33,8 +34,6 @@ var BigInteger = jsbn.BigInteger;
 var pbe = {};
 
 module.exports = pbe;
-
-var oids = pki.oids;
 
 // validator for an EncryptedPrivateKeyInfo structure
 // Note: Currently only works w/algorithm params
@@ -720,11 +719,11 @@ pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
  */
 pbe.getCipher = function(oid, params, password) {
   switch(oid) {
-  case pki.oids['pkcs5PBES2']:
+  case oids['pkcs5PBES2']:
     return pbe.getCipherForPBES2(oid, params, password);
 
-  case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
-  case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
+  case oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+  case oids['pbewithSHAAnd40BitRC2-CBC']:
     return pbe.getCipherForPKCS12PBE(oid, params, password);
 
   default:
@@ -764,7 +763,7 @@ pbe.getCipherForPBES2 = function(oid, params, password) {
 
   // check oids
   oid = asn1.derToOid(capture.kdfOid);
-  if(oid !== pki.oids['pkcs5PBKDF2']) {
+  if(oid !== oids['pkcs5PBKDF2']) {
     var error = new Error('Cannot read encrypted private key. ' +
       'Unsupported key derivation function OID.');
     error.oid = oid;
@@ -772,11 +771,11 @@ pbe.getCipherForPBES2 = function(oid, params, password) {
     throw error;
   }
   oid = asn1.derToOid(capture.encOid);
-  if(oid !== pki.oids['aes128-CBC'] &&
-    oid !== pki.oids['aes192-CBC'] &&
-    oid !== pki.oids['aes256-CBC'] &&
-    oid !== pki.oids['des-EDE3-CBC'] &&
-    oid !== pki.oids['desCBC']) {
+  if(oid !== oids['aes128-CBC'] &&
+    oid !== oids['aes192-CBC'] &&
+    oid !== oids['aes256-CBC'] &&
+    oid !== oids['des-EDE3-CBC'] &&
+    oid !== oids['desCBC']) {
     var error = new Error('Cannot read encrypted private key. ' +
       'Unsupported encryption scheme OID.');
     error.oid = oid;
@@ -791,7 +790,7 @@ pbe.getCipherForPBES2 = function(oid, params, password) {
   count = count.getInt(count.length() << 3);
   var dkLen;
   var cipherFn;
-  switch(pki.oids[oid]) {
+  switch(oids[oid]) {
   case 'aes128-CBC':
     dkLen = 16;
     cipherFn = aes.createDecryptionCipher;
@@ -852,13 +851,13 @@ pbe.getCipherForPKCS12PBE = function(oid, params, password) {
 
   var dkLen, dIvLen, cipherFn;
   switch(oid) {
-    case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
+    case oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
       dkLen = 24;
       dIvLen = 8;
       cipherFn = des.startDecrypting;
       break;
 
-    case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
+    case oids['pbewithSHAAnd40BitRC2-CBC']:
       dkLen = 5;
       dIvLen = 8;
       cipherFn = function(key, iv) {
