@@ -5,12 +5,10 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
 /* Utilities API */
-var util = forge.util = forge.util || {};
+var util = {};
+
+module.exports = util;
 
 // define setImmediate and nextTick
 (function() {
@@ -2932,6 +2930,3 @@ util.estimateCores = function(options, callback) {
     }, 0);
   }
 };
-
-} // end module implementation
-

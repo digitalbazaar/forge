@@ -8,9 +8,7 @@
  * Information on the RC2 cipher is available from RFC #2268,
  * http://www.ietf.org/rfc/rfc2268.txt
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 var piTable = [
   0xd9, 0x78, 0xf9, 0xc4, 0x19, 0xdd, 0xb5, 0xed, 0x28, 0xe9, 0xfd, 0x79, 0x4a, 0xa0, 0xd8, 0x9d,
@@ -64,7 +62,9 @@ var ror = function(word, bits) {
 
 
 /* RC2 API */
-forge.rc2 = forge.rc2 || {};
+var rc2 = {};
+
+module.exports = rc2;
 
 /**
  * Perform RC2 key expansion as per RFC #2268, section 2.
@@ -73,9 +73,9 @@ forge.rc2 = forge.rc2 || {};
  * @param effKeyBits number of effective key bits (default: 128)
  * @return the expanded RC2 key (ByteBuffer of 128 bytes)
  */
-forge.rc2.expandKey = function(key, effKeyBits) {
+rc2.expandKey = function(key, effKeyBits) {
   if(typeof key === 'string') {
-    key = forge.util.createBuffer(key);
+    key = util.createBuffer(key);
   }
   effKeyBits = effKeyBits || 128;
 
@@ -116,7 +116,7 @@ var createCipher = function(key, bits, encrypt) {
   var i, j, K = [];
 
   /* Expand key and fill into K[] Array */
-  key = forge.rc2.expandKey(key, bits);
+  key = rc2.expandKey(key, bits);
   for(i = 0; i < 64; i ++) {
     K.push(key.getInt16Le());
   }
@@ -250,13 +250,13 @@ var createCipher = function(key, bits, encrypt) {
       if(iv) {
         /* CBC mode */
         if(typeof iv === 'string') {
-          iv = forge.util.createBuffer(iv);
+          iv = util.createBuffer(iv);
         }
       }
 
       _finish = false;
-      _input = forge.util.createBuffer();
-      _output = output || new forge.util.createBuffer();
+      _input = util.createBuffer();
+      _output = output || new util.createBuffer();
       _iv = iv;
 
       cipher.output = _output;
@@ -355,8 +355,8 @@ var createCipher = function(key, bits, encrypt) {
  *
  * @return the cipher.
  */
-forge.rc2.startEncrypting = function(key, iv, output) {
-  var cipher = forge.rc2.createEncryptionCipher(key, 128);
+rc2.startEncrypting = function(key, iv, output) {
+  var cipher = rc2.createEncryptionCipher(key, 128);
   cipher.start(iv, output);
   return cipher;
 };
@@ -374,7 +374,7 @@ forge.rc2.startEncrypting = function(key, iv, output) {
  *
  * @return the cipher.
  */
-forge.rc2.createEncryptionCipher = function(key, bits) {
+rc2.createEncryptionCipher = function(key, bits) {
   return createCipher(key, bits, true);
 };
 
@@ -392,8 +392,8 @@ forge.rc2.createEncryptionCipher = function(key, bits) {
  *
  * @return the cipher.
  */
-forge.rc2.startDecrypting = function(key, iv, output) {
-  var cipher = forge.rc2.createDecryptionCipher(key, 128);
+rc2.startDecrypting = function(key, iv, output) {
+  var cipher = rc2.createDecryptionCipher(key, 128);
   cipher.start(iv, output);
   return cipher;
 };
@@ -411,9 +411,6 @@ forge.rc2.startDecrypting = function(key, iv, output) {
  *
  * @return the cipher.
  */
-forge.rc2.createDecryptionCipher = function(key, bits) {
+rc2.createDecryptionCipher = function(key, bits) {
   return createCipher(key, bits, false);
 };
-
-} // end module implementation
-

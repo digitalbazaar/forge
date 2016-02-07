@@ -133,12 +133,12 @@
  * The full OID (including ASN.1 tag and length of 6 bytes) is:
  * 0x06062A864886F70D
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 /* ASN.1 API */
-var asn1 = forge.asn1 = forge.asn1 || {};
+var asn1 = {};
+
+module.exports = asn1;
 
 /**
  * ASN.1 classes.
@@ -196,7 +196,7 @@ asn1.create = function(tagClass, type, constructed, value) {
     according to the ASN.1 data type. */
 
   // remove undefined values
-  if(forge.util.isArray(value)) {
+  if(util.isArray(value)) {
     var tmp = [];
     for(var i = 0; i < value.length; ++i) {
       if(value[i] !== undefined) {
@@ -210,7 +210,7 @@ asn1.create = function(tagClass, type, constructed, value) {
     tagClass: tagClass,
     type: type,
     constructed: constructed,
-    composed: constructed || forge.util.isArray(value),
+    composed: constructed || util.isArray(value),
     value: value
   };
 };
@@ -263,7 +263,7 @@ asn1.fromDer = function(bytes, strict) {
 
   // wrap in buffer if needed
   if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
+    bytes = util.createBuffer(bytes);
   }
 
   // minimum length for ASN.1 DER structure is 2
@@ -392,13 +392,13 @@ asn1.fromDer = function(bytes, strict) {
  * @return the buffer of bytes.
  */
 asn1.toDer = function(obj) {
-  var bytes = forge.util.createBuffer();
+  var bytes = util.createBuffer();
 
   // build the first byte
   var b1 = obj.tagClass | obj.type;
 
   // for storing the ASN.1 value
-  var value = forge.util.createBuffer();
+  var value = util.createBuffer();
 
   // if composed, use each child asn1 object's DER bytes as value
   if(obj.composed) {
@@ -475,7 +475,7 @@ asn1.toDer = function(obj) {
 asn1.oidToDer = function(oid) {
   // split OID into individual values
   var values = oid.split('.');
-  var bytes = forge.util.createBuffer();
+  var bytes = util.createBuffer();
 
   // first byte is 40 * value1 + value2
   bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
@@ -522,7 +522,7 @@ asn1.derToOid = function(bytes) {
 
   // wrap in buffer if needed
   if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
+    bytes = util.createBuffer(bytes);
   }
 
   // first byte is 40 * value1 + value2
@@ -803,7 +803,7 @@ asn1.dateToGeneralizedTime = function(date) {
  * @return the byte buffer.
  */
 asn1.integerToDer = function(x) {
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   if(x >= -0x80 && x < 0x80) {
     return rval.putSignedInt(x, 8);
   }
@@ -832,7 +832,7 @@ asn1.integerToDer = function(x) {
 asn1.derToInteger = function(bytes) {
   // wrap in buffer if needed
   if(typeof bytes === 'string') {
-    bytes = forge.util.createBuffer(bytes);
+    bytes = util.createBuffer(bytes);
   }
 
   var n = bytes.length() * 8;
@@ -874,7 +874,7 @@ asn1.validate = function(obj, v, capture, errors) {
       rval = true;
 
       // handle sub values
-      if(v.value && forge.util.isArray(v.value)) {
+      if(v.value && util.isArray(v.value)) {
         var j = 0;
         for(var i = 0; rval && i < v.value.length; ++i) {
           rval = v.value[i].optional || false;
@@ -1068,9 +1068,10 @@ asn1.prettyPrint = function(obj, level, indentation) {
     if(obj.type === asn1.Type.OID) {
       var oid = asn1.derToOid(obj.value);
       rval += oid;
-      if(forge.pki && forge.pki.oids) {
-        if(oid in forge.pki.oids) {
-          rval += ' (' + forge.pki.oids[oid] + ') ';
+      var pki = require("./pki");
+      if(pki && pki.oids) {
+        if(oid in pki.oids) {
+          rval += ' (' + pki.oids[oid] + ') ';
         }
       }
     }
@@ -1078,20 +1079,20 @@ asn1.prettyPrint = function(obj, level, indentation) {
       try {
         rval += asn1.derToInteger(obj.value);
       } catch(ex) {
-        rval += '0x' + forge.util.bytesToHex(obj.value);
+        rval += '0x' + util.bytesToHex(obj.value);
       }
     } else if(obj.type === asn1.Type.OCTETSTRING) {
       if(!_nonLatinRegex.test(obj.value)) {
         rval += '(' + obj.value + ') ';
       }
-      rval += '0x' + forge.util.bytesToHex(obj.value);
+      rval += '0x' + util.bytesToHex(obj.value);
     } else if(obj.type === asn1.Type.UTF8) {
-      rval += forge.util.decodeUtf8(obj.value);
+      rval += util.decodeUtf8(obj.value);
     } else if(obj.type === asn1.Type.PRINTABLESTRING ||
       obj.type === asn1.Type.IA5String) {
       rval += obj.value;
     } else if(_nonLatinRegex.test(obj.value)) {
-      rval += '0x' + forge.util.bytesToHex(obj.value);
+      rval += '0x' + util.bytesToHex(obj.value);
     } else if(obj.value.length === 0) {
       rval += '[null]';
     } else {
@@ -1101,6 +1102,3 @@ asn1.prettyPrint = function(obj, level, indentation) {
 
   return rval;
 };
-
-} // end module implementation
-

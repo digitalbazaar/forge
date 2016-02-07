@@ -5,19 +5,15 @@
  *
  * Copyright (c) 2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
-// forge.prime already defined
-if(forge.prime) {
-  return;
-}
+var util = require("./util");
+var random = require("./random");
 
 /* PRIME API */
-var prime = forge.prime = forge.prime || {};
+var prime = {};
 
-var BigInteger = forge.jsbn.BigInteger;
+module.exports = prime;
+
+var BigInteger = require("./jsbn").BigInteger;
 
 // primes are 30k+i for i = 1, 7, 11, 13, 17, 19, 23, 29
 var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
@@ -69,7 +65,7 @@ prime.generateProbablePrime = function(bits, options, callback) {
   algorithm.options = algorithm.options || {};
 
   // create prng with api that matches BigInteger secure random
-  var prng = options.prng || forge.random;
+  var prng = options.prng || random;
   var rng = {
     // x is an array to fill with bytes
     nextBytes: function(x) {
@@ -133,7 +129,7 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
   } while(maxBlockTime < 0 || (+new Date() - start < maxBlockTime));
 
   // keep trying (setImmediate would be better here)
-  forge.util.setImmediate(function() {
+  util.setImmediate(function() {
     primeincFindPrimeWithoutWorkers(bits, rng, options, callback);
   });
 }
@@ -153,7 +149,7 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
   var range = workLoad * 30 / 8;
   var workerScript = options.workerScript || 'forge/prime.worker.js';
   if(numWorkers === -1) {
-    return forge.util.estimateCores(function(err, cores) {
+    return util.estimateCores(function(err, cores) {
       if(err) {
         // default to 2
         cores = 2;
@@ -280,7 +276,3 @@ function getMillerRabinTests(bits) {
   if(bits <= 1250) return 3;
   return 2;
 }
-
-} // end module implementation
-
-})();

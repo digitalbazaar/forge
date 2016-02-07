@@ -116,25 +116,25 @@ function Tests(ASSERT, PBKDF2, MD, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/pbkdf2',
-    'forge/md',
-    'forge/util'
+    '../../js/pbkdf2',
+    '../../js/md',
+    '../../js/util'
   ], function(PBKDF2, MD, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PBKDF2(),
-      MD(),
-      UTIL()
+      PBKDF2,
+      MD,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pbkdf2')(),
-    require('../../js/md')(),
-    require('../../js/util')());
+    require('../../js/pbkdf2'),
+    require('../../js/md'),
+    require('../../js/util'));
 }
 
 })();

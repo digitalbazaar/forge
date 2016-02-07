@@ -47,10 +47,6 @@ Address all questions regarding this license to:
   tjw@cs.Stanford.EDU
 */
 
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
 // Bits per digit
 var dbits;
 
@@ -1263,8 +1259,8 @@ BigInteger.prototype.isProbablePrime = bnIsProbablePrime;
 //long longValue()
 //static BigInteger valueOf(long val)
 
-forge.jsbn = forge.jsbn || {};
-forge.jsbn.BigInteger = BigInteger;
+var jsbn = {};
 
-} // end module implementation
+module.exports = jsbn;
 
+jsbn.BigInteger = BigInteger;

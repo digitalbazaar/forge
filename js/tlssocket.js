@@ -5,9 +5,7 @@
  *
  * Copyright (c) 2009-2012 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var tls = require("./tls");
 
 /**
  * Wraps a forge.net socket with a TLS layer.
@@ -32,7 +30,7 @@ function initModule(forge) {
  *
  * @return the TLS-wrapped socket.
  */
-forge.tls.wrapSocket = function(options) {
+module.exports = function(options) {
   // get raw socket
   var socket = options.socket;
 
@@ -47,7 +45,7 @@ forge.tls.wrapSocket = function(options) {
   };
 
   // create TLS connection
-  var c = forge.tls.createConnection({
+  var c = tls.createConnection({
     server: false,
     sessionId: options.sessionId || null,
     caStore: options.caStore || [],
@@ -248,6 +246,3 @@ forge.tls.wrapSocket = function(options) {
 
   return tlsSocket;
 };
-
-} // end module implementation
-

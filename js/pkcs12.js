@@ -93,16 +93,19 @@
  *   ... -- For future extensions
  * }
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
+var md = require("./md");
+var hmac = require("./hmac");
+var pkcs7 = require("./pkcs7");
+var pbe = require("./pbe");
+var asn1 = require("./asn1");
+var pki = require("./pki");
+var random = require("./random");
 
-// shortcut for asn.1 & PKI API
-var asn1 = forge.asn1;
-var pki = forge.pki;
+// PKCS#12 API
+var p12 = {};
 
-// shortcut for PKCS#12 API
-var p12 = forge.pkcs12 = forge.pkcs12 || {};
+module.exports = p12;
 
 var contentInfoValidator = {
   name: 'ContentInfo',
@@ -348,7 +351,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
       if('localKeyId' in filter) {
         localKeyId = filter.localKeyId;
       } else if('localKeyIdHex' in filter) {
-        localKeyId = forge.util.hexToBytes(filter.localKeyIdHex);
+        localKeyId = util.hexToBytes(filter.localKeyIdHex);
       }
 
       // filter on bagType only
@@ -429,23 +432,23 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
     switch(macAlgorithm) {
     case pki.oids.sha1:
-      md = forge.md.sha1.create();
+      md = md.sha1.create();
       macKeyBytes = 20;
       break;
     case pki.oids.sha256:
-      md = forge.md.sha256.create();
+      md = md.sha256.create();
       macKeyBytes = 32;
       break;
     case pki.oids.sha384:
-      md = forge.md.sha384.create();
+      md = md.sha384.create();
       macKeyBytes = 48;
       break;
     case pki.oids.sha512:
-      md = forge.md.sha512.create();
+      md = md.sha512.create();
       macKeyBytes = 64;
       break;
     case pki.oids.md5:
-      md = forge.md.md5.create();
+      md = md.md5.create();
       macKeyBytes = 16;
       break;
     }
@@ -454,12 +457,12 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     }
 
     // verify MAC (iterations default to 1)
-    var macSalt = new forge.util.ByteBuffer(capture.macSalt);
+    var macSalt = new util.ByteBuffer(capture.macSalt);
     var macIterations = (('macIterations' in capture) ?
-      parseInt(forge.util.bytesToHex(capture.macIterations), 16) : 1);
+      parseInt(util.bytesToHex(capture.macIterations), 16) : 1);
     var macKey = p12.generateKey(
       password, macSalt, 3, macIterations, macKeyBytes, md);
-    var mac = forge.hmac.create();
+    var mac = hmac.create();
     mac.start(md, macKey);
     mac.update(data.value);
     var macValue = mac.getMac();
@@ -488,7 +491,7 @@ function _decodePkcs7Data(data) {
   // handle special case of "chunked" data content: an octet string composed
   // of other octet strings
   if(data.composed || data.constructed) {
-    var value = forge.util.createBuffer();
+    var value = util.createBuffer();
     for(var i = 0; i < data.value.length; ++i) {
       value.putBytes(data.value[i].value);
     }
@@ -570,7 +573,7 @@ function _decryptSafeContents(data, password) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(
-    data, forge.pkcs7.asn1.encryptedDataValidator, capture, errors)) {
+    data, pkcs7.asn1.encryptedDataValidator, capture, errors)) {
     var error = new Error('Cannot read EncryptedContentInfo.');
     error.errors = errors;
     throw error;
@@ -590,7 +593,7 @@ function _decryptSafeContents(data, password) {
 
   // get encrypted data
   var encryptedContentAsn1 = _decodePkcs7Data(capture.encryptedContentAsn1);
-  var encrypted = forge.util.createBuffer(encryptedContentAsn1.value);
+  var encrypted = util.createBuffer(encryptedContentAsn1.value);
 
   cipher.update(encrypted);
   if(!cipher.finish()) {
@@ -804,22 +807,22 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   var localKeyId = options.localKeyId;
   var bagAttrs;
   if(localKeyId !== null) {
-    localKeyId = forge.util.hexToBytes(localKeyId);
+    localKeyId = util.hexToBytes(localKeyId);
   } else if(options.generateLocalKeyId) {
     // use SHA-1 of paired cert, if available
     if(cert) {
-      var pairedCert = forge.util.isArray(cert) ? cert[0] : cert;
+      var pairedCert = util.isArray(cert) ? cert[0] : cert;
       if(typeof pairedCert === 'string') {
         pairedCert = pki.certificateFromPem(pairedCert);
       }
-      var sha1 = forge.md.sha1.create();
+      var sha1 = md.sha1.create();
       sha1.update(asn1.toDer(pki.certificateToAsn1(pairedCert)).getBytes());
       localKeyId = sha1.digest().getBytes();
     } else {
       // FIXME: consider using SHA-1 of public key (which can be generated
       // from private key components), see: cert.generateSubjectKeyIdentifier
       // generate random bytes
-      localKeyId = forge.random.getBytes(20);
+      localKeyId = random.getBytes(20);
     }
   }
 
@@ -863,7 +866,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   // create safe bag(s) for certificate chain
   var chain = [];
   if(cert !== null) {
-    if(forge.util.isArray(cert)) {
+    if(util.isArray(cert)) {
       chain = cert;
     } else {
       chain = [cert];
@@ -992,13 +995,13 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   var macData;
   if(options.useMac) {
     // MacData
-    var sha1 = forge.md.sha1.create();
-    var macSalt = new forge.util.ByteBuffer(
-      forge.random.getBytes(options.saltSize));
+    var sha1 = md.sha1.create();
+    var macSalt = new util.ByteBuffer(
+      random.getBytes(options.saltSize));
     var count = options.count;
     // 160-bit key
     var key = p12.generateKey(password, macSalt, 3, count, 20);
-    var mac = forge.hmac.create();
+    var mac = hmac.create();
     mac.start(sha1, key);
     mac.update(asn1.toDer(safe).getBytes());
     var macValue = mac.getMac();
@@ -1063,20 +1066,4 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
  *
  * @return a ByteBuffer with the bytes derived from the password.
  */
-p12.generateKey = forge.pbe.generatePkcs12Key;
-
-} // end module implementation
-
-  './hmac',
-  './oids',
-  './pkcs7asn1',
-  './pbe',
-  './random',
-  './rsa',
-  './sha1',
-  './util',
-  './x509'
-], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();
+p12.generateKey = pbe.generatePkcs12Key;

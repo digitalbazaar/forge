@@ -1,7 +1,6 @@
 (function() {
 
-function Tests(ASSERT, FORGE) {
-  var forge = FORGE();
+function Tests(ASSERT, forge) {
   var PKCS12 = forge.pkcs12;
   var ASN1 = forge.asn1;
   var PEM = forge.pem;
@@ -669,7 +668,7 @@ function Tests(ASSERT, FORGE) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/forge'
+    '../../js/forge'
   ], function(FORGE) {
     Tests(
       // Global provided by test harness

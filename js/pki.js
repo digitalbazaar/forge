@@ -6,15 +6,14 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
-// shortcut for asn.1 API
-var asn1 = forge.asn1;
+var pem = require("./pem");
+var util = require("./util");
+var asn1 = require("./asn1");
 
 /* Public Key Infrastructure (PKI) implementation. */
-var pki = forge.pki = forge.pki || {};
+var pki = {};
+
+module.exports = pki;
 
 /**
  * NOTE: THIS METHOD IS DEPRECATED. Use pem.decode() instead.
@@ -25,12 +24,12 @@ var pki = forge.pki = forge.pki || {};
  *
  * @return the DER-formatted data.
  */
-pki.pemToDer = function(pem) {
-  var msg = forge.pem.decode(pem)[0];
+pki.pemToDer = function(passed_pem) {
+  var msg = pem.decode(passed_pem)[0];
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
     throw new Error('Could not convert PEM to DER; PEM is encrypted.');
   }
-  return forge.util.createBuffer(msg.body);
+  return util.createBuffer(msg.body);
 };
 
 /**
@@ -40,8 +39,8 @@ pki.pemToDer = function(pem) {
  *
  * @return the private key.
  */
-pki.privateKeyFromPem = function(pem) {
-  var msg = forge.pem.decode(pem)[0];
+pki.privateKeyFromPem = function(passed_pem) {
+  var msg = pem.decode(passed_pem)[0];
 
   if(msg.type !== 'PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
     var error = new Error('Could not convert private key from PEM; PEM ' +
@@ -73,7 +72,7 @@ pki.privateKeyToPem = function(key, maxline) {
     type: 'RSA PRIVATE KEY',
     body: asn1.toDer(pki.privateKeyToAsn1(key)).getBytes()
   };
-  return forge.pem.encode(msg, {maxline: maxline});
+  return pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -90,9 +89,5 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
     type: 'PRIVATE KEY',
     body: asn1.toDer(pki).getBytes()
   };
-  return forge.pem.encode(msg, {maxline: maxline});
+  return pem.encode(msg, {maxline: maxline});
 };
-
-} // end module implementation
-
-})();

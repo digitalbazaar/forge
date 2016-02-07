@@ -5,14 +5,16 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
-forge.cipher = forge.cipher || {};
+var cipher = {};
+
+module.exports = cipher;
+
+cipher.modes = require("./cipherModes");
 
 // registered algorithms
-forge.cipher.algorithms = forge.cipher.algorithms || {};
+cipher.algorithms = cipher.algorithms || {};
 
 /**
  * Creates a cipher object that can be used to encrypt data using the given
@@ -27,10 +29,10 @@ forge.cipher.algorithms = forge.cipher.algorithms || {};
  *
  * @return the cipher.
  */
-forge.cipher.createCipher = function(algorithm, key) {
+cipher.createCipher = function(algorithm, key) {
   var api = algorithm;
   if(typeof api === 'string') {
-    api = forge.cipher.getAlgorithm(api);
+    api = cipher.getAlgorithm(api);
     if(api) {
       api = api();
     }
@@ -40,7 +42,7 @@ forge.cipher.createCipher = function(algorithm, key) {
   }
 
   // assume block cipher
-  return new forge.cipher.BlockCipher({
+  return new cipher.BlockCipher({
     algorithm: api,
     key: key,
     decrypt: false
@@ -60,10 +62,10 @@ forge.cipher.createCipher = function(algorithm, key) {
  *
  * @return the cipher.
  */
-forge.cipher.createDecipher = function(algorithm, key) {
+cipher.createDecipher = function(algorithm, key) {
   var api = algorithm;
   if(typeof api === 'string') {
-    api = forge.cipher.getAlgorithm(api);
+    api = cipher.getAlgorithm(api);
     if(api) {
       api = api();
     }
@@ -73,7 +75,7 @@ forge.cipher.createDecipher = function(algorithm, key) {
   }
 
   // assume block cipher
-  return new forge.cipher.BlockCipher({
+  return new cipher.BlockCipher({
     algorithm: api,
     key: key,
     decrypt: true
@@ -87,9 +89,9 @@ forge.cipher.createDecipher = function(algorithm, key) {
  * @param name the name of the algorithm.
  * @param algorithm the algorithm API object.
  */
-forge.cipher.registerAlgorithm = function(name, algorithm) {
+cipher.registerAlgorithm = function(name, algorithm) {
   name = name.toUpperCase();
-  forge.cipher.algorithms[name] = algorithm;
+  cipher.algorithms[name] = algorithm;
 };
 
 /**
@@ -99,15 +101,15 @@ forge.cipher.registerAlgorithm = function(name, algorithm) {
  *
  * @return the algorithm, if found, null if not.
  */
-forge.cipher.getAlgorithm = function(name) {
+cipher.getAlgorithm = function(name) {
   name = name.toUpperCase();
-  if(name in forge.cipher.algorithms) {
-    return forge.cipher.algorithms[name];
+  if(name in cipher.algorithms) {
+    return cipher.algorithms[name];
   }
   return null;
 };
 
-var BlockCipher = forge.cipher.BlockCipher = function(options) {
+var BlockCipher = cipher.BlockCipher = function(options) {
   this.algorithm = options.algorithm;
   this.mode = this.algorithm.mode;
   this.blockSize = this.mode.blockSize;
@@ -154,8 +156,8 @@ BlockCipher.prototype.start = function(options) {
   }
   opts.decrypt = this._decrypt;
   this._finish = false;
-  this._input = forge.util.createBuffer();
-  this.output = options.output || forge.util.createBuffer();
+  this._input = util.createBuffer();
+  this.output = options.output || util.createBuffer();
   this.mode.start(opts);
 };
 
@@ -229,7 +231,3 @@ BlockCipher.prototype.finish = function(pad) {
 
   return true;
 };
-
-
-} // end module implementation
-

@@ -7,14 +7,11 @@
  *
  * Copyright (c) 2010-2015 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
-var sha256 = forge.sha256 = forge.sha256 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
-forge.md.sha256 = forge.md.algorithms.sha256 = sha256;
+var sha256 = {};
+
+module.exports = sha256;
 
 /**
  * Creates a SHA-256 message digest object.
@@ -31,7 +28,7 @@ sha256.create = function() {
   var _state = null;
 
   // input buffer
-  var _input = forge.util.createBuffer();
+  var _input = util.createBuffer();
 
   // used for word storage
   var _w = new Array(64);
@@ -64,7 +61,7 @@ sha256.create = function() {
     for(var i = 0; i < int32s; ++i) {
       md.fullMessageLength.push(0);
     }
-    _input = forge.util.createBuffer();
+    _input = util.createBuffer();
     _state = {
       h0: 0x6A09E667,
       h1: 0xBB67AE85,
@@ -92,7 +89,7 @@ sha256.create = function() {
    */
   md.update = function(msg, encoding) {
     if(encoding === 'utf8') {
-      msg = forge.util.encodeUtf8(msg);
+      msg = util.encodeUtf8(msg);
     }
 
     // update message length
@@ -146,7 +143,7 @@ sha256.create = function() {
     must *always* be present, so if the message length is already
     congruent to 448 mod 512, then 512 padding bits must be added. */
 
-    var finalBlock = forge.util.createBuffer();
+    var finalBlock = util.createBuffer();
     finalBlock.putBytes(_input.bytes());
 
     // compute remaining size to be digested (include message length size)
@@ -162,7 +159,7 @@ sha256.create = function() {
 
     // serialize message length in bits in big-endian order; since length
     // is stored in bytes we multiply by 8 and add carry from next int
-    var messageLength = forge.util.createBuffer();
+    var messageLength = util.createBuffer();
     var next, carry;
     var bits = md.fullMessageLength[0] * 8;
     for(var i = 0; i < md.fullMessageLength.length; ++i) {
@@ -184,7 +181,7 @@ sha256.create = function() {
       h7: _state.h7
     };
     _update(s2, _w, finalBlock);
-    var rval = forge.util.createBuffer();
+    var rval = util.createBuffer();
     rval.putInt32(s2.h0);
     rval.putInt32(s2.h1);
     rval.putInt32(s2.h2);
@@ -212,7 +209,7 @@ var _k = null;
 function _init() {
   // create padding
   _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
+  _padding += util.fillString(String.fromCharCode(0x00), 64);
 
   // create K table for SHA-256
   _k = [
@@ -323,6 +320,3 @@ function _update(s, w, bytes) {
     len -= 64;
   }
 }
-
-} // end module implementation
-

@@ -153,22 +153,22 @@ function Tests(ASSERT, SHA512, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/sha512',
-    'forge/util'
+    '../../js/sha512',
+    '../../js/util'
   ], function(SHA512, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      SHA512(),
-      UTIL()
+      SHA512,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/sha512')(),
-    require('../../js/util')());
+    require('../../js/sha512'),
+    require('../../js/util'));
 }
 
 })();

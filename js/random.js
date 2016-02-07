@@ -13,24 +13,18 @@
  *
  * Copyright (c) 2009-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
-// forge.random already defined
-if(forge.random && forge.random.getBytes) {
-  return;
-}
-
-(function(jQuery) {
+var util = require("./util");
+var aes = require("./aes");
+var md = require("./md");
+var prng = require("./prng");
 
 // the default prng plugin, uses AES-128
 var prng_aes = {};
 var _prng_aes_output = new Array(4);
-var _prng_aes_buffer = forge.util.createBuffer();
+var _prng_aes_buffer = util.createBuffer();
 prng_aes.formatKey = function(key) {
   // convert the key into 32-bit integers
-  var tmp = forge.util.createBuffer(key);
+  var tmp = util.createBuffer(key);
   key = new Array(4);
   key[0] = tmp.getInt32();
   key[1] = tmp.getInt32();
@@ -38,11 +32,11 @@ prng_aes.formatKey = function(key) {
   key[3] = tmp.getInt32();
 
   // return the expanded key
-  return forge.aes._expandKey(key, false);
+  return aes._expandKey(key, false);
 };
 prng_aes.formatSeed = function(seed) {
   // convert seed into 32-bit integers
-  var tmp = forge.util.createBuffer(seed);
+  var tmp = util.createBuffer(seed);
   seed = new Array(4);
   seed[0] = tmp.getInt32();
   seed[1] = tmp.getInt32();
@@ -51,7 +45,7 @@ prng_aes.formatSeed = function(seed) {
   return seed;
 };
 prng_aes.cipher = function(key, seed) {
-  forge.aes._updateBlock(key, seed, _prng_aes_output, false);
+  aes._updateBlock(key, seed, _prng_aes_output, false);
   _prng_aes_buffer.putInt32(_prng_aes_output[0]);
   _prng_aes_buffer.putInt32(_prng_aes_output[1]);
   _prng_aes_buffer.putInt32(_prng_aes_output[2]);
@@ -63,13 +57,15 @@ prng_aes.increment = function(seed) {
   ++seed[3];
   return seed;
 };
-prng_aes.md = forge.md.sha256;
+prng_aes.md = md.sha256;
+if (!prng_aes.md) throw new Error("could not get sha256");
 
 /**
  * Creates a new PRNG.
  */
 function spawnPrng() {
-  var ctx = forge.prng.create(prng_aes);
+  if (!prng_aes.md) throw new Error("prng_aes.md not set");
+  var ctx = prng.create(prng_aes);
 
   /**
    * Gets random bytes. If a native secure crypto API is unavailable, this
@@ -120,7 +116,7 @@ if(typeof window !== 'undefined') {
     };
   }
 }
-if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
+if(require("./options").disableNativeCode || (!_nodejs && !getRandomValues)) {
   // if this is a web worker, do not use weak entropy, instead register to
   // receive strong entropy asynchronously from the main thread
   if(typeof window === 'undefined' || window.document === undefined) {
@@ -152,7 +148,7 @@ if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
   }
 
   // add mouse and keyboard collectors if jquery is available
-  if(jQuery) {
+  if(typeof(jQuery) !== "undefined") {
     // set up mouse entropy capture
     jQuery().mousemove(function(e) {
       // add mouse coords
@@ -167,20 +163,6 @@ if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
   }
 }
 
-/* Random API */
-if(!forge.random) {
-  forge.random = _ctx;
-} else {
-  // extend forge.random with _ctx
-  for(var key in _ctx) {
-    forge.random[key] = _ctx[key];
-  }
-}
-
+module.exports = _ctx;
 // expose spawn PRNG
-forge.random.createInstance = spawnPrng;
-
-})(typeof(jQuery) !== 'undefined' ? jQuery : null);
-
-} // end module implementation
-
+module.exports.createInstance = spawnPrng;

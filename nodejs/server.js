@@ -6,10 +6,11 @@ exports.main = function(callback) {
   try {
     var app = express();
 
-    mountStaticDir(app, /^\/forge\/(.*)$/, PATH.join(__dirname, '../js'));
-    mountStaticDir(app, /^\/test\/(.*)$/, PATH.join(__dirname, 'test'));
+    //mountStaticDir(app, /^\/forge\/(.*)$/, PATH.join(__dirname, '../js'));
+    //mountStaticDir(app, /^\/test\/(.*)$/, PATH.join(__dirname, 'test'));
     mountStaticDir(app, /^\/mocha\/(.*)$/, PATH.join(__dirname, 'node_modules/mocha'));
     mountStaticDir(app, /^\/chai\/(.*)$/, PATH.join(__dirname, 'node_modules/chai'));
+    //app.get(/^\/forge.bundle.js/, express.static(PATH.join(__dirname, 'forge.bundle.js')));
     app.get(/^\//, express.static(PATH.join(__dirname, 'ui')));
 
     var server = app.listen(PORT);

@@ -17,20 +17,23 @@
  *
  * EncryptedData ::= OCTET STRING
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var aes = require("./aes");
+var des = require("./des");
+var util = require("./util");
+var pem = require("./pem");
+var random = require("./random");
+var jsbn = require("./jsbn");
+var asn1 = require("./asn1");
+var pki = require("./pki");
+var pkcs5 = require("./pbkdf2");
 
-if(typeof BigInteger === 'undefined') {
-  var BigInteger = forge.jsbn.BigInteger;
-}
-
-// shortcut for asn.1 API
-var asn1 = forge.asn1;
+var BigInteger = jsbn.BigInteger;
 
 /* Password-based encryption implementation. */
-var pki = forge.pki = forge.pki || {};
-pki.pbe = forge.pbe = forge.pbe || {};
+var pbe = {};
+
+module.exports = pbe;
+
 var oids = pki.oids;
 
 // validator for an EncryptedPrivateKeyInfo structure
@@ -184,7 +187,7 @@ var pkcs12PbeParamsValidator = {
  *
  * @return the ASN.1 EncryptedPrivateKeyInfo.
  */
-pki.encryptPrivateKeyInfo = function(obj, password, options) {
+pbe.encryptPrivateKeyInfo = function(obj, password, options) {
   // set default options
   options = options || {};
   options.saltSize = options.saltSize || 8;
@@ -192,7 +195,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
   options.algorithm = options.algorithm || 'aes128';
 
   // generate PBE params
-  var salt = forge.random.getBytesSync(options.saltSize);
+  var salt = random.getBytesSync(options.saltSize);
   var count = options.count;
   var countBytes = asn1.integerToDer(count);
   var dkLen;
@@ -206,25 +209,25 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
       dkLen = 16;
       ivLen = 16;
       encOid = oids['aes128-CBC'];
-      cipherFn = forge.aes.createEncryptionCipher;
+      cipherFn = aes.createEncryptionCipher;
       break;
     case 'aes192':
       dkLen = 24;
       ivLen = 16;
       encOid = oids['aes192-CBC'];
-      cipherFn = forge.aes.createEncryptionCipher;
+      cipherFn = aes.createEncryptionCipher;
       break;
     case 'aes256':
       dkLen = 32;
       ivLen = 16;
       encOid = oids['aes256-CBC'];
-      cipherFn = forge.aes.createEncryptionCipher;
+      cipherFn = aes.createEncryptionCipher;
       break;
     case 'des':
       dkLen = 8;
       ivLen = 8;
       encOid = oids['desCBC'];
-      cipherFn = forge.des.createEncryptionCipher;
+      cipherFn = des.createEncryptionCipher;
       break;
     default:
       var error = new Error('Cannot encrypt private key. Unknown encryption algorithm.');
@@ -233,8 +236,8 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
     }
 
     // encrypt private key using pbe SHA-1 and AES/DES
-    var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
-    var iv = forge.random.getBytesSync(ivLen);
+    var dk = pkcs5.pbkdf2(password, salt, count, dkLen);
+    var iv = random.getBytesSync(ivLen);
     var cipher = cipherFn(dk);
     cipher.start(iv);
     cipher.update(asn1.toDer(obj));
@@ -274,10 +277,10 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
     // Do PKCS12 PBE
     dkLen = 24;
 
-    var saltBytes = new forge.util.ByteBuffer(salt);
-    var dk = pki.pbe.generatePkcs12Key(password, saltBytes, 1, count, dkLen);
-    var iv = pki.pbe.generatePkcs12Key(password, saltBytes, 2, count, dkLen);
-    var cipher = forge.des.createEncryptionCipher(dk);
+    var saltBytes = new util.ByteBuffer(salt);
+    var dk = pbe.generatePkcs12Key(password, saltBytes, 1, count, dkLen);
+    var iv = pbe.generatePkcs12Key(password, saltBytes, 2, count, dkLen);
+    var cipher = des.createEncryptionCipher(dk);
     cipher.start(iv);
     cipher.update(asn1.toDer(obj));
     cipher.finish();
@@ -321,7 +324,7 @@ pki.encryptPrivateKeyInfo = function(obj, password, options) {
  *
  * @return the ASN.1 PrivateKeyInfo on success, null on failure.
  */
-pki.decryptPrivateKeyInfo = function(obj, password) {
+pbe.decryptPrivateKeyInfo = function(obj, password) {
   var rval = null;
 
   // get PBE params
@@ -336,10 +339,10 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
 
   // get cipher
   var oid = asn1.derToOid(capture.encryptionOid);
-  var cipher = pki.pbe.getCipher(oid, capture.encryptionParams, password);
+  var cipher = pbe.getCipher(oid, capture.encryptionParams, password);
 
   // get encrypted data
-  var encrypted = forge.util.createBuffer(capture.encryptedData);
+  var encrypted = util.createBuffer(capture.encryptedData);
 
   cipher.update(encrypted);
   if(cipher.finish()) {
@@ -357,13 +360,13 @@ pki.decryptPrivateKeyInfo = function(obj, password) {
  *
  * @return the PEM-formatted encrypted private key.
  */
-pki.encryptedPrivateKeyToPem = function(epki, maxline) {
+pbe.encryptedPrivateKeyToPem = function(epki, maxline) {
   // convert to DER, then PEM-encode
   var msg = {
     type: 'ENCRYPTED PRIVATE KEY',
     body: asn1.toDer(epki).getBytes()
   };
-  return forge.pem.encode(msg, {maxline: maxline});
+  return pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -374,8 +377,8 @@ pki.encryptedPrivateKeyToPem = function(epki, maxline) {
  *
  * @return the ASN.1 EncryptedPrivateKeyInfo.
  */
-pki.encryptedPrivateKeyFromPem = function(pem) {
-  var msg = forge.pem.decode(pem)[0];
+pbe.encryptedPrivateKeyFromPem = function(passed_pem) {
+  var msg = pem.decode(passed_pem)[0];
 
   if(msg.type !== 'ENCRYPTED PRIVATE KEY') {
     var error = new Error('Could not convert encrypted private key from PEM; ' +
@@ -418,14 +421,14 @@ pki.encryptedPrivateKeyFromPem = function(pem) {
  *
  * @return the PEM-encoded ASN.1 EncryptedPrivateKeyInfo.
  */
-pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
+pbe.encryptRsaPrivateKey = function(rsaKey, password, options) {
   // standard PKCS#8
   options = options || {};
   if(!options.legacy) {
     // encrypt PrivateKeyInfo
     var rval = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(rsaKey));
-    rval = pki.encryptPrivateKeyInfo(rval, password, options);
-    return pki.encryptedPrivateKeyToPem(rval);
+    rval = pbe.encryptPrivateKeyInfo(rval, password, options);
+    return pbe.encryptedPrivateKeyToPem(rval);
   }
 
   // legacy non-PKCS#8
@@ -437,32 +440,32 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
   case 'aes128':
     algorithm = 'AES-128-CBC';
     dkLen = 16;
-    iv = forge.random.getBytesSync(16);
-    cipherFn = forge.aes.createEncryptionCipher;
+    iv = random.getBytesSync(16);
+    cipherFn = aes.createEncryptionCipher;
     break;
   case 'aes192':
     algorithm = 'AES-192-CBC';
     dkLen = 24;
-    iv = forge.random.getBytesSync(16);
-    cipherFn = forge.aes.createEncryptionCipher;
+    iv = random.getBytesSync(16);
+    cipherFn = aes.createEncryptionCipher;
     break;
   case 'aes256':
     algorithm = 'AES-256-CBC';
     dkLen = 32;
-    iv = forge.random.getBytesSync(16);
-    cipherFn = forge.aes.createEncryptionCipher;
+    iv = random.getBytesSync(16);
+    cipherFn = aes.createEncryptionCipher;
     break;
   case '3des':
     algorithm = 'DES-EDE3-CBC';
     dkLen = 24;
-    iv = forge.random.getBytesSync(8);
-    cipherFn = forge.des.createEncryptionCipher;
+    iv = random.getBytesSync(8);
+    cipherFn = des.createEncryptionCipher;
     break;
   case 'des':
     algorithm = 'DES-CBC';
     dkLen = 8;
-    iv = forge.random.getBytesSync(8);
-    cipherFn = forge.des.createEncryptionCipher;
+    iv = random.getBytesSync(8);
+    cipherFn = des.createEncryptionCipher;
     break;
   default:
     var error = new Error('Could not encrypt RSA private key; unsupported ' +
@@ -472,7 +475,7 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
   }
 
   // encrypt private key using OpenSSL legacy key derivation
-  var dk = forge.pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
+  var dk = pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
   var cipher = cipherFn(dk);
   cipher.start(iv);
   cipher.update(asn1.toDer(pki.privateKeyToAsn1(rsaKey)));
@@ -486,11 +489,11 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
     },
     dekInfo: {
       algorithm: algorithm,
-      parameters: forge.util.bytesToHex(iv).toUpperCase()
+      parameters: util.bytesToHex(iv).toUpperCase()
     },
     body: cipher.output.getBytes()
   };
-  return forge.pem.encode(msg);
+  return pem.encode(msg);
 };
 
 /**
@@ -501,10 +504,10 @@ pki.encryptRsaPrivateKey = function(rsaKey, password, options) {
  *
  * @return the RSA key on success, null on failure.
  */
-pki.decryptRsaPrivateKey = function(pem, password) {
+pbe.decryptRsaPrivateKey = function(passed_pem, password) {
   var rval = null;
 
-  var msg = forge.pem.decode(pem)[0];
+  var msg = pem.decode(passed_pem)[0];
 
   if(msg.type !== 'ENCRYPTED PRIVATE KEY' &&
     msg.type !== 'PRIVATE KEY' &&
@@ -521,40 +524,40 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     switch(msg.dekInfo.algorithm) {
     case 'DES-CBC':
       dkLen = 8;
-      cipherFn = forge.des.createDecryptionCipher;
+      cipherFn = des.createDecryptionCipher;
       break;
     case 'DES-EDE3-CBC':
       dkLen = 24;
-      cipherFn = forge.des.createDecryptionCipher;
+      cipherFn = des.createDecryptionCipher;
       break;
     case 'AES-128-CBC':
       dkLen = 16;
-      cipherFn = forge.aes.createDecryptionCipher;
+      cipherFn = aes.createDecryptionCipher;
       break;
     case 'AES-192-CBC':
       dkLen = 24;
-      cipherFn = forge.aes.createDecryptionCipher;
+      cipherFn = aes.createDecryptionCipher;
       break;
     case 'AES-256-CBC':
       dkLen = 32;
-      cipherFn = forge.aes.createDecryptionCipher;
+      cipherFn = aes.createDecryptionCipher;
       break;
     case 'RC2-40-CBC':
       dkLen = 5;
       cipherFn = function(key) {
-        return forge.rc2.createDecryptionCipher(key, 40);
+        return rc2.createDecryptionCipher(key, 40);
       };
       break;
     case 'RC2-64-CBC':
       dkLen = 8;
       cipherFn = function(key) {
-        return forge.rc2.createDecryptionCipher(key, 64);
+        return rc2.createDecryptionCipher(key, 64);
       };
       break;
     case 'RC2-128-CBC':
       dkLen = 16;
       cipherFn = function(key) {
-        return forge.rc2.createDecryptionCipher(key, 128);
+        return rc2.createDecryptionCipher(key, 128);
       };
       break;
     default:
@@ -565,11 +568,11 @@ pki.decryptRsaPrivateKey = function(pem, password) {
     }
 
     // use OpenSSL legacy key derivation
-    var iv = forge.util.hexToBytes(msg.dekInfo.parameters);
-    var dk = forge.pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
+    var iv = util.hexToBytes(msg.dekInfo.parameters);
+    var dk = pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
     var cipher = cipherFn(dk);
     cipher.start(iv);
-    cipher.update(forge.util.createBuffer(msg.body));
+    cipher.update(util.createBuffer(msg.body));
     if(cipher.finish()) {
       rval = cipher.output.getBytes();
     } else {
@@ -580,7 +583,7 @@ pki.decryptRsaPrivateKey = function(pem, password) {
   }
 
   if(msg.type === 'ENCRYPTED PRIVATE KEY') {
-    rval = pki.decryptPrivateKeyInfo(asn1.fromDer(rval), password);
+    rval = pbe.decryptPrivateKeyInfo(asn1.fromDer(rval), password);
   } else {
     // decryption already performed above
     rval = asn1.fromDer(rval);
@@ -606,19 +609,19 @@ pki.decryptRsaPrivateKey = function(pem, password) {
  *
  * @return a ByteBuffer with the bytes derived from the password.
  */
-pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
+pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
   var j, l;
 
   if(typeof md === 'undefined' || md === null) {
-    md = forge.md.sha1.create();
+    md = md.sha1.create();
   }
 
   var u = md.digestLength;
   var v = md.blockLength;
-  var result = new forge.util.ByteBuffer();
+  var result = new util.ByteBuffer();
 
   /* Convert password to Unicode byte buffer + trailing 0-byte. */
-  var passBuf = new forge.util.ByteBuffer();
+  var passBuf = new util.ByteBuffer();
   if(password !== null && password !== undefined) {
     for(l = 0; l < password.length; l++) {
       passBuf.putInt16(password.charCodeAt(l));
@@ -632,7 +635,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
   /* 1. Construct a string, D (the "diversifier"), by concatenating
         v copies of ID. */
-  var D = new forge.util.ByteBuffer();
+  var D = new util.ByteBuffer();
   D.fillWithByte(id, v);
 
   /* 2. Concatenate copies of the salt together to create a string S of length
@@ -640,7 +643,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
         to create S).
         Note that if the salt is the empty string, then so is S. */
   var Slen = v * Math.ceil(s / v);
-  var S = new forge.util.ByteBuffer();
+  var S = new util.ByteBuffer();
   for(l = 0; l < Slen; l ++) {
     S.putByte(salt.at(l % s));
   }
@@ -650,7 +653,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
         truncated to create P).
         Note that if the password is the empty string, then so is P. */
   var Plen = v * Math.ceil(p / v);
-  var P = new forge.util.ByteBuffer();
+  var P = new util.ByteBuffer();
   for(l = 0; l < Plen; l ++) {
     P.putByte(passBuf.at(l % p));
   }
@@ -665,7 +668,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
   /* 6. For i=1, 2, ..., c, do the following: */
   for(var i = 1; i <= c; i ++) {
     /* a) Set Ai=H^r(D||I). (l.e. the rth hash of D||I, H(H(H(...H(D||I)))) */
-    var buf = new forge.util.ByteBuffer();
+    var buf = new util.ByteBuffer();
     buf.putBytes(D.bytes());
     buf.putBytes(I.bytes());
     for(var round = 0; round < iter; round ++) {
@@ -676,7 +679,7 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
 
     /* b) Concatenate copies of Ai to create a string B of length v bytes (the
           final copy of Ai may be truncated to create B). */
-    var B = new forge.util.ByteBuffer();
+    var B = new util.ByteBuffer();
     for(l = 0; l < v; l ++) {
       B.putByte(buf.at(l % u));
     }
@@ -685,9 +688,9 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
           where k=ceil(s / v) + ceil(p / v), modify I by setting
           Ij=(Ij+B+1) mod 2v for each j.  */
     var k = Math.ceil(s / v) + Math.ceil(p / v);
-    var Inew = new forge.util.ByteBuffer();
+    var Inew = new util.ByteBuffer();
     for(j = 0; j < k; j ++) {
-      var chunk = new forge.util.ByteBuffer(I.getBytes(v));
+      var chunk = new util.ByteBuffer(I.getBytes(v));
       var x = 0x1ff;
       for(l = B.length() - 1; l >= 0; l --) {
         x = x >> 8;
@@ -715,14 +718,14 @@ pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
  *
  * @return new cipher object instance.
  */
-pki.pbe.getCipher = function(oid, params, password) {
+pbe.getCipher = function(oid, params, password) {
   switch(oid) {
   case pki.oids['pkcs5PBES2']:
-    return pki.pbe.getCipherForPBES2(oid, params, password);
+    return pbe.getCipherForPBES2(oid, params, password);
 
   case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
   case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
-    return pki.pbe.getCipherForPKCS12PBE(oid, params, password);
+    return pbe.getCipherForPKCS12PBE(oid, params, password);
 
   default:
     var error = new Error('Cannot read encrypted PBE data block. Unsupported OID.');
@@ -748,7 +751,7 @@ pki.pbe.getCipher = function(oid, params, password) {
  *
  * @return new cipher object instance.
  */
-pki.pbe.getCipherForPBES2 = function(oid, params, password) {
+pbe.getCipherForPBES2 = function(oid, params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
@@ -784,35 +787,35 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
 
   // set PBE params
   var salt = capture.kdfSalt;
-  var count = forge.util.createBuffer(capture.kdfIterationCount);
+  var count = util.createBuffer(capture.kdfIterationCount);
   count = count.getInt(count.length() << 3);
   var dkLen;
   var cipherFn;
   switch(pki.oids[oid]) {
   case 'aes128-CBC':
     dkLen = 16;
-    cipherFn = forge.aes.createDecryptionCipher;
+    cipherFn = aes.createDecryptionCipher;
     break;
   case 'aes192-CBC':
     dkLen = 24;
-    cipherFn = forge.aes.createDecryptionCipher;
+    cipherFn = aes.createDecryptionCipher;
     break;
   case 'aes256-CBC':
     dkLen = 32;
-    cipherFn = forge.aes.createDecryptionCipher;
+    cipherFn = aes.createDecryptionCipher;
     break;
   case 'des-EDE3-CBC':
     dkLen = 24;
-    cipherFn = forge.des.createDecryptionCipher;
+    cipherFn = des.createDecryptionCipher;
     break;
   case 'desCBC':
     dkLen = 8;
-    cipherFn = forge.des.createDecryptionCipher;
+    cipherFn = des.createDecryptionCipher;
     break;
   }
 
   // decrypt private key using pbe SHA-1 and AES/DES
-  var dk = forge.pkcs5.pbkdf2(password, salt, count, dkLen);
+  var dk = pkcs5.pbkdf2(password, salt, count, dkLen);
   var iv = capture.encIv;
   var cipher = cipherFn(dk);
   cipher.start(iv);
@@ -832,7 +835,7 @@ pki.pbe.getCipherForPBES2 = function(oid, params, password) {
  *
  * @return the new cipher object instance.
  */
-pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
+pbe.getCipherForPKCS12PBE = function(oid, params, password) {
   // get PBE params
   var capture = {};
   var errors = [];
@@ -843,8 +846,8 @@ pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
     throw error;
   }
 
-  var salt = forge.util.createBuffer(capture.salt);
-  var count = forge.util.createBuffer(capture.iterations);
+  var salt = util.createBuffer(capture.salt);
+  var count = util.createBuffer(capture.iterations);
   count = count.getInt(count.length() << 3);
 
   var dkLen, dIvLen, cipherFn;
@@ -852,14 +855,14 @@ pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
     case pki.oids['pbeWithSHAAnd3-KeyTripleDES-CBC']:
       dkLen = 24;
       dIvLen = 8;
-      cipherFn = forge.des.startDecrypting;
+      cipherFn = des.startDecrypting;
       break;
 
     case pki.oids['pbewithSHAAnd40BitRC2-CBC']:
       dkLen = 5;
       dIvLen = 8;
       cipherFn = function(key, iv) {
-        var cipher = forge.rc2.createDecryptionCipher(key, 40);
+        var cipher = rc2.createDecryptionCipher(key, 40);
         cipher.start(iv, null);
         return cipher;
       };
@@ -871,8 +874,8 @@ pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
       throw error;
   }
 
-  var key = pki.pbe.generatePkcs12Key(password, salt, 1, count, dkLen);
-  var iv = pki.pbe.generatePkcs12Key(password, salt, 2, count, dIvLen);
+  var key = pbe.generatePkcs12Key(password, salt, 1, count, dkLen);
+  var iv = pbe.generatePkcs12Key(password, salt, 2, count, dIvLen);
 
   return cipherFn(key, iv);
 };
@@ -888,9 +891,9 @@ pki.pbe.getCipherForPKCS12PBE = function(oid, params, password) {
  * @param [options] the options to use:
  *          [md] an optional message digest object to use.
  */
-pki.pbe.opensslDeriveBytes = function(password, salt, dkLen, md) {
+pbe.opensslDeriveBytes = function(password, salt, dkLen, md) {
   if(typeof md === 'undefined' || md === null) {
-    md = forge.md.md5.create();
+    md = md.md5.create();
   }
   if(salt === null) {
     salt = '';
@@ -905,20 +908,3 @@ pki.pbe.opensslDeriveBytes = function(password, salt, dkLen, md) {
 function hash(md, bytes) {
   return md.start().update(bytes).digest().getBytes();
 }
-
-} // end module implementation
-
-  './asn1',
-  './des',
-  './md',
-  './oids',
-  './pem',
-  './pbkdf2',
-  './random',
-  './rc2',
-  './rsa',
-  './util'
-], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

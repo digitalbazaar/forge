@@ -10,11 +10,12 @@
  *
  * Copyright (c) 2014-2015 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var forge = require("./forge");
 
 var sha512 = forge.sha512 = forge.sha512 || {};
+
+module.exports = sha512;
+
 forge.md = forge.md || {};
 forge.md.algorithms = forge.md.algorithms || {};
 
@@ -547,6 +548,3 @@ function _update(s, w, bytes) {
     len -= 128;
   }
 }
-
-} // end module implementation
-

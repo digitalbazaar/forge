@@ -4,7 +4,15 @@
     <link rel="stylesheet" href="mocha/mocha.css">
     <script src="mocha/mocha.js" type="text/javascript" charset="utf-8"></script>
     <script src="chai/chai.js" type="text/javascript" charset="utf-8"></script>
-    <script src="require.js" data-main="test" type="text/javascript" charset="utf-8"></script>
+    <script>
+    var ASSERT = chai.assert;
+    mocha.setup({
+        ui: 'bdd',
+        timeout: 30000
+    });
+    </script>
+    <script src="forge.bundle.js" type="text/javascript" charset="utf-8"></script>
+    <script src="test.js"></script>
 </head>
 <body>
     <div id="mocha"></div>

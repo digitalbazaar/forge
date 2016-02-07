@@ -23,9 +23,6 @@
     }
   ],
   "devDependencies": {
-    "almond": "~0.2.6",
-    "jscs": "^1.8.1",
-    "requirejs": "~2.1.8"
   },
   "repository": {
     "type": "git",

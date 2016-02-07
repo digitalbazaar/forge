@@ -571,31 +571,31 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
-    'forge/pkcs7',
-    'forge/pki',
-    'forge/aes',
-    'forge/des',
-    'forge/util'
+    '../../js/pkcs7',
+    '../../js/pki',
+    '../../js/aes',
+    '../../js/des',
+    '../../js/util'
   ], function(PKCS7, PKI, AES, DES, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKCS7(forge),
-      PKI(forge),
-      AES(forge),
-      DES(forge),
-      UTIL(forge)
+      PKCS7,
+      PKI,
+      AES,
+      DES,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pkcs7')(forge),
-    require('../../js/pki')(forge),
-    require('../../js/aes')(forge),
-    require('../../js/des')(forge),
-    require('../../js/util')(forge));
+    require('../../js/pkcs7'),
+    require('../../js/pki'),
+    require('../../js/aes'),
+    require('../../js/des'),
+    require('../../js/util'));
 }
 
 })();

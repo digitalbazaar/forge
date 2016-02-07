@@ -9,19 +9,19 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
 var _crypto = null;
-if(!forge.disableNativeCode && _nodejs && !process.versions['node-webkit']) {
+if(!require("./options").disableNativeCode && _nodejs && !process.versions['node-webkit']) {
   _crypto = require('crypto');
 }
 
 /* PRNG API */
-var prng = forge.prng = forge.prng || {};
+var prng = {};
+
+module.exports = prng;
 
 /**
  * Creates a new PRNG context.
@@ -85,7 +85,7 @@ prng.create = function(plugin) {
     var increment = ctx.plugin.increment;
     var formatKey = ctx.plugin.formatKey;
     var formatSeed = ctx.plugin.formatSeed;
-    var b = forge.util.createBuffer();
+    var b = util.createBuffer();
 
     // reset key for every request
     ctx.key = null;
@@ -109,7 +109,7 @@ prng.create = function(plugin) {
 
       if(ctx.key === null) {
         // prevent stack overflow
-        return forge.util.nextTick(function() {
+        return util.nextTick(function() {
           _reseed(generate);
         });
       }
@@ -123,7 +123,7 @@ prng.create = function(plugin) {
       ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
       ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
 
-      forge.util.setImmediate(generate);
+      util.setImmediate(generate);
     }
   };
 
@@ -144,7 +144,7 @@ prng.create = function(plugin) {
     // reset key for every request
     ctx.key = null;
 
-    var b = forge.util.createBuffer();
+    var b = util.createBuffer();
     while(b.length() < count) {
       // if amount of data generated is greater than 1 MiB, trigger reseed
       if(ctx.generated > 0xfffff) {
@@ -259,7 +259,7 @@ prng.create = function(plugin) {
       }
     }
 
-    var b = forge.util.createBuffer();
+    var b = util.createBuffer();
     if(getRandomValues) {
       while(b.length() < needed) {
         // max byte length is 65536 before QuotaExceededError is thrown
@@ -401,7 +401,3 @@ prng.create = function(plugin) {
 
   return ctx;
 };
-
-} // end module implementation
-
-})();

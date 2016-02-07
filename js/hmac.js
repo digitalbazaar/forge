@@ -7,12 +7,14 @@
  *
  * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+
+var md = require("./md");
+var util = require("./util");
 
 /* HMAC API */
-var hmac = forge.hmac = forge.hmac || {};
+var hmac = {};
+
+module.exports = hmac;
 
 /**
  * Creates an HMAC object that uses the given message digest object.
@@ -48,8 +50,8 @@ hmac.create = function() {
       if(typeof md === 'string') {
         // create builtin message digest
         md = md.toLowerCase();
-        if(md in forge.md.algorithms) {
-          _md = forge.md.algorithms[md].create();
+        if(md in md.algorithms) {
+          _md = md.algorithms[md].create();
         } else {
           throw new Error('Unknown hash algorithm "' + md + '"');
         }
@@ -65,11 +67,11 @@ hmac.create = function() {
     } else {
       if(typeof key === 'string') {
         // convert string into byte buffer
-        key = forge.util.createBuffer(key);
-      } else if(forge.util.isArray(key)) {
+        key = util.createBuffer(key);
+      } else if(util.isArray(key)) {
         // convert byte array into byte buffer
         var tmp = key;
-        key = forge.util.createBuffer();
+        key = util.createBuffer();
         for(var i = 0; i < tmp.length; ++i) {
           key.putByte(tmp[i]);
         }
@@ -86,8 +88,8 @@ hmac.create = function() {
       // mix key into inner and outer padding
       // ipadding = [0x36 * blocksize] ^ key
       // opadding = [0x5C * blocksize] ^ key
-      _ipadding = forge.util.createBuffer();
-      _opadding = forge.util.createBuffer();
+      _ipadding = util.createBuffer();
+      _opadding = util.createBuffer();
       keylen = key.length();
       for(var i = 0; i < keylen; ++i) {
         var tmp = key.at(i);
@@ -144,6 +146,3 @@ hmac.create = function() {
 
   return ctx;
 };
-
-} // end module implementation
-

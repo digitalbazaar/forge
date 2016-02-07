@@ -7,16 +7,18 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var md = require("./md");
+var util = require("./util");
+var hmac = require("./hmac");
 
-var pkcs5 = forge.pkcs5 = forge.pkcs5 || {};
+var pkcs5 = {};
+
+module.exports = pkcs5;
 
 var _nodejs = (
   typeof process !== 'undefined' && process.versions && process.versions.node);
 var crypto;
-if(_nodejs && !forge.disableNativeCode) {
+if(_nodejs && !require("./options").disableNativeCode) {
   crypto = require('crypto');
 }
 
@@ -36,7 +38,7 @@ if(_nodejs && !forge.disableNativeCode) {
  * @return the derived key, as a binary-encoded string of bytes, for the
  *           synchronous version (if no callback is specified).
  */
-forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
+pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
   if(typeof md === 'function') {
     callback = md;
     md = null;
@@ -44,7 +46,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
 
   // use native implementation if possible and not disabled, note that
   // some node versions only support SHA-1, others allow digest to be changed
-  if(_nodejs && !forge.disableNativeCode && crypto.pbkdf2 &&
+  if(_nodejs && !require("./options").disableNativeCode && crypto.pbkdf2 &&
     (md === null || typeof md !== 'object') &&
     (crypto.pbkdf2Sync.length > 4 || (!md || md === 'sha1'))) {
     if(typeof md !== 'string') {
@@ -76,13 +78,13 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
 
   if(typeof md === 'undefined' || md === null) {
     // default prf to SHA-1
-    md = forge.md.sha1.create();
+    md = md.sha1.create();
   }
   if(typeof md === 'string') {
-    if(!(md in forge.md.algorithms)) {
+    if(!(md in md.algorithms)) {
       throw new Error('Unknown hash algorithm: ' + md);
     }
-    md = forge.md[md].create();
+    md = md[md].create();
   }
 
   var hLen = md.digestLength;
@@ -131,7 +133,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
 
     Here, INT(i) is a four-octet encoding of the integer i, most
     significant octet first. */
-  var prf = forge.hmac.create();
+  var prf = hmac.create();
   prf.start(md, p);
   var dk = '';
   var xor, u_c, u_c1;
@@ -142,7 +144,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
       // PRF(P, S || INT(i)) (first iteration)
       prf.start(null, null);
       prf.update(s);
-      prf.update(forge.util.int32ToBytes(i));
+      prf.update(util.int32ToBytes(i));
       xor = u_c1 = prf.digest().getBytes();
 
       // PRF(P, u_{c-1}) (other iterations)
@@ -151,7 +153,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
         prf.update(u_c1);
         u_c = prf.digest().getBytes();
         // F(p, s, c, i)
-        xor = forge.util.xorBytes(xor, u_c, hLen);
+        xor = util.xorBytes(xor, u_c, hLen);
         u_c1 = u_c;
       }
 
@@ -176,7 +178,7 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
     // PRF(P, S || INT(i)) (first iteration)
     prf.start(null, null);
     prf.update(s);
-    prf.update(forge.util.int32ToBytes(i));
+    prf.update(util.int32ToBytes(i));
     xor = u_c1 = prf.digest().getBytes();
 
     // PRF(P, u_{c-1}) (other iterations)
@@ -190,10 +192,10 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
       prf.update(u_c1);
       u_c = prf.digest().getBytes();
       // F(p, s, c, i)
-      xor = forge.util.xorBytes(xor, u_c, hLen);
+      xor = util.xorBytes(xor, u_c, hLen);
       u_c1 = u_c;
       ++j;
-      return forge.util.setImmediate(inner);
+      return util.setImmediate(inner);
     }
 
     /* 4. Concatenate the blocks and extract the first dkLen octets to
@@ -208,6 +210,3 @@ forge.pbkdf2 = pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
 
   outer();
 };
-
-} // end module implementation
-

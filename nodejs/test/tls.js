@@ -173,7 +173,7 @@ function Tests(ASSERT, forge) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/forge'
+    '../../js/forge'
   ], function(forge) {
     Tests(
       // Global provided by test harness

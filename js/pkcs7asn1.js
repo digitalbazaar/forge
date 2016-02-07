@@ -107,17 +107,15 @@
  *
  * EncryptedKey ::= OCTET STRING
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var forge = require("./forge");
 
-// shortcut for ASN.1 API
-var asn1 = forge.asn1;
+// ASN.1 API
+var asn1 = require("./asn1");
 
-// shortcut for PKCS#7 API
-var p7v = forge.pkcs7asn1 = forge.pkcs7asn1 || {};
-forge.pkcs7 = forge.pkcs7 || {};
-forge.pkcs7.asn1 = p7v;
+// PKCS#7 API
+var p7v = {};
+
+module.exports = p7v;
 
 var contentInfoValidator = {
   name: 'ContentInfo',
@@ -407,6 +405,3 @@ p7v.recipientInfoValidator = {
     capture: 'encKey'
   }]
 };
-
-} // end module implementation
-

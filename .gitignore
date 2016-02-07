@@ -21,3 +21,4 @@ js/forge.min.js
 node_modules
 nodejs/coverage
 tests/forge
+nodejs/ui/forge.bundle.js

@@ -5,12 +5,12 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var forge = require("./forge");
 
 forge.pki = forge.pki || {};
 var oids = forge.pki.oids = forge.oids = forge.oids || {};
+
+module.exports = oids;
 
 // algorithm OIDs
 oids['1.2.840.113549.1.1.1'] = 'rsaEncryption';
@@ -214,6 +214,3 @@ oids['1.3.6.1.5.5.7.3.4'] = 'emailProtection';
 oids['emailProtection'] = '1.3.6.1.5.5.7.3.4';
 oids['1.3.6.1.5.5.7.3.8'] = 'timeStamping';
 oids['timeStamping'] = '1.3.6.1.5.5.7.3.8';
-
-} // end module implementation
-

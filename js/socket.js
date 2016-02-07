@@ -5,12 +5,12 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 // define net namespace
-var net = forge.net = forge.net || {};
+var net = {};
+
+module.exports = net;
 
 // map of flash ID to socket pool
 net.socketPools = {};
@@ -210,7 +210,7 @@ net.createSocketPool = function(options) {
       * @return true on success, false on failure.
       */
      socket.send = function(bytes) {
-       return api.send(id, forge.util.encode64(bytes));
+       return api.send(id, util.encode64(bytes));
      };
 
      /**
@@ -231,7 +231,7 @@ net.createSocketPool = function(options) {
       */
      socket.receive = function(count) {
        var rval = api.receive(id, count).rval;
-       return (rval === null) ? null : forge.util.decode64(rval);
+       return (rval === null) ? null : util.decode64(rval);
      };
 
      /**
@@ -286,6 +286,3 @@ net.createSocket = function(options) {
   }
   return socket;
 };
-
-} // end module implementation
-

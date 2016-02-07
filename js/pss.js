@@ -5,12 +5,13 @@
  *
  * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
 
-// shortcut for PSS API
-var pss = forge.pss = forge.pss || {};
+var util = require("./util");
+var random = require("./random");
+
+var pss = {};
+
+module.exports = pss;
 
 /**
  * Creates a PSS signature scheme object.
@@ -48,7 +49,7 @@ pss.create = function(options) {
   var salt_ = options.salt || null;
   if(typeof salt_ === 'string') {
     // assume binary-encoded string
-    salt_ = forge.util.createBuffer(salt_);
+    salt_ = util.createBuffer(salt_);
   }
 
   var sLen;
@@ -64,7 +65,7 @@ pss.create = function(options) {
     throw new Error('Given salt length does not match length of given salt.');
   }
 
-  var prng = options.prng || forge.random;
+  var prng = options.prng || random;
 
   var pssobj = {};
 
@@ -102,7 +103,7 @@ pss.create = function(options) {
     }
 
     /* 5. Let M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt; */
-    var m_ = new forge.util.ByteBuffer();
+    var m_ = new util.ByteBuffer();
     m_.fillWithByte(0, 8);
     m_.putBytes(mHash);
     m_.putBytes(salt);
@@ -114,7 +115,7 @@ pss.create = function(options) {
 
     /* 7. Generate an octet string PS consisting of emLen - sLen - hLen - 2
      *    zero octets.  The length of PS may be 0. */
-    var ps = new forge.util.ByteBuffer();
+    var ps = new util.ByteBuffer();
     ps.fillWithByte(0, emLen - sLen - hLen - 2);
 
     /* 8. Let DB = PS || 0x01 || salt; DB is an octet string of length
@@ -223,7 +224,7 @@ pss.create = function(options) {
     var salt = db.substr(-sLen);
 
     /* 12.  Let M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt */
-    var m_ = new forge.util.ByteBuffer();
+    var m_ = new util.ByteBuffer();
     m_.fillWithByte(0, 8);
     m_.putBytes(mHash);
     m_.putBytes(salt);
@@ -239,6 +240,3 @@ pss.create = function(options) {
 
   return pssobj;
 };
-
-} // end module implementation
-

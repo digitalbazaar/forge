@@ -5,88 +5,63 @@
  *
  * Copyright 2011-2014 Digital Bazaar, Inc.
  */
-(function() {
-var name = 'forge';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      // set to true to disable native code if even it's available
-      forge = {disableNativeCode: false};
-    }
-    return;
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    });
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge;
-  };
-  // set to true to disable native code if even it's available
-  module.exports.disableNativeCode = false;
-  module.exports(module.exports);
+
+var aes = require( './aes' );
+var asn1 = require( './asn1' );
+var cipher = require( './cipher' );
+var debug = require( './debug' );
+var des = require( './des' );
+var hmac = require( './hmac' );
+var kem = require( './kem' );
+var log = require( './log' );
+var md = require( './md' );
+var mgf1 = require( './mgf1' );
+var pkcs5 = require( './pbkdf2' );
+var pem = require( './pem' );
+var pkcs7 = require( './pkcs7' );
+var pkcs1 = require( './pkcs1' );
+var pkcs12 = require( './pkcs12' );
+var pki = require( './pki' );
+var prime = require( './prime' );
+var prng = require( './prng' );
+var pss = require( './pss' );
+var random = require( './random' );
+var rc2 = require( './rc2' );
+var ssh = require( './ssh' );
+var task = require( './task' );
+var tls = require( './tls' );
+var net = require( './socket' );
+var jsbn = require( './jsbn' );
+var pbe = require( './pbe' );
+var util = require( './util' );
+
+module.exports = {
+"aes": aes,
+"asn1" : asn1,
+"cipher" : cipher,
+"debug" : debug,
+"des" : des,
+"hmac" : hmac,
+"kem" : kem,
+"log" : log,
+"md" : md,
+"mgf1" : mgf1,
+"pkcs5" : pkcs5,
+"pem" : pem,
+"pkcs7" : pkcs7,
+"pkcs1" : pkcs1,
+"pkcs12" : pkcs12,
+"pki" : pki,
+"prime" : prime,
+"prng" : prng,
+"pss" : pss,
+"random" : random,
+"rc2" : rc2,
+"ssh" : ssh,
+"task" : task,
+"tls" : tls,
+"net" : net,
+"jsbn" : jsbn,
+"pbe" : pbe,
+"util" : util
 };
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define([
-  'require',
-  'module',
-  './aes',
-  './aesCipherSuites',
-  './asn1',
-  './cipher',
-  './cipherModes',
-  './debug',
-  './des',
-  './hmac',
-  './kem',
-  './log',
-  './md',
-  './mgf1',
-  './pbkdf2',
-  './pem',
-  './pkcs7',
-  './pkcs1',
-  './pkcs12',
-  './pki',
-  './prime',
-  './prng',
-  './pss',
-  './random',
-  './rc2',
-  './ssh',
-  './task',
-  './tls',
-  './util'
-], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

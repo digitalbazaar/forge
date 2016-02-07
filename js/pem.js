@@ -26,12 +26,12 @@
  *
  * body: the binary-encoded body.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
-// shortcut for pem API
-var pem = forge.pem = forge.pem || {};
+// pem API
+var pem = {};
+
+module.exports = pem;
 
 /**
  * Encodes (serializes) the given PEM object.
@@ -80,7 +80,7 @@ pem.encode = function(msg, options) {
   }
 
   // add body
-  rval += forge.util.encode64(msg.body, options.maxline || 64) + '\r\n';
+  rval += util.encode64(msg.body, options.maxline || 64) + '\r\n';
 
   rval += '-----END ' + msg.type + '-----\r\n';
   return rval;
@@ -113,7 +113,7 @@ pem.decode = function(str) {
       contentDomain: null,
       dekInfo: null,
       headers: [],
-      body: forge.util.decode64(match[3])
+      body: util.decode64(match[3])
     };
     rval.push(msg);
 
@@ -229,6 +229,3 @@ function foldHeader(header) {
 function ltrim(str) {
   return str.replace(/^\s+/, '');
 }
-
-} // end module implementation
-

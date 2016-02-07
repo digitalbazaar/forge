@@ -274,22 +274,22 @@ function Tests(ASSERT, ASN1, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/asn1',
-    'forge/util'
+    '../../js/asn1',
+    '../../js/util'
   ], function(ASN1, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      ASN1(),
-      UTIL()
+      ASN1,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/asn1')(),
-    require('../../js/util')());
+    require('../../js/asn1'),
+    require('../../js/util'));
 }
 
 })();

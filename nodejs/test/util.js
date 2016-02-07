@@ -497,19 +497,19 @@ function Tests(ASSERT, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/util'
+    '../../js/util'
   ], function(UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      UTIL()
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/util')());
+    require('../../js/util'));
 }
 
 })();

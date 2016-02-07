@@ -566,37 +566,37 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/pki',
-    'forge/rsa',
-    'forge/md',
-    'forge/mgf',
-    'forge/pss',
-    'forge/random',
-    'forge/util'
+    '../../js/pki',
+    '../../js/rsa',
+    '../../js/md',
+    '../../js/mgf',
+    '../../js/pss',
+    '../../js/random',
+    '../../js/util'
   ], function(PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI(),
-      RSA(),
-      MD(),
-      MGF(),
-      PSS(),
-      RANDOM(),
-      UTIL()
+      PKI,
+      RSA,
+      MD,
+      MGF,
+      PSS,
+      RANDOM,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki')(),
-    require('../../js/rsa')(),
-    require('../../js/md')(),
-    require('../../js/mgf')(),
-    require('../../js/pss')(),
-    require('../../js/random')(),
-    require('../../js/util')());
+    require('../../js/pki'),
+    require('../../js/rsa'),
+    require('../../js/md'),
+    require('../../js/mgf'),
+    require('../../js/pss'),
+    require('../../js/random'),
+    require('../../js/util'));
 }
 
 })();

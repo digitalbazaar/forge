@@ -15,12 +15,13 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var modes = require("./cipherModes");
+var cipher = require("./cipher");
 
 /* AES API */
-forge.aes = forge.aes || {};
+var aes = {};
+
+module.exports = aes;
 
 /**
  * Deprecated. Instead, use:
@@ -41,7 +42,7 @@ forge.aes = forge.aes || {};
  *
  * @return the cipher.
  */
-forge.aes.startEncrypting = function(key, iv, output, mode) {
+aes.startEncrypting = function(key, iv, output, mode) {
   var cipher = _createCipher({
     key: key,
     output: output,
@@ -67,7 +68,7 @@ forge.aes.startEncrypting = function(key, iv, output, mode) {
  *
  * @return the cipher.
  */
-forge.aes.createEncryptionCipher = function(key, mode) {
+aes.createEncryptionCipher = function(key, mode) {
   return _createCipher({
     key: key,
     output: null,
@@ -95,7 +96,7 @@ forge.aes.createEncryptionCipher = function(key, mode) {
  *
  * @return the cipher.
  */
-forge.aes.startDecrypting = function(key, iv, output, mode) {
+aes.startDecrypting = function(key, iv, output, mode) {
   var cipher = _createCipher({
     key: key,
     output: output,
@@ -121,7 +122,7 @@ forge.aes.startDecrypting = function(key, iv, output, mode) {
  *
  * @return the cipher.
  */
-forge.aes.createDecryptionCipher = function(key, mode) {
+aes.createDecryptionCipher = function(key, mode) {
   return _createCipher({
     key: key,
     output: null,
@@ -138,7 +139,7 @@ forge.aes.createDecryptionCipher = function(key, mode) {
  *
  * @return the AES algorithm object.
  */
-forge.aes.Algorithm = function(name, mode) {
+aes.Algorithm = function(name, mode) {
   if(!init) {
     initialize();
   }
@@ -166,7 +167,7 @@ forge.aes.Algorithm = function(name, mode) {
  *          decrypt true if the algorithm should be initialized for decryption,
  *            false for encryption.
  */
-forge.aes.Algorithm.prototype.initialize = function(options) {
+aes.Algorithm.prototype.initialize = function(options) {
   if(this._init) {
     return;
   }
@@ -231,7 +232,7 @@ forge.aes.Algorithm.prototype.initialize = function(options) {
  *
  * @return the expanded key.
  */
-forge.aes._expandKey = function(key, decrypt) {
+aes._expandKey = function(key, decrypt) {
   if(!init) {
     initialize();
   }
@@ -246,23 +247,23 @@ forge.aes._expandKey = function(key, decrypt) {
  * @param output an array of block-size 32-bit words.
  * @param decrypt true to decrypt, false to encrypt.
  */
-forge.aes._updateBlock = _updateBlock;
+aes._updateBlock = _updateBlock;
 
 
 /** Register AES algorithms **/
 
-registerAlgorithm('AES-ECB', forge.cipher.modes.ecb);
-registerAlgorithm('AES-CBC', forge.cipher.modes.cbc);
-registerAlgorithm('AES-CFB', forge.cipher.modes.cfb);
-registerAlgorithm('AES-OFB', forge.cipher.modes.ofb);
-registerAlgorithm('AES-CTR', forge.cipher.modes.ctr);
-registerAlgorithm('AES-GCM', forge.cipher.modes.gcm);
+registerAlgorithm('AES-ECB', modes.ecb);
+registerAlgorithm('AES-CBC', modes.cbc);
+registerAlgorithm('AES-CFB', modes.cfb);
+registerAlgorithm('AES-OFB', modes.ofb);
+registerAlgorithm('AES-CTR', modes.ctr);
+registerAlgorithm('AES-GCM', modes.gcm);
 
 function registerAlgorithm(name, mode) {
   var factory = function() {
-    return new forge.aes.Algorithm(name, mode);
+    return new aes.Algorithm(name, mode);
   };
-  forge.cipher.registerAlgorithm(name, factory);
+  cipher.registerAlgorithm(name, factory);
 }
 
 
@@ -1068,9 +1069,9 @@ function _createCipher(options) {
 
   var cipher;
   if(options.decrypt) {
-    cipher = forge.cipher.createDecipher(algorithm, options.key);
+    cipher = cipher.createDecipher(algorithm, options.key);
   } else {
-    cipher = forge.cipher.createCipher(algorithm, options.key);
+    cipher = cipher.createCipher(algorithm, options.key);
   }
 
   // backwards compatible start API
@@ -1090,7 +1091,3 @@ function _createCipher(options) {
 
   return cipher;
 }
-
-} // end module implementation
-
-})();
