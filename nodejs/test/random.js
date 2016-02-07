@@ -1,6 +1,8 @@
 (function() {
 
-function Tests(ASSERT, random, UTIL) {
+function Tests(ASSERT, RANDOM, UTIL) {
+  var random = RANDOM;
+
   describe('random', function() {
     it('should generate 10 random bytes', function() {
       random.getBytes(16);

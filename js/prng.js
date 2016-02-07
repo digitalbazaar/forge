@@ -320,7 +320,7 @@ prng.create = function(plugin) {
       });
     };
     // use nodejs sync API
-    ctx.seedFileSync = function(needed) {
+    var seedFileSync = function(needed) {
       return _crypto.randomBytes(needed).toString();
     };
   } else {
@@ -331,8 +331,15 @@ prng.create = function(plugin) {
         callback(e);
       }
     };
-    ctx.seedFileSync = defaultSeedFile;
+    seedFileSync = defaultSeedFile;
   }
+
+  Object.defineProperty(ctx, "seedFileSync", { set: function (x) {
+    console.log("seedFileSync set!");
+    this._seedFileSync = x;
+  }, get: function() {
+    return typeof this._seedFileSync === "undefined" ? seedFileSync : this._seedFileSync;
+  } });
 
   /**
    * Adds entropy to a prng ctx's accumulator.

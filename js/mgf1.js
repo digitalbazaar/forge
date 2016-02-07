@@ -9,9 +9,9 @@
  */
 var util = require("./util");
 
-module.exports = {};
+var mgf1 = {};
 
-var mgf1 = module.exports.mgf1 = {};
+module.exports = mgf1;
 
 /**
  * Creates a MGF1 mask generation function object.

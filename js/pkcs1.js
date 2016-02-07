@@ -46,6 +46,7 @@
 var md = require("./md");
 var random = require("./random");
 var util = require("./util");
+var forge_md = md;
 
 // PKCS#1 API
 var pkcs1 = {};
@@ -92,7 +93,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
 
   // default OAEP to SHA-1 message digest
   if(!md) {
-    md = md.sha1.create();
+    md = forge_md.sha1.create();
   } else {
     md.start();
   }
@@ -192,7 +193,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
 
   // default OAEP to SHA-1 message digest
   if(md === undefined) {
-    md = md.sha1.create();
+    md = forge_md.sha1.create();
   } else {
     md.start();
   }

@@ -12,11 +12,11 @@ describe('browser', function() {
         return done(err);
       }
 
-      var globbed = fs.readdirSync("test").filter(function(val) {
-        return val.indexOf("browser") === -1;
-      }).map(function(val) {
-        return "../nodejs/test/" + val.slice(0, -3);
-      });
+      //var globbed = fs.readdirSync("test").filter(function(val) {
+      //  return val.indexOf("browser") === -1;
+      //}).map(function(val) {
+      //  return "../nodejs/test/" + val.slice(0, -3);
+      //});
       //console.log(globbed);
       grunt.initConfig({
         webpack: {
@@ -25,7 +25,7 @@ describe('browser', function() {
             //  { test: /^..\/nodejs\/test\//, loader: "mocha" }
             //],
             context: __dirname + "../../../js",
-            entry: [/*"../nodejs/ui/test", */"./forge"].concat(globbed),
+            entry: ["../nodejs/ui/test"],
             output: {
               library: "forge-bundle",
               path: "ui",

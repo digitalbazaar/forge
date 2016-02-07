@@ -488,13 +488,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as UTC time because it's >= 1950
           value: new Date('Jan 1, 1950 00:00:00Z')
         }]
@@ -517,13 +517,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
           value: new Date('Dec 31, 1949 23:59:59Z')
         }]
@@ -548,13 +548,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
           value: new Date('Dec 31, 1949 23:59:59Z')
         }]

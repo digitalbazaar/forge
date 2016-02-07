@@ -58,13 +58,11 @@ prng_aes.increment = function(seed) {
   return seed;
 };
 prng_aes.md = md.sha256;
-if (!prng_aes.md) throw new Error("could not get sha256");
 
 /**
  * Creates a new PRNG.
  */
 function spawnPrng() {
-  if (!prng_aes.md) throw new Error("prng_aes.md not set");
   var ctx = prng.create(prng_aes);
 
   /**

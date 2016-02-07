@@ -6,6 +6,7 @@ function Tests(ASSERT, forge) {
   var PEM = forge.pem;
   var PKI = forge.pki;
   var UTIL = forge.util;
+  var OIDS = forge.pki.oids;
 
   var _data;
   describe('pkcs12', function() {
@@ -69,7 +70,7 @@ function Tests(ASSERT, forge) {
 
       // SafeContents has one SafeBag which has one CertBag with the cert
       ASSERT.equal(p12.safeContents[0].safeBags.length, 1);
-      ASSERT.equal(p12.safeContents[0].safeBags[0].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[0].safeBags[0].type, OIDS.certBag);
 
       // check cert's serial number
       ASSERT.equal(
@@ -89,7 +90,7 @@ function Tests(ASSERT, forge) {
 
       // SafeContents has one SafeBag which has one KeyBag with the key
       ASSERT.equal(p12.safeContents[0].safeBags.length, 1);
-      ASSERT.equal(p12.safeContents[0].safeBags[0].type, PKI.oids.keyBag);
+      ASSERT.equal(p12.safeContents[0].safeBags[0].type, OIDS.keyBag);
 
       // compare the key from the PFX by comparing both primes
       var expected = PKI.privateKeyFromPem(_data.privateKey);
@@ -111,7 +112,7 @@ function Tests(ASSERT, forge) {
       // SafeContents has one SafeBag which has one shrouded KeyBag with the key
       ASSERT.equal(p12.safeContents[0].safeBags.length, 1);
       ASSERT.equal(
-        p12.safeContents[0].safeBags[0].type, PKI.oids.pkcs8ShroudedKeyBag);
+        p12.safeContents[0].safeBags[0].type, OIDS.pkcs8ShroudedKeyBag);
 
       // compare the key from the PFX by comparing both primes
       var expected = PKI.privateKeyFromPem(_data.privateKey);
@@ -133,7 +134,7 @@ function Tests(ASSERT, forge) {
       // SafeContents has one SafeBag which has one shrouded KeyBag with the key
       ASSERT.equal(p12.safeContents[0].safeBags.length, 1);
       ASSERT.equal(
-        p12.safeContents[0].safeBags[0].type, PKI.oids.pkcs8ShroudedKeyBag);
+        p12.safeContents[0].safeBags[0].type, OIDS.pkcs8ShroudedKeyBag);
 
       // compare the key from the PFX by comparing both primes
       var expected = PKI.privateKeyFromPem(_data.privateKey);
@@ -154,13 +155,13 @@ function Tests(ASSERT, forge) {
 
       ASSERT.equal(p12.safeContents[0].encrypted, false);
       ASSERT.equal(p12.safeContents[0].safeBags.length, 2);
-      ASSERT.equal(p12.safeContents[0].safeBags[0].type, PKI.oids.pkcs8ShroudedKeyBag);
+      ASSERT.equal(p12.safeContents[0].safeBags[0].type, OIDS.pkcs8ShroudedKeyBag);
       ASSERT.equal(p12.safeContents[0].safeBags[0].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[0].safeBags[0].attributes.friendlyName[0], 'encryptionkey');
       ASSERT.equal(p12.safeContents[0].safeBags[0].attributes.localKeyId.length, 1);
       ASSERT.equal(p12.safeContents[0].safeBags[0].attributes.localKeyId[0], 'Time 1311855238964');
 
-      ASSERT.equal(p12.safeContents[0].safeBags[1].type, PKI.oids.pkcs8ShroudedKeyBag);
+      ASSERT.equal(p12.safeContents[0].safeBags[1].type, OIDS.pkcs8ShroudedKeyBag);
       ASSERT.equal(p12.safeContents[0].safeBags[1].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[0].safeBags[1].attributes.friendlyName[0], 'signaturekey');
       ASSERT.equal(p12.safeContents[0].safeBags[1].attributes.localKeyId.length, 1);
@@ -169,31 +170,31 @@ function Tests(ASSERT, forge) {
       ASSERT.equal(p12.safeContents[1].encrypted, true);
       ASSERT.equal(p12.safeContents[1].safeBags.length, 6);
 
-      ASSERT.equal(p12.safeContents[1].safeBags[0].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[0].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[0].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[0].attributes.friendlyName[0], 'CN=1002753325,2.5.4.5=#130b3130303237353333323543');
       ASSERT.equal(p12.safeContents[1].safeBags[0].attributes.localKeyId.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[0].attributes.localKeyId[0], 'Time 1311855238964');
 
-      ASSERT.equal(p12.safeContents[1].safeBags[1].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[1].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[1].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[1].attributes.friendlyName[0], 'CN=ElsterSoftTestCA,OU=CA,O=Elster,C=DE');
 
-      ASSERT.equal(p12.safeContents[1].safeBags[2].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[2].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[2].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[2].attributes.friendlyName[0], 'CN=ElsterRootCA,OU=RootCA,O=Elster,C=DE');
 
-      ASSERT.equal(p12.safeContents[1].safeBags[3].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[3].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[3].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[3].attributes.friendlyName[0], 'CN=1002753325,2.5.4.5=#130b3130303237353333323541');
       ASSERT.equal(p12.safeContents[1].safeBags[3].attributes.localKeyId.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[3].attributes.localKeyId[0], 'Time 1311855238863');
 
-      ASSERT.equal(p12.safeContents[1].safeBags[4].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[4].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[4].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[4].attributes.friendlyName[0], 'CN=ElsterSoftTestCA,OU=CA,O=Elster,C=DE');
 
-      ASSERT.equal(p12.safeContents[1].safeBags[5].type, PKI.oids.certBag);
+      ASSERT.equal(p12.safeContents[1].safeBags[5].type, OIDS.certBag);
       ASSERT.equal(p12.safeContents[1].safeBags[5].attributes.friendlyName.length, 1);
       ASSERT.equal(p12.safeContents[1].safeBags[5].attributes.friendlyName[0], 'CN=ElsterRootCA,OU=RootCA,O=Elster,C=DE');
     });
@@ -214,7 +215,7 @@ function Tests(ASSERT, forge) {
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
         friendlyName: 'CN=1002753325,2.5.4.5=#130b3130303237353333323543',
-        bagType: PKI.oids.certBag
+        bagType: OIDS.certBag
       });
 
       ASSERT.equal(bags.friendlyName.length, 1);
@@ -226,12 +227,12 @@ function Tests(ASSERT, forge) {
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
-        bagType: PKI.oids.certBag
+        bagType: OIDS.certBag
       });
 
-      ASSERT.equal(bags[PKI.oids.certBag].length, 6);
-      for(var i = 0; i < bags[PKI.oids.certBag].length; ++i) {
-        ASSERT.equal(bags[PKI.oids.certBag][i].type, PKI.oids.certBag);
+      ASSERT.equal(bags[OIDS.certBag].length, 6);
+      for(var i = 0; i < bags[OIDS.certBag].length; ++i) {
+        ASSERT.equal(bags[OIDS.certBag][i].type, OIDS.certBag);
       }
     });
 
@@ -252,12 +253,12 @@ function Tests(ASSERT, forge) {
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123456');
       var bags = p12.getBags({
         localKeyId: 'Time 1311855238863',
-        bagType: PKI.oids.certBag
+        bagType: OIDS.certBag
       });
 
       ASSERT.equal(bags.localKeyId.length, 1);
       ASSERT.equal(bags.localKeyId[0].attributes.localKeyId[0], 'Time 1311855238863');
-      ASSERT.equal(bags.localKeyId[0].type, PKI.oids.certBag);
+      ASSERT.equal(bags.localKeyId[0].type, OIDS.certBag);
     });
 
     it('should generate a PKCS#12 mac key', function() {
@@ -272,10 +273,10 @@ function Tests(ASSERT, forge) {
       var p12Der = UTIL.decode64(_data.p12ecdsa);
       var p12Asn1 = ASN1.fromDer(p12Der);
       var p12 = PKCS12.pkcs12FromAsn1(p12Asn1, '123321');
-      var bags = p12.getBags({bagType: PKI.oids.certBag});
+      var bags = p12.getBags({bagType: OIDS.certBag});
 
-      ASSERT.equal(bags[PKI.oids.certBag].length, 1);
-      var bag = bags[PKI.oids.certBag][0];
+      ASSERT.equal(bags[OIDS.certBag].length, 1);
+      var bag = bags[OIDS.certBag][0];
       ASSERT.equal(bag.cert, null);
       ASSERT.equal('asn1' in bag, true);
 

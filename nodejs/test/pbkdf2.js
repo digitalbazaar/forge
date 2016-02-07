@@ -123,7 +123,7 @@ if(typeof define === 'function') {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PBKDF2,
+      PBKDF2.pbkdf2,
       MD,
       UTIL
     );
@@ -132,7 +132,7 @@ if(typeof define === 'function') {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pbkdf2'),
+    require('../../js/pbkdf2').pbkdf2,
     require('../../js/md'),
     require('../../js/util'));
 }

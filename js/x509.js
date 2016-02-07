@@ -110,6 +110,7 @@
 
 var pem = require("./pem");
 var md = require("./md");
+var forge_md = md;
 var mgf = require("./mgf");
 var pss = require("./pss");
 var util = require("./util");
@@ -493,7 +494,7 @@ var certificationRequestValidator = {
  * @param rdn the RDNSequence to convert.
  * @param md a message digest to append type and value to if provided.
  */
-x509.RDNAttributesAsArray = function(rdn, md) {
+x509.RDNAttributesAsArray = function(rdn, passed_md) {
   var rval = [];
 
   // each value in 'rdn' in is a SET of RelativeDistinguishedName
@@ -518,9 +519,9 @@ x509.RDNAttributesAsArray = function(rdn, md) {
           obj.shortName = _shortNames[obj.name];
         }
       }
-      if(md) {
-        md.update(obj.type);
-        md.update(obj.value);
+      if(passed_md) {
+        passed_md.update(obj.type);
+        passed_md.update(obj.value);
       }
       rval.push(obj);
     }
@@ -758,7 +759,7 @@ x509.publicKeyFromPem = function(passed_pem) {
   // convert DER to ASN.1 object
   var obj = asn1.fromDer(msg.body);
 
-  return pki.publicKeyFromAsn1(obj);
+  return rsa.publicKeyFromAsn1(obj);
 };
 
 /**
@@ -773,7 +774,7 @@ x509.publicKeyToPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'PUBLIC KEY',
-    body: asn1.toDer(pki.publicKeyToAsn1(key)).getBytes()
+    body: asn1.toDer(rsa.publicKeyToAsn1(key)).getBytes()
   };
   return pem.encode(msg, {maxline: maxline});
 };
@@ -790,7 +791,7 @@ x509.publicKeyToRSAPublicKeyPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'RSA PUBLIC KEY',
-    body: asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes()
+    body: asn1.toDer(rsa.publicKeyToRSAPublicKey(key)).getBytes()
   };
   return pem.encode(msg, {maxline: maxline});
 };
@@ -817,10 +818,10 @@ x509.getPublicKeyFingerprint = function(key, options) {
   var bytes;
   switch(type) {
   case 'RSAPublicKey':
-    bytes = asn1.toDer(pki.publicKeyToRSAPublicKey(key)).getBytes();
+    bytes = asn1.toDer(rsa.publicKeyToRSAPublicKey(key)).getBytes();
     break;
   case 'SubjectPublicKeyInfo':
-    bytes = asn1.toDer(pki.publicKeyToAsn1(key)).getBytes();
+    bytes = asn1.toDer(rsa.publicKeyToAsn1(key)).getBytes();
     break;
   default:
     throw new Error('Unknown fingerprint type "' + options.type + '".');
@@ -1019,9 +1020,9 @@ x509.createCertificate = function() {
    * @param key the private key to sign with.
    * @param md the message digest object to use (defaults to forge.md.sha1).
    */
-  cert.sign = function(key, md) {
+  cert.sign = function(key, passed_md) {
     // TODO: get signature OID from private key
-    cert.md = md || md.sha1.create();
+    cert.md = passed_md || md.sha1.create();
     var algorithmOid = oids[cert.md.algorithm + 'WithRSAEncryption'];
     if(!algorithmOid) {
       var error = new Error('Could not compute certificate digest. ' +
@@ -1402,7 +1403,7 @@ x509.certificateFromAsn1 = function(obj, computeHash) {
   }
 
   // convert RSA public key from ASN.1
-  cert.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
+  cert.publicKey = rsa.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
 
   return cert;
 };
@@ -1731,7 +1732,7 @@ x509.certificationRequestFromAsn1 = function(obj, computeHash) {
   csr.subject.hash = smd.digest().toHex();
 
   // convert RSA public key from ASN.1
-  csr.publicKey = pki.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
+  csr.publicKey = rsa.publicKeyFromAsn1(capture.subjectPublicKeyInfo);
 
   // convert attributes from ASN.1
   csr.getAttribute = function(sn) {
@@ -1813,9 +1814,9 @@ x509.createCertificationRequest = function() {
    * @param key the private key to sign with.
    * @param md the message digest object to use (defaults to forge.md.sha1).
    */
-  csr.sign = function(key, md) {
+  csr.sign = function(key, passed_md) {
     // TODO: get signature OID from private key
-    csr.md = md || md.sha1.create();
+    csr.md = passed_md || md.sha1.create();
     var algorithmOid = oids[csr.md.algorithm + 'WithRSAEncryption'];
     if(!algorithmOid) {
       var error = new Error('Could not compute certification request digest. ' +
@@ -1856,19 +1857,19 @@ x509.createCertificationRequest = function() {
         var oid = oids[csr.signatureOid];
         switch(oid) {
         case 'sha1WithRSAEncryption':
-          md = md.sha1.create();
+          md = forge_md.sha1.create();
           break;
         case 'md5WithRSAEncryption':
-          md = md.md5.create();
+          md = forge_md.md5.create();
           break;
         case 'sha256WithRSAEncryption':
-          md = md.sha256.create();
+          md = forge_md.sha256.create();
           break;
         case 'sha512WithRSAEncryption':
-          md = md.sha512.create();
+          md = forge_md.sha512.create();
           break;
         case 'RSASSA-PSS':
-          md = md.sha256.create();
+          md = forge_md.sha256.create();
           break;
         }
       }
@@ -2472,7 +2473,7 @@ x509.getTBSCertificate = function(cert) {
     // subject
     _dnToAsn1(cert.subject),
     // SubjectPublicKeyInfo
-    pki.publicKeyToAsn1(cert.publicKey)
+    rsa.publicKeyToAsn1(cert.publicKey)
   ]);
 
   if(cert.issuer.uniqueId) {
@@ -2523,7 +2524,7 @@ x509.getCertificationRequestInfo = function(csr) {
     // subject
     _dnToAsn1(csr.subject),
     // SubjectPublicKeyInfo
-    pki.publicKeyToAsn1(csr.publicKey),
+    rsa.publicKeyToAsn1(csr.publicKey),
     // attributes
     _CRIAttributesToAsn1(csr)
   ]);

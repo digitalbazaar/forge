@@ -36,6 +36,7 @@ var pbe = require( './pbe' );
 var util = require( './util' );
 
 module.exports = {
+"pbkdf2": pkcs5.pbkdf2,
 "aes": aes,
 "asn1" : asn1,
 "cipher" : cipher,

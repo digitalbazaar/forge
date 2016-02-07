@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, PKI) {
+function Tests(ASSERT, PKI, OIDS) {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -119,7 +119,7 @@ function Tests(ASSERT, PKI) {
       var csr = PKI.certificationRequestFromPem(pem);
       ASSERT.equal(csr.subject.getField('CN').value, 'MyCommonName');
       ASSERT.equal(csr.subject.getField('O').value, 'MyOrganization');
-      ASSERT.equal(csr.signatureOid, PKI.oids.sha1WithRSAEncryption);
+      ASSERT.equal(csr.signatureOid, OIDS.sha1WithRSAEncryption);
       ASSERT.equal(csr.publicKey.e.toString(16), '10001');
       ASSERT.equal(csr.publicKey.n.toString(16).toUpperCase(), 'A454CEB00C6E28928C06189773D6B0EACDC18D15B5E9A0459734B7BFB71655A9D5EF2E200DCAC5915963CEF9C28D103AF0FE01D36FE7E627A248333A2F371774F8C9EC01491D1388EDCF6B8B4BE02EC2CD69E1625882FE8C24E5B1C25741CB91851617ACFB2F1DC7CA1A3194A9AB1F24923CF6512CAA7B29CC316E315CD847E1415DB523BDD9D66086E8C129EDC376A816D03F238C36301489B396B3824911D5235A19BCE84666F7EA9F8292F9B65A5909EFA45F24AB293A79EA632C7D2390BE5A25A513BCA4FF40523684A918A4099EF8E48FFD5BB74734F528CB19165798D10F0713EECEB9DBE2FAA31B68A95397A60DBCB802F491465031AF3091850A6623');
       ASSERT.ok(csr.verify());
@@ -130,19 +130,22 @@ function Tests(ASSERT, PKI) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    '../../js/pki'
+    '../../js/pki',
+    '../../js/oids'
   ], function(PKI) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI
+      PKI,
+      OIDS
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki'));
+    require('../../js/pki'),
+    require('../../js/oids'));
 }
 
 })();

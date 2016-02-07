@@ -30,6 +30,7 @@
  */
 var util = require("./util");
 var cipher = require("./cipher");
+var forge_cipher = cipher;
 var modes = require("./cipherModes");
 
 /* DES API */
@@ -474,9 +475,9 @@ function _createCipher(options) {
 
   var cipher;
   if(options.decrypt) {
-    cipher = cipher.createDecipher(algorithm, options.key);
+    cipher = forge_cipher.createDecipher(algorithm, options.key);
   } else {
-    cipher = cipher.createCipher(algorithm, options.key);
+    cipher = forge_cipher.createCipher(algorithm, options.key);
   }
 
   // backwards compatible start API

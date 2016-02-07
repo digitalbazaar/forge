@@ -7,7 +7,7 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-var md = require("./md");
+var forge_md = require("./md");
 var util = require("./util");
 var hmac = require("./hmac");
 
@@ -78,13 +78,13 @@ pkcs5.pbkdf2 = function(p, s, c, dkLen, md, callback) {
 
   if(typeof md === 'undefined' || md === null) {
     // default prf to SHA-1
-    md = md.sha1.create();
+    md = forge_md.sha1.create();
   }
   if(typeof md === 'string') {
-    if(!(md in md.algorithms)) {
+    if(!(md in forge_md.algorithms)) {
       throw new Error('Unknown hash algorithm: ' + md);
     }
-    md = md[md].create();
+    md = forge_md[md].create();
   }
 
   var hLen = md.digestLength;

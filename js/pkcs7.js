@@ -25,6 +25,7 @@ var aes = require("./aes");
 var des = require("./des");
 var random = require("./random");
 var asn1 = require("./asn1");
+var pkcs7asn1 = require("./pkcs7asn1");
 
 // PKCS#7 API
 var p7 = {};
@@ -85,7 +86,7 @@ p7.messageFromAsn1 = function(obj) {
   // validate root level ContentInfo and capture data
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, p7.asn1.contentInfoValidator, capture, errors))
+  if(!asn1.validate(obj, pkcs7asn1.contentInfoValidator, capture, errors))
   {
     var error = new Error('Cannot read PKCS#7 message. ' +
       'ASN.1 object is not an PKCS#7 ContentInfo.');
@@ -134,7 +135,7 @@ p7.createSignedData = function() {
 
     fromAsn1: function(obj) {
       // validate SignedData content block and capture data.
-      _fromAsn1(msg, obj, p7.asn1.signedDataValidator);
+      _fromAsn1(msg, obj, pkcs7asn1.signedDataValidator);
       msg.certificates = [];
       msg.crls = [];
       msg.digestAlgorithmIdentifiers = [];
@@ -543,7 +544,7 @@ p7.createEncryptedData = function() {
      */
     fromAsn1: function(obj) {
       // Validate EncryptedData content block and capture data.
-      _fromAsn1(msg, obj, p7.asn1.encryptedDataValidator);
+      _fromAsn1(msg, obj, pkcs7asn1.encryptedDataValidator);
     },
 
     /**
@@ -583,7 +584,7 @@ p7.createEnvelopedData = function() {
      */
     fromAsn1: function(obj) {
       // validate EnvelopedData content block and capture data
-      var capture = _fromAsn1(msg, obj, p7.asn1.envelopedDataValidator);
+      var capture = _fromAsn1(msg, obj, pkcs7asn1.envelopedDataValidator);
       msg.recipients = _recipientsFromAsn1(capture.recipientInfos.value);
     },
 
@@ -807,7 +808,7 @@ function _recipientFromAsn1(obj) {
   // validate EnvelopedData content block and capture data
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, p7.asn1.recipientInfoValidator, capture, errors)) {
+  if(!asn1.validate(obj, pkcs7asn1.recipientInfoValidator, capture, errors)) {
     var error = new Error('Cannot read PKCS#7 RecipientInfo. ' +
       'ASN.1 object is not an PKCS#7 RecipientInfo.');
     error.errors = errors;
@@ -901,7 +902,7 @@ function _signerFromAsn1(obj) {
   // validate EnvelopedData content block and capture data
   var capture = {};
   var errors = [];
-  if(!asn1.validate(obj, p7.asn1.signerInfoValidator, capture, errors)) {
+  if(!asn1.validate(obj, pkcs7asn1.signerInfoValidator, capture, errors)) {
     var error = new Error('Cannot read PKCS#7 SignerInfo. ' +
       'ASN.1 object is not an PKCS#7 SignerInfo.');
     error.errors = errors;

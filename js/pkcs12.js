@@ -101,6 +101,7 @@ var pbe = require("./pbe");
 var asn1 = require("./asn1");
 var pki = require("./pki");
 var random = require("./random");
+var oids = require("./oids");
 
 // PKCS#12 API
 var p12 = {};
@@ -412,7 +413,7 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     throw error;
   }
 
-  if(asn1.derToOid(capture.contentType) !== pki.oids.data) {
+  if(asn1.derToOid(capture.contentType) !== oids.data) {
     var error = new Error('Only PKCS#12 PFX in password integrity mode supported.');
     error.oid = asn1.derToOid(capture.contentType);
     throw error;
@@ -431,23 +432,23 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     var macKeyBytes = 0;
     var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
     switch(macAlgorithm) {
-    case pki.oids.sha1:
+    case oids.sha1:
       md = md.sha1.create();
       macKeyBytes = 20;
       break;
-    case pki.oids.sha256:
+    case oids.sha256:
       md = md.sha256.create();
       macKeyBytes = 32;
       break;
-    case pki.oids.sha384:
+    case oids.sha384:
       md = md.sha384.create();
       macKeyBytes = 48;
       break;
-    case pki.oids.sha512:
+    case oids.sha512:
       md = md.sha512.create();
       macKeyBytes = 64;
       break;
-    case pki.oids.md5:
+    case oids.md5:
       md = md.md5.create();
       macKeyBytes = 16;
       break;
@@ -539,14 +540,14 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
     var safeContents = null;
     var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
-    case pki.oids.data:
+    case oids.data:
       if(data.tagClass !== asn1.Class.UNIVERSAL ||
          data.type !== asn1.Type.OCTETSTRING) {
         throw new Error('PKCS#12 SafeContents Data is not an OCTET STRING.');
       }
       safeContents = _decodePkcs7Data(data).value;
       break;
-    case pki.oids.encryptedData:
+    case oids.encryptedData:
       safeContents = _decryptSafeContents(data, password);
       obj.encrypted = true;
       break;
@@ -580,7 +581,7 @@ function _decryptSafeContents(data, password) {
   }
 
   var oid = asn1.derToOid(capture.contentType);
-  if(oid !== pki.oids.data) {
+  if(oid !== oids.data) {
     var error = new Error(
       'PKCS#12 EncryptedContentInfo ContentType is not Data.');
     error.oid = oid;
@@ -653,7 +654,7 @@ function _decodeSafeContents(safeContents, strict, password) {
     var validator, decoder;
     var bagAsn1 = capture.bagValue.value[0];
     switch(bag.type) {
-      case pki.oids.pkcs8ShroudedKeyBag:
+      case oids.pkcs8ShroudedKeyBag:
         /* bagAsn1 has a EncryptedPrivateKeyInfo, which we need to decrypt.
            Afterwards we can handle it like a keyBag,
            which is a PrivateKeyInfo. */
@@ -664,7 +665,7 @@ function _decodeSafeContents(safeContents, strict, password) {
         }
 
         /* fall through */
-      case pki.oids.keyBag:
+      case oids.keyBag:
         /* A PKCS#12 keyBag is a simple PrivateKeyInfo as understood by our
            PKI module, hence we don't have to do validation/capturing here,
            just pass what we already got. */
@@ -677,13 +678,13 @@ function _decodeSafeContents(safeContents, strict, password) {
         }
         continue;  /* Nothing more to do. */
 
-      case pki.oids.certBag:
+      case oids.certBag:
         /* A PKCS#12 certBag can wrap both X.509 and sdsi certificates.
            Therefore put the SafeBag content through another validator to
            capture the fields.  Afterwards check & store the results. */
         validator = certBagValidator;
         decoder = function() {
-          if(asn1.derToOid(capture.certId) !== pki.oids.x509Certificate) {
+          if(asn1.derToOid(capture.certId) !== oids.x509Certificate) {
             var error = new Error(
               'Unsupported certificate type, only X.509 supported.');
             error.oid = asn1.derToOid(capture.certId);
@@ -744,14 +745,14 @@ function _decodeBagAttributes(attributes) {
       }
 
       var oid = asn1.derToOid(capture.oid);
-      if(pki.oids[oid] === undefined) {
+      if(oids[oid] === undefined) {
         // unsupported attribute type, ignore.
         continue;
       }
 
-      decodedAttrs[pki.oids[oid]] = [];
+      decodedAttrs[oids[oid]] = [];
       for(var j = 0; j < capture.values.length; ++j) {
-        decodedAttrs[pki.oids[oid]].push(capture.values[j].value);
+        decodedAttrs[oids[oid]].push(capture.values[j].value);
       }
     }
   }
@@ -833,7 +834,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids.localKeyId).getBytes()),
+          asn1.oidToDer(oids.localKeyId).getBytes()),
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
@@ -847,7 +848,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // attrId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids.friendlyName).getBytes()),
+          asn1.oidToDer(oids.friendlyName).getBytes()),
         // attrValues
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BMPSTRING, false,
@@ -888,14 +889,14 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids.certBag).getBytes()),
+          asn1.oidToDer(oids.certBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // CertBag
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
             // certId
             asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-              asn1.oidToDer(pki.oids.x509Certificate).getBytes()),
+              asn1.oidToDer(oids.x509Certificate).getBytes()),
             // certValue (x509Certificate)
             asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
               asn1.create(
@@ -920,7 +921,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(pki.oids.data).getBytes()),
+          asn1.oidToDer(oids.data).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -941,7 +942,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids.keyBag).getBytes()),
+          asn1.oidToDer(oids.keyBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // PrivateKeyInfo
@@ -955,7 +956,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
         // bagId
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-          asn1.oidToDer(pki.oids.pkcs8ShroudedKeyBag).getBytes()),
+          asn1.oidToDer(oids.pkcs8ShroudedKeyBag).getBytes()),
         // bagValue
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           // EncryptedPrivateKeyInfo
@@ -977,7 +978,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         // contentType
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
           // OID for the content type is 'data'
-          asn1.oidToDer(pki.oids.data).getBytes()),
+          asn1.oidToDer(oids.data).getBytes()),
         // content
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
@@ -1012,7 +1013,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
           // algorithm = SHA-1
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
-            asn1.oidToDer(pki.oids.sha1).getBytes()),
+            asn1.oidToDer(oids.sha1).getBytes()),
           // parameters = Null
           asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
         ]),
@@ -1041,7 +1042,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       // contentType
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         // OID for the content type is 'data'
-        asn1.oidToDer(pki.oids.data).getBytes()),
+        asn1.oidToDer(oids.data).getBytes()),
       // content
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
         asn1.create(

@@ -45,19 +45,19 @@ hmac.create = function() {
    * @param key the key to use as a string, array of bytes, byte buffer,
    *           or null to reuse the previous key.
    */
-  ctx.start = function(md, key) {
-    if(md !== null) {
-      if(typeof md === 'string') {
+  ctx.start = function(passed_md, key) {
+    if(passed_md !== null) {
+      if(typeof passed_md === 'string') {
         // create builtin message digest
-        md = md.toLowerCase();
-        if(md in md.algorithms) {
-          _md = md.algorithms[md].create();
+        passed_md = passed_md.toLowerCase();
+        if(passed_md in md.algorithms) {
+          _md = md.algorithms[passed_md].create();
         } else {
-          throw new Error('Unknown hash algorithm "' + md + '"');
+          throw new Error('Unknown hash algorithm "' + passed_md + '"');
         }
       } else {
         // store message digest
-        _md = md;
+        _md = passed_md;
       }
     }
 
