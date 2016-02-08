@@ -27,6 +27,8 @@ var asn1 = require("./asn1");
 var pki = require("./pki");
 var pkcs5 = require("./pbkdf2");
 var oids = require("./oids");
+var forge_md = require("./md");
+var rc2 = require("./rc2");
 
 var BigInteger = jsbn.BigInteger;
 
@@ -612,7 +614,7 @@ pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
   var j, l;
 
   if(typeof md === 'undefined' || md === null) {
-    md = md.sha1.create();
+    md = forge_md.sha1.create();
   }
 
   var u = md.digestLength;
@@ -892,7 +894,7 @@ pbe.getCipherForPKCS12PBE = function(oid, params, password) {
  */
 pbe.opensslDeriveBytes = function(password, salt, dkLen, md) {
   if(typeof md === 'undefined' || md === null) {
-    md = md.md5.create();
+    md = forge_md.md5.create();
   }
   if(salt === null) {
     salt = '';

@@ -15,7 +15,8 @@ function Tests(ASSERT, RANDOM, UTIL) {
 
     it('should use a synchronous seed file', function() {
       var rand = RANDOM;
-      rand.seedFileSync = function(needed) {
+      rand.seedFileSync = function testSeedFileSync(needed) {
+        console.log("testSeedFileSync called");
         return UTIL.fillString('a', needed);
       };
       var b = rand.getBytes(10);

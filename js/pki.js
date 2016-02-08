@@ -95,10 +95,10 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
   return pem.encode(msg, {maxline: maxline});
 };
 
-for (var i of ["encryptPrivateKeyInfo"])
+for (var i of ["encryptPrivateKeyInfo", "decryptPrivateKeyInfo"])
   pki[i] = pbe[i];
 
-for (var i of ["publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1"])
+for (var i of ["publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
   pki[i] = x509[i];
 
 for (var i of ["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"])

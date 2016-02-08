@@ -119,6 +119,8 @@ prng.create = function(plugin) {
       ctx.generated += bytes.length;
       b.putBytes(bytes);
 
+      console.log("generating bytes for new key and seed. seed: " + ctx.seed);
+
       // generate bytes for a new key and seed
       ctx.key = formatKey(cipher(ctx.key, increment(ctx.seed)));
       ctx.seed = formatSeed(cipher(ctx.key, ctx.seed));
@@ -154,6 +156,9 @@ prng.create = function(plugin) {
       if(ctx.key === null) {
         _reseedSync();
       }
+
+      console.log("seed: " + ctx.seed);
+      console.log("key: " + ctx.key);
 
       // generate the random bytes
       var bytes = cipher(ctx.key, ctx.seed);
@@ -207,11 +212,16 @@ prng.create = function(plugin) {
    * Private function that seeds a generator once enough bytes are available.
    */
   function _seed() {
+    console.log("_seed called");
+
     // create a plugin-based message digest
     var md = ctx.plugin.md.create();
 
+    var pool0entropy = ctx.pools[0].digest().getBytes();
+    console.log("pool0entropy " + pool0entropy);
+
     // digest pool 0's entropy and restart it
-    md.update(ctx.pools[0].digest().getBytes());
+    md.update(pool0entropy);
     ctx.pools[0].start();
 
     // digest the entropy of other pools whose index k meet the
@@ -235,6 +245,9 @@ prng.create = function(plugin) {
     // update
     ctx.key = ctx.plugin.formatKey(keyBytes);
     ctx.seed = ctx.plugin.formatSeed(seedBytes);
+
+    console.log("_seed: just wrote seed " + ctx.seed);
+
     ctx.reseeds = (ctx.reseeds === 0xffffffff) ? 0 : ctx.reseeds + 1;
     ctx.generated = 0;
   }
@@ -283,6 +296,7 @@ prng.create = function(plugin) {
 
     // be sad and add some weak random data
     if(b.length() < needed) {
+      console.log("adding weak random data");
       /* Draws from Park-Miller "minimal standard" 31 bit PRNG,
       implemented with David G. Carta's optimization: with 32 bit math
       and without division (Public Domain). */
@@ -320,7 +334,7 @@ prng.create = function(plugin) {
       });
     };
     // use nodejs sync API
-    var seedFileSync = function(needed) {
+    ctx.seedFileSync = function(needed) {
       return _crypto.randomBytes(needed).toString();
     };
   } else {
@@ -331,15 +345,8 @@ prng.create = function(plugin) {
         callback(e);
       }
     };
-    seedFileSync = defaultSeedFile;
+    ctx.seedFileSync = defaultSeedFile;
   }
-
-  Object.defineProperty(ctx, "seedFileSync", { set: function (x) {
-    console.log("seedFileSync set!");
-    this._seedFileSync = x;
-  }, get: function() {
-    return typeof this._seedFileSync === "undefined" ? seedFileSync : this._seedFileSync;
-  } });
 
   /**
    * Adds entropy to a prng ctx's accumulator.
@@ -347,6 +354,7 @@ prng.create = function(plugin) {
    * @param bytes the bytes of entropy as a string.
    */
   ctx.collect = function(bytes) {
+    console.log("collecting using pool " + ctx.pool + " " + JSON.stringify(ctx.pools[ctx.pool]));
     // iterate over pools distributing entropy cyclically
     var count = bytes.length;
     for(var i = 0; i < count; ++i) {

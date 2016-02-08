@@ -95,6 +95,7 @@
  */
 var util = require("./util");
 var md = require("./md");
+var forge_md = md;
 var hmac = require("./hmac");
 var pkcs7 = require("./pkcs7");
 var pbe = require("./pbe");
@@ -102,6 +103,7 @@ var asn1 = require("./asn1");
 var pki = require("./pki");
 var random = require("./random");
 var oids = require("./oids");
+var pkcs7asn1 = require("./pkcs7asn1");
 
 // PKCS#12 API
 var p12 = {};
@@ -433,23 +435,23 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
     var macAlgorithm = asn1.derToOid(capture.macAlgorithm);
     switch(macAlgorithm) {
     case oids.sha1:
-      md = md.sha1.create();
+      md = forge_md.sha1.create();
       macKeyBytes = 20;
       break;
     case oids.sha256:
-      md = md.sha256.create();
+      md = forge_md.sha256.create();
       macKeyBytes = 32;
       break;
     case oids.sha384:
-      md = md.sha384.create();
+      md = forge_md.sha384.create();
       macKeyBytes = 48;
       break;
     case oids.sha512:
-      md = md.sha512.create();
+      md = forge_md.sha512.create();
       macKeyBytes = 64;
       break;
     case oids.md5:
-      md = md.md5.create();
+      md = forge_md.md5.create();
       macKeyBytes = 16;
       break;
     }
@@ -574,7 +576,7 @@ function _decryptSafeContents(data, password) {
   var capture = {};
   var errors = [];
   if(!asn1.validate(
-    data, pkcs7.asn1.encryptedDataValidator, capture, errors)) {
+    data, pkcs7asn1.encryptedDataValidator, capture, errors)) {
     var error = new Error('Cannot read EncryptedContentInfo.');
     error.errors = errors;
     throw error;
@@ -590,7 +592,7 @@ function _decryptSafeContents(data, password) {
 
   // get cipher
   oid = asn1.derToOid(capture.encAlgorithm);
-  var cipher = pki.pbe.getCipher(oid, capture.encParameter, password);
+  var cipher = pbe.getCipher(oid, capture.encParameter, password);
 
   // get encrypted data
   var encryptedContentAsn1 = _decodePkcs7Data(capture.encryptedContentAsn1);
@@ -696,6 +698,7 @@ function _decodeSafeContents(safeContents, strict, password) {
           try {
             bag.cert = pki.certificateFromAsn1(certAsn1, true);
           } catch(e) {
+            console.log(e);
             // ignore unknown cert type, pass asn1 value
             bag.cert = null;
             bag.asn1 = certAsn1;
