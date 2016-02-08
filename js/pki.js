@@ -73,7 +73,7 @@ pki.privateKeyToPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'RSA PRIVATE KEY',
-    body: asn1.toDer(pki.privateKeyToAsn1(key)).getBytes()
+    body: asn1.toDer(rsa.privateKeyToAsn1(key)).getBytes()
   };
   return pem.encode(msg, {maxline: maxline});
 };
@@ -95,11 +95,13 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
   return pem.encode(msg, {maxline: maxline});
 };
 
-for (var i of ["encryptPrivateKeyInfo", "decryptPrivateKeyInfo"])
+for (var i of ["decryptRsaPrivateKey", "encryptRsaPrivateKey", "encryptPrivateKeyInfo", "decryptPrivateKeyInfo"])
   pki[i] = pbe[i];
 
-for (var i of ["publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
+for (var i of ["createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
   pki[i] = x509[i];
 
 for (var i of ["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"])
   pki[i] = rsa[i];
+
+pki.rsa = rsa;

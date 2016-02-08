@@ -233,6 +233,7 @@
 var util = require("./util");
 var random = require("./random");
 var hmac = require("./hmac");
+var forge_hmac = hmac;
 var asn1 = require("./asn1");
 var pki = require("./pki");
 var md = require("./md");
@@ -296,7 +297,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
   var s1 = secret.substr(0, slen);
   var s2 = secret.substr(idx, slen);
   var ai = util.createBuffer();
-  var hmac = hmac.create();
+  var hmac = forge_hmac.create();
   seed = label + seed;
 
   // determine the number of iterations that must be performed to generate

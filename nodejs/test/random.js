@@ -1,10 +1,9 @@
 (function() {
 
 function Tests(ASSERT, RANDOM, UTIL) {
-  var random = RANDOM;
-
   describe('random', function() {
     it('should generate 10 random bytes', function() {
+      var random = RANDOM.createInstance();
       random.getBytes(16);
       random.getBytes(24);
       random.getBytes(32);
@@ -14,21 +13,20 @@ function Tests(ASSERT, RANDOM, UTIL) {
     });
 
     it('should use a synchronous seed file', function() {
-      var rand = RANDOM;
-      rand.seedFileSync = function testSeedFileSync(needed) {
-        console.log("testSeedFileSync called");
+      var random = RANDOM.createInstance();
+      random.seedFileSync = function testSeedFileSync(needed) {
         return UTIL.fillString('a', needed);
       };
-      var b = rand.getBytes(10);
+      var b = random.getBytes(10);
       ASSERT.equal(UTIL.bytesToHex(b), '80a7901a239c3e606319');
     });
 
     it('should use an asynchronous seed file', function(done) {
-      var rand = RANDOM;
-      rand.seedFile = function(needed, callback) {
+      var random = RANDOM.createInstance();
+      random.seedFile = function(needed, callback) {
         callback(null, UTIL.fillString('a', needed));
       };
-      rand.getBytes(10, function(err, b) {
+      random.getBytes(10, function(err, b) {
         ASSERT.equal(err, null);
         ASSERT.equal(UTIL.bytesToHex(b), '80a7901a239c3e606319');
         done();
@@ -36,12 +34,12 @@ function Tests(ASSERT, RANDOM, UTIL) {
     });
 
     it('should collect some random bytes', function() {
-      var rand = RANDOM;
-      rand.seedFileSync = function(needed) {
+      var random = RANDOM.createInstance();
+      random.seedFileSync = function(needed) {
         return UTIL.fillString('a', needed);
       };
-      rand.collect('bbb');
-      var b = rand.getBytes(10);
+      random.collect('bbb');
+      var b = random.getBytes(10);
       ASSERT.equal(UTIL.bytesToHex(b), 'ff8d213516047c94ca46');
     });
   });

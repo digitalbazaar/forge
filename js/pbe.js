@@ -18,6 +18,7 @@
  * EncryptedData ::= OCTET STRING
  */
 var aes = require("./aes");
+var rsa = require("./rsa");
 var des = require("./des");
 var util = require("./util");
 var pem = require("./pem");
@@ -427,7 +428,7 @@ pbe.encryptRsaPrivateKey = function(rsaKey, password, options) {
   options = options || {};
   if(!options.legacy) {
     // encrypt PrivateKeyInfo
-    var rval = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(rsaKey));
+    var rval = rsa.wrapRsaPrivateKey(rsa.privateKeyToAsn1(rsaKey));
     rval = pbe.encryptPrivateKeyInfo(rval, password, options);
     return pbe.encryptedPrivateKeyToPem(rval);
   }
@@ -479,7 +480,7 @@ pbe.encryptRsaPrivateKey = function(rsaKey, password, options) {
   var dk = pbe.opensslDeriveBytes(password, iv.substr(0, 8), dkLen);
   var cipher = cipherFn(dk);
   cipher.start(iv);
-  cipher.update(asn1.toDer(pki.privateKeyToAsn1(rsaKey)));
+  cipher.update(asn1.toDer(rsa.privateKeyToAsn1(rsaKey)));
   cipher.finish();
 
   var msg = {
@@ -591,7 +592,7 @@ pbe.decryptRsaPrivateKey = function(passed_pem, password) {
   }
 
   if(rval !== null) {
-    rval = pki.privateKeyFromAsn1(rval);
+    rval = rsa.privateKeyFromAsn1(rval);
   }
 
   return rval;

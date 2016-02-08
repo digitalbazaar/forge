@@ -45,7 +45,6 @@ prng_aes.formatSeed = function(seed) {
   return seed;
 };
 prng_aes.cipher = function(key, seed) {
-  console.log("cipher called, seed:" + seed);
   aes._updateBlock(key, seed, _prng_aes_output, false);
   _prng_aes_buffer.putInt32(_prng_aes_output[0]);
   _prng_aes_buffer.putInt32(_prng_aes_output[1]);
@@ -79,7 +78,6 @@ function spawnPrng() {
    * @return the random bytes in a string.
    */
   ctx.getBytes = function(count, callback) {
-    console.log("get bytes called, generating " + count + " bytes");
     return ctx.generate(count, callback);
   };
 
@@ -94,7 +92,6 @@ function spawnPrng() {
    * @return the random bytes in a string.
    */
   ctx.getBytesSync = function(count) {
-    console.log("get bytes sync called, generating " + count + " bytes");
     return ctx.generate(count);
   };
 
@@ -123,8 +120,6 @@ if(require("./options").disableNativeCode || (!_nodejs && !getRandomValues)) {
   if(typeof window === 'undefined' || window.document === undefined) {
     // FIXME:
   }
-
-  console.log("warning, using date to load entropy");
 
   // get load time entropy
   _ctx.collectInt(+new Date(), 32);

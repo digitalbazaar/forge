@@ -22,3 +22,4 @@ node_modules
 nodejs/coverage
 tests/forge
 nodejs/ui/forge.bundle.js
+npm-debug.log

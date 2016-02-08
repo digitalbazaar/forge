@@ -11,8 +11,10 @@
 var util = require("./util");
 var aes = require("./aes");
 var hmac = require("./hmac");
+var forge_hmac = hmac;
 var pki = require("./pki");
 var md = require("./md");
+var forge_md = md;
 
 var ssh = {};
 
@@ -108,7 +110,7 @@ ssh.privateKeyToPutty = function(privateKey, passphrase, comment) {
   macbuffer.putInt32(privbuffer.length());
   macbuffer.putBuffer(privbuffer);
 
-  var hmac = hmac.create();
+  var hmac = forge_hmac.create();
   hmac.start('sha1', mackey);
   hmac.update(macbuffer.bytes());
 
@@ -168,7 +170,7 @@ ssh.privateKeyToOpenSSH = function(privateKey, passphrase) {
  */
 ssh.getPublicKeyFingerprint = function(key, options) {
   options = options || {};
-  var md = options.md || md.md5.create();
+  var md = options.md || forge_md.md5.create();
 
   var type = 'ssh-rsa';
   var buffer = util.createBuffer();
