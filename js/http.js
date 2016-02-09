@@ -5,17 +5,23 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc. All rights reserved.
  */
-(function() {
+var forge_pki = require("./pki");
+var forge_tls = require("./tls");
+var forge_util = require("./util");
+var forge_log = require("./log");
+var forge_debug = require("./debug");
 
 // define http namespace
 var http = {};
+
+module.exports = http;
 
 // logging category
 var cat = 'forge.http';
 
 // add array of clients to debug storage
-if(forge.debug) {
-  forge.debug.set('forge.http', 'clients', []);
+if(forge_debug) {
+  forge_debug.set('forge.http', 'clients', []);
 }
 
 // normalizes an http header field name
@@ -49,7 +55,7 @@ var _getStorageId = function(client) {
 var _loadCookies = function(client) {
   if(client.persistCookies) {
     try {
-      var cookies = forge.util.getItem(
+      var cookies = forge_util.getItem(
         client.socketPool.flashApi,
         _getStorageId(client), 'cookies');
       client.cookies = cookies || {};
@@ -70,7 +76,7 @@ var _loadCookies = function(client) {
 var _saveCookies = function(client) {
   if(client.persistCookies) {
     try {
-      forge.util.setItem(
+      forge_util.setItem(
         client.socketPool.flashApi,
         _getStorageId(client), 'cookies', client.cookies);
     } catch(ex) {
@@ -94,7 +100,7 @@ var _clearCookies = function(client) {
   if(client.persistCookies) {
     try {
       // only thing stored is 'cookies', so clear whole storage
-      forge.util.clearItems(
+      forge_util.clearItems(
         client.socketPool.flashApi,
         _getStorageId(client));
     } catch(ex) {
@@ -291,7 +297,7 @@ var _initSocket = function(client, socket, tlsOptions) {
 
   // wrap socket for TLS
   if(tlsOptions) {
-    socket = forge.tls.wrapSocket({
+    socket = forge_tls.wrapSocket({
       sessionId: null,
       sessionCache: {},
       caStore: tlsOptions.caStore,
@@ -307,7 +313,7 @@ var _initSocket = function(client, socket, tlsOptions) {
     });
 
     socket.options = null;
-    socket.buffer = forge.util.createBuffer();
+    socket.buffer = forge_util.createBuffer();
     client.sockets.push(socket);
     if(tlsOptions.prime) {
       // prime socket by connecting and caching TLS session, will do
@@ -324,7 +330,7 @@ var _initSocket = function(client, socket, tlsOptions) {
     }
   } else {
     // no need to prime non-TLS sockets
-    socket.buffer = forge.util.createBuffer();
+    socket.buffer = forge_util.createBuffer();
     client.sockets.push(socket);
     client.idle.push(socket);
   }
@@ -438,7 +444,7 @@ http.createClient = function(options) {
   // create CA store to share with all TLS connections
   var caStore = null;
   if(options.caCerts) {
-    caStore = forge.pki.createCaStore(options.caCerts);
+    caStore = forge_pki.createCaStore(options.caCerts);
   }
 
   // get scheme, host, and port from url
@@ -482,8 +488,8 @@ http.createClient = function(options) {
   };
 
   // add client to debug storage
-  if(forge.debug) {
-    forge.debug.get('forge.http', 'clients').push(client);
+  if(forge_debug) {
+    forge_debug.get('forge.http', 'clients').push(client);
   }
 
   // load cookies from disk
@@ -532,10 +538,10 @@ http.createClient = function(options) {
     if(sp.flashApi !== null) {
       tlsOptions.deflate = function(bytes) {
         // strip 2 byte zlib header and 4 byte trailer
-        return forge.util.deflate(sp.flashApi, bytes, true);
+        return forge_util.deflate(sp.flashApi, bytes, true);
       };
       tlsOptions.inflate = function(bytes) {
-        return forge.util.inflate(sp.flashApi, bytes, true);
+        return forge_util.inflate(sp.flashApi, bytes, true);
       };
     }
   }
@@ -789,8 +795,8 @@ http.createClient = function(options) {
     _clearCookies(client);
   };
 
-  if(forge.log) {
-    forge.log.debug('forge.http', 'created client', options);
+  if(forge_log) {
+    forge_log.debug('forge.http', 'created client', options);
   }
 
   return client;
@@ -876,7 +882,7 @@ http.createRequest = function(options) {
 
   // add custom headers
   var headers = options.headers || [];
-  if(!forge.util.isArray(headers)) {
+  if(!forge_util.isArray(headers)) {
     headers = [headers];
   }
   for(var i = 0; i < headers.length; ++i) {
@@ -945,7 +951,7 @@ http.createRequest = function(options) {
       request.getField('Content-Encoding') === null &&
       !request.bodyDeflated && request.body.length > 100) {
       // use flash to compress data
-      request.body = forge.util.deflate(request.flashApi, request.body);
+      request.body = forge_util.deflate(request.flashApi, request.body);
       request.bodyDeflated = true;
       request.setField('Content-Encoding', 'deflate');
       request.setField('Content-Length', request.body.length);
@@ -1203,7 +1209,7 @@ http.createResponse = function() {
       response.bodyReceived && response.body !== null &&
       response.getField('Content-Encoding') === 'deflate') {
       // inflate using flash api
-      response.body = forge.util.inflate(
+      response.body = forge_util.inflate(
         response.flashApi, response.body);
     }
 
@@ -1322,7 +1328,7 @@ http.createResponse = function() {
  *
  * @return the parsed url object or null if the url is invalid.
  */
-http.parseUrl = forge.util.parseUrl;
+http.parseUrl = forge_util.parseUrl;
 
 /**
  * Returns true if the given url is within the given cookie's domain.
@@ -1359,11 +1365,3 @@ http.withinCookieDomain = function(url, cookie) {
 
   return rval;
 };
-
-// public access to http namespace
-if(typeof forge === 'undefined') {
-  forge = {};
-}
-forge.http = http;
-
-})();

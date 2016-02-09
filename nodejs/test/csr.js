@@ -132,7 +132,7 @@ if(typeof define === 'function') {
   define([
     '../../js/pki',
     '../../js/oids'
-  ], function(PKI) {
+  ], function(PKI, OIDS) {
     Tests(
       // Global provided by test harness
       ASSERT,

@@ -28,7 +28,7 @@ var asn1 = require("./asn1");
 var pkcs7asn1 = require("./pkcs7asn1");
 
 // PKCS#7 API
-var p7 = {};
+var p7 = {asn1: pkcs7asn1};
 
 module.exports = p7;
 

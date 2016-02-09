@@ -15,8 +15,8 @@ var hmac = require( './hmac' );
 var kem = require( './kem' );
 var log = require( './log' );
 var md = require( './md' );
-var mgf1 = require( './mgf1' );
-var pkcs5 = require( './pbkdf2' );
+var mgf = require( './mgf' );
+var pkcs5 = require( './pkcs5' );
 var pem = require( './pem' );
 var pkcs7 = require( './pkcs7' );
 var pkcs1 = require( './pkcs1' );
@@ -34,9 +34,10 @@ var net = require( './socket' );
 var jsbn = require( './jsbn' );
 var pbe = require( './pbe' );
 var util = require( './util' );
+var http = require( './http' );
 
 module.exports = {
-"pbkdf2": pkcs5.pbkdf2,
+"http": http,
 "aes": aes,
 "asn1" : asn1,
 "cipher" : cipher,
@@ -46,7 +47,7 @@ module.exports = {
 "kem" : kem,
 "log" : log,
 "md" : md,
-"mgf1" : mgf1,
+"mgf" : mgf,
 "pkcs5" : pkcs5,
 "pem" : pem,
 "pkcs7" : pkcs7,

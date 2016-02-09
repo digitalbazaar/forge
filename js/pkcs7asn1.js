@@ -107,8 +107,6 @@
  *
  * EncryptedKey ::= OCTET STRING
  */
-var forge = require("./forge");
-
 // ASN.1 API
 var asn1 = require("./asn1");
 
