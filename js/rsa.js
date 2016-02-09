@@ -66,6 +66,7 @@ var util = require("./util");
 var random = require("./random");
 var prime = require("./prime");
 var pkcs1 = require("./pkcs1");
+var asn1ct = require("./asn1ClassType");
 
 var BigInteger = require("./jsbn").BigInteger;
 
@@ -86,34 +87,34 @@ var GCD_30_DELTA = [6, 4, 2, 4, 2, 4, 6, 2];
 var privateKeyValidator = {
   // PrivateKeyInfo
   name: 'PrivateKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     // Version (INTEGER)
     name: 'PrivateKeyInfo.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyVersion'
   }, {
     // privateKeyAlgorithm
     name: 'PrivateKeyInfo.privateKeyAlgorithm',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     value: [{
       name: 'AlgorithmIdentifier.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OID,
       constructed: false,
       capture: 'privateKeyOid'
     }]
   }, {
     // PrivateKey
     name: 'PrivateKeyInfo',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OCTETSTRING,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OCTETSTRING,
     constructed: false,
     capture: 'privateKey'
   }]
@@ -123,70 +124,70 @@ var privateKeyValidator = {
 var rsaPrivateKeyValidator = {
   // RSAPrivateKey
   name: 'RSAPrivateKey',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     // Version (INTEGER)
     name: 'RSAPrivateKey.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyVersion'
   }, {
     // modulus (n)
     name: 'RSAPrivateKey.modulus',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyModulus'
   }, {
     // publicExponent (e)
     name: 'RSAPrivateKey.publicExponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyPublicExponent'
   }, {
     // privateExponent (d)
     name: 'RSAPrivateKey.privateExponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyPrivateExponent'
   }, {
     // prime1 (p)
     name: 'RSAPrivateKey.prime1',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyPrime1'
   }, {
     // prime2 (q)
     name: 'RSAPrivateKey.prime2',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyPrime2'
   }, {
     // exponent1 (d mod (p-1))
     name: 'RSAPrivateKey.exponent1',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyExponent1'
   }, {
     // exponent2 (d mod (q-1))
     name: 'RSAPrivateKey.exponent2',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyExponent2'
   }, {
     // coefficient ((inverse of q) mod p)
     name: 'RSAPrivateKey.coefficient',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'privateKeyCoefficient'
   }]
@@ -196,21 +197,21 @@ var rsaPrivateKeyValidator = {
 var rsaPublicKeyValidator = {
   // RSAPublicKey
   name: 'RSAPublicKey',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     // modulus (n)
     name: 'RSAPublicKey.modulus',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'publicKeyModulus'
   }, {
     // publicExponent (e)
     name: 'RSAPublicKey.exponent',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'publicKeyExponent'
   }]
@@ -220,33 +221,33 @@ var rsaPublicKeyValidator = {
 // Note: Currently only works with an RSA public key
 var publicKeyValidator = rsa.publicKeyValidator = {
   name: 'SubjectPublicKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   captureAsn1: 'subjectPublicKeyInfo',
   value: [{
     name: 'SubjectPublicKeyInfo.AlgorithmIdentifier',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     value: [{
       name: 'AlgorithmIdentifier.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OID,
       constructed: false,
       capture: 'publicKeyOid'
     }]
   }, {
     // subjectPublicKey
     name: 'SubjectPublicKeyInfo.subjectPublicKey',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.BITSTRING,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.BITSTRING,
     constructed: false,
     value: [{
       // RSAPublicKey
       name: 'SubjectPublicKeyInfo.subjectPublicKey.RSAPublicKey',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.SEQUENCE,
       constructed: true,
       optional: true,
       captureAsn1: 'rsaPublicKey'
@@ -285,15 +286,15 @@ var emsaPkcs1v15encode = function(md) {
 
   // create the digest info
   var digestInfo = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, []);
   var digestAlgorithm = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, []);
   digestAlgorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.OID, false, oidBytes));
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false, oidBytes));
   digestAlgorithm.value.push(asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.NULL, false, ''));
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.NULL, false, ''));
   var digest = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING,
     false, md.digest().getBytes());
   digestInfo.value.push(digestAlgorithm);
   digestInfo.value.push(digest);
@@ -1140,19 +1141,19 @@ rsa.setRsaPrivateKey = rsa.setPrivateKey = function(
  */
 rsa.wrapRsaPrivateKey = function(rsaKey) {
   // PrivateKeyInfo
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  return asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // version (0)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       asn1.integerToDer(0).getBytes()),
     // privateKeyAlgorithm
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
       asn1.create(
-        asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
         asn1.oidToDer(oids.rsaEncryption).getBytes()),
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.NULL, false, '')
     ]),
     // PrivateKey
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
       asn1.toDer(rsaKey).getBytes())
     ]);
 };
@@ -1217,33 +1218,33 @@ rsa.privateKeyFromAsn1 = function(obj) {
  */
 rsa.privateKeyToAsn1 = rsa.privateKeyToRSAPrivateKey = function(key) {
   // RSAPrivateKey
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  return asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // version (0 = only 2 primes, 1 multiple primes)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       asn1.integerToDer(0).getBytes()),
     // modulus (n)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.n)),
     // publicExponent (e)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.e)),
     // privateExponent (d)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.d)),
     // privateKeyPrime1 (p)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.p)),
     // privateKeyPrime2 (q)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.q)),
     // privateKeyExponent1 (dP)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.dP)),
     // privateKeyExponent2 (dQ)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.dQ)),
     // coefficient (qInv)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.qInv))
   ]);
 };
@@ -1259,6 +1260,7 @@ rsa.publicKeyFromAsn1 = function(obj) {
   // get SubjectPublicKeyInfo
   var capture = {};
   var errors = [];
+  var asn1 = require("./asn1");
   if(asn1.validate(obj, publicKeyValidator, capture, errors)) {
     // get oid
     var oid = asn1.derToOid(capture.publicKeyOid);
@@ -1298,17 +1300,17 @@ rsa.publicKeyFromAsn1 = function(obj) {
  */
 rsa.publicKeyToAsn1 = rsa.publicKeyToSubjectPublicKeyInfo = function(key) {
   // SubjectPublicKeyInfo
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  return asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // AlgorithmIdentifier
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
       // algorithm
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
         asn1.oidToDer(oids.rsaEncryption).getBytes()),
       // parameters (null)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.NULL, false, '')
     ]),
     // subjectPublicKey
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false, [
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.BITSTRING, false, [
       rsa.publicKeyToRSAPublicKey(key)
     ])
   ]);
@@ -1323,12 +1325,12 @@ rsa.publicKeyToAsn1 = rsa.publicKeyToSubjectPublicKeyInfo = function(key) {
  */
 rsa.publicKeyToRSAPublicKey = function(key) {
   // RSAPublicKey
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  return asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // modulus (n)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.n)),
     // publicExponent (e)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       _bnToBytes(key.e))
   ]);
 };

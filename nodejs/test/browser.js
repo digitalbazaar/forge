@@ -1,7 +1,7 @@
 var server = require('../server');
 var grunt = require('grunt');
-var path = require('path');
-var fs = require("fs");
+//var path = require('path');
+//var fs = require("fs");
 
 describe('browser', function() {
   it('should run tests', function(done) {

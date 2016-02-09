@@ -104,6 +104,7 @@ var pki = require("./pki");
 var random = require("./random");
 var oids = require("./oids");
 var pkcs7asn1 = require("./pkcs7asn1");
+var asn1ct = require("./asn1ClassType");
 
 // PKCS#12 API
 var p12 = {};
@@ -112,18 +113,18 @@ module.exports = p12;
 
 var contentInfoValidator = {
   name: 'ContentInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,  // a ContentInfo
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,  // a ContentInfo
   constructed: true,
   value: [{
     name: 'ContentInfo.contentType',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OID,
     constructed: false,
     capture: 'contentType'
   }, {
     name: 'ContentInfo.content',
-    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    tagClass: asn1ct.Class.CONTEXT_SPECIFIC,
     constructed: true,
     captureAsn1: 'content'
   }]
@@ -131,61 +132,61 @@ var contentInfoValidator = {
 
 var pfxValidator = {
   name: 'PFX',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'PFX.version',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'version'
   },
   contentInfoValidator, {
     name: 'PFX.macData',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     optional: true,
     captureAsn1: 'mac',
     value: [{
       name: 'PFX.macData.mac',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,  // DigestInfo
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.SEQUENCE,  // DigestInfo
       constructed: true,
       value: [{
         name: 'PFX.macData.mac.digestAlgorithm',
-        tagClass: asn1.Class.UNIVERSAL,
-        type: asn1.Type.SEQUENCE,  // DigestAlgorithmIdentifier
+        tagClass: asn1ct.Class.UNIVERSAL,
+        type: asn1ct.Type.SEQUENCE,  // DigestAlgorithmIdentifier
         constructed: true,
         value: [{
           name: 'PFX.macData.mac.digestAlgorithm.algorithm',
-          tagClass: asn1.Class.UNIVERSAL,
-          type: asn1.Type.OID,
+          tagClass: asn1ct.Class.UNIVERSAL,
+          type: asn1ct.Type.OID,
           constructed: false,
           capture: 'macAlgorithm'
         }, {
           name: 'PFX.macData.mac.digestAlgorithm.parameters',
-          tagClass: asn1.Class.UNIVERSAL,
+          tagClass: asn1ct.Class.UNIVERSAL,
           captureAsn1: 'macAlgorithmParameters'
         }]
       }, {
         name: 'PFX.macData.mac.digest',
-        tagClass: asn1.Class.UNIVERSAL,
-        type: asn1.Type.OCTETSTRING,
+        tagClass: asn1ct.Class.UNIVERSAL,
+        type: asn1ct.Type.OCTETSTRING,
         constructed: false,
         capture: 'macDigest'
       }]
     }, {
       name: 'PFX.macData.macSalt',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OCTETSTRING,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OCTETSTRING,
       constructed: false,
       capture: 'macSalt'
     }, {
       name: 'PFX.macData.iterations',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.INTEGER,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.INTEGER,
       constructed: false,
       optional: true,
       capture: 'macIterations'
@@ -195,24 +196,24 @@ var pfxValidator = {
 
 var safeBagValidator = {
   name: 'SafeBag',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'SafeBag.bagId',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OID,
     constructed: false,
     capture: 'bagId'
   }, {
     name: 'SafeBag.bagValue',
-    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    tagClass: asn1ct.Class.CONTEXT_SPECIFIC,
     constructed: true,
     captureAsn1: 'bagValue'
   }, {
     name: 'SafeBag.bagAttributes',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SET,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SET,
     constructed: true,
     optional: true,
     capture: 'bagAttributes'
@@ -221,19 +222,19 @@ var safeBagValidator = {
 
 var attributeValidator = {
   name: 'Attribute',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'Attribute.attrId',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OID,
     constructed: false,
     capture: 'oid'
   }, {
     name: 'Attribute.attrValues',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SET,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SET,
     constructed: true,
     capture: 'values'
   }]
@@ -241,25 +242,25 @@ var attributeValidator = {
 
 var certBagValidator = {
   name: 'CertBag',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'CertBag.certId',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OID,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OID,
     constructed: false,
     capture: 'certId'
   }, {
     name: 'CertBag.certValue',
-    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    tagClass: asn1ct.Class.CONTEXT_SPECIFIC,
     constructed: true,
     /* So far we only support X.509 certificates (which are wrapped in
        an OCTET STRING, hence hard code that here). */
     value: [{
       name: 'CertBag.certValue[0]',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Class.OCTETSTRING,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Class.OCTETSTRING,
       constructed: false,
       capture: 'cert'
     }]
@@ -422,8 +423,8 @@ p12.pkcs12FromAsn1 = function(obj, strict, password) {
   }
 
   var data = capture.content.value[0];
-  if(data.tagClass !== asn1.Class.UNIVERSAL ||
-     data.type !== asn1.Type.OCTETSTRING) {
+  if(data.tagClass !== asn1ct.Class.UNIVERSAL ||
+     data.type !== asn1ct.Type.OCTETSTRING) {
     throw new Error('PKCS#12 authSafe content data is not an OCTET STRING.');
   }
   data = _decodePkcs7Data(data);
@@ -517,8 +518,8 @@ function _decodePkcs7Data(data) {
 function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
   authSafe = asn1.fromDer(authSafe, strict);  /* actually it's BER encoded */
 
-  if(authSafe.tagClass !== asn1.Class.UNIVERSAL ||
-     authSafe.type !== asn1.Type.SEQUENCE ||
+  if(authSafe.tagClass !== asn1ct.Class.UNIVERSAL ||
+     authSafe.type !== asn1ct.Type.SEQUENCE ||
      authSafe.constructed !== true) {
     throw new Error('PKCS#12 AuthenticatedSafe expected to be a ' +
       'SEQUENCE OF ContentInfo');
@@ -543,8 +544,8 @@ function _decodeAuthenticatedSafe(pfx, authSafe, strict, password) {
     var data = capture.content.value[0];
     switch(asn1.derToOid(capture.contentType)) {
     case oids.data:
-      if(data.tagClass !== asn1.Class.UNIVERSAL ||
-         data.type !== asn1.Type.OCTETSTRING) {
+      if(data.tagClass !== asn1ct.Class.UNIVERSAL ||
+         data.type !== asn1ct.Type.OCTETSTRING) {
         throw new Error('PKCS#12 SafeContents Data is not an OCTET STRING.');
       }
       safeContents = _decodePkcs7Data(data).value;
@@ -626,8 +627,8 @@ function _decodeSafeContents(safeContents, strict, password) {
   // actually it's BER-encoded
   safeContents = asn1.fromDer(safeContents, strict);
 
-  if(safeContents.tagClass !== asn1.Class.UNIVERSAL ||
-    safeContents.type !== asn1.Type.SEQUENCE ||
+  if(safeContents.tagClass !== asn1ct.Class.UNIVERSAL ||
+    safeContents.type !== asn1ct.Type.SEQUENCE ||
     safeContents.constructed !== true) {
     throw new Error(
       'PKCS#12 SafeContents expected to be a SEQUENCE OF SafeBag.');
@@ -833,13 +834,13 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   if(localKeyId !== null) {
     attrs.push(
       // localKeyID
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // attrId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           asn1.oidToDer(oids.localKeyId).getBytes()),
         // attrValues
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SET, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
             localKeyId)
         ])
       ]));
@@ -847,20 +848,20 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   if('friendlyName' in options) {
     attrs.push(
       // friendlyName
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // attrId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           asn1.oidToDer(oids.friendlyName).getBytes()),
         // attrValues
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, [
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BMPSTRING, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SET, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.BMPSTRING, false,
             options.friendlyName)
         ])
       ]));
   }
 
   if(attrs.length > 0) {
-    bagAttrs = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SET, true, attrs);
+    bagAttrs = asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SET, true, attrs);
   }
 
   // collect contents for AuthenticatedSafe
@@ -888,21 +889,21 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     var certBagAttrs = (i === 0) ? bagAttrs : undefined;
     var certAsn1 = pki.certificateToAsn1(cert);
     var certSafeBag =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           asn1.oidToDer(oids.certBag).getBytes()),
         // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
           // CertBag
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
             // certId
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+            asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
               asn1.oidToDer(oids.x509Certificate).getBytes()),
             // certValue (x509Certificate)
-            asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+            asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
               asn1.create(
-                asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+                asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
                 asn1.toDer(certAsn1).getBytes())
             ])])]),
         // bagAttributes (OPTIONAL)
@@ -914,20 +915,20 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
   if(certSafeBags.length > 0) {
     // SafeContents
     var certSafeContents = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, certSafeBags);
+      asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, certSafeBags);
 
     // ContentInfo
     var certCI =
       // PKCS#7 ContentInfo
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // contentType
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           // OID for the content type is 'data'
           asn1.oidToDer(oids.data).getBytes()),
         // content
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
             asn1.toDer(certSafeContents).getBytes())
         ])
       ]);
@@ -941,12 +942,12 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     var pkAsn1 = pki.wrapRsaPrivateKey(pki.privateKeyToAsn1(key));
     if(password === null) {
       // no encryption
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      keyBag = asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           asn1.oidToDer(oids.keyBag).getBytes()),
         // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
           // PrivateKeyInfo
           pkAsn1
         ]),
@@ -955,12 +956,12 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
       ]);
     } else {
       // encrypted PrivateKeyInfo
-      keyBag = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      keyBag = asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // bagId
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           asn1.oidToDer(oids.pkcs8ShroudedKeyBag).getBytes()),
         // bagValue
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
           // EncryptedPrivateKeyInfo
           pki.encryptPrivateKeyInfo(pkAsn1, password, options)
         ]),
@@ -971,20 +972,20 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
 
     // SafeContents
     var keySafeContents =
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [keyBag]);
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [keyBag]);
 
     // ContentInfo
     var keyCI =
       // PKCS#7 ContentInfo
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // contentType
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
           // OID for the content type is 'data'
           asn1.oidToDer(oids.data).getBytes()),
         // content
-        asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+        asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
           asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+            asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
             asn1.toDer(keySafeContents).getBytes())
         ])
       ]);
@@ -993,7 +994,7 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
 
   // create AuthenticatedSafe by stringing together the contents
   var safe = asn1.create(
-    asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, contents);
+    asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, contents);
 
   var macData;
   if(options.useMac) {
@@ -1008,47 +1009,47 @@ p12.toPkcs12Asn1 = function(key, cert, password, options) {
     mac.start(sha1, key);
     mac.update(asn1.toDer(safe).getBytes());
     var macValue = mac.getMac();
-    macData = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    macData = asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
       // mac DigestInfo
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // digestAlgorithm
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
           // algorithm = SHA-1
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
             asn1.oidToDer(oids.sha1).getBytes()),
           // parameters = Null
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.NULL, false, '')
         ]),
         // digest
         asn1.create(
-          asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING,
+          asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING,
           false, macValue.getBytes())
       ]),
       // macSalt OCTET STRING
       asn1.create(
-        asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, macSalt.getBytes()),
+        asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false, macSalt.getBytes()),
       // iterations INTEGER (XXX: Only support count < 65536)
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
         asn1.integerToDer(count).getBytes()
       )
     ]);
   }
 
   // PFX
-  return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  return asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // version (3)
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
       asn1.integerToDer(3).getBytes()),
     // PKCS#7 ContentInfo
-    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+    asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
       // contentType
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
         // OID for the content type is 'data'
         asn1.oidToDer(oids.data).getBytes()),
       // content
-      asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+      asn1.create(asn1ct.Class.CONTEXT_SPECIFIC, 0, true, [
         asn1.create(
-          asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
+          asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false,
           asn1.toDer(safe).getBytes())
       ])
     ]),

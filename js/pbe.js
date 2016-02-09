@@ -30,6 +30,7 @@ var pkcs5 = require("./pbkdf2");
 var oids = require("./oids");
 var forge_md = require("./md");
 var rc2 = require("./rc2");
+var asn1ct = require("./asn1ClassType");
 
 var BigInteger = jsbn.BigInteger;
 
@@ -42,32 +43,32 @@ module.exports = pbe;
 // Note: Currently only works w/algorithm params
 var encryptedPrivateKeyValidator = {
   name: 'EncryptedPrivateKeyInfo',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'EncryptedPrivateKeyInfo.encryptionAlgorithm',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     value: [{
       name: 'AlgorithmIdentifier.algorithm',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OID,
       constructed: false,
       capture: 'encryptionOid'
     }, {
       name: 'AlgorithmIdentifier.parameters',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.SEQUENCE,
       constructed: true,
       captureAsn1: 'encryptionParams'
     }]
   }, {
     // encryptedData
     name: 'EncryptedPrivateKeyInfo.encryptedData',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OCTETSTRING,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OCTETSTRING,
     constructed: false,
     capture: 'encryptedData'
   }]
@@ -77,54 +78,54 @@ var encryptedPrivateKeyValidator = {
 // Note: Currently only works w/PBKDF2 + AES encryption schemes
 var PBES2AlgorithmsValidator = {
   name: 'PBES2Algorithms',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'PBES2Algorithms.keyDerivationFunc',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     value: [{
       name: 'PBES2Algorithms.keyDerivationFunc.oid',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OID,
       constructed: false,
       capture: 'kdfOid'
     }, {
       name: 'PBES2Algorithms.params',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.SEQUENCE,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.SEQUENCE,
       constructed: true,
       value: [{
         name: 'PBES2Algorithms.params.salt',
-        tagClass: asn1.Class.UNIVERSAL,
-        type: asn1.Type.OCTETSTRING,
+        tagClass: asn1ct.Class.UNIVERSAL,
+        type: asn1ct.Type.OCTETSTRING,
         constructed: false,
         capture: 'kdfSalt'
       }, {
         name: 'PBES2Algorithms.params.iterationCount',
-        tagClass: asn1.Class.UNIVERSAL,
-        type: asn1.Type.INTEGER,
+        tagClass: asn1ct.Class.UNIVERSAL,
+        type: asn1ct.Type.INTEGER,
         onstructed: true,
         capture: 'kdfIterationCount'
       }]
     }]
   }, {
     name: 'PBES2Algorithms.encryptionScheme',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.SEQUENCE,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.SEQUENCE,
     constructed: true,
     value: [{
       name: 'PBES2Algorithms.encryptionScheme.oid',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OID,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OID,
       constructed: false,
       capture: 'encOid'
     }, {
       name: 'PBES2Algorithms.encryptionScheme.iv',
-      tagClass: asn1.Class.UNIVERSAL,
-      type: asn1.Type.OCTETSTRING,
+      tagClass: asn1ct.Class.UNIVERSAL,
+      type: asn1ct.Type.OCTETSTRING,
       constructed: false,
       capture: 'encIv'
     }]
@@ -133,19 +134,19 @@ var PBES2AlgorithmsValidator = {
 
 var pkcs12PbeParamsValidator = {
   name: 'pkcs-12PbeParams',
-  tagClass: asn1.Class.UNIVERSAL,
-  type: asn1.Type.SEQUENCE,
+  tagClass: asn1ct.Class.UNIVERSAL,
+  type: asn1ct.Type.SEQUENCE,
   constructed: true,
   value: [{
     name: 'pkcs-12PbeParams.salt',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.OCTETSTRING,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.OCTETSTRING,
     constructed: false,
     capture: 'salt'
   }, {
     name: 'pkcs-12PbeParams.iterations',
-    tagClass: asn1.Class.UNIVERSAL,
-    type: asn1.Type.INTEGER,
+    tagClass: asn1ct.Class.UNIVERSAL,
+    type: asn1ct.Type.INTEGER,
     constructed: false,
     capture: 'iterations'
   }]
@@ -247,31 +248,31 @@ pbe.encryptPrivateKeyInfo = function(obj, password, options) {
     encryptedData = cipher.output.getBytes();
 
     encryptionAlgorithm = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
         asn1.oidToDer(oids['pkcs5PBES2']).getBytes()),
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // keyDerivationFunc
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
             asn1.oidToDer(oids['pkcs5PBKDF2']).getBytes()),
           // PBKDF2-params
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
             // salt
             asn1.create(
-              asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
+              asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false, salt),
             // iteration count
-            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+            asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
               countBytes.getBytes())
           ])
         ]),
         // encryptionScheme
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
+          asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
             asn1.oidToDer(encOid).getBytes()),
           // iv
           asn1.create(
-            asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, iv)
+            asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false, iv)
         ])
       ])
     ]);
@@ -289,15 +290,15 @@ pbe.encryptPrivateKeyInfo = function(obj, password, options) {
     encryptedData = cipher.output.getBytes();
 
     encryptionAlgorithm = asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OID, false,
         asn1.oidToDer(oids['pbeWithSHAAnd3-KeyTripleDES-CBC']).getBytes()),
       // pkcs-12PbeParams
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+      asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
         // salt
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, salt),
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false, salt),
         // iteration count
-        asn1.create(asn1.Class.UNIVERSAL, asn1.Type.INTEGER, false,
+        asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.INTEGER, false,
           countBytes.getBytes())
       ])
     ]);
@@ -308,12 +309,12 @@ pbe.encryptPrivateKeyInfo = function(obj, password, options) {
   }
 
   // EncryptedPrivateKeyInfo
-  var rval = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+  var rval = asn1.create(asn1ct.Class.UNIVERSAL, asn1ct.Type.SEQUENCE, true, [
     // encryptionAlgorithm
     encryptionAlgorithm,
     // encryptedData
     asn1.create(
-      asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false, encryptedData)
+      asn1ct.Class.UNIVERSAL, asn1ct.Type.OCTETSTRING, false, encryptedData)
   ]);
   return rval;
 };

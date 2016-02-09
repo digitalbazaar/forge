@@ -134,49 +134,13 @@
  * 0x06062A864886F70D
  */
 var util = require("./util");
+var asn1ClassType = require("./asn1ClassType");
+var asn1ct = asn1ClassType;
 
 /* ASN.1 API */
 var asn1 = {};
 
 module.exports = asn1;
-
-/**
- * ASN.1 classes.
- */
-asn1.Class = {
-  UNIVERSAL:        0x00,
-  APPLICATION:      0x40,
-  CONTEXT_SPECIFIC: 0x80,
-  PRIVATE:          0xC0
-};
-
-/**
- * ASN.1 types. Not all types are supported by this implementation, only
- * those necessary to implement a simple PKI are implemented.
- */
-asn1.Type = {
-  NONE:             0,
-  BOOLEAN:          1,
-  INTEGER:          2,
-  BITSTRING:        3,
-  OCTETSTRING:      4,
-  NULL:             5,
-  OID:              6,
-  ODESC:            7,
-  EXTERNAL:         8,
-  REAL:             9,
-  ENUMERATED:      10,
-  EMBEDDED:        11,
-  UTF8:            12,
-  ROID:            13,
-  SEQUENCE:        16,
-  SET:             17,
-  PRINTABLESTRING: 19,
-  IA5STRING:       22,
-  UTCTIME:         23,
-  GENERALIZEDTIME: 24,
-  BMPSTRING:       30
-};
 
 /**
  * Creates a new asn1 object.
@@ -305,8 +269,8 @@ asn1.fromDer = function(bytes, strict) {
   // determine if the value is composed of other ASN.1 objects (if its
   // constructed it will be and if its a BITSTRING it may be)
   var composed = constructed;
-  if(!composed && tagClass === asn1.Class.UNIVERSAL &&
-    type === asn1.Type.BITSTRING && length > 1) {
+  if(!composed && tagClass === asn1ct.Class.UNIVERSAL &&
+    type === asn1ct.Type.BITSTRING && length > 1) {
     /* The first octet gives the number of bits by which the length of the
       bit string is less than the next multiple of eight (this is called
       the "number of unused bits").
@@ -321,7 +285,7 @@ asn1.fromDer = function(bytes, strict) {
       // and the length is valid, assume we've got an ASN.1 object
       b1 = bytes.getByte();
       var tc = (b1 & 0xC0);
-      if(tc === asn1.Class.UNIVERSAL || tc === asn1.Class.CONTEXT_SPECIFIC) {
+      if(tc === asn1ct.Class.UNIVERSAL || tc === asn1ct.Class.CONTEXT_SPECIFIC) {
         try {
           var len = _getValueLength(bytes);
           composed = (len === length - (bytes.read - read));
@@ -370,7 +334,7 @@ asn1.fromDer = function(bytes, strict) {
       length = bytes.length();
     }
 
-    if(type === asn1.Type.BMPSTRING) {
+    if(type === asn1ct.Type.BMPSTRING) {
       value = '';
       for(var i = 0; i < length; i += 2) {
         value += String.fromCharCode(bytes.getInt16());
@@ -419,7 +383,7 @@ asn1.toDer = function(obj) {
     }
   } else {
     // use asn1.value directly
-    if(obj.type === asn1.Type.BMPSTRING) {
+    if(obj.type === asn1ct.Type.BMPSTRING) {
       for(var i = 0; i < obj.value.length; ++i) {
         value.putInt16(obj.value.charCodeAt(i));
       }
@@ -960,86 +924,86 @@ asn1.prettyPrint = function(obj, level, indentation) {
   // print class:type
   rval += indent + 'Tag: ';
   switch(obj.tagClass) {
-  case asn1.Class.UNIVERSAL:
+  case asn1ct.Class.UNIVERSAL:
     rval += 'Universal:';
     break;
-  case asn1.Class.APPLICATION:
+  case asn1ct.Class.APPLICATION:
     rval += 'Application:';
     break;
-  case asn1.Class.CONTEXT_SPECIFIC:
+  case asn1ct.Class.CONTEXT_SPECIFIC:
     rval += 'Context-Specific:';
     break;
-  case asn1.Class.PRIVATE:
+  case asn1ct.Class.PRIVATE:
     rval += 'Private:';
     break;
   }
 
-  if(obj.tagClass === asn1.Class.UNIVERSAL) {
+  if(obj.tagClass === asn1ct.Class.UNIVERSAL) {
     rval += obj.type;
 
     // known types
     switch(obj.type) {
-    case asn1.Type.NONE:
+    case asn1ct.Type.NONE:
       rval += ' (None)';
       break;
-    case asn1.Type.BOOLEAN:
+    case asn1ct.Type.BOOLEAN:
       rval += ' (Boolean)';
       break;
-    case asn1.Type.BITSTRING:
+    case asn1ct.Type.BITSTRING:
       rval += ' (Bit string)';
       break;
-    case asn1.Type.INTEGER:
+    case asn1ct.Type.INTEGER:
       rval += ' (Integer)';
       break;
-    case asn1.Type.OCTETSTRING:
+    case asn1ct.Type.OCTETSTRING:
       rval += ' (Octet string)';
       break;
-    case asn1.Type.NULL:
+    case asn1ct.Type.NULL:
       rval += ' (Null)';
       break;
-    case asn1.Type.OID:
+    case asn1ct.Type.OID:
       rval += ' (Object Identifier)';
       break;
-    case asn1.Type.ODESC:
+    case asn1ct.Type.ODESC:
       rval += ' (Object Descriptor)';
       break;
-    case asn1.Type.EXTERNAL:
+    case asn1ct.Type.EXTERNAL:
       rval += ' (External or Instance of)';
       break;
-    case asn1.Type.REAL:
+    case asn1ct.Type.REAL:
       rval += ' (Real)';
       break;
-    case asn1.Type.ENUMERATED:
+    case asn1ct.Type.ENUMERATED:
       rval += ' (Enumerated)';
       break;
-    case asn1.Type.EMBEDDED:
+    case asn1ct.Type.EMBEDDED:
       rval += ' (Embedded PDV)';
       break;
-    case asn1.Type.UTF8:
+    case asn1ct.Type.UTF8:
       rval += ' (UTF8)';
       break;
-    case asn1.Type.ROID:
+    case asn1ct.Type.ROID:
       rval += ' (Relative Object Identifier)';
       break;
-    case asn1.Type.SEQUENCE:
+    case asn1ct.Type.SEQUENCE:
       rval += ' (Sequence)';
       break;
-    case asn1.Type.SET:
+    case asn1ct.Type.SET:
       rval += ' (Set)';
       break;
-    case asn1.Type.PRINTABLESTRING:
+    case asn1ct.Type.PRINTABLESTRING:
       rval += ' (Printable String)';
       break;
-    case asn1.Type.IA5String:
+    case asn1ct.Type.IA5String:
       rval += ' (IA5String (ASCII))';
       break;
-    case asn1.Type.UTCTIME:
+    case asn1ct.Type.UTCTIME:
       rval += ' (UTC time)';
       break;
-    case asn1.Type.GENERALIZEDTIME:
+    case asn1ct.Type.GENERALIZEDTIME:
       rval += ' (Generalized time)';
       break;
-    case asn1.Type.BMPSTRING:
+    case asn1ct.Type.BMPSTRING:
       rval += ' (BMP String)';
       break;
     }
@@ -1065,7 +1029,7 @@ asn1.prettyPrint = function(obj, level, indentation) {
     rval += indent + 'Sub values: ' + subvalues + sub;
   } else {
     rval += indent + 'Value: ';
-    if(obj.type === asn1.Type.OID) {
+    if(obj.type === asn1ct.Type.OID) {
       var oid = asn1.derToOid(obj.value);
       rval += oid;
       var pki = require("./pki");
@@ -1075,21 +1039,21 @@ asn1.prettyPrint = function(obj, level, indentation) {
         }
       }
     }
-    if(obj.type === asn1.Type.INTEGER) {
+    if(obj.type === asn1ct.Type.INTEGER) {
       try {
         rval += asn1.derToInteger(obj.value);
       } catch(ex) {
         rval += '0x' + util.bytesToHex(obj.value);
       }
-    } else if(obj.type === asn1.Type.OCTETSTRING) {
+    } else if(obj.type === asn1ct.Type.OCTETSTRING) {
       if(!_nonLatinRegex.test(obj.value)) {
         rval += '(' + obj.value + ') ';
       }
       rval += '0x' + util.bytesToHex(obj.value);
-    } else if(obj.type === asn1.Type.UTF8) {
+    } else if(obj.type === asn1ct.Type.UTF8) {
       rval += util.decodeUtf8(obj.value);
-    } else if(obj.type === asn1.Type.PRINTABLESTRING ||
-      obj.type === asn1.Type.IA5String) {
+    } else if(obj.type === asn1ct.Type.PRINTABLESTRING ||
+      obj.type === asn1ct.Type.IA5String) {
       rval += obj.value;
     } else if(_nonLatinRegex.test(obj.value)) {
       rval += '0x' + util.bytesToHex(obj.value);
