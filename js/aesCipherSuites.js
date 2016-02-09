@@ -10,6 +10,7 @@ var cipher = require("./cipher");
 var random = require("./random");
 var util = require("./util");
 var hmac = require("./hmac");
+var forge_hmac = hmac;
 var tls = require("./tls");
 
 var CipherSuites = {};
@@ -273,7 +274,7 @@ function decrypt_aes_cbc_sha1(record, s) {
  * @return true if the MACs are the same, false if not.
  */
 function compareMacs(key, mac1, mac2) {
-  var hmac = hmac.create();
+  var hmac = forge_hmac.create();
 
   hmac.start('SHA1', key);
   hmac.update(mac1);

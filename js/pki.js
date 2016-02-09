@@ -98,7 +98,7 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
 for (var i of ["decryptRsaPrivateKey", "encryptRsaPrivateKey", "encryptPrivateKeyInfo", "decryptPrivateKeyInfo"])
   pki[i] = pbe[i];
 
-for (var i of ["createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
+for (var i of ["getPublicKeyFingerprint", "certificateError", "verifyCertificateChain", "createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
   pki[i] = x509[i];
 
 for (var i of ["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"])

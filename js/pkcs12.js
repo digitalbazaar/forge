@@ -698,7 +698,6 @@ function _decodeSafeContents(safeContents, strict, password) {
           try {
             bag.cert = pki.certificateFromAsn1(certAsn1, true);
           } catch(e) {
-            console.log(e);
             // ignore unknown cert type, pass asn1 value
             bag.cert = null;
             bag.asn1 = certAsn1;

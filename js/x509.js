@@ -111,11 +111,15 @@
 var pem = require("./pem");
 var md = require("./md");
 var forge_md = md;
-var mgf = require("./mgf");
+var forge_mgf = require("./mgf");
 var pss = require("./pss");
 var util = require("./util");
 var asn1 = require("./asn1");
 var rsa = require("./rsa");
+var md5 = require("./md5");
+var sha1 = require("./sha1");
+var sha256 = require("./sha256");
+var sha512 = require("./sha512");
 
 var x509 = {};
 
@@ -812,7 +816,7 @@ x509.publicKeyToRSAPublicKeyPem = function(key, maxline) {
  */
 x509.getPublicKeyFingerprint = function(key, options) {
   options = options || {};
-  var md = options.md || md.sha1.create();
+  var md = options.md || sha1.create();
   var type = options.type || 'RSAPublicKey';
 
   var bytes;
@@ -1070,19 +1074,19 @@ x509.createCertificate = function() {
         var oid = oids[child.signatureOid];
         switch(oid) {
         case 'sha1WithRSAEncryption':
-          md = md.sha1.create();
+          md = sha1.create();
           break;
         case 'md5WithRSAEncryption':
-          md = md.md5.create();
+          md = md5.create();
           break;
         case 'sha256WithRSAEncryption':
-          md = md.sha256.create();
+          md = sha256.create();
           break;
         case 'sha512WithRSAEncryption':
-          md = md.sha512.create();
+          md = sha512.create();
           break;
         case 'RSASSA-PSS':
-          md = md.sha256.create();
+          md = sha256.create();
           break;
         }
       }
@@ -1111,7 +1115,7 @@ x509.createCertificate = function() {
 
         /* initialize mgf */
         hash = oids[child.signatureParameters.mgf.hash.algorithmOid];
-        if(hash === undefined || md[hash] === undefined) {
+        if(hash === undefined || forge_md[hash] === undefined) {
           var error = new Error('Unsupported MGF hash function.');
           error.oid = child.signatureParameters.mgf.hash.algorithmOid;
           error.name = hash;
@@ -1119,18 +1123,18 @@ x509.createCertificate = function() {
         }
 
         mgf = oids[child.signatureParameters.mgf.algorithmOid];
-        if(mgf === undefined || mgf[mgf] === undefined) {
+        if(mgf === undefined || forge_mgf[mgf] === undefined) {
           var error = new Error('Unsupported MGF function.');
           error.oid = child.signatureParameters.mgf.algorithmOid;
           error.name = mgf;
           throw error;
         }
 
-        mgf = mgf[mgf].create(md[hash].create());
+        mgf = forge_mgf[mgf].create(forge_md[hash].create());
 
         /* initialize hash function */
         hash = oids[child.signatureParameters.hash.algorithmOid];
-        if(hash === undefined || md[hash] === undefined) {
+        if(hash === undefined || forge_md[hash] === undefined) {
           throw {
             message: 'Unsupported RSASSA-PSS hash function.',
             oid: child.signatureParameters.hash.algorithmOid,
@@ -1138,7 +1142,7 @@ x509.createCertificate = function() {
           };
         }
 
-        scheme = pss.create(md[hash].create(), mgf,
+        scheme = pss.create(forge_md[hash].create(), mgf,
           child.signatureParameters.saltLength);
         break;
       }
@@ -1899,7 +1903,7 @@ x509.createCertificationRequest = function() {
 
         /* initialize mgf */
         hash = oids[csr.signatureParameters.mgf.hash.algorithmOid];
-        if(hash === undefined || md[hash] === undefined) {
+        if(hash === undefined || forge_md[hash] === undefined) {
           var error = new Error('Unsupported MGF hash function.');
           error.oid = csr.signatureParameters.mgf.hash.algorithmOid;
           error.name = hash;
@@ -1907,25 +1911,25 @@ x509.createCertificationRequest = function() {
         }
 
         mgf = oids[csr.signatureParameters.mgf.algorithmOid];
-        if(mgf === undefined || mgf[mgf] === undefined) {
+        if(mgf === undefined || forge_mgf[mgf] === undefined) {
           var error = new Error('Unsupported MGF function.');
           error.oid = csr.signatureParameters.mgf.algorithmOid;
           error.name = mgf;
           throw error;
         }
 
-        mgf = mgf[mgf].create(md[hash].create());
+        mgf = forge_mgf[mgf].create(forge_md[hash].create());
 
         /* initialize hash function */
         hash = oids[csr.signatureParameters.hash.algorithmOid];
-        if(hash === undefined || md[hash] === undefined) {
+        if(hash === undefined || forge_md[hash] === undefined) {
           var error = new Error('Unsupported RSASSA-PSS hash function.');
           error.oid = csr.signatureParameters.hash.algorithmOid;
           error.name = hash;
           throw error;
         }
 
-        scheme = pss.create(md[hash].create(), mgf,
+        scheme = pss.create(forge_md[hash].create(), mgf,
           csr.signatureParameters.saltLength);
         break;
       }
@@ -2713,7 +2717,7 @@ x509.createCaStore = function(certs) {
 
     // produce subject hash if it doesn't exist
     if(!cert.subject.hash) {
-      var md = md.sha1.create();
+      var md = sha1.create();
       cert.subject.attributes =  x509.RDNAttributesAsArray(
         _dnToAsn1(cert.subject), md);
       cert.subject.hash = md.digest().toHex();
@@ -2760,7 +2764,7 @@ x509.createCaStore = function(certs) {
   function getBySubject(subject) {
     // produce subject hash if it doesn't exist
     if(!subject.hash) {
-      var md = md.sha1.create();
+      var md = sha1.create();
       subject.attributes =  x509.RDNAttributesAsArray(_dnToAsn1(subject), md);
       subject.hash = md.digest().toHex();
     }

@@ -235,6 +235,7 @@ var random = require("./random");
 var hmac = require("./hmac");
 var forge_hmac = hmac;
 var asn1 = require("./asn1");
+var forge_asn1 = asn1;
 var pki = require("./pki");
 var md = require("./md");
 var pem = require("./pem");
@@ -377,7 +378,7 @@ var hmac_sha1 = function(key, seqNum, record) {
       TLSCompressed.length +
       TLSCompressed.fragment)
   */
-  var hmac = hmac.create();
+  var hmac = forge_hmac.create();
   hmac.start('SHA1', key);
   var b = util.createBuffer();
   b.putInt32(seqNum[0]);
@@ -1232,7 +1233,7 @@ tls.handleCertificate = function(c, record, length) {
     while(msg.certificate_list.length() > 0) {
       // each entry in msg.certificate_list is a vector with 3 len bytes
       cert = readVector(msg.certificate_list, 3);
-      asn1 = asn1.fromDer(cert);
+      asn1 = forge_asn1.fromDer(cert);
       cert = pki.certificateFromAsn1(asn1, true);
       certs.push(cert);
     }
@@ -2903,7 +2904,7 @@ tls.createCertificate = function(c) {
 
         var der = util.createBuffer(msg.body);
         if(asn1 === null) {
-          asn1 = asn1.fromDer(der.bytes(), false);
+          asn1 = forge_asn1.fromDer(der.bytes(), false);
         }
 
         // certificate entry is itself a vector with 3 length bytes
