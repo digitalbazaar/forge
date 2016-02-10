@@ -51,7 +51,7 @@ var op_or = function(x, y) {return x|y;};
  * @return callback(err, num) called once the operation completes.
  */
 prime.generateProbablePrime = function(bits, options, callback) {
-  if(typeof options === 'function') {
+  if (typeof options === 'function') {
     callback = options;
     options = {};
   }
@@ -59,7 +59,7 @@ prime.generateProbablePrime = function(bits, options, callback) {
 
   // default to PRIMEINC algorithm
   var algorithm = options.algorithm || 'PRIMEINC';
-  if(typeof algorithm === 'string') {
+  if (typeof algorithm === 'string') {
     algorithm = {name: algorithm};
   }
   algorithm.options = algorithm.options || {};
@@ -76,7 +76,7 @@ prime.generateProbablePrime = function(bits, options, callback) {
     }
   };
 
-  if(algorithm.name === 'PRIMEINC') {
+  if (algorithm.name === 'PRIMEINC') {
     return primeincFindPrime(bits, rng, algorithm.options, callback);
   }
 
@@ -84,7 +84,7 @@ prime.generateProbablePrime = function(bits, options, callback) {
 };
 
 function primeincFindPrime(bits, rng, options, callback) {
-  if('workers' in options) {
+  if ('workers' in options) {
     return primeincFindPrimeWithWorkers(bits, rng, options, callback);
   }
   return primeincFindPrimeWithoutWorkers(bits, rng, options, callback);
@@ -102,7 +102,7 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
 
   // get required number of MR tests
   var mrTests = getMillerRabinTests(num.bitLength());
-  if('millerRabinTests' in options) {
+  if ('millerRabinTests' in options) {
     mrTests = options.millerRabinTests;
   }
 
@@ -111,17 +111,17 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
   // below 60fps (1000/60 == 16.67), but in reality, the number will
   // likely be higher due to an 'atomic' big int modPow
   var maxBlockTime = 10;
-  if('maxBlockTime' in options) {
+  if ('maxBlockTime' in options) {
     maxBlockTime = options.maxBlockTime;
   }
   var start = +new Date();
   do {
     // overflow, regenerate random number
-    if(num.bitLength() > bits) {
+    if (num.bitLength() > bits) {
       num = generateRandom(bits, rng);
     }
     // do primality test
-    if(num.isProbablePrime(mrTests)) {
+    if (num.isProbablePrime(mrTests)) {
       return callback(null, num);
     }
     // get next potential prime
@@ -136,7 +136,7 @@ function primeincFindPrimeWithoutWorkers(bits, rng, options, callback) {
 
 function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
   // web workers unavailable
-  if(typeof Worker === 'undefined') {
+  if (typeof Worker === 'undefined') {
     return primeincFindPrimeWithoutWorkers(bits, rng, options, callback);
   }
 
@@ -148,9 +148,9 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
   var workLoad = options.workLoad || 100;
   var range = workLoad * 30 / 8;
   var workerScript = options.workerScript || 'forge/prime.worker.js';
-  if(numWorkers === -1) {
+  if (numWorkers === -1) {
     return util.estimateCores(function(err, cores) {
-      if(err) {
+      if (err) {
         // default to 2
         cores = 2;
       }
@@ -198,13 +198,13 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
     var found = false;
     function workerMessage(e) {
       // ignore message, prime already found
-      if(found) {
+      if (found) {
         return;
       }
 
       --running;
       var data = e.data;
-      if(data.found) {
+      if (data.found) {
         // terminate all workers
         for(var i = 0; i < workers.length; ++i) {
           workers[i].terminate();
@@ -214,7 +214,7 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
       }
 
       // overflow, regenerate random number
-      if(num.bitLength() > bits) {
+      if (num.bitLength() > bits) {
         num = generateRandom(bits, rng);
       }
 
@@ -244,7 +244,7 @@ function generateRandom(bits, rng) {
   var num = new BigInteger(bits, rng);
   // force MSB set
   var bits1 = bits - 1;
-  if(!num.testBit(bits1)) {
+  if (!num.testBit(bits1)) {
     num.bitwiseTo(BigInteger.ONE.shiftLeft(bits1), op_or, num);
   }
   // align number on 30k+1 boundary
@@ -263,16 +263,16 @@ function generateRandom(bits, rng) {
  * @return the required number of iterations.
  */
 function getMillerRabinTests(bits) {
-  if(bits <= 100) return 27;
-  if(bits <= 150) return 18;
-  if(bits <= 200) return 15;
-  if(bits <= 250) return 12;
-  if(bits <= 300) return 9;
-  if(bits <= 350) return 8;
-  if(bits <= 400) return 7;
-  if(bits <= 500) return 6;
-  if(bits <= 600) return 5;
-  if(bits <= 800) return 4;
-  if(bits <= 1250) return 3;
+  if (bits <= 100) return 27;
+  if (bits <= 150) return 18;
+  if (bits <= 200) return 15;
+  if (bits <= 250) return 12;
+  if (bits <= 300) return 9;
+  if (bits <= 350) return 8;
+  if (bits <= 400) return 7;
+  if (bits <= 500) return 6;
+  if (bits <= 600) return 5;
+  if (bits <= 800) return 4;
+  if (bits <= 1250) return 3;
   return 2;
 }

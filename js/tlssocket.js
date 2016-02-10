@@ -38,10 +38,10 @@ module.exports = function(options) {
   var tlsSocket = {
     id: socket.id,
     // set handlers
-    connected: socket.connected || function(e){},
-    closed: socket.closed || function(e){},
-    data: socket.data || function(e){},
-    error: socket.error || function(e){}
+    connected: socket.connected || function(e) {},
+    closed: socket.closed || function(e) {},
+    data: socket.data || function(e) {},
+    error: socket.error || function(e) {}
   };
 
   // create TLS connection

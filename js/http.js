@@ -572,8 +572,8 @@ http.createClient = function(options) {
     // set default dummy handlers
     var opts = {};
     opts.request = options.request;
-    opts.connected = options.connected || function(){};
-    opts.closed = options.close || function(){};
+    opts.connected = options.connected || function() {};
+    opts.closed = options.close || function() {};
     opts.headerReady = function(e) {
       // read cookies
       _readCookies(client, e.response);
@@ -581,8 +581,8 @@ http.createClient = function(options) {
         options.headerReady(e);
       }
     };
-    opts.bodyReady = options.bodyReady || function(){};
-    opts.error = options.error || function(){};
+    opts.bodyReady = options.bodyReady || function() {};
+    opts.error = options.error || function() {};
 
     // create response
     opts.response = http.createResponse();
@@ -594,11 +594,11 @@ http.createClient = function(options) {
     opts.request.abort = function() {
       // set aborted, clear handlers
       opts.request.aborted = true;
-      opts.connected = function(){};
-      opts.closed = function(){};
-      opts.headerReady = function(){};
-      opts.bodyReady = function(){};
-      opts.error = function(){};
+      opts.connected = function() {};
+      opts.closed = function() {};
+      opts.headerReady = function() {};
+      opts.bodyReady = function() {};
+      opts.error = function() {};
     };
 
     // add cookies to request

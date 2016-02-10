@@ -508,7 +508,6 @@ modes.ctr.prototype.encrypt = function(input, output, finish) {
 
 modes.ctr.prototype.decrypt = modes.ctr.prototype.encrypt;
 
-
 /** Galois/Counter Mode (GCM) **/
 
 modes.gcm = function(options) {
@@ -954,7 +953,6 @@ modes.gcm.prototype.generateSubHashTable = function(mid, bits) {
   }
   return m;
 };
-
 
 /** Utility functions */
 

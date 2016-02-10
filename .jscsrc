@@ -1,5 +1,6 @@
 {
   "excludeFiles": [
+    "./nodejs/ui/forge.bundle.js",
     "./js/forge.bundle.js",
     "./js/forge.min.js",
     "./js/jsbn.js",
@@ -33,7 +34,7 @@
   "disallowTrailingComma": true,
   "disallowTrailingWhitespace": true,
   "requireCommaBeforeLineBreak": true,
-  "requireCurlyBraces": ["if", "else", "for", "while", "do", "try", "catch"],
+  "requireCurlyBraces": ["else", "for", "while", "do", "try", "catch"],
   "requireLineFeedAtFileEnd": true,
   "requireSpaceAfterBinaryOperators": ["?", ":", "+", "-", "/", "*", "%", "==", "===", "!=", "!==", ">", ">=", "<", "<=", "&&", "||"],
   "requireSpaceBeforeBinaryOperators": ["?", ":", "+", "-", "/", "*", "%", "==", "===", "!=", "!==", ">", ">=", "<", "<=", "&&", "||"],

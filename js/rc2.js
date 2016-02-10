@@ -87,7 +87,7 @@ rc2.expandKey = function(key, effKeyBits) {
   var TM = 0xff >> (T1 & 0x07);
   var i;
 
-  for(i = T; i < 128; i ++) {
+  for(i = T; i < 128; i++) {
     L.putByte(piTable[(L.at(i - 1) + L.at(i - T)) & 0xff]);
   }
 
@@ -117,7 +117,7 @@ var createCipher = function(key, bits, encrypt) {
 
   /* Expand key and fill into K[] Array */
   key = rc2.expandKey(key, bits);
-  for(i = 0; i < 64; i ++) {
+  for(i = 0; i < 64; i++) {
     K.push(key.getInt16Le());
   }
 
@@ -132,7 +132,7 @@ var createCipher = function(key, bits, encrypt) {
         R[i] += K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
           ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
         R[i] = rol(R[i], s[i]);
-        j ++;
+        j++;
       }
     };
 
@@ -142,7 +142,7 @@ var createCipher = function(key, bits, encrypt) {
      * @param R Array of four words to perform mashing on.
      */
     mashRound = function(R) {
-      for(i = 0; i < 4; i ++) {
+      for(i = 0; i < 4; i++) {
         R[i] += K[R[(i + 3) % 4] & 63];
       }
     };
@@ -190,7 +190,7 @@ var createCipher = function(key, bits, encrypt) {
     var R = [];
 
     /* Get data from input buffer and fill the four words into R */
-    for(i = 0; i < 4; i ++) {
+    for(i = 0; i < 4; i++) {
       var val = _input.getInt16Le();
 
       if(_iv !== null) {
@@ -210,14 +210,14 @@ var createCipher = function(key, bits, encrypt) {
     j = encrypt ? 0 : 63;
 
     /* Run execution plan. */
-    for(var ptr = 0; ptr < plan.length; ptr ++) {
-      for(var ctr = 0; ctr < plan[ptr][0]; ctr ++) {
+    for(var ptr = 0; ptr < plan.length; ptr++) {
+      for(var ctr = 0; ctr < plan[ptr][0]; ctr++) {
         plan[ptr][1](R);
       }
     }
 
     /* Write back result to output buffer. */
-    for(i = 0; i < 4; i ++) {
+    for(i = 0; i < 4; i++) {
       if(_iv !== null) {
         if(encrypt) {
           /* We're encrypting in CBC-mode, feed back encrypted bytes into
@@ -339,7 +339,6 @@ var createCipher = function(key, bits, encrypt) {
 
   return cipher;
 };
-
 
 /**
  * Creates an RC2 cipher object to encrypt data in ECB or CBC mode using the

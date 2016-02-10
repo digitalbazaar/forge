@@ -23,6 +23,7 @@
     }
   ],
   "devDependencies": {
+    "jscs": "^2.9.0"
   },
   "repository": {
     "type": "git",
@@ -74,7 +75,7 @@
   "scripts": {
     "bundle": "r.js -o minify.js optimize=none out=js/forge.bundle.js",
     "minify": "r.js -o minify.js",
-    "jscs": "jscs *.js js/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
+    "jscs": "jscs js/*.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
     "jshint": "jshint *.js js/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
   },
   "jspm": {

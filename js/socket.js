@@ -78,7 +78,7 @@ net.createSocketPool = function(options) {
           running javascript in the middle of its execution (BAD!) ...
           calling setTimeout() will schedule the javascript to run on
           the javascript thread and solve this EVIL problem. */
-        setTimeout(function(){sp.sockets[e.id][f](e);}, 0);
+        setTimeout(function() {sp.sockets[e.id][f](e);}, 0);
       }
     };
   } else {
@@ -145,10 +145,10 @@ net.createSocketPool = function(options) {
      var socket = {
        id: id,
        // set handlers
-       connected: options.connected || function(e){},
-       closed: options.closed || function(e){},
-       data: options.data || function(e){},
-       error: options.error || function(e){}
+       connected: options.connected || function(e) {},
+       closed: options.closed || function(e) {},
+       data: options.data || function(e) {},
+       error: options.error || function(e) {}
      };
 
      /**

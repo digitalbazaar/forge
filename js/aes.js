@@ -251,7 +251,6 @@ aes._expandKey = function(key, decrypt) {
  */
 aes._updateBlock = _updateBlock;
 
-
 /** Register AES algorithms **/
 
 registerAlgorithm('AES-ECB', modes.ecb);
@@ -267,7 +266,6 @@ function registerAlgorithm(name, mode) {
   };
   cipher.registerAlgorithm(name, factory);
 }
-
 
 /** AES implementation **/
 

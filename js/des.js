@@ -196,7 +196,6 @@ des.Algorithm.prototype.initialize = function(options) {
   this._init = true;
 };
 
-
 /** Register DES algorithms **/
 
 registerAlgorithm('DES-ECB', modes.ecb);
@@ -217,7 +216,6 @@ function registerAlgorithm(name, mode) {
   };
   cipher.registerAlgorithm(name, factory);
 }
-
 
 /** DES implementation **/
 
@@ -264,7 +262,7 @@ function _createKeys(key) {
   var shifts = [0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0];
 
   var n = 0, tmp;
-  for(var j = 0; j < iterations; j ++) {
+  for(var j = 0; j < iterations; j++) {
     var left = key.getInt32();
     var right = key.getInt32();
 

@@ -8,7 +8,7 @@ node_js:
   - "iojs"
 sudo: false
 install: (cd nodejs && npm install)
-script: 
+script:
   - (cd nodejs && npm test)
 notifications:
   email:
