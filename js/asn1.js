@@ -138,7 +138,7 @@ var asn1ClassType = require("./asn1ClassType");
 var asn1ct = asn1ClassType;
 
 /* ASN.1 API */
-var asn1 = {};
+var asn1 = {Class: asn1ct.Class, Type: asn1ct.Type};
 
 module.exports = asn1;
 

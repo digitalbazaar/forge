@@ -95,13 +95,16 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
   return pem.encode(msg, {maxline: maxline});
 };
 
-for (var i in ["decryptRsaPrivateKey", "encryptRsaPrivateKey", "encryptPrivateKeyInfo", "decryptPrivateKeyInfo"])
+["decryptRsaPrivateKey", "encryptRsaPrivateKey", "encryptPrivateKeyInfo", "decryptPrivateKeyInfo"].forEach(function(i) {
   pki[i] = pbe[i];
+});
 
-for (var i in ["getPublicKeyFingerprint", "certificateError", "verifyCertificateChain", "createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"])
+["getPublicKeyFingerprint", "certificateError", "verifyCertificateChain", "createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"].forEach(function(i) {
   pki[i] = x509[i];
+});
 
-for (var i in ["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"])
+["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"].forEach(function(i) {
   pki[i] = rsa[i];
+});
 
 pki.rsa = rsa;
