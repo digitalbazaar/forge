@@ -1,7 +1,7 @@
-Hacking on forge
-================
+Contributing to forge
+=====================
 
-Want to hack on forge? Great! Here are a few notes:
+Want to contribute to forge? Great! Here are a few notes:
 
 Code
 ----
