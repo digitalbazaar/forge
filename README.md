@@ -7,13 +7,15 @@
 A native implementation of [TLS][] (and various other cryptographic tools) in
 [JavaScript][].
 
-## Introduction
+Introduction
+------------
 
 The Forge software is a fully native implementation of the [TLS][] protocol in
 JavaScript as well as a set of tools for developing Web Apps that utilize many
 network resources.
 
-## Performance
+Performance
+------------
 
 Forge is fast. Benchmarks against other popular JavaScript cryptography
 libraries can be found here:
@@ -22,10 +24,10 @@ http://dominictarr.github.io/crypto-bench/
 
 http://cryptojs.altervista.org/test/simulate-threading-speed_test.html
 
-## Getting Started
-------------------
+Getting Started
+---------------
 
-### Node.js ###
+### Node.js
 
 If you want to use forge with [node.js][], it is available through `npm`:
 
@@ -39,7 +41,7 @@ You can then use forge as a regular module:
 
     var forge = require('node-forge');
 
-### Requirements ###
+### Requirements
 
 * General
   * Optional: GNU autotools for the build infrastructure if using Flash.
@@ -112,6 +114,7 @@ Keep in mind that these bundles will not include any WebWorker
 scripts (eg: prime.worker.js) or their dependencies, so these will
 need to be accessible from the browser if any WebWorkers are used.
 
+<a name="testing" />
 ### Testing with NodeJS & RequireJS ###
 
 A test server for [node.js][] can be found at `./nodejs`. The following are included:
@@ -151,8 +154,8 @@ More advanced tests need TLS enabled::
 
     $ ./tests/server.py --tls
 
-## Contributing
----------------
+Contributing
+-------------
 
 Any contributions (eg: PRs) that are accepted will be brought under the same
 license used by the rest of the Forge project. This license allows Forge to
@@ -164,8 +167,8 @@ See: [LICENSE](https://github.com/digitalbazaar/forge/blob/cbebca3780658703d925b
 If a contribution contains 3rd party source code with its own license, it
 may retain it, so long as that license is compatible with the Forge license.
 
-## Documentation
-----------------
+Documentation
+-------------
 
 ### Transports
 
@@ -249,8 +252,8 @@ To disable native code when using node.js:
 var forge = require('node-forge')({disableNativeCode: true});
 ```
 
----------------------------------------
-## Transports
+Transports
+----------
 
 <a name="tls" />
 ### TLS
@@ -529,6 +532,7 @@ Provides an XmlHttpRequest implementation using forge.http as a backend.
 __Examples__
 
 ```js
+// TODO
 ```
 
 <a name="socket" />
@@ -539,10 +543,11 @@ Provides an interface to create and use raw sockets provided via Flash.
 __Examples__
 
 ```js
+// TODO
 ```
 
----------------------------------------
-## Ciphers
+Ciphers
+-------
 
 <a name="cipher" />
 ### CIPHER
@@ -751,8 +756,9 @@ cipher.finish();
 // outputs decrypted hex
 console.log(cipher.output.toHex());
 ```
----------------------------------------
-## PKI
+
+PKI
+---
 
 Provides [X.509][] certificate and RSA public and private key encoding,
 decoding, encryption/decryption, and signing/verifying.
@@ -1499,8 +1505,8 @@ if(oid !== pki.oids['rsaEncryption']) {
 asn1.prettyPrint(object);
 ```
 
----------------------------------------
-## Message Digests
+Message Digests
+----------------
 
 <a name="sha1" />
 ### SHA1
@@ -1600,8 +1606,8 @@ console.log(hmac.digest().toHex());
 // output: effcdf6ae5eb2fa2d27416d5f184df9c259a7c79
 ```
 
----------------------------------------
-## Utilities
+Utilities
+---------
 
 <a name="prime" />
 ### Prime
@@ -1754,6 +1760,7 @@ levels of verbosity.
 __Examples__
 
 ```js
+// TODO
 ```
 
 <a name="debug" />
@@ -1765,6 +1772,7 @@ closures for viewing/investigation.
 __Examples__
 
 ```js
+// TODO
 ```
 
 <a name="fsp" />
