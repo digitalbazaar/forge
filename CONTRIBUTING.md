@@ -9,6 +9,8 @@ Code
 * In general, follow a common [Node.js Style Guide][].
 * Use version X.Y.Z-dev in dev mode.
 * Use version X.Y.Z for releases.
+* Ensure [tests pass](./README.md#testing).
+* Read the [contributing](./README.md#contributing) notes.
 
 Versioning
 ----------
@@ -35,3 +37,4 @@ To ensure a clean upload, use a clean updated checkout, and run the following:
 [Node.js Style Guide]: http://nodeguide.com/style.html
 [jshint]: http://www.jshint.com/install/
 [Semantic Versioning]: http://semver.org/
+[README]: ./README.md
