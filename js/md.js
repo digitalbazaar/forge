@@ -13,11 +13,13 @@ forge.md = forge.md || {};
 forge.md.algorithms = {
   md5: forge.md5,
   sha1: forge.sha1,
-  sha256: forge.sha256
+  sha256: forge.sha256,
+  sha512: forge.sha512
 };
 forge.md.md5 = forge.md5;
 forge.md.sha1 = forge.sha1;
 forge.md.sha256 = forge.sha256;
+forge.md.sha512 = forge.sha512;
 
 } // end module implementation
 
