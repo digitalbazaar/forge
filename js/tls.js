@@ -3377,6 +3377,14 @@ tls.queue = function(c, record) {
     return;
   }
 
+  if (record.fragment.length == 0) {
+    if (record.type === tls.contentType.handshake ||
+      record.type === tls.contentType.alert ||
+      record.type === tls.contentType.change_cipher_spec) {
+    // Empty handshake, alert of change cipher spec messages are not allowed per the TLS specification and should not be sent.
+    return;
+  }
+
   // if the record is a handshake record, update handshake hashes
   if(record.type === tls.ContentType.handshake) {
     var bytes = record.fragment.bytes();
