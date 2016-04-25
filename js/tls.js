@@ -3377,7 +3377,7 @@ tls.queue = function(c, record) {
     return;
   }
 
-  if (record.fragment.length == 0) {
+  if (record.fragment.length() == 0) {
     if (record.type === tls.contentType.handshake ||
       record.type === tls.contentType.alert ||
       record.type === tls.contentType.change_cipher_spec) {
