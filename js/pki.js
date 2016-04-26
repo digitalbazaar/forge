@@ -6,15 +6,17 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
-// shortcut for asn.1 API
-var asn1 = forge.asn1;
+var pem = require("./pem");
+var util = require("./util");
+var asn1 = require("./asn1");
+var x509 = require("./x509");
+var rsa = require("./rsa");
+var pbe = require("./pbe");
 
 /* Public Key Infrastructure (PKI) implementation. */
-var pki = forge.pki = forge.pki || {};
+var pki = {oids: require("./oids")};
+
+module.exports = pki;
 
 /**
  * NOTE: THIS METHOD IS DEPRECATED. Use pem.decode() instead.
@@ -25,12 +27,12 @@ var pki = forge.pki = forge.pki || {};
  *
  * @return the DER-formatted data.
  */
-pki.pemToDer = function(pem) {
-  var msg = forge.pem.decode(pem)[0];
+pki.pemToDer = function(passed_pem) {
+  var msg = pem.decode(passed_pem)[0];
   if(msg.procType && msg.procType.type === 'ENCRYPTED') {
     throw new Error('Could not convert PEM to DER; PEM is encrypted.');
   }
-  return forge.util.createBuffer(msg.body);
+  return util.createBuffer(msg.body);
 };
 
 /**
@@ -40,8 +42,8 @@ pki.pemToDer = function(pem) {
  *
  * @return the private key.
  */
-pki.privateKeyFromPem = function(pem) {
-  var msg = forge.pem.decode(pem)[0];
+pki.privateKeyFromPem = function(passed_pem) {
+  var msg = pem.decode(passed_pem)[0];
 
   if(msg.type !== 'PRIVATE KEY' && msg.type !== 'RSA PRIVATE KEY') {
     var error = new Error('Could not convert private key from PEM; PEM ' +
@@ -71,9 +73,9 @@ pki.privateKeyToPem = function(key, maxline) {
   // convert to ASN.1, then DER, then PEM-encode
   var msg = {
     type: 'RSA PRIVATE KEY',
-    body: asn1.toDer(pki.privateKeyToAsn1(key)).getBytes()
+    body: asn1.toDer(rsa.privateKeyToAsn1(key)).getBytes()
   };
-  return forge.pem.encode(msg, {maxline: maxline});
+  return pem.encode(msg, {maxline: maxline});
 };
 
 /**
@@ -90,72 +92,19 @@ pki.privateKeyInfoToPem = function(pki, maxline) {
     type: 'PRIVATE KEY',
     body: asn1.toDer(pki).getBytes()
   };
-  return forge.pem.encode(msg, {maxline: maxline});
+  return pem.encode(msg, {maxline: maxline});
 };
 
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'pki';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define([
-  'require',
-  'module',
-  './asn1',
-  './oids',
-  './pbe',
-  './pem',
-  './pbkdf2',
-  './pkcs12',
-  './pss',
-  './rsa',
-  './util',
-  './x509'
-], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
+["decryptRsaPrivateKey", "encryptRsaPrivateKey", "encryptPrivateKeyInfo", "decryptPrivateKeyInfo"].forEach(function(i) {
+  pki[i] = pbe[i];
 });
-})();
+
+["getPublicKeyFingerprint", "certificateError", "verifyCertificateChain", "createCaStore", "certificateToPem", "createCertificate", "publicKeyToPem", "publicKeyFromPem", "createCertificationRequest", "certificationRequestToPem", "certificationRequestFromPem", "certificateFromPem", "certificateToAsn1", "RDNAttributesAsArray", "distinguishedNameToAsn1", "certificateFromAsn1"].forEach(function(i) {
+  pki[i] = x509[i];
+});
+
+["setRsaPrivateKey", "setRsaPublicKey", "setPublicKey", "wrapRsaPrivateKey", "privateKeyFromAsn1", "privateKeyToAsn1", "privateKeyToRSAPrivateKey", "publicKeyFromAsn1", "publicKeyToAsn1", "publicKeyToSubjectPublicKeyInfo", "publicKeyToRSAPublicKey"].forEach(function(i) {
+  pki[i] = rsa[i];
+});
+
+pki.rsa = rsa;

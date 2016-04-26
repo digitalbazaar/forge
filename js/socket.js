@@ -5,12 +5,12 @@
  *
  * Copyright (c) 2010-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 // define net namespace
-var net = forge.net = forge.net || {};
+var net = {};
+
+module.exports = net;
 
 // map of flash ID to socket pool
 net.socketPools = {};
@@ -78,7 +78,7 @@ net.createSocketPool = function(options) {
           running javascript in the middle of its execution (BAD!) ...
           calling setTimeout() will schedule the javascript to run on
           the javascript thread and solve this EVIL problem. */
-        setTimeout(function(){sp.sockets[e.id][f](e);}, 0);
+        setTimeout(function() {sp.sockets[e.id][f](e);}, 0);
       }
     };
   } else {
@@ -145,10 +145,10 @@ net.createSocketPool = function(options) {
      var socket = {
        id: id,
        // set handlers
-       connected: options.connected || function(e){},
-       closed: options.closed || function(e){},
-       data: options.data || function(e){},
-       error: options.error || function(e){}
+       connected: options.connected || function(e) {},
+       closed: options.closed || function(e) {},
+       data: options.data || function(e) {},
+       error: options.error || function(e) {}
      };
 
      /**
@@ -210,7 +210,7 @@ net.createSocketPool = function(options) {
       * @return true on success, false on failure.
       */
      socket.send = function(bytes) {
-       return api.send(id, forge.util.encode64(bytes));
+       return api.send(id, util.encode64(bytes));
      };
 
      /**
@@ -231,7 +231,7 @@ net.createSocketPool = function(options) {
       */
      socket.receive = function(count) {
        var rval = api.receive(id, count).rval;
-       return (rval === null) ? null : forge.util.decode64(rval);
+       return (rval === null) ? null : util.decode64(rval);
      };
 
      /**
@@ -286,57 +286,3 @@ net.createSocket = function(options) {
   }
   return socket;
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'net';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

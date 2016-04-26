@@ -86,19 +86,19 @@ function Tests(ASSERT, PEM) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/pem'
+    '../../js/pem'
   ], function(PEM) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PEM()
+      PEM
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pem')());
+    require('../../js/pem'));
 }
 
 })();

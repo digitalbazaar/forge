@@ -131,25 +131,25 @@ function Tests(ASSERT, CIPHER, DES, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
-    'forge/cipher',
-    'forge/des',
-    'forge/util'
+    '../../js/cipher',
+    '../../js/des',
+    '../../js/util'
   ], function(CIPHER, DES, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      CIPHER(forge),
-      DES(forge),
-      UTIL(forge)
+      CIPHER,
+      DES,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/cipher')(forge),
-    require('../../js/des')(forge),
-    require('../../js/util')(forge));
+    require('../../js/cipher'),
+    require('../../js/des'),
+    require('../../js/util'));
 }
 
 })();

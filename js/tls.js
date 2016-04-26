@@ -230,10 +230,15 @@
  * due to the large block size of existing MACs and the small size of the
  * timing signal.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
+var util = require("./util");
+var random = require("./random");
+var hmac = require("./hmac");
+var forge_hmac = hmac;
+var asn1 = require("./asn1");
+var forge_asn1 = asn1;
+var pki = require("./pki");
+var md = require("./md");
+var pem = require("./pem");
 /**
  * Generates pseudo random bytes by mixing the result of two hash functions,
  * MD5 and SHA-1.
@@ -282,7 +287,7 @@ function initModule(forge) {
  * @return the pseudo random bytes in a byte buffer.
  */
 var prf_TLS1 = function(secret, label, seed, length) {
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
 
   /* For TLS 1.0, the secret is split in half, into two secrets of equal
     length. If the secret has an odd length then the last byte of the first
@@ -292,8 +297,8 @@ var prf_TLS1 = function(secret, label, seed, length) {
   var slen = idx + (secret.length & 1);
   var s1 = secret.substr(0, slen);
   var s2 = secret.substr(idx, slen);
-  var ai = forge.util.createBuffer();
-  var hmac = forge.hmac.create();
+  var ai = util.createBuffer();
+  var hmac = forge_hmac.create();
   seed = label + seed;
 
   // determine the number of iterations that must be performed to generate
@@ -303,7 +308,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
 
   // do md5 iterations
   hmac.start('MD5', s1);
-  var md5bytes = forge.util.createBuffer();
+  var md5bytes = util.createBuffer();
   ai.putBytes(seed);
   for(var i = 0; i < md5itr; ++i) {
     // HMAC_hash(secret, A(i-1))
@@ -319,7 +324,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
 
   // do sha1 iterations
   hmac.start('SHA1', s2);
-  var sha1bytes = forge.util.createBuffer();
+  var sha1bytes = util.createBuffer();
   ai.clear();
   ai.putBytes(seed);
   for(var i = 0; i < sha1itr; ++i) {
@@ -335,7 +340,7 @@ var prf_TLS1 = function(secret, label, seed, length) {
   }
 
   // XOR the md5 bytes with the sha1 bytes
-  rval.putBytes(forge.util.xorBytes(
+  rval.putBytes(util.xorBytes(
     md5bytes.getBytes(), sha1bytes.getBytes(), length));
 
   return rval;
@@ -373,9 +378,9 @@ var hmac_sha1 = function(key, seqNum, record) {
       TLSCompressed.length +
       TLSCompressed.fragment)
   */
-  var hmac = forge.hmac.create();
+  var hmac = forge_hmac.create();
   hmac.start('SHA1', key);
-  var b = forge.util.createBuffer();
+  var b = util.createBuffer();
   b.putInt32(seqNum[0]);
   b.putInt32(seqNum[1]);
   b.putByte(record.type);
@@ -402,7 +407,7 @@ var deflate = function(c, record, s) {
 
   try {
     var bytes = c.deflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
+    record.fragment = util.createBuffer(bytes);
     record.length = bytes.length;
     rval = true;
   } catch(ex) {
@@ -427,7 +432,7 @@ var inflate = function(c, record, s) {
 
   try {
     var bytes = c.inflate(record.fragment.getBytes());
-    record.fragment = forge.util.createBuffer(bytes);
+    record.fragment = util.createBuffer(bytes);
     record.length = bytes.length;
     rval = true;
   } catch(ex) {
@@ -471,7 +476,7 @@ var readVector = function(b, lenBytes) {
   }
 
   // read vector bytes into a new buffer
-  return forge.util.createBuffer(b.getBytes(len));
+  return util.createBuffer(b.getBytes(len));
 };
 
 /**
@@ -493,6 +498,8 @@ var writeVector = function(b, lenBytes, v) {
  * The tls implementation.
  */
 var tls = {};
+
+module.exports = tls;
 
 /**
  * Version: TLS 1.2 = 3.3, TLS 1.1 = 3.2, TLS 1.0 = 3.1. Both TLS 1.1 and
@@ -700,7 +707,7 @@ tls.HeartbeatMessageType = {
 /**
  * Supported cipher suites.
  */
-tls.CipherSuites = {};
+tls.CipherSuites = require("./aesCipherSuites");
 
 /**
  * Gets a supported cipher suite from its 2 byte ID.
@@ -799,7 +806,7 @@ tls.parseHelloMessage = function(c, record, length) {
         major: b.getByte(),
         minor: b.getByte()
       },
-      random: forge.util.createBuffer(b.getBytes(32)),
+      random: util.createBuffer(b.getBytes(32)),
       session_id: readVector(b, 1),
       extensions: []
     };
@@ -873,7 +880,7 @@ tls.parseHelloMessage = function(c, record, length) {
     } else {
       // get a supported preferred (ClientHello) cipher suite
       // choose the first supported cipher suite
-      var tmp = forge.util.createBuffer(msg.cipher_suites.bytes());
+      var tmp = util.createBuffer(msg.cipher_suites.bytes());
       while(tmp.length() > 0) {
         // FIXME: should be checking configured acceptable suites
         // cipher suites take up 2 bytes
@@ -893,7 +900,7 @@ tls.parseHelloMessage = function(c, record, length) {
           level: tls.Alert.Level.fatal,
           description: tls.Alert.Description.handshake_failure
         },
-        cipherSuite: forge.util.bytesToHex(msg.cipher_suite)
+        cipherSuite: util.bytesToHex(msg.cipher_suite)
       });
     }
 
@@ -1067,7 +1074,7 @@ tls.handleClientHello = function(c, record, length) {
 
   // no session found to resume, generate a new session ID
   if(sessionId.length === 0) {
-    sessionId = forge.random.getBytes(32);
+    sessionId = random.getBytes(32);
   }
 
   // update session
@@ -1226,8 +1233,8 @@ tls.handleCertificate = function(c, record, length) {
     while(msg.certificate_list.length() > 0) {
       // each entry in msg.certificate_list is a vector with 3 len bytes
       cert = readVector(msg.certificate_list, 3);
-      asn1 = forge.asn1.fromDer(cert);
-      cert = forge.pki.certificateFromAsn1(asn1, true);
+      asn1 = forge_asn1.fromDer(cert);
+      cert = pki.certificateFromAsn1(asn1, true);
       certs.push(cert);
     }
   } catch(ex) {
@@ -1384,7 +1391,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
   if(c.getPrivateKey) {
     try {
       privateKey = c.getPrivateKey(c, c.session.serverCertificate);
-      privateKey = forge.pki.privateKeyFromPem(privateKey);
+      privateKey = pki.privateKeyFromPem(privateKey);
     } catch(ex) {
       c.error(c, {
         message: 'Could not get private key.',
@@ -1426,7 +1433,7 @@ tls.handleClientKeyExchange = function(c, record, length) {
       TLS server which is using PKCS#1 encoded RSA, so instead of
       failing here, we generate 48 random bytes and use that as
       the pre-master secret. */
-    sp.pre_master_secret = forge.random.getBytes(48);
+    sp.pre_master_secret = random.getBytes(48);
   }
 
   // expect a CertificateVerify message if a Certificate was received that
@@ -1535,7 +1542,7 @@ tls.handleCertificateVerify = function(c, record, length) {
   // TODO: add support for DSA
 
   // generate data to verify
-  var verify = forge.util.createBuffer();
+  var verify = util.createBuffer();
   verify.putBuffer(c.session.md5.digest());
   verify.putBuffer(c.session.sha1.digest());
   verify = verify.getBytes();
@@ -1624,7 +1631,7 @@ tls.handleServerHelloDone = function(c, record, length) {
       // check for custom alert info
       if(ret || ret === 0) {
         // set custom message and alert description
-        if(typeof ret === 'object' && !forge.util.isArray(ret)) {
+        if(typeof ret === 'object' && !util.isArray(ret)) {
           if(ret.message) {
             error.message = ret.message;
           }
@@ -1806,7 +1813,7 @@ tls.handleFinished = function(c, record, length) {
   var vd = record.fragment.getBytes();
 
   // ensure verify data is correct
-  b = forge.util.createBuffer();
+  b = util.createBuffer();
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -2002,7 +2009,7 @@ tls.handleHandshake = function(c, record) {
     // cache the record, clear its fragment, and reset the buffer read
     // pointer before the type and length were read
     c.fragmented = record;
-    record.fragment = forge.util.createBuffer();
+    record.fragment = util.createBuffer();
     b.read -= 4;
 
     // continue
@@ -2037,8 +2044,8 @@ tls.handleHandshake = function(c, record) {
         compressionMethod: null,
         serverCertificate: null,
         clientCertificate: null,
-        md5: forge.md.md5.create(),
-        sha1: forge.md.sha1.create()
+        md5: md.md5.create(),
+        sha1: md.sha1.create()
       };
     }
 
@@ -2112,7 +2119,7 @@ tls.handleHeartbeat = function(c, record) {
 
     // notify that a valid heartbeat was received
     if(c.heartbeatReceived) {
-      c.heartbeatReceived(c, forge.util.createBuffer(payload));
+      c.heartbeatReceived(c, util.createBuffer(payload));
     }
   }
 
@@ -2580,9 +2587,9 @@ tls.createRandom = function() {
   // get UTC milliseconds
   var d = new Date();
   var utc = +d + d.getTimezoneOffset() * 60000;
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putInt32(utc);
-  rval.putBytes(forge.random.getBytes(28));
+  rval.putBytes(random.getBytes(28));
   return rval;
 };
 
@@ -2623,7 +2630,7 @@ tls.createRecord = function(c, options) {
  * @return the created alert record.
  */
 tls.createAlert = function(c, alert) {
-  var b = forge.util.createBuffer();
+  var b = util.createBuffer();
   b.putByte(alert.level);
   b.putByte(alert.description);
   return tls.createRecord(c, {
@@ -2706,7 +2713,7 @@ tls.createClientHello = function(c) {
   };
 
   // create supported cipher suites
-  var cipherSuites = forge.util.createBuffer();
+  var cipherSuites = util.createBuffer();
   for(var i = 0; i < c.cipherSuites.length; ++i) {
     var cs = c.cipherSuites[i];
     cipherSuites.putByte(cs.id[0]);
@@ -2716,7 +2723,7 @@ tls.createClientHello = function(c) {
 
   // create supported compression methods, null always supported, but
   // also support deflate if connection has inflate and deflate methods
-  var compressionMethods = forge.util.createBuffer();
+  var compressionMethods = util.createBuffer();
   compressionMethods.putByte(tls.CompressionMethod.none);
   // FIXME: deflate support disabled until issues with raw deflate data
   // without zlib headers are resolved
@@ -2729,10 +2736,10 @@ tls.createClientHello = function(c) {
 
   // create TLS SNI (server name indication) extension if virtual host
   // has been specified, see RFC 3546
-  var extensions = forge.util.createBuffer();
+  var extensions = util.createBuffer();
   if(c.virtualHost) {
     // create extension struct
-    var ext = forge.util.createBuffer();
+    var ext = util.createBuffer();
     ext.putByte(0x00); // type server_name (ExtensionType is 2 bytes)
     ext.putByte(0x00);
 
@@ -2758,12 +2765,12 @@ tls.createClientHello = function(c) {
      *   ServerName server_name_list<1..2^16-1>
      * } ServerNameList;
      */
-    var serverName = forge.util.createBuffer();
+    var serverName = util.createBuffer();
     serverName.putByte(0x00); // type host_name
-    writeVector(serverName, 2, forge.util.createBuffer(c.virtualHost));
+    writeVector(serverName, 2, util.createBuffer(c.virtualHost));
 
     // ServerNameList is in extension_data
-    var snList = forge.util.createBuffer();
+    var snList = util.createBuffer();
     writeVector(snList, 2, serverName);
     writeVector(ext, 2, snList);
     extensions.putBuffer(ext);
@@ -2787,13 +2794,13 @@ tls.createClientHello = function(c) {
     extLength;             // extensions vector
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.client_hello);
   rval.putInt24(length);                     // handshake length
   rval.putByte(c.version.major);             // major version
   rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.client_random); // random time + bytes
-  writeVector(rval, 1, forge.util.createBuffer(sessionId));
+  writeVector(rval, 1, util.createBuffer(sessionId));
   writeVector(rval, 2, cipherSuites);
   writeVector(rval, 1, compressionMethods);
   if(extLength > 0) {
@@ -2820,13 +2827,13 @@ tls.createServerHello = function(c) {
     1;                     // chosen compression method
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.server_hello);
   rval.putInt24(length);                     // handshake length
   rval.putByte(c.version.major);             // major version
   rval.putByte(c.version.minor);             // minor version
   rval.putBytes(c.session.sp.server_random); // random time + bytes
-  writeVector(rval, 1, forge.util.createBuffer(sessionId));
+  writeVector(rval, 1, util.createBuffer(sessionId));
   rval.putByte(c.session.cipherSuite.id[0]);
   rval.putByte(c.session.cipherSuite.id[1]);
   rval.putByte(c.session.compressionMethod);
@@ -2872,16 +2879,16 @@ tls.createCertificate = function(c) {
   }
 
   // buffer to hold certificate list
-  var certList = forge.util.createBuffer();
+  var certList = util.createBuffer();
   if(cert !== null) {
     try {
       // normalize cert to a chain of certificates
-      if(!forge.util.isArray(cert)) {
+      if(!util.isArray(cert)) {
         cert = [cert];
       }
       var asn1 = null;
       for(var i = 0; i < cert.length; ++i) {
-        var msg = forge.pem.decode(cert[i])[0];
+        var msg = pem.decode(cert[i])[0];
         if(msg.type !== 'CERTIFICATE' &&
           msg.type !== 'X509 CERTIFICATE' &&
           msg.type !== 'TRUSTED CERTIFICATE') {
@@ -2895,13 +2902,13 @@ tls.createCertificate = function(c) {
           throw new Error('Could not convert certificate from PEM; PEM is encrypted.');
         }
 
-        var der = forge.util.createBuffer(msg.body);
+        var der = util.createBuffer(msg.body);
         if(asn1 === null) {
-          asn1 = forge.asn1.fromDer(der.bytes(), false);
+          asn1 = forge_asn1.fromDer(der.bytes(), false);
         }
 
         // certificate entry is itself a vector with 3 length bytes
-        var certBuffer = forge.util.createBuffer();
+        var certBuffer = util.createBuffer();
         writeVector(certBuffer, 3, der);
 
         // add cert vector to cert list vector
@@ -2909,7 +2916,7 @@ tls.createCertificate = function(c) {
       }
 
       // save certificate
-      cert = forge.pki.certificateFromAsn1(asn1);
+      cert = pki.certificateFromAsn1(asn1);
       if(client) {
         c.session.clientCertificate = cert;
       } else {
@@ -2932,7 +2939,7 @@ tls.createCertificate = function(c) {
   var length = 3 + certList.length(); // cert list vector
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.certificate);
   rval.putInt24(length);
   writeVector(rval, 3, certList);
@@ -2990,7 +2997,7 @@ tls.createCertificate = function(c) {
  */
 tls.createClientKeyExchange = function(c) {
   // create buffer to encrypt
-  var b = forge.util.createBuffer();
+  var b = util.createBuffer();
 
   // add highest client-supported protocol to help server avoid version
   // rollback attacks
@@ -2998,7 +3005,7 @@ tls.createClientKeyExchange = function(c) {
   b.putByte(c.session.clientHelloVersion.minor);
 
   // generate and add 46 random bytes
-  b.putBytes(forge.random.getBytes(46));
+  b.putBytes(random.getBytes(46));
 
   // save pre-master secret
   var sp = c.session.sp;
@@ -3017,7 +3024,7 @@ tls.createClientKeyExchange = function(c) {
   var length = b.length + 2;
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.client_key_exchange);
   rval.putInt24(length);
   // add vector length bytes
@@ -3041,7 +3048,7 @@ tls.createServerKeyExchange = function(c) {
   var length = 0;
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   if(length > 0) {
     rval.putByte(tls.HandshakeType.server_key_exchange);
     rval.putInt24(length);
@@ -3058,7 +3065,7 @@ tls.createServerKeyExchange = function(c) {
  */
 tls.getClientSignature = function(c, callback) {
   // generate data to RSA encrypt
-  var b = forge.util.createBuffer();
+  var b = util.createBuffer();
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
   b = b.getBytes();
@@ -3070,7 +3077,7 @@ tls.getClientSignature = function(c, callback) {
     if(c.getPrivateKey) {
       try {
         privateKey = c.getPrivateKey(c, c.session.clientCertificate);
-        privateKey = forge.pki.privateKeyFromPem(privateKey);
+        privateKey = pki.privateKeyFromPem(privateKey);
       } catch(ex) {
         c.error(c, {
           message: 'Could not get private key.',
@@ -3174,7 +3181,7 @@ tls.createCertificateVerify = function(c, signature) {
   var length = signature.length + 2;
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.certificate_verify);
   rval.putInt24(length);
   // add vector length bytes
@@ -3192,18 +3199,18 @@ tls.createCertificateVerify = function(c, signature) {
  */
 tls.createCertificateRequest = function(c) {
   // TODO: support other certificate types
-  var certTypes = forge.util.createBuffer();
+  var certTypes = util.createBuffer();
 
   // common RSA certificate type
   certTypes.putByte(0x01);
 
   // TODO: verify that this data format is correct
   // add distinguished names from CA store
-  var cAs = forge.util.createBuffer();
+  var cAs = util.createBuffer();
   for(var key in c.caStore.certs) {
     var cert = c.caStore.certs[key];
-    var dn = forge.pki.distinguishedNameToAsn1(cert.subject);
-    cAs.putBuffer(forge.asn1.toDer(dn));
+    var dn = pki.distinguishedNameToAsn1(cert.subject);
+    cAs.putBuffer(asn1.toDer(dn));
   }
 
   // TODO: TLS 1.2+ has a different format
@@ -3214,7 +3221,7 @@ tls.createCertificateRequest = function(c) {
     2 + cAs.length();
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.certificate_request);
   rval.putInt24(length);
   writeVector(rval, 1, certTypes);
@@ -3231,7 +3238,7 @@ tls.createCertificateRequest = function(c) {
  */
 tls.createServerHelloDone = function(c) {
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.server_hello_done);
   rval.putInt24(0);
   return rval;
@@ -3252,7 +3259,7 @@ tls.createServerHelloDone = function(c) {
  * @return the ChangeCipherSpec byte buffer.
  */
 tls.createChangeCipherSpec = function() {
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(0x01);
   return rval;
 };
@@ -3286,7 +3293,7 @@ tls.createChangeCipherSpec = function() {
  */
 tls.createFinished = function(c) {
   // generate verify_data
-  var b = forge.util.createBuffer();
+  var b = util.createBuffer();
   b.putBuffer(c.session.md5.digest());
   b.putBuffer(c.session.sha1.digest());
 
@@ -3299,7 +3306,7 @@ tls.createFinished = function(c) {
   b = prf(sp.master_secret, label, b.getBytes(), vdl);
 
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(tls.HandshakeType.finished);
   rval.putInt24(b.length());
   rval.putBuffer(b);
@@ -3354,14 +3361,14 @@ tls.createHeartbeat = function(type, payload, payloadLength) {
     payloadLength = payload.length;
   }
   // build record fragment
-  var rval = forge.util.createBuffer();
+  var rval = util.createBuffer();
   rval.putByte(type);               // heartbeat message type
   rval.putInt16(payloadLength);     // payload length
   rval.putBytes(payload);           // payload
   // padding
   var plaintextLength = rval.length();
   var paddingLength = Math.max(16, plaintextLength - payloadLength - 3);
-  rval.putBytes(forge.random.getBytes(paddingLength));
+  rval.putBytes(random.getBytes(paddingLength));
   return rval;
 };
 
@@ -3396,7 +3403,7 @@ tls.queue = function(c, record) {
     while(data.length > tls.MaxFragment) {
       records.push(tls.createRecord(c, {
         type: record.type,
-        data: forge.util.createBuffer(data.slice(0, tls.MaxFragment))
+        data: util.createBuffer(data.slice(0, tls.MaxFragment))
       }));
       data = data.slice(tls.MaxFragment);
     }
@@ -3404,7 +3411,7 @@ tls.queue = function(c, record) {
     if(data.length > 0) {
       records.push(tls.createRecord(c, {
         type: record.type,
-        data: forge.util.createBuffer(data)
+        data: util.createBuffer(data)
       }));
     }
   }
@@ -3455,17 +3462,17 @@ var _certErrorToAlertDesc = function(error) {
   switch(error) {
   case true:
     return true;
-  case forge.pki.certificateError.bad_certificate:
+  case pki.certificateError.bad_certificate:
     return tls.Alert.Description.bad_certificate;
-  case forge.pki.certificateError.unsupported_certificate:
+  case pki.certificateError.unsupported_certificate:
     return tls.Alert.Description.unsupported_certificate;
-  case forge.pki.certificateError.certificate_revoked:
+  case pki.certificateError.certificate_revoked:
     return tls.Alert.Description.certificate_revoked;
-  case forge.pki.certificateError.certificate_expired:
+  case pki.certificateError.certificate_expired:
     return tls.Alert.Description.certificate_expired;
-  case forge.pki.certificateError.certificate_unknown:
+  case pki.certificateError.certificate_unknown:
     return tls.Alert.Description.certificate_unknown;
-  case forge.pki.certificateError.unknown_ca:
+  case pki.certificateError.unknown_ca:
     return tls.Alert.Description.unknown_ca;
   default:
     return tls.Alert.Description.bad_certificate;
@@ -3484,19 +3491,19 @@ var _alertDescToCertError = function(desc) {
   case true:
     return true;
   case tls.Alert.Description.bad_certificate:
-    return forge.pki.certificateError.bad_certificate;
+    return pki.certificateError.bad_certificate;
   case tls.Alert.Description.unsupported_certificate:
-    return forge.pki.certificateError.unsupported_certificate;
+    return pki.certificateError.unsupported_certificate;
   case tls.Alert.Description.certificate_revoked:
-    return forge.pki.certificateError.certificate_revoked;
+    return pki.certificateError.certificate_revoked;
   case tls.Alert.Description.certificate_expired:
-    return forge.pki.certificateError.certificate_expired;
+    return pki.certificateError.certificate_expired;
   case tls.Alert.Description.certificate_unknown:
-    return forge.pki.certificateError.certificate_unknown;
+    return pki.certificateError.certificate_unknown;
   case tls.Alert.Description.unknown_ca:
-    return forge.pki.certificateError.unknown_ca;
+    return pki.certificateError.unknown_ca;
   default:
-    return forge.pki.certificateError.bad_certificate;
+    return pki.certificateError.bad_certificate;
   }
 };
 
@@ -3513,7 +3520,7 @@ var _alertDescToCertError = function(desc) {
 tls.verifyCertificateChain = function(c, chain) {
   try {
     // verify chain
-    forge.pki.verifyCertificateChain(c.caStore, chain,
+    pki.verifyCertificateChain(c.caStore, chain,
       function verify(vfd, depth, chain) {
         // convert pki.certificateError to tls alert description
         var desc = _certErrorToAlertDesc(vfd);
@@ -3521,7 +3528,7 @@ tls.verifyCertificateChain = function(c, chain) {
         // call application callback
         var ret = c.verify(c, vfd, depth, chain);
         if(ret !== true) {
-          if(typeof ret === 'object' && !forge.util.isArray(ret)) {
+          if(typeof ret === 'object' && !util.isArray(ret)) {
             // throw custom error
             var error = new Error('The application rejected the certificate.');
             error.send = true;
@@ -3549,7 +3556,7 @@ tls.verifyCertificateChain = function(c, chain) {
   } catch(ex) {
     // build tls error if not already customized
     var err = ex;
-    if(typeof err !== 'object' || forge.util.isArray(err)) {
+    if(typeof err !== 'object' || util.isArray(err)) {
       err = {
         send: true,
         alert: {
@@ -3612,7 +3619,7 @@ tls.createSessionCache = function(cache, capacity) {
 
       // if session ID provided, use it
       if(sessionId) {
-        key = forge.util.bytesToHex(sessionId);
+        key = util.bytesToHex(sessionId);
       } else if(rval.order.length > 0) {
         // get first session from cache
         key = rval.order[0];
@@ -3641,7 +3648,7 @@ tls.createSessionCache = function(cache, capacity) {
         delete rval.cache[key];
       }
       // add session to cache
-      var key = forge.util.bytesToHex(sessionId);
+      var key = util.bytesToHex(sessionId);
       rval.order.push(key);
       rval.cache[key] = session;
     };
@@ -3651,11 +3658,99 @@ tls.createSessionCache = function(cache, capacity) {
 };
 
 /**
- * Creates a new TLS connection.
+ * Creates a new TLS connection. This does not make any assumptions about the
+ * transport layer that TLS is working on top of, ie: it does not assume there
+ * is a TCP/IP connection or establish one. A TLS connection is totally
+ * abstracted away from the layer is runs on top of, it merely establishes a
+ * secure channel between a client" and a "server".
  *
- * See public createConnection() docs for more details.
+ * A TLS connection contains 4 connection states: pending read and write, and
+ * current read and write.
  *
- * @param options the options for this connection.
+ * At initialization, the current read and write states will be null. Only once
+ * the security parameters have been set and the keys have been generated can
+ * the pending states be converted into current states. Current states will be
+ * updated for each record processed.
+ *
+ * A custom certificate verify callback may be provided to check information
+ * like the common name on the server's certificate. It will be called for
+ * every certificate in the chain. It has the following signature:
+ *
+ * variable func(c, certs, index, preVerify)
+ * Where:
+ * c         The TLS connection
+ * verified  Set to true if certificate was verified, otherwise the alert
+ *           tls.Alert.Description for why the certificate failed.
+ * depth     The current index in the chain, where 0 is the server's cert.
+ * certs     The certificate chain, *NOTE* if the server was anonymous then
+ *           the chain will be empty.
+ *
+ * The function returns true on success and on failure either the appropriate
+ * tls.Alert.Description or an object with 'alert' set to the appropriate
+ * tls.Alert.Description and 'message' set to a custom error message. If true
+ * is not returned then the connection will abort using, in order of
+ * availability, first the returned alert description, second the preVerify
+ * alert description, and lastly the default 'bad_certificate'.
+ *
+ * There are three callbacks that can be used to make use of client-side
+ * certificates where each takes the TLS connection as the first parameter:
+ *
+ * getCertificate(conn, hint)
+ *   The second parameter is a hint as to which certificate should be
+ *   returned. If the connection entity is a client, then the hint will be
+ *   the CertificateRequest message from the server that is part of the
+ *   TLS protocol. If the connection entity is a server, then it will be
+ *   the servername list provided via an SNI extension the ClientHello, if
+ *   one was provided (empty array if not). The hint can be examined to
+ *   determine which certificate to use (advanced). Most implementations
+ *   will just return a certificate. The return value must be a
+ *   PEM-formatted certificate or an array of PEM-formatted certificates
+ *   that constitute a certificate chain, with the first in the array/chain
+ *   being the client's certificate.
+ * getPrivateKey(conn, certificate)
+ *   The second parameter is an forge.pki X.509 certificate object that
+ *   is associated with the requested private key. The return value must
+ *   be a PEM-formatted private key.
+ * getSignature(conn, bytes, callback)
+ *   This callback can be used instead of getPrivateKey if the private key
+ *   is not directly accessible in javascript or should not be. For
+ *   instance, a secure external web service could provide the signature
+ *   in exchange for appropriate credentials. The second parameter is a
+ *   string of bytes to be signed that are part of the TLS protocol. These
+ *   bytes are used to verify that the private key for the previously
+ *   provided client-side certificate is accessible to the client. The
+ *   callback is a function that takes 2 parameters, the TLS connection
+ *   and the RSA encrypted (signed) bytes as a string. This callback must
+ *   be called once the signature is ready.
+ *
+ * @param options the options for this connection:
+ *   server: true if the connection is server-side, false for client.
+ *   sessionId: a session ID to reuse, null for a new connection.
+ *   caStore: an array of certificates to trust.
+ *   sessionCache: a session cache to use.
+ *   cipherSuites: an optional array of cipher suites to use,
+ *     see tls.CipherSuites.
+ *   connected: function(conn) called when the first handshake completes.
+ *   virtualHost: the virtual server name to use in a TLS SNI extension.
+ *   verifyClient: true to require a client certificate in server mode,
+ *     'optional' to request one, false not to (default: false).
+ *   verify: a handler used to custom verify certificates in the chain.
+ *   getCertificate: an optional callback used to get a certificate or
+ *     a chain of certificates (as an array).
+ *   getPrivateKey: an optional callback used to get a private key.
+ *   getSignature: an optional callback used to get a signature.
+ *   tlsDataReady: function(conn) called when TLS protocol data has been
+ *     prepared and is ready to be used (typically sent over a socket
+ *     connection to its destination), read from conn.tlsData buffer.
+ *   dataReady: function(conn) called when application data has
+ *     been parsed from a TLS record and should be consumed by the
+ *     application, read from conn.data buffer.
+ *   closed: function(conn) called when the connection has been closed.
+ *   error: function(conn, error) called when there was an error.
+ *   deflate: function(inBytes) if provided, will deflate TLS records using
+ *     the deflate algorithm if the server supports it.
+ *   inflate: function(inBytes) if provided, will inflate TLS records using
+ *     the deflate algorithm if the server supports it.
  *
  * @return the new TLS connection.
  */
@@ -3663,14 +3758,14 @@ tls.createConnection = function(options) {
   var caStore = null;
   if(options.caStore) {
     // if CA store is an array, convert it to a CA store object
-    if(forge.util.isArray(options.caStore)) {
-      caStore = forge.pki.createCaStore(options.caStore);
+    if(util.isArray(options.caStore)) {
+      caStore = pki.createCaStore(options.caStore);
     } else {
       caStore = options.caStore;
     }
   } else {
     // create empty CA store
-    caStore = forge.pki.createCaStore();
+    caStore = pki.createCaStore();
   }
 
   // setup default cipher suites
@@ -3705,9 +3800,9 @@ tls.createConnection = function(options) {
     getCertificate: options.getCertificate || null,
     getPrivateKey: options.getPrivateKey || null,
     getSignature: options.getSignature || null,
-    input: forge.util.createBuffer(),
-    tlsData: forge.util.createBuffer(),
-    data: forge.util.createBuffer(),
+    input: util.createBuffer(),
+    tlsData: util.createBuffer(),
+    data: util.createBuffer(),
     tlsDataReady: options.tlsDataReady,
     dataReady: options.dataReady,
     heartbeatReceived: options.heartbeatReceived,
@@ -3820,7 +3915,7 @@ tls.createConnection = function(options) {
           minor: b.getByte()
         },
         length: b.getInt16(),
-        fragment: forge.util.createBuffer(),
+        fragment: util.createBuffer(),
         ready: false
       };
 
@@ -3967,8 +4062,8 @@ tls.createConnection = function(options) {
         certificateRequest: null,
         clientCertificate: null,
         sp: {},
-        md5: forge.md.md5.create(),
-        sha1: forge.md.sha1.create()
+        md5: md.md5.create(),
+        sha1: md.sha1.create()
       };
 
       // use existing session information
@@ -4052,7 +4147,7 @@ tls.createConnection = function(options) {
   c.prepare = function(data) {
     tls.queue(c, tls.createRecord(c, {
       type: tls.ContentType.application_data,
-      data: forge.util.createBuffer(data)
+      data: util.createBuffer(data)
     }));
     return tls.flush(c);
   };
@@ -4073,7 +4168,7 @@ tls.createConnection = function(options) {
    * @return true on success, false on failure.
    */
   c.prepareHeartbeatRequest = function(payload, payloadLength) {
-    if(payload instanceof forge.util.ByteBuffer) {
+    if(payload instanceof util.ByteBuffer) {
       payload = payload.bytes();
     }
     if(typeof payloadLength === 'undefined') {
@@ -4134,183 +4229,13 @@ tls.createConnection = function(options) {
   return c;
 };
 
-/* TLS API */
-forge.tls = forge.tls || {};
-
-// expose non-functions
-for(var key in tls) {
-  if(typeof tls[key] !== 'function') {
-    forge.tls[key] = tls[key];
-  }
-}
-
 // expose prf_tls1 for testing
-forge.tls.prf_tls1 = prf_TLS1;
+tls.prf_tls1 = prf_TLS1;
 
 // expose sha1 hmac method
-forge.tls.hmac_sha1 = hmac_sha1;
+tls.hmac_sha1 = hmac_sha1;
 
 // expose session cache creation
-forge.tls.createSessionCache = tls.createSessionCache;
+tls.createSessionCache = tls.createSessionCache;
 
-/**
- * Creates a new TLS connection. This does not make any assumptions about the
- * transport layer that TLS is working on top of, ie: it does not assume there
- * is a TCP/IP connection or establish one. A TLS connection is totally
- * abstracted away from the layer is runs on top of, it merely establishes a
- * secure channel between a client" and a "server".
- *
- * A TLS connection contains 4 connection states: pending read and write, and
- * current read and write.
- *
- * At initialization, the current read and write states will be null. Only once
- * the security parameters have been set and the keys have been generated can
- * the pending states be converted into current states. Current states will be
- * updated for each record processed.
- *
- * A custom certificate verify callback may be provided to check information
- * like the common name on the server's certificate. It will be called for
- * every certificate in the chain. It has the following signature:
- *
- * variable func(c, certs, index, preVerify)
- * Where:
- * c         The TLS connection
- * verified  Set to true if certificate was verified, otherwise the alert
- *           tls.Alert.Description for why the certificate failed.
- * depth     The current index in the chain, where 0 is the server's cert.
- * certs     The certificate chain, *NOTE* if the server was anonymous then
- *           the chain will be empty.
- *
- * The function returns true on success and on failure either the appropriate
- * tls.Alert.Description or an object with 'alert' set to the appropriate
- * tls.Alert.Description and 'message' set to a custom error message. If true
- * is not returned then the connection will abort using, in order of
- * availability, first the returned alert description, second the preVerify
- * alert description, and lastly the default 'bad_certificate'.
- *
- * There are three callbacks that can be used to make use of client-side
- * certificates where each takes the TLS connection as the first parameter:
- *
- * getCertificate(conn, hint)
- *   The second parameter is a hint as to which certificate should be
- *   returned. If the connection entity is a client, then the hint will be
- *   the CertificateRequest message from the server that is part of the
- *   TLS protocol. If the connection entity is a server, then it will be
- *   the servername list provided via an SNI extension the ClientHello, if
- *   one was provided (empty array if not). The hint can be examined to
- *   determine which certificate to use (advanced). Most implementations
- *   will just return a certificate. The return value must be a
- *   PEM-formatted certificate or an array of PEM-formatted certificates
- *   that constitute a certificate chain, with the first in the array/chain
- *   being the client's certificate.
- * getPrivateKey(conn, certificate)
- *   The second parameter is an forge.pki X.509 certificate object that
- *   is associated with the requested private key. The return value must
- *   be a PEM-formatted private key.
- * getSignature(conn, bytes, callback)
- *   This callback can be used instead of getPrivateKey if the private key
- *   is not directly accessible in javascript or should not be. For
- *   instance, a secure external web service could provide the signature
- *   in exchange for appropriate credentials. The second parameter is a
- *   string of bytes to be signed that are part of the TLS protocol. These
- *   bytes are used to verify that the private key for the previously
- *   provided client-side certificate is accessible to the client. The
- *   callback is a function that takes 2 parameters, the TLS connection
- *   and the RSA encrypted (signed) bytes as a string. This callback must
- *   be called once the signature is ready.
- *
- * @param options the options for this connection:
- *   server: true if the connection is server-side, false for client.
- *   sessionId: a session ID to reuse, null for a new connection.
- *   caStore: an array of certificates to trust.
- *   sessionCache: a session cache to use.
- *   cipherSuites: an optional array of cipher suites to use,
- *     see tls.CipherSuites.
- *   connected: function(conn) called when the first handshake completes.
- *   virtualHost: the virtual server name to use in a TLS SNI extension.
- *   verifyClient: true to require a client certificate in server mode,
- *     'optional' to request one, false not to (default: false).
- *   verify: a handler used to custom verify certificates in the chain.
- *   getCertificate: an optional callback used to get a certificate or
- *     a chain of certificates (as an array).
- *   getPrivateKey: an optional callback used to get a private key.
- *   getSignature: an optional callback used to get a signature.
- *   tlsDataReady: function(conn) called when TLS protocol data has been
- *     prepared and is ready to be used (typically sent over a socket
- *     connection to its destination), read from conn.tlsData buffer.
- *   dataReady: function(conn) called when application data has
- *     been parsed from a TLS record and should be consumed by the
- *     application, read from conn.data buffer.
- *   closed: function(conn) called when the connection has been closed.
- *   error: function(conn, error) called when there was an error.
- *   deflate: function(inBytes) if provided, will deflate TLS records using
- *     the deflate algorithm if the server supports it.
- *   inflate: function(inBytes) if provided, will inflate TLS records using
- *     the deflate algorithm if the server supports it.
- *
- * @return the new TLS connection.
- */
-forge.tls.createConnection = tls.createConnection;
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'tls';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define([
-  'require',
-  'module',
-  './asn1',
-  './hmac',
-  './md',
-  './pem',
-  './pki',
-  './random',
-  './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();
+tls.wrapSocket = require("./tlssocket");

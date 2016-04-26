@@ -937,25 +937,25 @@ function Tests(ASSERT, PKI, MD, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/pki',
-    'forge/md',
-    'forge/util'
+    '../../js/pki',
+    '../../js/md',
+    '../../js/util'
   ], function(PKI, MD, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKI(),
-      MD(),
-      UTIL()
+      PKI,
+      MD,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pki')(),
-    require('../../js/md')(),
-    require('../../js/util')());
+    require('../../js/pki'),
+    require('../../js/md'),
+    require('../../js/util'));
 }
 
 })();

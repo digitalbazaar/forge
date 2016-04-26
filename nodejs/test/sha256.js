@@ -60,22 +60,22 @@ function Tests(ASSERT, SHA256, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
-    'forge/sha256',
-    'forge/util'
+    '../../js/sha256',
+    '../../js/util'
   ], function(SHA256, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      SHA256(),
-      UTIL()
+      SHA256,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/sha256')(),
-    require('../../js/util')());
+    require('../../js/sha256'),
+    require('../../js/util'));
 }
 
 })();

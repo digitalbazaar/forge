@@ -10,41 +10,32 @@
  *
  * Copyright (c) 2014-2015 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var md = require("./md");
+var util = require("./util");
 
-var sha512 = forge.sha512 = forge.sha512 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
+var sha512 = {};
 
-// SHA-512
-forge.md.sha512 = forge.md.algorithms.sha512 = sha512;
+module.exports = sha512;
 
 // SHA-384
-var sha384 = forge.sha384 = forge.sha512.sha384 = forge.sha512.sha384 || {};
+var sha384 = sha512.sha384 = {};
 sha384.create = function() {
   return sha512.create('SHA-384');
 };
-forge.md.sha384 = forge.md.algorithms.sha384 = sha384;
 
 // SHA-512/256
-forge.sha512.sha256 = forge.sha512.sha256 || {
+sha512.sha256 = {
   create: function() {
     return sha512.create('SHA-512/256');
   }
 };
-forge.md['sha512/256'] = forge.md.algorithms['sha512/256'] =
-  forge.sha512.sha256;
 
 // SHA-512/224
-forge.sha512.sha224 = forge.sha512.sha224 || {
+sha512.sha224 = {
   create: function() {
     return sha512.create('SHA-512/224');
   }
 };
-forge.md['sha512/224'] = forge.md.algorithms['sha512/224'] =
-  forge.sha512.sha224;
 
 /**
  * Creates a SHA-2 message digest object.
@@ -73,7 +64,7 @@ sha512.create = function(algorithm) {
   var _h = null;
 
   // input buffer
-  var _input = forge.util.createBuffer();
+  var _input = util.createBuffer();
 
   // used for 64-bit word storage
   var _w = new Array(80);
@@ -110,7 +101,7 @@ sha512.create = function(algorithm) {
     for(var i = 0; i < int32s; ++i) {
       md.fullMessageLength.push(0);
     }
-    _input = forge.util.createBuffer();
+    _input = util.createBuffer();
     _h = new Array(_state.length);
     for(var i = 0; i < _state.length; ++i) {
       _h[i] = _state[i].slice(0);
@@ -132,7 +123,7 @@ sha512.create = function(algorithm) {
    */
   md.update = function(msg, encoding) {
     if(encoding === 'utf8') {
-      msg = forge.util.encodeUtf8(msg);
+      msg = util.encodeUtf8(msg);
     }
 
     // update message length
@@ -186,7 +177,7 @@ sha512.create = function(algorithm) {
     must *always* be present, so if the message length is already
     congruent to 896 mod 1024, then 1024 padding bits must be added. */
 
-    var finalBlock = forge.util.createBuffer();
+    var finalBlock = util.createBuffer();
     finalBlock.putBytes(_input.bytes());
 
     // compute remaining size to be digested (include message length size)
@@ -202,7 +193,7 @@ sha512.create = function(algorithm) {
 
     // serialize message length in bits in big-endian order; since length
     // is stored in bytes we multiply by 8 and add carry from next int
-    var messageLength = forge.util.createBuffer();
+    var messageLength = util.createBuffer();
     var next, carry;
     var bits = md.fullMessageLength[0] * 8;
     for(var i = 0; i < md.fullMessageLength.length; ++i) {
@@ -218,7 +209,7 @@ sha512.create = function(algorithm) {
       h[i] = _h[i].slice(0);
     }
     _update(h, _w, finalBlock);
-    var rval = forge.util.createBuffer();
+    var rval = util.createBuffer();
     var hlen;
     if(algorithm === 'SHA-512') {
       hlen = h.length;
@@ -255,7 +246,7 @@ var _states = null;
 function _init() {
   // create padding
   _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 128);
+  _padding += util.fillString(String.fromCharCode(0x00), 128);
 
   // create K table for SHA-512
   _k = [
@@ -547,57 +538,3 @@ function _update(s, w, bytes) {
     len -= 128;
   }
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'sha512';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

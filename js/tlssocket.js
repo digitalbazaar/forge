@@ -5,9 +5,7 @@
  *
  * Copyright (c) 2009-2012 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var tls = require("./tls");
 
 /**
  * Wraps a forge.net socket with a TLS layer.
@@ -32,7 +30,7 @@ function initModule(forge) {
  *
  * @return the TLS-wrapped socket.
  */
-forge.tls.wrapSocket = function(options) {
+module.exports = function(options) {
   // get raw socket
   var socket = options.socket;
 
@@ -40,14 +38,14 @@ forge.tls.wrapSocket = function(options) {
   var tlsSocket = {
     id: socket.id,
     // set handlers
-    connected: socket.connected || function(e){},
-    closed: socket.closed || function(e){},
-    data: socket.data || function(e){},
-    error: socket.error || function(e){}
+    connected: socket.connected || function(e) {},
+    closed: socket.closed || function(e) {},
+    data: socket.data || function(e) {},
+    error: socket.error || function(e) {}
   };
 
   // create TLS connection
-  var c = forge.tls.createConnection({
+  var c = tls.createConnection({
     server: false,
     sessionId: options.sessionId || null,
     caStore: options.caStore || [],
@@ -248,57 +246,3 @@ forge.tls.wrapSocket = function(options) {
 
   return tlsSocket;
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'tlssocket';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './tls'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

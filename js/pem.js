@@ -26,12 +26,12 @@
  *
  * body: the binary-encoded body.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
-// shortcut for pem API
-var pem = forge.pem = forge.pem || {};
+// pem API
+var pem = {};
+
+module.exports = pem;
 
 /**
  * Encodes (serializes) the given PEM object.
@@ -80,7 +80,7 @@ pem.encode = function(msg, options) {
   }
 
   // add body
-  rval += forge.util.encode64(msg.body, options.maxline || 64) + '\r\n';
+  rval += util.encode64(msg.body, options.maxline || 64) + '\r\n';
 
   rval += '-----END ' + msg.type + '-----\r\n';
   return rval;
@@ -113,7 +113,7 @@ pem.decode = function(str) {
       contentDomain: null,
       dekInfo: null,
       headers: [],
-      body: forge.util.decode64(match[3])
+      body: util.decode64(match[3])
     };
     rval.push(msg);
 
@@ -229,57 +229,3 @@ function foldHeader(header) {
 function ltrim(str) {
   return str.replace(/^\s+/, '');
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'pem';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

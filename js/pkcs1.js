@@ -43,12 +43,15 @@
  *
  * Copyright (c) 2013-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var md = require("./md");
+var random = require("./random");
+var util = require("./util");
+var forge_md = md;
 
-// shortcut for PKCS#1 API
-var pkcs1 = forge.pkcs1 = forge.pkcs1 || {};
+// PKCS#1 API
+var pkcs1 = {};
+
+module.exports = pkcs1;
 
 /**
  * Encode the given RSAES-OAEP message (M) using key, with optional label (L)
@@ -90,7 +93,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
 
   // default OAEP to SHA-1 message digest
   if(!md) {
-    md = forge.md.sha1.create();
+    md = forge_md.sha1.create();
   } else {
     md.start();
   }
@@ -125,7 +128,7 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   var DB = lHash.getBytes() + PS + '\x01' + message;
 
   if(!seed) {
-    seed = forge.random.getBytes(md.digestLength);
+    seed = random.getBytes(md.digestLength);
   } else if(seed.length !== md.digestLength) {
     var error = new Error('Invalid RSAES-OAEP seed. The seed length must ' +
       'match the digest length.')
@@ -135,10 +138,10 @@ pkcs1.encode_rsa_oaep = function(key, message, options) {
   }
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
-  var maskedDB = forge.util.xorBytes(DB, dbMask, DB.length);
+  var maskedDB = util.xorBytes(DB, dbMask, DB.length);
 
   var seedMask = rsa_mgf1(maskedDB, md.digestLength, mgf1Md);
-  var maskedSeed = forge.util.xorBytes(seed, seedMask, seed.length);
+  var maskedSeed = util.xorBytes(seed, seedMask, seed.length);
 
   // return encoded message
   return '\x00' + maskedSeed + maskedDB;
@@ -190,7 +193,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
 
   // default OAEP to SHA-1 message digest
   if(md === undefined) {
-    md = forge.md.sha1.create();
+    md = forge_md.sha1.create();
   } else {
     md.start();
   }
@@ -216,10 +219,10 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
   var maskedDB = em.substring(1 + md.digestLength);
 
   var seedMask = rsa_mgf1(maskedDB, md.digestLength, mgf1Md);
-  var seed = forge.util.xorBytes(maskedSeed, seedMask, maskedSeed.length);
+  var seed = util.xorBytes(maskedSeed, seedMask, maskedSeed.length);
 
   var dbMask = rsa_mgf1(seed, keyLength - md.digestLength - 1, mgf1Md);
-  var db = forge.util.xorBytes(maskedDB, dbMask, maskedDB.length);
+  var db = util.xorBytes(maskedDB, dbMask, maskedDB.length);
 
   var lHashPrime = db.substring(0, md.digestLength);
 
@@ -260,7 +263,7 @@ pkcs1.decode_rsa_oaep = function(key, em, options) {
 function rsa_mgf1(seed, maskLength, hash) {
   // default to SHA-1 message digest
   if(!hash) {
-    hash = forge.md.sha1.create();
+    hash = md.sha1.create();
   }
   var t = '';
   var count = Math.ceil(maskLength / hash.digestLength);
@@ -273,57 +276,3 @@ function rsa_mgf1(seed, maskLength, hash) {
   }
   return t.substring(0, maskLength);
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'pkcs1';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util', './random', './sha1'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

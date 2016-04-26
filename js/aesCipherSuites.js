@@ -6,16 +6,20 @@
  * Copyright (c) 2009-2015 Digital Bazaar, Inc.
  *
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var cipher = require("./cipher");
+var random = require("./random");
+var util = require("./util");
+var hmac = require("./hmac");
+var forge_hmac = hmac;
+var tls = require("./tls");
 
-var tls = forge.tls;
+var CipherSuites = {};
+module.exports = CipherSuites;
 
 /**
  * Supported cipher suites.
  */
-tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
+CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   id: [0x00,0x2f],
   name: 'TLS_RSA_WITH_AES_128_CBC_SHA',
   initSecurityParameters: function(sp) {
@@ -31,7 +35,7 @@ tls.CipherSuites['TLS_RSA_WITH_AES_128_CBC_SHA'] = {
   },
   initConnectionState: initConnectionState
 };
-tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
+CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
   id: [0x00,0x35],
   name: 'TLS_RSA_WITH_AES_256_CBC_SHA',
   initSecurityParameters: function(sp) {
@@ -49,18 +53,18 @@ tls.CipherSuites['TLS_RSA_WITH_AES_256_CBC_SHA'] = {
 };
 
 function initConnectionState(state, c, sp) {
-  var client = (c.entity === forge.tls.ConnectionEnd.client);
+  var client = (c.entity === tls.ConnectionEnd.client);
 
   // cipher setup
   state.read.cipherState = {
     init: false,
-    cipher: forge.cipher.createDecipher('AES-CBC', client ?
+    cipher: cipher.createDecipher('AES-CBC', client ?
       sp.keys.server_write_key : sp.keys.client_write_key),
     iv: client ? sp.keys.server_write_IV : sp.keys.client_write_IV
   };
   state.write.cipherState = {
     init: false,
-    cipher: forge.cipher.createCipher('AES-CBC', client ?
+    cipher: cipher.createCipher('AES-CBC', client ?
       sp.keys.client_write_key : sp.keys.server_write_key),
     iv: client ? sp.keys.client_write_IV : sp.keys.server_write_IV
   };
@@ -96,7 +100,7 @@ function encrypt_aes_cbc_sha1(record, s) {
     // the residue from the previous encryption
     iv = s.cipherState.init ? null : s.cipherState.iv;
   } else {
-    iv = forge.random.getBytesSync(16);
+    iv = random.getBytesSync(16);
   }
 
   s.cipherState.init = true;
@@ -234,7 +238,7 @@ function decrypt_aes_cbc_sha1(record, s) {
 
   // create a random MAC to check against should the mac length check fail
   // Note: do this regardless of the failure to keep timing consistent
-  var mac = forge.random.getBytesSync(macLen);
+  var mac = random.getBytesSync(macLen);
 
   // get fragment and mac
   var len = cipher.output.length();
@@ -245,7 +249,7 @@ function decrypt_aes_cbc_sha1(record, s) {
     // bad data, but get bytes anyway to try to keep timing consistent
     record.fragment = cipher.output.getBytes();
   }
-  record.fragment = forge.util.createBuffer(record.fragment);
+  record.fragment = util.createBuffer(record.fragment);
   record.length = record.fragment.length();
 
   // see if data integrity checks out, update sequence number
@@ -270,7 +274,7 @@ function decrypt_aes_cbc_sha1(record, s) {
  * @return true if the MACs are the same, false if not.
  */
 function compareMacs(key, mac1, mac2) {
-  var hmac = forge.hmac.create();
+  var hmac = forge_hmac.create();
 
   hmac.start('SHA1', key);
   hmac.update(mac1);
@@ -282,57 +286,3 @@ function compareMacs(key, mac1, mac2) {
 
   return mac1 === mac2;
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'aesCipherSuites';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './aes', './tls'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

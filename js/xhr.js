@@ -328,10 +328,10 @@ xhrApi.create = function(options) {
   options = $.extend({
     logWarningOnError: true,
     verbose: false,
-    logError: function(){},
-    logWarning: function(){},
-    logDebug: function(){},
-    logVerbose: function(){},
+    logError: function() {},
+    logWarning: function() {},
+    logDebug: function() {},
+    logVerbose: function() {},
     url: null
   }, options || {});
 

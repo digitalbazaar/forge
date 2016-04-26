@@ -7,9 +7,9 @@
  *
  * Copyright (c) 2009-2013 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var log = require("./log");
+var util = require("./util");
+var debug = require("./debug");
 
 // logging category
 var cat = 'forge.task';
@@ -27,12 +27,12 @@ var sVL = 0;
 var sTasks = {};
 var sNextTaskId = 0;
 // debug access
-forge.debug.set(cat, 'tasks', sTasks);
+debug.set(cat, 'tasks', sTasks);
 
 // a map of task type to task queue
 var sTaskQueues = {};
 // debug access
-forge.debug.set(cat, 'queues', sTaskQueues);
+debug.set(cat, 'queues', sTaskQueues);
 
 // name for unnamed tasks
 var sNoTaskName = '?';
@@ -196,7 +196,7 @@ var Task = function(options) {
   this.id = sNextTaskId++;
   sTasks[this.id] = this;
   if(sVL >= 1) {
-    forge.log.verbose(cat, '[%s][%s] init', this.id, this.name, this);
+    log.verbose(cat, '[%s][%s] init', this.id, this.name, this);
   }
 };
 
@@ -205,7 +205,7 @@ var Task = function(options) {
  */
 Task.prototype.debug = function(msg) {
   msg = msg || '';
-  forge.log.debug(cat, msg,
+  log.debug(cat, msg,
     '[%s][%s] task:', this.id, this.name, this,
     'subtasks:', this.subtasks.length,
     'queue:', sTaskQueues);
@@ -258,7 +258,7 @@ Task.prototype.next = function(name, subrun) {
  */
 Task.prototype.parallel = function(name, subrun) {
   // juggle parameters if it looks like no name is given
-  if(forge.util.isArray(name)) {
+  if(util.isArray(name)) {
     subrun = name;
 
     // inherit parent's name
@@ -276,7 +276,7 @@ Task.prototype.parallel = function(name, subrun) {
     // closure and changes as the loop changes -- causing i
     // to always be set to its highest value
     var startParallelTask = function(pname, pi) {
-      forge.task.start({
+      task.start({
         type: pname,
         run: function(task) {
            subrun[pi](task);
@@ -558,7 +558,7 @@ var finish = function(task, suppressCallbacks) {
 
   delete sTasks[task.id];
   if(sVL >= 1) {
-    forge.log.verbose(cat, '[%s][%s] finish',
+    log.verbose(cat, '[%s][%s] finish',
       task.id, task.name, task);
   }
 
@@ -566,17 +566,17 @@ var finish = function(task, suppressCallbacks) {
   if(task.parent === null) {
     // report error if queue is missing
     if(!(task.type in sTaskQueues)) {
-      forge.log.error(cat,
+      log.error(cat,
         '[%s][%s] task queue missing [%s]',
         task.id, task.name, task.type);
     } else if(sTaskQueues[task.type].length === 0) {
       // report error if queue is empty
-      forge.log.error(cat,
+      log.error(cat,
         '[%s][%s] task queue empty [%s]',
         task.id, task.name, task.type);
     } else if(sTaskQueues[task.type][0] !== task) {
       // report error if this task isn't the first in the queue
-      forge.log.error(cat,
+      log.error(cat,
         '[%s][%s] task not first in queue [%s]',
         task.id, task.name, task.type);
     } else {
@@ -585,7 +585,7 @@ var finish = function(task, suppressCallbacks) {
       // clean up queue if it is empty
       if(sTaskQueues[task.type].length === 0) {
         if(sVL >= 1) {
-          forge.log.verbose(cat, '[%s][%s] delete queue [%s]',
+          log.verbose(cat, '[%s][%s] delete queue [%s]',
             task.id, task.name, task.type);
         }
         /* Note: Only a task can delete a queue of its own type. This
@@ -596,7 +596,7 @@ var finish = function(task, suppressCallbacks) {
       } else {
         // dequeue the next task and start it
         if(sVL >= 1) {
-          forge.log.verbose(cat,
+          log.verbose(cat,
             '[%s][%s] queue start next [%s] remain:%s',
             task.id, task.name, task.type,
             sTaskQueues[task.type].length);
@@ -617,7 +617,9 @@ var finish = function(task, suppressCallbacks) {
 };
 
 /* Tasks API */
-forge.task = forge.task || {};
+var task = {};
+
+module.exports = task;
 
 /**
  * Starts a new task that will run the passed function asynchronously.
@@ -641,7 +643,7 @@ forge.task = forge.task || {};
  *
  * @param options the object as described above.
  */
-forge.task.start = function(options) {
+task.start = function(options) {
   // create a new task
   var task = new Task({
     run: options.run,
@@ -654,7 +656,7 @@ forge.task.start = function(options) {
   // append the task onto the appropriate queue
   if(!(task.type in sTaskQueues)) {
     if(sVL >= 1) {
-      forge.log.verbose(cat, '[%s][%s] create queue [%s]',
+      log.verbose(cat, '[%s][%s] create queue [%s]',
         task.id, task.name, task.type);
     }
     // create the queue with the new task
@@ -672,7 +674,7 @@ forge.task.start = function(options) {
  *
  * @param type the type of task to cancel.
  */
-forge.task.cancel = function(type) {
+task.cancel = function(type) {
   // find the task queue
   if(type in sTaskQueues) {
     // empty all but the current task from the queue
@@ -687,7 +689,7 @@ forge.task.cancel = function(type) {
  *
  * @return the condition variable.
  */
-forge.task.createCondition = function() {
+task.createCondition = function() {
   var cond = {
     // all tasks that are blocked
     tasks: {}
@@ -722,57 +724,3 @@ forge.task.createCondition = function() {
 
   return cond;
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'task';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './debug', './log', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

@@ -7,18 +7,19 @@
  * Copyright (c) 2014 Lautaro Cozzani <lautaro.cozzani@scytl.com>
  * Copyright (c) 2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var random = require("./random");
+var util = require("./util");
 
-forge.kem = forge.kem || {};
+var kem = {};
 
-var BigInteger = forge.jsbn.BigInteger;
+module.exports = kem;
+
+var BigInteger = require("./jsbn").BigInteger;
 
 /**
  * The API for the RSA Key Encapsulation Mechanism (RSA-KEM) from ISO 18033-2.
  */
-forge.kem.rsa = {};
+kem.rsa = {};
 
 /**
  * Creates an RSA KEM API object for generating a secret asymmetric key.
@@ -34,9 +35,9 @@ forge.kem.rsa = {};
  *          [prng] a custom crypto-secure pseudo-random number generator to use,
  *            that must define "getBytesSync".
  */
-forge.kem.rsa.create = function(kdf, options) {
+kem.rsa.create = function(kdf, options) {
   options = options || {};
-  var prng = options.prng || forge.random;
+  var prng = options.prng || random;
 
   var kem = {};
 
@@ -57,15 +58,15 @@ forge.kem.rsa.create = function(kdf, options) {
     var r;
     do {
       r = new BigInteger(
-        forge.util.bytesToHex(prng.getBytesSync(byteLength)),
+        util.bytesToHex(prng.getBytesSync(byteLength)),
         16).mod(publicKey.n);
     } while(r.equals(BigInteger.ZERO));
 
     // prepend r with zeros
-    r = forge.util.hexToBytes(r.toString(16));
+    r = util.hexToBytes(r.toString(16));
     var zeros = byteLength - r.length;
     if(zeros > 0) {
-      r = forge.util.fillString(String.fromCharCode(0), zeros) + r;
+      r = util.fillString(String.fromCharCode(0), zeros) + r;
     }
 
     // encrypt the random
@@ -107,7 +108,7 @@ forge.kem.rsa.create = function(kdf, options) {
  *
  * @return a KDF1 API object.
  */
-forge.kem.kdf1 = function(md, digestLength) {
+kem.kdf1 = function(md, digestLength) {
   _createKDF(this, md, 0, digestLength || md.digestLength);
 };
 
@@ -120,7 +121,7 @@ forge.kem.kdf1 = function(md, digestLength) {
  *
  * @return a KDF2 API object.
  */
-forge.kem.kdf2 = function(md, digestLength) {
+kem.kdf2 = function(md, digestLength) {
   _createKDF(this, md, 1, digestLength || md.digestLength);
 };
 
@@ -143,12 +144,12 @@ function _createKDF(kdf, md, counterStart, digestLength) {
    * @return the key as a binary-encoded string.
    */
   kdf.generate = function(x, length) {
-    var key = new forge.util.ByteBuffer();
+    var key = new util.ByteBuffer();
 
     // run counter from counterStart to ceil(length / Hash.len)
     var k = Math.ceil(length / digestLength) + counterStart;
 
-    var c = new forge.util.ByteBuffer();
+    var c = new util.ByteBuffer();
     for(var i = counterStart; i < k; ++i) {
       // I2OSP(i, 4): convert counter to an octet string of 4 octets
       c.putInt32(i);
@@ -165,57 +166,3 @@ function _createKDF(kdf, md, counterStart, digestLength) {
     return key.getBytes();
   };
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'kem';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util','./random','./jsbn'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

@@ -5,14 +5,11 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
-var md5 = forge.md5 = forge.md5 || {};
-forge.md = forge.md || {};
-forge.md.algorithms = forge.md.algorithms || {};
-forge.md.md5 = forge.md.algorithms.md5 = md5;
+var md5 = {};
+
+module.exports = md5;
 
 /**
  * Creates an MD5 message digest object.
@@ -29,7 +26,7 @@ md5.create = function() {
   var _state = null;
 
   // input buffer
-  var _input = forge.util.createBuffer();
+  var _input = util.createBuffer();
 
   // used for word storage
   var _w = new Array(16);
@@ -62,7 +59,7 @@ md5.create = function() {
     for(var i = 0; i < int32s; ++i) {
       md.fullMessageLength.push(0);
     }
-    _input = forge.util.createBuffer();
+    _input = util.createBuffer();
     _state = {
       h0: 0x67452301,
       h1: 0xEFCDAB89,
@@ -86,7 +83,7 @@ md5.create = function() {
    */
   md.update = function(msg, encoding) {
     if(encoding === 'utf8') {
-      msg = forge.util.encodeUtf8(msg);
+      msg = util.encodeUtf8(msg);
     }
 
     // update message length
@@ -140,7 +137,7 @@ md5.create = function() {
     must *always* be present, so if the message length is already
     congruent to 448 mod 512, then 512 padding bits must be added. */
 
-    var finalBlock = forge.util.createBuffer();
+    var finalBlock = util.createBuffer();
     finalBlock.putBytes(_input.bytes());
 
     // compute remaining size to be digested (include message length size)
@@ -170,7 +167,7 @@ md5.create = function() {
       h3: _state.h3
     };
     _update(s2, _w, finalBlock);
-    var rval = forge.util.createBuffer();
+    var rval = util.createBuffer();
     rval.putInt32Le(s2.h0);
     rval.putInt32Le(s2.h1);
     rval.putInt32Le(s2.h2);
@@ -194,7 +191,7 @@ var _initialized = false;
 function _init() {
   // create padding
   _padding = String.fromCharCode(128);
-  _padding += forge.util.fillString(String.fromCharCode(0x00), 64);
+  _padding += util.fillString(String.fromCharCode(0x00), 64);
 
   // g values
   _g = [
@@ -289,57 +286,3 @@ function _update(s, w, bytes) {
     len -= 64;
   }
 }
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'md5';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

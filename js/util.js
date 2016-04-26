@@ -5,12 +5,10 @@
  *
  * Copyright (c) 2010-2014 Digital Bazaar, Inc.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
-
 /* Utilities API */
-var util = forge.util = forge.util || {};
+var util = {};
+
+module.exports = util;
 
 // define setImmediate and nextTick
 (function() {
@@ -225,7 +223,7 @@ util.ByteStringBuffer.prototype.putByte = function(b) {
 util.ByteStringBuffer.prototype.fillWithByte = function(b, n) {
   b = String.fromCharCode(b);
   var d = this.data;
-  while(n > 0) {
+  while (n > 0) {
     if(n & 1) {
       d += b;
     }
@@ -360,7 +358,7 @@ util.ByteStringBuffer.prototype.putInt = function(i, n) {
   do {
     n -= 8;
     bytes += String.fromCharCode((i >> n) & 0xFF);
-  } while(n > 0);
+  } while (n > 0);
   return this.putBytes(bytes);
 };
 
@@ -503,7 +501,7 @@ util.ByteStringBuffer.prototype.getInt = function(n) {
   do {
     rval = (rval << 8) + this.data.charCodeAt(this.read++);
     n -= 8;
-  } while(n > 0);
+  } while (n > 0);
   return rval;
 };
 
@@ -1041,7 +1039,7 @@ util.DataBuffer.prototype.putInt = function(i, n) {
   do {
     n -= 8;
     this.data.setInt8(this.write++, (i >> n) & 0xFF);
-  } while(n > 0);
+  } while (n > 0);
   return this;
 };
 
@@ -1160,7 +1158,7 @@ util.DataBuffer.prototype.getInt = function(n) {
   do {
     rval = (rval << 8) + this.data.getInt8(this.read++);
     n -= 8;
-  } while(n > 0);
+  } while (n > 0);
   return rval;
 };
 
@@ -1360,7 +1358,6 @@ util.DataBuffer.prototype.toString = function(encoding) {
 
 /** End Buffer w/UInt8Array backing */
 
-
 /**
  * Creates a buffer that stores bytes. A value may be given to put into the
  * buffer that is either a string of bytes or a UTF-16 string that will
@@ -1391,7 +1388,7 @@ util.createBuffer = function(input, encoding) {
  */
 util.fillString = function(c, n) {
   var s = '';
-  while(n > 0) {
+  while (n > 0) {
     if(n & 1) {
       s += c;
     }
@@ -1531,7 +1528,7 @@ util.encode64 = function(input, maxline) {
   var output = '';
   var chr1, chr2, chr3;
   var i = 0;
-  while(i < input.length) {
+  while (i < input.length) {
     chr1 = input.charCodeAt(i++);
     chr2 = input.charCodeAt(i++);
     chr3 = input.charCodeAt(i++);
@@ -1572,7 +1569,7 @@ util.decode64 = function(input) {
   var enc1, enc2, enc3, enc4;
   var i = 0;
 
-  while(i < input.length) {
+  while (i < input.length) {
     enc1 = _base64Idx[input.charCodeAt(i++) - 43];
     enc2 = _base64Idx[input.charCodeAt(i++) - 43];
     enc3 = _base64Idx[input.charCodeAt(i++) - 43];
@@ -1713,7 +1710,7 @@ util.binary.base64.encode = function(input, maxline) {
   var output = '';
   var chr1, chr2, chr3;
   var i = 0;
-  while(i < input.byteLength) {
+  while (i < input.byteLength) {
     chr1 = input[i++];
     chr2 = input[i++];
     chr3 = input[i++];
@@ -1760,7 +1757,7 @@ util.binary.base64.decode = function(input, output, offset) {
   var enc1, enc2, enc3, enc4;
   var i = 0, j = offset;
 
-  while(i < input.length) {
+  while (i < input.length) {
     enc1 = _base64Idx[input.charCodeAt(i++) - 43];
     enc2 = _base64Idx[input.charCodeAt(i++) - 43];
     enc3 = _base64Idx[input.charCodeAt(i++) - 43];
@@ -2463,7 +2460,7 @@ util.setPath = function(object, keys, value) {
   if(typeof(object) === 'object' && object !== null) {
     var i = 0;
     var len = keys.length;
-    while(i < len) {
+    while (i < len) {
       var next = keys[i++];
       if(i == len) {
         // last
@@ -2498,7 +2495,7 @@ util.getPath = function(object, keys, _default) {
   var i = 0;
   var len = keys.length;
   var hasNext = true;
-  while(hasNext && i < len &&
+  while (hasNext && i < len &&
     typeof(object) === 'object' && object !== null) {
     var next = keys[i++];
     hasNext = next in object;
@@ -2522,7 +2519,7 @@ util.deletePath = function(object, keys) {
   if(typeof(object) === 'object' && object !== null) {
     var i = 0;
     var len = keys.length;
-    while(i < len) {
+    while (i < len) {
       var next = keys[i++];
       if(i == len) {
         // last
@@ -2579,7 +2576,7 @@ util.format = function(format) {
   // last index found
   var last = 0;
   // loop while matches remain
-  while((match = re.exec(format))) {
+  while ((match = re.exec(format))) {
     part = format.substring(last, re.lastIndex - 2);
     // don't add empty strings (ie, parts between %s%s)
     if(part.length > 0) {
@@ -2785,7 +2782,7 @@ util.bytesToIPv6 = function(bytes) {
   for(var i = 0; i < bytes.length; i += 2) {
     var hex = util.bytesToHex(bytes[i] + bytes[i + 1]);
     // canonicalize zero representation
-    while(hex[0] === '0' && hex !== '0') {
+    while (hex[0] === '0' && hex !== '0') {
       hex = hex.substr(1);
     }
     if(hex === '0') {
@@ -2861,7 +2858,7 @@ util.estimateCores = function(options, callback) {
         // run worker for 4 ms
         var st = Date.now();
         var et = st + 4;
-        while(Date.now() < et);
+        while (Date.now() < et);
         self.postMessage({st: st, et: et});
       });
     }.toString(),
@@ -2932,57 +2929,3 @@ util.estimateCores = function(options, callback) {
     }, 0);
   }
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'util';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

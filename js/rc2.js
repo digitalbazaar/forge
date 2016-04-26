@@ -8,9 +8,7 @@
  * Information on the RC2 cipher is available from RFC #2268,
  * http://www.ietf.org/rfc/rfc2268.txt
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+var util = require("./util");
 
 var piTable = [
   0xd9, 0x78, 0xf9, 0xc4, 0x19, 0xdd, 0xb5, 0xed, 0x28, 0xe9, 0xfd, 0x79, 0x4a, 0xa0, 0xd8, 0x9d,
@@ -64,7 +62,9 @@ var ror = function(word, bits) {
 
 
 /* RC2 API */
-forge.rc2 = forge.rc2 || {};
+var rc2 = {};
+
+module.exports = rc2;
 
 /**
  * Perform RC2 key expansion as per RFC #2268, section 2.
@@ -73,9 +73,9 @@ forge.rc2 = forge.rc2 || {};
  * @param effKeyBits number of effective key bits (default: 128)
  * @return the expanded RC2 key (ByteBuffer of 128 bytes)
  */
-forge.rc2.expandKey = function(key, effKeyBits) {
+rc2.expandKey = function(key, effKeyBits) {
   if(typeof key === 'string') {
-    key = forge.util.createBuffer(key);
+    key = util.createBuffer(key);
   }
   effKeyBits = effKeyBits || 128;
 
@@ -87,7 +87,7 @@ forge.rc2.expandKey = function(key, effKeyBits) {
   var TM = 0xff >> (T1 & 0x07);
   var i;
 
-  for(i = T; i < 128; i ++) {
+  for(i = T; i < 128; i++) {
     L.putByte(piTable[(L.at(i - 1) + L.at(i - T)) & 0xff]);
   }
 
@@ -116,8 +116,8 @@ var createCipher = function(key, bits, encrypt) {
   var i, j, K = [];
 
   /* Expand key and fill into K[] Array */
-  key = forge.rc2.expandKey(key, bits);
-  for(i = 0; i < 64; i ++) {
+  key = rc2.expandKey(key, bits);
+  for(i = 0; i < 64; i++) {
     K.push(key.getInt16Le());
   }
 
@@ -132,7 +132,7 @@ var createCipher = function(key, bits, encrypt) {
         R[i] += K[j] + (R[(i + 3) % 4] & R[(i + 2) % 4]) +
           ((~R[(i + 3) % 4]) & R[(i + 1) % 4]);
         R[i] = rol(R[i], s[i]);
-        j ++;
+        j++;
       }
     };
 
@@ -142,7 +142,7 @@ var createCipher = function(key, bits, encrypt) {
      * @param R Array of four words to perform mashing on.
      */
     mashRound = function(R) {
-      for(i = 0; i < 4; i ++) {
+      for(i = 0; i < 4; i++) {
         R[i] += K[R[(i + 3) % 4] & 63];
       }
     };
@@ -190,7 +190,7 @@ var createCipher = function(key, bits, encrypt) {
     var R = [];
 
     /* Get data from input buffer and fill the four words into R */
-    for(i = 0; i < 4; i ++) {
+    for(i = 0; i < 4; i++) {
       var val = _input.getInt16Le();
 
       if(_iv !== null) {
@@ -210,14 +210,14 @@ var createCipher = function(key, bits, encrypt) {
     j = encrypt ? 0 : 63;
 
     /* Run execution plan. */
-    for(var ptr = 0; ptr < plan.length; ptr ++) {
-      for(var ctr = 0; ctr < plan[ptr][0]; ctr ++) {
+    for(var ptr = 0; ptr < plan.length; ptr++) {
+      for(var ctr = 0; ctr < plan[ptr][0]; ctr++) {
         plan[ptr][1](R);
       }
     }
 
     /* Write back result to output buffer. */
-    for(i = 0; i < 4; i ++) {
+    for(i = 0; i < 4; i++) {
       if(_iv !== null) {
         if(encrypt) {
           /* We're encrypting in CBC-mode, feed back encrypted bytes into
@@ -250,13 +250,13 @@ var createCipher = function(key, bits, encrypt) {
       if(iv) {
         /* CBC mode */
         if(typeof iv === 'string') {
-          iv = forge.util.createBuffer(iv);
+          iv = util.createBuffer(iv);
         }
       }
 
       _finish = false;
-      _input = forge.util.createBuffer();
-      _output = output || new forge.util.createBuffer();
+      _input = util.createBuffer();
+      _output = output || new util.createBuffer();
       _iv = iv;
 
       cipher.output = _output;
@@ -340,7 +340,6 @@ var createCipher = function(key, bits, encrypt) {
   return cipher;
 };
 
-
 /**
  * Creates an RC2 cipher object to encrypt data in ECB or CBC mode using the
  * given symmetric key. The output will be stored in the 'output' member
@@ -355,8 +354,8 @@ var createCipher = function(key, bits, encrypt) {
  *
  * @return the cipher.
  */
-forge.rc2.startEncrypting = function(key, iv, output) {
-  var cipher = forge.rc2.createEncryptionCipher(key, 128);
+rc2.startEncrypting = function(key, iv, output) {
+  var cipher = rc2.createEncryptionCipher(key, 128);
   cipher.start(iv, output);
   return cipher;
 };
@@ -374,7 +373,7 @@ forge.rc2.startEncrypting = function(key, iv, output) {
  *
  * @return the cipher.
  */
-forge.rc2.createEncryptionCipher = function(key, bits) {
+rc2.createEncryptionCipher = function(key, bits) {
   return createCipher(key, bits, true);
 };
 
@@ -392,8 +391,8 @@ forge.rc2.createEncryptionCipher = function(key, bits) {
  *
  * @return the cipher.
  */
-forge.rc2.startDecrypting = function(key, iv, output) {
-  var cipher = forge.rc2.createDecryptionCipher(key, 128);
+rc2.startDecrypting = function(key, iv, output) {
+  var cipher = rc2.createDecryptionCipher(key, 128);
   cipher.start(iv, output);
   return cipher;
 };
@@ -411,60 +410,6 @@ forge.rc2.startDecrypting = function(key, iv, output) {
  *
  * @return the cipher.
  */
-forge.rc2.createDecryptionCipher = function(key, bits) {
+rc2.createDecryptionCipher = function(key, bits) {
   return createCipher(key, bits, false);
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'rc2';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();

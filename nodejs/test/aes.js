@@ -1,5 +1,3 @@
-(function() {
-
 function Tests(ASSERT, CIPHER, AES, UTIL) {
   describe('aes', function() {
     it('should encrypt a single block with a 128-bit key', function() {
@@ -1474,25 +1472,23 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
-    'forge/cipher',
-    'forge/aes',
-    'forge/util'
+    '../../js/cipher',
+    '../../js/aes',
+    '../../js/util'
   ], function(CIPHER, AES, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      CIPHER(forge),
-      AES(forge),
-      UTIL(forge)
+      CIPHER,
+      AES,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/cipher')(forge),
-    require('../../js/aes')(forge),
-    require('../../js/util')(forge));
+    require('../../js/cipher'),
+    require('../../js/aes'),
+    require('../../js/util'));
 }
-
-})();

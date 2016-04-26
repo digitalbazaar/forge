@@ -488,13 +488,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as UTC time because it's >= 1950
           value: new Date('Jan 1, 1950 00:00:00Z')
         }]
@@ -517,13 +517,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
           value: new Date('Dec 31, 1949 23:59:59Z')
         }]
@@ -548,13 +548,13 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         certificate: _pem.certificate,
         digestAlgorithm: PKI.oids.sha256,
         authenticatedAttributes: [{
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
+          type: PKI.oids.contentType,
+          value: PKI.oids.data
         }, {
-          type: forge.pki.oids.messageDigest
+          type: PKI.oids.messageDigest
           // value will be auto-populated at signing time
         }, {
-          type: forge.pki.oids.signingTime,
+          type: PKI.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
           value: new Date('Dec 31, 1949 23:59:59Z')
         }]
@@ -571,31 +571,31 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
 var forge = {};
 if(typeof define === 'function') {
   define([
-    'forge/pkcs7',
-    'forge/pki',
-    'forge/aes',
-    'forge/des',
-    'forge/util'
+    '../../js/pkcs7',
+    '../../js/pki',
+    '../../js/aes',
+    '../../js/des',
+    '../../js/util'
   ], function(PKCS7, PKI, AES, DES, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
-      PKCS7(forge),
-      PKI(forge),
-      AES(forge),
-      DES(forge),
-      UTIL(forge)
+      PKCS7,
+      PKI,
+      AES,
+      DES,
+      UTIL
     );
   });
 } else if(typeof module === 'object' && module.exports) {
   // assume NodeJS
   Tests(
     require('assert'),
-    require('../../js/pkcs7')(forge),
-    require('../../js/pki')(forge),
-    require('../../js/aes')(forge),
-    require('../../js/des')(forge),
-    require('../../js/util')(forge));
+    require('../../js/pkcs7'),
+    require('../../js/pki'),
+    require('../../js/aes'),
+    require('../../js/des'),
+    require('../../js/util'));
 }
 
 })();

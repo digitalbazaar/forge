@@ -7,12 +7,14 @@
  *
  * Copyright (c) 2010-2012 Digital Bazaar, Inc. All rights reserved.
  */
-(function() {
-/* ########## Begin module implementation ########## */
-function initModule(forge) {
+
+var md = require("./md");
+var util = require("./util");
 
 /* HMAC API */
-var hmac = forge.hmac = forge.hmac || {};
+var hmac = {};
+
+module.exports = hmac;
 
 /**
  * Creates an HMAC object that uses the given message digest object.
@@ -43,19 +45,19 @@ hmac.create = function() {
    * @param key the key to use as a string, array of bytes, byte buffer,
    *           or null to reuse the previous key.
    */
-  ctx.start = function(md, key) {
-    if(md !== null) {
-      if(typeof md === 'string') {
+  ctx.start = function(passed_md, key) {
+    if(passed_md !== null) {
+      if(typeof passed_md === 'string') {
         // create builtin message digest
-        md = md.toLowerCase();
-        if(md in forge.md.algorithms) {
-          _md = forge.md.algorithms[md].create();
+        passed_md = passed_md.toLowerCase();
+        if(passed_md in md.algorithms) {
+          _md = md.algorithms[passed_md].create();
         } else {
-          throw new Error('Unknown hash algorithm "' + md + '"');
+          throw new Error('Unknown hash algorithm "' + passed_md + '"');
         }
       } else {
         // store message digest
-        _md = md;
+        _md = passed_md;
       }
     }
 
@@ -65,11 +67,11 @@ hmac.create = function() {
     } else {
       if(typeof key === 'string') {
         // convert string into byte buffer
-        key = forge.util.createBuffer(key);
-      } else if(forge.util.isArray(key)) {
+        key = util.createBuffer(key);
+      } else if(util.isArray(key)) {
         // convert byte array into byte buffer
         var tmp = key;
-        key = forge.util.createBuffer();
+        key = util.createBuffer();
         for(var i = 0; i < tmp.length; ++i) {
           key.putByte(tmp[i]);
         }
@@ -86,8 +88,8 @@ hmac.create = function() {
       // mix key into inner and outer padding
       // ipadding = [0x36 * blocksize] ^ key
       // opadding = [0x5C * blocksize] ^ key
-      _ipadding = forge.util.createBuffer();
-      _opadding = forge.util.createBuffer();
+      _ipadding = util.createBuffer();
+      _opadding = util.createBuffer();
       keylen = key.length();
       for(var i = 0; i < keylen; ++i) {
         var tmp = key.at(i);
@@ -144,57 +146,3 @@ hmac.create = function() {
 
   return ctx;
 };
-
-} // end module implementation
-
-/* ########## Begin module wrapper ########## */
-var name = 'hmac';
-if(typeof define !== 'function') {
-  // NodeJS -> AMD
-  if(typeof module === 'object' && module.exports) {
-    var nodeJS = true;
-    define = function(ids, factory) {
-      factory(require, module);
-    };
-  } else {
-    // <script>
-    if(typeof forge === 'undefined') {
-      forge = {};
-    }
-    return initModule(forge);
-  }
-}
-// AMD
-var deps;
-var defineFunc = function(require, module) {
-  module.exports = function(forge) {
-    var mods = deps.map(function(dep) {
-      return require(dep);
-    }).concat(initModule);
-    // handle circular dependencies
-    forge = forge || {};
-    forge.defined = forge.defined || {};
-    if(forge.defined[name]) {
-      return forge[name];
-    }
-    forge.defined[name] = true;
-    for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
-    }
-    return forge[name];
-  };
-};
-var tmpDefine = define;
-define = function(ids, factory) {
-  deps = (typeof ids === 'string') ? factory.slice(2) : ids.slice(2);
-  if(nodeJS) {
-    delete define;
-    return tmpDefine.apply(null, Array.prototype.slice.call(arguments, 0));
-  }
-  define = tmpDefine;
-  return define.apply(null, Array.prototype.slice.call(arguments, 0));
-};
-define(['require', 'module', './md', './util'], function() {
-  defineFunc.apply(null, Array.prototype.slice.call(arguments, 0));
-});
-})();
