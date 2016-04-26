@@ -3197,13 +3197,14 @@ tls.createCertificateRequest = function(c) {
   // common RSA certificate type
   certTypes.putByte(0x01);
 
-  // TODO: verify that this data format is correct
   // add distinguished names from CA store
   var cAs = forge.util.createBuffer();
   for(var key in c.caStore.certs) {
     var cert = c.caStore.certs[key];
     var dn = forge.pki.distinguishedNameToAsn1(cert.subject);
-    cAs.putBuffer(forge.asn1.toDer(dn));
+    var byteBuffer = forge.asn1.toDer(dn);
+    cAs.putInt16(byteBuffer.length());
+    cAs.putBuffer(byteBuffer);
   }
 
   // TODO: TLS 1.2+ has a different format
