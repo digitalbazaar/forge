@@ -29,7 +29,7 @@ var util = forge.util = forge.util || {};
 
   // polyfill nextTick with native setImmediate
   if(typeof setImmediate === 'function') {
-    util.setImmediate = setImmediate;
+    util.setImmediate = function() { return setImmediate.apply(undefined, arguments); };
     util.nextTick = function(callback) {
       return setImmediate(callback);
     };
