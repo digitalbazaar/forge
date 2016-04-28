@@ -3377,8 +3377,8 @@ tls.queue = function(c, record) {
     return;
   }
 
-  if (record.fragment.length() == 0) {
-    if (record.type === tls.ContentType.handshake ||
+  if(record.fragment.length() === 0) {
+    if(record.type === tls.ContentType.handshake ||
       record.type === tls.ContentType.alert ||
       record.type === tls.ContentType.change_cipher_spec) {
       // Empty handshake, alert of change cipher spec messages are not allowed per the TLS specification and should not be sent.
