@@ -880,8 +880,9 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
   }
 
   // if native code is permitted and a callback is given, use native
-  // key generation code if available
-  if(!forge.disableNativeCode && callback) {
+  // key generation code if available and if parameters are acceptable
+  if(!forge.disableNativeCode && callback &&
+    bits >= 256 && bits <= 16384 && (e === 0x10001 || e === 3)) {
     if(_detectSubtleCrypto('generateKey') && _detectSubtleCrypto('exportKey')) {
       // use standard native generateKey
       return window.crypto.subtle.generateKey({
@@ -891,21 +892,49 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
         hash: {name: 'SHA-256'}
       }, true /* key can be exported*/, ['sign', 'verify'])
       .then(function(pair) {
-        return window.crypto.subtle.exportKey('jwk', pair.privateKey);
+        return window.crypto.subtle.exportKey('pkcs8', pair.privateKey);
       }).catch(function(err) {
         callback(err);
-      }).then(function(jwk) {
-        if(jwk) {
+      }).then(function(pkcs8) {
+        if(pkcs8) {
+          var privateKey = pki.privateKeyFromAsn1(
+            asn1.fromDer(forge.util.createBuffer(pkcs8)));
           callback(null, {
-            privateKey: _privateKeyFromJwk(jwk),
-            publicKey: _publicKeyFromJwk(jwk)
+            privateKey: privateKey,
+            publicKey: pki.setRsaPublicKey(privateKey.n, privateKey.e)
           });
         }
       });
     }
-    if(_detectSubtleMsCrypto('generateKey')) {
-      // TODO: use deprecated MS native generateKey
-      //return;
+    if(_detectSubtleMsCrypto('generateKey') &&
+      _detectSubtleMsCrypto('exportKey')) {
+      var genOp = window.msCrypto.subtle.generateKey({
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: bits,
+        publicExponent: _intToUint8Array(e),
+        hash: {name: 'SHA-256'}
+      }, true /* key can be exported*/, ['sign', 'verify']);
+      genOp.oncomplete = function(e) {
+        var pair = e.target.result;
+        var exportOp = window.msCrypto.subtle.exportKey(
+          'pkcs8', pair.privateKey);
+        exportOp.oncomplete = function(e) {
+          var pkcs8 = e.target.result;
+          var privateKey = pki.privateKeyFromAsn1(
+            asn1.fromDer(forge.util.createBuffer(pkcs8)));
+          callback(null, {
+            privateKey: privateKey,
+            publicKey: pki.setRsaPublicKey(privateKey.n, privateKey.e)
+          });
+        };
+        exportOp.onerror = function(err) {
+          callback(err);
+        };
+      };
+      genOp.onerror = function(err) {
+        callback(err);
+      };
+      return;
     }
   }
 
@@ -1722,7 +1751,8 @@ function _intToUint8Array(x) {
 
 function _privateKeyFromJwk(jwk) {
   if(jwk.kty !== 'RSA') {
-    throw new Error('Key algorithm must be "RSA".');
+    throw new Error(
+      'Unsupported key algorithm "' + jwk.kty + '"; algorithm must be "RSA".');
   }
   return pki.setRsaPrivateKey(
     _base64ToBigInt(jwk.n),
