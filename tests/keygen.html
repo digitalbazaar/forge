@@ -33,6 +33,10 @@ function async() {
     /*workLoad: 100,*/
     workerScript: 'forge/prime.worker.js'
   }, function(err, keypair) {
+    if(err) {
+      console.error(err);
+      return;
+    }
     var et = +new Date();
     console.log('Key-pair created in ' + (et - st) + 'ms.');
     console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
