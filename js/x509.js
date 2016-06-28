@@ -2308,6 +2308,40 @@ function _fillMissingExtensionFields(e, options) {
       seq.push(
         asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, false, serialNumber));
     }
+  } else if (e.name === 'cRLDistributionPoints') {
+    e.value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    var seq = e.value.value;
+
+    // Create sub sequence distribution points
+    var subSeq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+    var altName;
+    for(var n = 0; n < e.altNames.length; ++n) {
+      altName = e.altNames[n];
+      var value = altName.value;
+      // handle IP
+      if(altName.type === 7 && altName.ip) {
+        value = forge.util.bytesFromIP(altName.ip);
+        if(value === null) {
+          var error = new Error(
+            'Extension "ip" value is not a valid IPv4 or IPv6 address.');
+          error.extension = e;
+          throw error;
+        }
+      } else if(altName.type === 8) {
+        // handle OID
+        if(altName.oid) {
+          value = asn1.oidToDer(asn1.oidToDer(altName.oid));
+        } else {
+          // deprecated ... convert value to OID
+          value = asn1.oidToDer(value);
+        }
+      }
+      subSeq.value.push(asn1.create(
+        asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
+        value));
+    }
+
+    seq.push(subSeq);
   }
 
   // ensure value has been defined by now
