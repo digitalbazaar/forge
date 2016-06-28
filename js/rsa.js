@@ -883,7 +883,6 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
   // key generation code if available
   if(!forge.disableNativeCode && callback) {
     if(_detectSubtleCrypto('generateKey') && _detectSubtleCrypto('exportKey')) {
-      console.log('native generate key');
       // use standard native generateKey
       return window.crypto.subtle.generateKey({
         name: 'RSASSA-PKCS1-v1_5',
