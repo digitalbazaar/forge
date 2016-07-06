@@ -69,6 +69,13 @@ npm install
 npm run minify
 ```
 
+**Note for Windows users**: If you have trouble running the
+`npm run bundle` command, try this instead:
+
+```
+node node_modules\requirejs\bin\r.js -o minify.js
+```
+
 This will create a single minimized file that can be included in
 the browser:
 
@@ -94,6 +101,13 @@ the browser:
 ```
 npm install
 npm run bundle
+```
+
+**Note for Windows users**: If you have trouble running the
+`npm run bundle` command, try this instead:
+
+```
+node node_modules\requirejs\bin\r.js -o minify.js optimize=none out=js/forge.bundle.js
 ```
 
 This will create:
