@@ -69,6 +69,13 @@ npm install
 npm run minify
 ```
 
+**Note for Windows users**: If you have trouble running the
+`npm run bundle` command, try this instead:
+
+```
+node node_modules\requirejs\bin\r.js -o minify.js
+```
+
 This will create a single minimized file that can be included in
 the browser:
 
@@ -94,6 +101,13 @@ the browser:
 ```
 npm install
 npm run bundle
+```
+
+**Note for Windows users**: If you have trouble running the
+`npm run bundle` command, try this instead:
+
+```
+node node_modules\requirejs\bin\r.js -o minify.js optimize=none out=js/forge.bundle.js
 ```
 
 This will create:
@@ -772,10 +786,14 @@ __Examples__
 var rsa = forge.pki.rsa;
 
 // generate an RSA key pair synchronously
+// *NOT RECOMMENDED* -- can be significantly slower than async and will not
+// use native APIs if available.
 var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
 
 // generate an RSA key pair asynchronously (uses web workers if available)
 // use workers: -1 to run a fast core estimator to optimize # of workers
+// *RECOMMENDED* - can be significantly faster than sync -- and will use
+// native APIs if available.
 rsa.generateKeyPair({bits: 2048, workers: 2}, function(err, keypair) {
   // keypair.privateKey, keypair.publicKey
 });

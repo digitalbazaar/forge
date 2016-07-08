@@ -267,6 +267,70 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       });
     });
 
+    it('should generate a certificate with cRLDistributionPoints extension', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        extensions: [{
+          id: '2.5.29.31',
+          altNames: [{
+            type: 6,
+            value: 'https://test-organisation.com/test-organisation/crl/test_organisation_ca.crl.der'
+          }]
+        }],
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      // verify certificate encoding/parsing
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+
+      // verify cRLDistributionPoints extension
+      var index = findIndex(cert.extensions, {id: '2.5.29.31'});
+      ASSERT.ok(index !== -1);
+      var ext = cert.extensions[index];
+      ASSERT.equal(ext.name, 'cRLDistributionPoints');
+      ASSERT.equal(ext.value, UTIL.hexToBytes(
+        '30543052865068747470733a2f2f746573742d6f7267616e69736174696f6e2e63' +
+        '6f6d2f746573742d6f7267616e69736174696f6e2f63726c2f746573745f6f7267' +
+        '616e69736174696f6e5f63612e63726c2e646572'));
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
+        ASSERT.equal(vfd, true);
+        ASSERT.ok(cert.verifySubjectKeyIdentifier());
+        return true;
+      });
+    });
+
     it('should generate and verify a self-signed certificate', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),

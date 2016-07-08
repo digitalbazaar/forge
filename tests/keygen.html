@@ -12,7 +12,11 @@
   <script type="text/javascript" src="forge/jsbn.js"></script>
   <script type="text/javascript" src="forge/asn1.js"></script>
   <script type="text/javascript" src="forge/pem.js"></script>
+  <script type="text/javascript" src="forge/prime.js"></script>
   <script type="text/javascript" src="forge/rsa.js"></script>
+  <script type="text/javascript" src="forge/pki.js"></script>
+  <script type="text/javascript" src="forge/oids.js"></script>
+  <script type="text/javascript" src="forge/x509.js"></script>
 </head>
 
 <body>
@@ -29,10 +33,14 @@ function async() {
     /*workLoad: 100,*/
     workerScript: 'forge/prime.worker.js'
   }, function(err, keypair) {
+    if(err) {
+      console.error(err);
+      return;
+    }
     var et = +new Date();
     console.log('Key-pair created in ' + (et - st) + 'ms.');
-    //console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
-    //console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
+    console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
+    console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
   });
 }
 
@@ -43,14 +51,14 @@ function sync() {
   var keypair = forge.pki.rsa.generateKeyPair(bits);
   var et = +new Date();
   console.log('Key-pair created in ' + (et - st) + 'ms.');
-  //console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
-  //console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
+  console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
+  console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
 }
 
-async();
-//sync();
-
 </script>
+
+<button onclick="async()">Async Generate Key</button>
+<button onclick="sync()">Sync Generate Key</button>
 
 </body>
 </html>

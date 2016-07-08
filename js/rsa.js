@@ -878,6 +878,67 @@ pki.rsa.generateKeyPair = function(bits, e, options, callback) {
   if(e === undefined) {
     e = options.e || 0x10001;
   }
+
+  // if native code is permitted and a callback is given, use native
+  // key generation code if available and if parameters are acceptable
+  if(!forge.disableNativeCode && callback &&
+    bits >= 256 && bits <= 16384 && (e === 0x10001 || e === 3)) {
+    if(_detectSubtleCrypto('generateKey') && _detectSubtleCrypto('exportKey')) {
+      // use standard native generateKey
+      return window.crypto.subtle.generateKey({
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: bits,
+        publicExponent: _intToUint8Array(e),
+        hash: {name: 'SHA-256'}
+      }, true /* key can be exported*/, ['sign', 'verify'])
+      .then(function(pair) {
+        return window.crypto.subtle.exportKey('pkcs8', pair.privateKey);
+      }).catch(function(err) {
+        callback(err);
+      }).then(function(pkcs8) {
+        if(pkcs8) {
+          var privateKey = pki.privateKeyFromAsn1(
+            asn1.fromDer(forge.util.createBuffer(pkcs8)));
+          callback(null, {
+            privateKey: privateKey,
+            publicKey: pki.setRsaPublicKey(privateKey.n, privateKey.e)
+          });
+        }
+      });
+    }
+    if(_detectSubtleMsCrypto('generateKey') &&
+      _detectSubtleMsCrypto('exportKey')) {
+      var genOp = window.msCrypto.subtle.generateKey({
+        name: 'RSASSA-PKCS1-v1_5',
+        modulusLength: bits,
+        publicExponent: _intToUint8Array(e),
+        hash: {name: 'SHA-256'}
+      }, true /* key can be exported*/, ['sign', 'verify']);
+      genOp.oncomplete = function(e) {
+        var pair = e.target.result;
+        var exportOp = window.msCrypto.subtle.exportKey(
+          'pkcs8', pair.privateKey);
+        exportOp.oncomplete = function(e) {
+          var pkcs8 = e.target.result;
+          var privateKey = pki.privateKeyFromAsn1(
+            asn1.fromDer(forge.util.createBuffer(pkcs8)));
+          callback(null, {
+            privateKey: privateKey,
+            publicKey: pki.setRsaPublicKey(privateKey.n, privateKey.e)
+          });
+        };
+        exportOp.onerror = function(err) {
+          callback(err);
+        };
+      };
+      genOp.onerror = function(err) {
+        callback(err);
+      };
+      return;
+    }
+  }
+
+  // use JavaScript implementation
   var state = pki.rsa.createKeyPairGenerationState(bits, e, options);
   if(!callback) {
     pki.rsa.stepKeyPairGenerationState(state, 0);
@@ -1647,6 +1708,74 @@ function _getMillerRabinTests(bits) {
   if(bits <= 800) return 4;
   if(bits <= 1250) return 3;
   return 2;
+}
+
+/**
+ * Performs feature detection on the SubtleCrypto interface.
+ *
+ * @param fn the feature (function) to detect.
+ *
+ * @return true if detected, false if not.
+ */
+function _detectSubtleCrypto(fn) {
+  return (typeof window !== 'undefined' &&
+    typeof window.crypto === 'object' &&
+    typeof window.crypto.subtle === 'object' &&
+    typeof window.crypto.subtle[fn] === 'function');
+}
+
+/**
+ * Performs feature detection on the deprecated Microsoft Internet Explorer
+ * outdated SubtleCrypto interface. This function should only be used after
+ * checking for the modern, standard SubtleCrypto interface.
+ *
+ * @param fn the feature (function) to detect.
+ *
+ * @return true if detected, false if not.
+ */
+function _detectSubtleMsCrypto(fn) {
+  return (typeof window !== 'undefined' &&
+    typeof window.msCrypto === 'object' &&
+    typeof window.msCrypto.subtle === 'object' &&
+    typeof window.msCrypto.subtle[fn] === 'function');
+}
+
+function _intToUint8Array(x) {
+  var bytes = forge.util.hexToBytes(x.toString(16));
+  var buffer = new Uint8Array(bytes.length);
+  for(var i = 0; i < bytes.length; ++i) {
+    buffer[i] = bytes.charCodeAt(i);
+  }
+  return buffer;
+}
+
+function _privateKeyFromJwk(jwk) {
+  if(jwk.kty !== 'RSA') {
+    throw new Error(
+      'Unsupported key algorithm "' + jwk.kty + '"; algorithm must be "RSA".');
+  }
+  return pki.setRsaPrivateKey(
+    _base64ToBigInt(jwk.n),
+    _base64ToBigInt(jwk.e),
+    _base64ToBigInt(jwk.d),
+    _base64ToBigInt(jwk.p),
+    _base64ToBigInt(jwk.q),
+    _base64ToBigInt(jwk.dp),
+    _base64ToBigInt(jwk.dq),
+    _base64ToBigInt(jwk.qi));
+}
+
+function _publicKeyFromJwk(jwk) {
+  if(jwk.kty !== 'RSA') {
+    throw new Error('Key algorithm must be "RSA".');
+  }
+  return pki.setRsaPublicKey(
+    _base64ToBigInt(jwk.n),
+    _base64ToBigInt(jwk.e));
+}
+
+function _base64ToBigInt(b64) {
+  return new BigInteger(forge.util.bytesToHex(forge.util.decode64(b64)), 16);
 }
 
 } // end module implementation
