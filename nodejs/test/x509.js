@@ -317,9 +317,9 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       var ext = cert.extensions[index];
       ASSERT.equal(ext.name, 'cRLDistributionPoints');
       ASSERT.equal(ext.value, UTIL.hexToBytes(
-        '30543052865068747470733a2f2f746573742d6f7267616e69736174696f6e2e63' +
-        '6f6d2f746573742d6f7267616e69736174696f6e2f63726c2f746573745f6f7267' +
-        '616e69736174696f6e5f63612e63726c2e646572'));
+        '30583056a054a052865068747470733a2f2f746573742d6f7267616e6973617469' +
+        '6f6e2e636f6d2f746573742d6f7267616e69736174696f6e2f63726c2f74657374' +
+        '5f6f7267616e69736174696f6e5f63612e63726c2e646572'));
 
       // verify certificate chain
       var caStore = PKI.createCaStore();
