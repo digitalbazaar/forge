@@ -2312,8 +2312,11 @@ function _fillMissingExtensionFields(e, options) {
     e.value = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
     var seq = e.value.value;
 
-    // Create sub sequence distribution points
+    // Create sub SEQUENCE of DistributionPointName
     var subSeq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+
+    // Create fullName CHOICE
+    var fullNameGeneralNames = asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, []);
     var altName;
     for(var n = 0; n < e.altNames.length; ++n) {
       altName = e.altNames[n];
@@ -2336,11 +2339,13 @@ function _fillMissingExtensionFields(e, options) {
           value = asn1.oidToDer(value);
         }
       }
-      subSeq.value.push(asn1.create(
+      fullNameGeneralNames.value.push(asn1.create(
         asn1.Class.CONTEXT_SPECIFIC, altName.type, false,
         value));
     }
 
+    // Add to the parent SEQUENCE
+    subSeq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [fullNameGeneralNames]));
     seq.push(subSeq);
   }
 
