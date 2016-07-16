@@ -824,7 +824,6 @@ pki.rsa.stepKeyPairGenerationState = function(state, n) {
  *          workLoad the size of the work load, ie: number of possible prime
  *            numbers for each web worker to check per work assignment,
  *            (default: 100).
- *          e the public exponent to use, defaults to 65537.
  *          prng a custom crypto-secure pseudo-random number generator to use,
  *            that must define "getBytesSync".
  *          algorithm the algorithm to use (default: 'PRIMEINC').
