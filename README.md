@@ -1402,7 +1402,7 @@ if(bag.key === null) {
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password');
 
-// generate a p12 that can be imported by Chrome/Firefox
+// generate a p12 that can be imported by Chrome/Firefox/iOS
 // (requires the use of Triple DES instead of AES)
 var p12Asn1 = forge.pkcs12.toPkcs12Asn1(
   privateKey, certificateChain, 'password',
