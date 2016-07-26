@@ -1337,6 +1337,10 @@ csr.getAttribute({name: 'extensionRequest'}).extensions;
 
 Provides the cryptographic archive file format from [PKCS#12][].
 
+**Note for Chrome/Firefox/iOS/similar users**: If you have trouble importing
+a PKCS#12 container, try using the TripleDES algorithm. It can be passed
+to `forge.pkcs12.toPkcs12Asn1` using the `{algorithm: '3des'}` option.
+
 __Examples__
 
 ```js
