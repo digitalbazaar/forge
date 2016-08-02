@@ -36,7 +36,7 @@
     "email": "support@digitalbazaar.com"
   },
   "license": "(BSD-3-Clause OR GPL-2.0)",
-  "main": "js/forge.js",
+  "main": "lib/index.js",
   "engines": {
     "node": "*"
   },
