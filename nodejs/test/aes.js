@@ -1,6 +1,9 @@
-(function() {
+var ASSERT = require('assert');
+var CIPHER = require('../../lib/cipher');
+var AES = require('../../lib/aes');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, CIPHER, AES, UTIL) {
+(function() {
   describe('aes', function() {
     it('should encrypt a single block with a 128-bit key', function() {
       var key = [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f];
@@ -1468,31 +1471,4 @@ function Tests(ASSERT, CIPHER, AES, UTIL) {
       }
     })();
   });
-}
-
-// check for AMD
-var forge = {};
-if(typeof define === 'function') {
-  define([
-    'forge/cipher',
-    'forge/aes',
-    'forge/util'
-  ], function(CIPHER, AES, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      CIPHER(forge),
-      AES(forge),
-      UTIL(forge)
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/cipher')(forge),
-    require('../../js/aes')(forge),
-    require('../../js/util')(forge));
-}
-
 })();

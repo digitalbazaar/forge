@@ -1,6 +1,11 @@
-(function() {
+var ASSERT = require('assert');
+var PKI = require('../../lib/pki');
+var PKCS1 = require('../../lib/pkcs1');
+var MD = require('../../lib/md');
+var JSBN = require('../../lib/jsbn');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
+(function() {
   var BigInteger = JSBN.BigInteger;
 
   // RSA's test vectors for Forge's RSA-OAEP implementation:
@@ -1070,36 +1075,4 @@ function Tests(ASSERT, PKI, PKCS1, MD, JSBN, UTIL) {
       return {publicKey: pubkey, privateKey: privateKey};
     }
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pki',
-    'forge/pkcs1',
-    'forge/md',
-    'forge/jsbn',
-    'forge/util'
-  ], function(PKI, PKCS1, MD, JSBN, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PKI(),
-      PKCS1(),
-      MD(),
-      JSBN(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pki')(),
-    require('../../js/pkcs1')(),
-    require('../../js/md')(),
-    require('../../js/jsbn')(),
-    require('../../js/util')());
-}
-
 })();

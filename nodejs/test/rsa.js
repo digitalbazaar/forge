@@ -1,6 +1,13 @@
-(function() {
+var ASSERT = require('assert');
+var PKI = require('../../lib/pki');
+var RSA = require('../../lib/rsa');
+var MD = require('../../lib/md');
+var MGF = require('../../lib/mgf');
+var PSS = require('../../lib/pss');
+var RANDOM = require('../../lib/random');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
+(function() {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -583,42 +590,4 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
       }
     })();
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pki',
-    'forge/rsa',
-    'forge/md',
-    'forge/mgf',
-    'forge/pss',
-    'forge/random',
-    'forge/util'
-  ], function(PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PKI(),
-      RSA(),
-      MD(),
-      MGF(),
-      PSS(),
-      RANDOM(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pki')(),
-    require('../../js/rsa')(),
-    require('../../js/md')(),
-    require('../../js/mgf')(),
-    require('../../js/pss')(),
-    require('../../js/random')(),
-    require('../../js/util')());
-}
-
 })();

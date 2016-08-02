@@ -1,6 +1,7 @@
-(function() {
+var ASSERT = require('assert');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, UTIL) {
+(function() {
   // custom assertion to test array-like objects
   function assertArrayEqual(actual, expected) {
     ASSERT.equal(actual.length, expected.length);
@@ -492,24 +493,4 @@ function Tests(ASSERT, UTIL) {
       }
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/util'
-  ], function(UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/util')());
-}
-
 })();

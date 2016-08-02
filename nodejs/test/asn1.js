@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var ASN1 = require('../../lib/asn1');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, ASN1, UTIL) {
+(function() {
   describe('asn1', function() {
     // TODO: add more ASN.1 coverage
 
@@ -269,27 +271,4 @@ function Tests(ASSERT, ASN1, UTIL) {
       }
     })();
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/asn1',
-    'forge/util'
-  ], function(ASN1, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      ASN1(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/asn1')(),
-    require('../../js/util')());
-}
-
 })();
