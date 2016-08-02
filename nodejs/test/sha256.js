@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var SHA256 = require('../../lib/sha256');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, SHA256, UTIL) {
+(function() {
   describe('sha256', function() {
     it('should digest the empty string', function() {
       var md = SHA256.create();
@@ -69,27 +71,4 @@ function Tests(ASSERT, SHA256, UTIL) {
       }
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/sha256',
-    'forge/util'
-  ], function(SHA256, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      SHA256(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/sha256')(),
-    require('../../js/util')());
-}
-
 })();

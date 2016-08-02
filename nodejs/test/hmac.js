@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var HMAC = require('../../lib/hmac');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, HMAC, UTIL) {
+(function() {
   describe('hmac', function() {
     it('should md5 hash "Hi There", 16-byte key', function() {
       var key = UTIL.hexToBytes('0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b');
@@ -59,27 +61,4 @@ function Tests(ASSERT, HMAC, UTIL) {
         hmac.digest().toHex(), 'aa4ae5e15272d00e95705637ce8a3b55ed402112');
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/hmac',
-    'forge/util'
-  ], function(HMAC, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      HMAC(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/hmac')(),
-    require('../../js/util')());
-}
-
 })();

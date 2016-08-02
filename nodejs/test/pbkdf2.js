@@ -1,6 +1,9 @@
-(function() {
+var ASSERT = require('assert');
+var PBKDF2 = require('../../lib/pbkdf2');
+var MD = require('../../lib/md');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, PBKDF2, MD, UTIL) {
+(function() {
   describe('pbkdf2', function() {
     it('should derive a password with hmac-sha-1 c=1', function() {
       var dkHex = UTIL.bytesToHex(PBKDF2('password', 'salt', 1, 20));
@@ -111,30 +114,4 @@ function Tests(ASSERT, PBKDF2, MD, UTIL) {
       });
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pbkdf2',
-    'forge/md',
-    'forge/util'
-  ], function(PBKDF2, MD, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PBKDF2(),
-      MD(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pbkdf2')(),
-    require('../../js/md')(),
-    require('../../js/util')());
-}
-
 })();

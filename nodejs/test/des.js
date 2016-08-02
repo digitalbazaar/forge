@@ -1,6 +1,9 @@
-(function() {
+var ASSERT = require('assert');
+var CIPHER = require('../../lib/cipher');
+var DES = require('../../lib/des');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, CIPHER, DES, UTIL) {
+(function() {
   describe('des', function() {
     // OpenSSL equivalent:
     // openssl enc -des-ecb -K a1c06b381adf3651 -nosalt
@@ -125,31 +128,4 @@ function Tests(ASSERT, CIPHER, DES, UTIL) {
       ASSERT.equal(decipher.output.getBytes(), 'foobar,,');
     });
   });
-}
-
-// check for AMD
-var forge = {};
-if(typeof define === 'function') {
-  define([
-    'forge/cipher',
-    'forge/des',
-    'forge/util'
-  ], function(CIPHER, DES, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      CIPHER(forge),
-      DES(forge),
-      UTIL(forge)
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/cipher')(forge),
-    require('../../js/des')(forge),
-    require('../../js/util')(forge));
-}
-
 })();

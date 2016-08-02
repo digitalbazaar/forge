@@ -1,7 +1,12 @@
+var ASSERT = require('assert');
+var KEM = require('../../lib/kem');
+var MD = require('../../lib/md');
+var RSA = require('../../lib/rsa');
+var UTIL = require('../../lib/util');
+var JSBN = require('../../lib/jsbn');
+var RANDOM = require('../../lib/random');
+
 (function() {
-
-function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
-
   function FixedSecureRandom(str) {
     var bytes = UTIL.hexToBytes(str);
     this.getBytesSync = function(count) {
@@ -160,39 +165,4 @@ function Tests(ASSERT, KEM, MD, RSA, UTIL, JSBN, RANDOM) {
       ASSERT.equal(UTIL.bytesToHex(decryptedKey), K);
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/kem',
-    'forge/md',
-    'forge/rsa',
-    'forge/util',
-    'forge/jsbn',
-    'forge/random'
-  ], function(KEM, MD, RSA, UTIL, JSBN, RANDOM) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      KEM(),
-      MD(),
-      RSA(),
-      UTIL(),
-      JSBN(),
-      RANDOM()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/kem')(),
-    require('../../js/md')(),
-    require('../../js/rsa')(),
-    require('../../js/util')(),
-    require('../../js/jsbn')(),
-    require('../../js/random')());
-}
-
 })();

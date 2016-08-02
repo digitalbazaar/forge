@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var SHA1 = require('../../lib/sha1');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, SHA1, UTIL) {
+(function() {
   describe('sha1', function() {
     it('should digest the empty string', function() {
       var md = SHA1.create();
@@ -62,27 +64,4 @@ function Tests(ASSERT, SHA1, UTIL) {
       }
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/sha1',
-    'forge/util'
-  ], function(SHA1, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      SHA1(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/sha1')(),
-    require('../../js/util')());
-}
-
 })();

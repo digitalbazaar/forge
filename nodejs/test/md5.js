@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var MD5 = require('../../lib/md5');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, MD5, UTIL) {
+(function() {
   describe('md5', function() {
     it('should digest the empty string', function() {
       var md = MD5.create();
@@ -104,27 +106,4 @@ function Tests(ASSERT, MD5, UTIL) {
       }
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/md5',
-    'forge/util'
-  ], function(MD5, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      MD5(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/md5')(),
-    require('../../js/util')());
-}
-
 })();

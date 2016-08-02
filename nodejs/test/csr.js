@@ -1,6 +1,7 @@
-(function() {
+var ASSERT = require('assert');
+var PKI = require('../../lib/pki');
 
-function Tests(ASSERT, PKI) {
+(function() {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -125,24 +126,4 @@ function Tests(ASSERT, PKI) {
       ASSERT.ok(csr.verify());
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pki'
-  ], function(PKI) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PKI()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pki')());
-}
-
 })();

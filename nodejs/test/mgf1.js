@@ -1,6 +1,9 @@
-(function() {
+var ASSERT = require('assert');
+var MGF = require('../../lib/mgf');
+var MD = require('../../lib/md');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, MGF, MD, UTIL) {
+(function() {
   describe('mgf1', function() {
     it('should digest the empty string', function() {
       var seed = UTIL.hexToBytes('032e45326fa859a72ec235acff929b15d1372e30b207255f0611b8f785d764374152e0ac009e509e7ba30cd2f1778e113b64e135cf4e2292c75efe5288edfda4');
@@ -10,30 +13,4 @@ function Tests(ASSERT, MGF, MD, UTIL) {
       ASSERT.equal(result, expect);
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/mgf',
-    'forge/md',
-    'forge/util'
-  ], function(MGF, MD, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      MGF(),
-      MD(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/mgf')(),
-    require('../../js/md')(),
-    require('../../js/util')());
-}
-
 })();

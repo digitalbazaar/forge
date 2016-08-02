@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var RC2 = require('../../lib/rc2');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, RC2, UTIL) {
+(function() {
   describe('rc2', function() {
     it('should expand a 128-bit key', function() {
       var key = UTIL.hexToBytes('88bca90e90875a7f0f79c384627bafb2');
@@ -83,27 +85,4 @@ function Tests(ASSERT, RC2, UTIL) {
       ASSERT.equal(cipher.output, 'revolution');
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/rc2',
-    'forge/util'
-  ], function(RC2, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      RC2(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/rc2')(),
-    require('../../js/util')());
-}
-
 })();

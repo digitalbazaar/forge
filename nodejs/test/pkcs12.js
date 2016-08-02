@@ -1,13 +1,12 @@
+var ASSERT = require('assert');
+var forge = require('../../lib/forge');
+var PKCS12 = require('../../lib/pkcs12');
+var ASN1 = require('../../lib/asn1');
+var PEM = require('../../lib/pem');
+var PKI = require('../../lib/pki');
+var UTIL = require('../../lib/util');
+
 (function() {
-
-function Tests(ASSERT, FORGE) {
-  var forge = FORGE();
-  var PKCS12 = forge.pkcs12;
-  var ASN1 = forge.asn1;
-  var PEM = forge.pem;
-  var PKI = forge.pki;
-  var UTIL = forge.util;
-
   var _data;
   describe('pkcs12', function() {
     it('should create certificate-only p12', function() {
@@ -664,24 +663,4 @@ function Tests(ASSERT, FORGE) {
       'mthwYiI/c1op4Y+H0xLUp2v8iLWHIDqAZA89\r\n' +
       '-----END CERTIFICATE-----\r\n'
   };
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/forge'
-  ], function(FORGE) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      FORGE
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/forge'));
-}
-
 })();

@@ -1,6 +1,8 @@
-(function() {
+var ASSERT = require('assert');
+var SHA512 = require('../../lib/sha512');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, SHA512, UTIL) {
+(function() {
   describe('sha512', function() {
     it('should digest the empty string', function() {
       var md = SHA512.create();
@@ -176,27 +178,4 @@ function Tests(ASSERT, SHA512, UTIL) {
         '944cd2847fb54558d4775db0485a50003111c8e5daa63fe722c6aa37');
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/sha512',
-    'forge/util'
-  ], function(SHA512, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      SHA512(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/sha512')(),
-    require('../../js/util')());
-}
-
 })();
