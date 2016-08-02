@@ -1,6 +1,7 @@
-(function() {
+var ASSERT = require('assert');
+var PEM = require('../../lib/pem');
 
-function Tests(ASSERT, PEM) {
+(function() {
   var _input = '-----BEGIN PRIVACY-ENHANCED MESSAGE-----\r\n' +
     'Proc-Type: 4,ENCRYPTED\r\n' +
     'Content-Domain: RFC822\r\n' +
@@ -81,24 +82,4 @@ function Tests(ASSERT, PEM) {
       ASSERT.equal(output, _input);
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pem'
-  ], function(PEM) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PEM()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pem')());
-}
-
 })();

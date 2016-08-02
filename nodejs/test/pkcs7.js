@@ -1,6 +1,12 @@
-(function() {
+var ASSERT = require('assert');
+var forge = require('../../lib/forge');
+var PKCS7 = require('../../lib/pkcs7');
+var PKI = require('../../lib/pki');
+var AES = require('../../lib/aes');
+var DES = require('../../lib/des');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
+(function() {
   var _pem = {
     p7: '-----BEGIN PKCS7-----\r\n' +
       'MIICTgYJKoZIhvcNAQcDoIICPzCCAjsCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
@@ -565,37 +571,4 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
     });
 
   });
-}
-
-// check for AMD
-var forge = {};
-if(typeof define === 'function') {
-  define([
-    'forge/pkcs7',
-    'forge/pki',
-    'forge/aes',
-    'forge/des',
-    'forge/util'
-  ], function(PKCS7, PKI, AES, DES, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PKCS7(forge),
-      PKI(forge),
-      AES(forge),
-      DES(forge),
-      UTIL(forge)
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pkcs7')(forge),
-    require('../../js/pki')(forge),
-    require('../../js/aes')(forge),
-    require('../../js/des')(forge),
-    require('../../js/util')(forge));
-}
-
 })();

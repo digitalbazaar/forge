@@ -1,6 +1,9 @@
-(function() {
+var ASSERT = require('assert');
+var PKI = require('../../lib/pki');
+var MD = require('../../lib/md');
+var UTIL = require('../../lib/util');
 
-function Tests(ASSERT, PKI, MD, UTIL) {
+(function() {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -1217,30 +1220,4 @@ function Tests(ASSERT, PKI, MD, UTIL) {
 
     return cert;
   }
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/pki',
-    'forge/md',
-    'forge/util'
-  ], function(PKI, MD, UTIL) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      PKI(),
-      MD(),
-      UTIL()
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/pki')(),
-    require('../../js/md')(),
-    require('../../js/util')());
-}
-
 })();

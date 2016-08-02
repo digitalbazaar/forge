@@ -1,6 +1,10 @@
-(function() {
+var ASSERT = require('assert');
+var forge = require('../../lib/forge');
+require('../../lib/tls');
+require('../../lib/aesCipherSuites');
+require('../../lib/util');
 
-function Tests(ASSERT, forge) {
+(function() {
   describe('tls', function() {
     it('should test TLS 1.0 PRF', function() {
       // Note: This test vector is originally from:
@@ -168,24 +172,4 @@ function Tests(ASSERT, forge) {
       }
     });
   });
-}
-
-// check for AMD
-if(typeof define === 'function') {
-  define([
-    'forge/forge'
-  ], function(forge) {
-    Tests(
-      // Global provided by test harness
-      ASSERT,
-      forge
-    );
-  });
-} else if(typeof module === 'object' && module.exports) {
-  // assume NodeJS
-  Tests(
-    require('assert'),
-    require('../../js/forge'));
-}
-
 })();
