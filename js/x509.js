@@ -2828,6 +2828,10 @@ pki.createCaStore = function(certs) {
    */
   caStore.removeCertificate = function(cert) {
     var result;
+    // convert from pem if necessary
+    if(typeof cert === 'string') {
+      cert = forge.pki.certificateFromPem(cert);
+    }
     assureSubjectHasHash(cert.subject);
     if (caStore.hasCertificate(cert)) {
       var match = getBySubject(cert.subject);
