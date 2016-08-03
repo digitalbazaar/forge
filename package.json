@@ -35,12 +35,7 @@
     "url": "https://github.com/digitalbazaar/forge/issues",
     "email": "support@digitalbazaar.com"
   },
-  "licenses": [
-    {
-      "type": "BSD",
-      "url": "https://github.com/digitalbazaar/forge/raw/master/LICENSE"
-    }
-  ],
+  "license": "(BSD-3-Clause OR GPL-2.0)",
   "main": "js/forge.js",
   "engines": {
     "node": "*"
