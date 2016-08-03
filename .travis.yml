@@ -1,7 +1,7 @@
 language: node_js
 node_js:
-  - "4.4"
-  - "6.2"
+  - "4"
+  - "6"
   - "node"
 sudo: false
 install: (cd nodejs && npm install)
