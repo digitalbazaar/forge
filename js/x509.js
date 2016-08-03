@@ -2745,34 +2745,37 @@ pki.createCaStore = function(certs) {
       cert = forge.pki.certificateFromPem(cert);
     }
 
-    // produce subject hash if it doesn't exist
-    if(!cert.subject.hash) {
-      var md = forge.md.sha1.create();
-      cert.subject.attributes =  pki.RDNAttributesAsArray(
-        _dnToAsn1(cert.subject), md);
-      cert.subject.hash = md.digest().toHex();
-    }
+    assureSubjectHasHash(cert.subject);
 
-    if(cert.subject.hash in caStore.certs) {
-      // subject hash already exists, append to array
-      var tmp = caStore.certs[cert.subject.hash];
-      if(!forge.util.isArray(tmp)) {
-        tmp = [tmp];
+    if (!caStore.hasCertificate(cert)) {  // avoid duplicate certificates in store
+      if(cert.subject.hash in caStore.certs) {
+        // subject hash already exists, append to array
+        var tmp = caStore.certs[cert.subject.hash];
+        if(!forge.util.isArray(tmp)) {
+          tmp = [tmp];
+        }
+        tmp.push(cert);
+        caStore.certs[cert.subject.hash] = tmp;
+      } else {
+        caStore.certs[cert.subject.hash] = cert;
       }
-      tmp.push(cert);
-    } else {
-      caStore.certs[cert.subject.hash] = cert;
     }
   };
 
   /**
    * Checks to see if the given certificate is in the store.
    *
-   * @param cert the certificate to check.
+   * @param cert the certificate to check (either a pki.certificate or a PEM-formatted
+   *          certificate).
    *
    * @return true if the certificate is in the store, false if not.
    */
   caStore.hasCertificate = function(cert) {
+    // convert from pem if necessary
+    if(typeof cert === 'string') {
+      cert = forge.pki.certificateFromPem(cert);
+    }
+
     var match = getBySubject(cert.subject);
     if(!match) {
       return false;
@@ -2791,14 +2794,84 @@ pki.createCaStore = function(certs) {
     return false;
   };
 
+  /**
+   * Lists all of the forge certificates kept in the store.
+   *
+   * @returns Array of all of the pki.certificate objects in the store.
+   */
+  caStore.listAllCertificates = function() {
+    var certList = [];
+
+    for (var hash in caStore.certs) {
+      if (caStore.certs.hasOwnProperty(hash)) {
+        var value = caStore.certs[hash];
+        if (!forge.util.isArray(value)) {
+          certList.push(value);
+        } else {
+          for (var i = 0; i < value.length; i++) {
+            certList.push(value[i]);
+          }
+        }
+      }
+    }
+
+    return certList;
+  };
+
+  /**
+   * Removes a certificate from the store.
+   *
+   * @param cert - the certificate to remove (either a pki.certificate or a PEM-formatted
+   *          certificate).
+   *
+   * @returns the certificate that was removed or null if the certificate wasn't in store.
+   */
+  caStore.removeCertificate = function(cert) {
+    var result;
+    // convert from pem if necessary
+    if(typeof cert === 'string') {
+      cert = forge.pki.certificateFromPem(cert);
+    }
+    assureSubjectHasHash(cert.subject);
+    if (caStore.hasCertificate(cert)) {
+      var match = getBySubject(cert.subject);
+
+      if (!forge.util.isArray(match)) {
+        result = caStore.certs[cert.subject.hash];
+        delete caStore.certs[cert.subject.hash];
+      } else {
+        // compare DER-encoding of certificates
+        var der1 = asn1.toDer(pki.certificateToAsn1(cert)).getBytes();
+        for(var i = 0; i < match.length; ++i) {
+          var der2 = asn1.toDer(pki.certificateToAsn1(match[i])).getBytes();
+          if(der1 === der2) {
+            result = match[i];
+            match.splice(i, 1);
+          }
+        }
+        if (match.length === 0) {
+          delete caStore.certs[cert.subject.hash];
+        }
+      }
+    } else {
+      result = null;
+    }
+
+    return result;
+  };
+
   function getBySubject(subject) {
+    assureSubjectHasHash(subject);
+    return caStore.certs[subject.hash] || null;
+  }
+
+  function assureSubjectHasHash(subject) {
     // produce subject hash if it doesn't exist
     if(!subject.hash) {
       var md = forge.md.sha1.create();
       subject.attributes =  pki.RDNAttributesAsArray(_dnToAsn1(subject), md);
       subject.hash = md.digest().toHex();
     }
-    return caStore.certs[subject.hash] || null;
   }
 
   // auto-add passed in certs
