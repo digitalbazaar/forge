@@ -170,6 +170,31 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       '-----END CERTIFICATE-----\r\n'
   };
 
+  var _pem_same_subject = [
+    '-----BEGIN CERTIFICATE-----\r\n' +
+    'MIIBrDCCARWgAwIBAgIBATANBgkqhkiG9w0BAQUFADAAMB4XDTE2MDgwNDE0NDcw\r\n' +
+    'MFoXDTE3MDgwNDE0NDcwMFowGTEXMBUGA1UEAxMOQ2VydCBBdXRob3JpdHkwgZ8w\r\n' +
+    'DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMsBaqRGPC6bZh22NMmATSZq6E70SLfN\r\n' +
+    'esKFOG337k2belUHr9tXU2699p0fJjNgDntNTo+0Sfu5mMa+zAUqJ3PzQcJ2NVY7\r\n' +
+    'tYPqhDoPPooi8gv5F7EZZzZZ1FfkdHMSJVOwEn2ZAskN7eJyycibKIwRWu1ky8AK\r\n' +
+    'M6lZvzGgDaORAgMBAAGjHTAbMAwGA1UdEwQFMAMBAf8wCwYDVR0PBAQDAgLEMA0G\r\n' +
+    'CSqGSIb3DQEBBQUAA4GBACYSi4PVsQVBu8vgUwDWNJs6+Qvuo4FtRuQNDg+aOa/O\r\n' +
+    'MyOQBv3flEHNGrg7BN72tAdmlZLjp/dz87u8AwRNdW0KqF3zYI9Hsni3JDQjC/ga\r\n' +
+    '//Si48IbHpJrApQD7y9wwO4xjZbHQPRQ8BUJZgg57xeQqDe95vnQ62c7Eqdt97e9\r\n' +
+    '-----END CERTIFICATE-----\r\n',
+    '-----BEGIN CERTIFICATE-----\r\n' +
+    'MIIBrzCCARigAwIBAgIBAjANBgkqhkiG9w0BAQUFADAAMB4XDTE2MDgwNDE0NDcw\r\n' +
+    'MFoXDTE4MDgwNDE0NDcwMFowGTEXMBUGA1UEAxMOQ2VydCBBdXRob3JpdHkwgZ8w\r\n' +
+    'DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAOepv6vtleShp+A4XwJwqVAoAkEeR3dG\r\n' +
+    '6ogwYTNMTtLMXoYYXPj3UnKSUbK0XiCY/UK1rSC6/jp8OMb9xvVZ5+AH3y7h2FRm\r\n' +
+    'gNLGGjuBPnfBea6FEuptk+//eheAQ0wl6Wre96zxILSyrPzBy8F91Ht/psO0WXIl\r\n' +
+    'dfh/XHhBY3D1AgMBAAGjIDAeMA8GA1UdEwQIMAYBAf8CAQIwCwYDVR0PBAQDAgKE\r\n' +
+    'MA0GCSqGSIb3DQEBBQUAA4GBAIYjbuzf2dANljhEgAWVPeu50OJJYLoV5umRQjXF\r\n' +
+    'WfXc53ODU0usuHeeH14a63zW1jqfHgc475WEMgMLL/k0FechIuC9AdcDEgzGmBSG\r\n' +
+    'PDV8nxhU98gpj6I7ewsVk31WDQhFYeSuYJiDiiL47P0BXJLWb+86fFiQklsm5y0h\r\n' +
+    'Xt0s\r\n' +
+    '-----END CERTIFICATE-----\r\n'
+  ];
 
   describe('x509', function() {
     it('should convert SHA-1 based certificate to/from PEM', function() {
@@ -917,6 +942,202 @@ function Tests(ASSERT, PKI, MD, UTIL) {
           delimiter: ':'
         });
       ASSERT.equal(fp, 'e5:c5:ba:57:7f:e2:4f:b8:a6:78:d8:d5:8f:53:9c:d7');
+    });
+  });
+
+  describe('CA store', function() {
+    it('should add a certificate object to a store', function() {
+      var cert = PKI.certificateFromPem(_pem.certificate);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+      ASSERT.ok(caStore.hasCertificate(cert));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should add a PEM certificate to a store', function() {
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(_pem.certificate);
+      ASSERT.ok(caStore.hasCertificate(_pem.certificate));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should add two certificate objects to a store', function() {
+      var cert1 = PKI.certificateFromPem(_pem.certificate);
+      var cert2 = PKI.certificateFromPem(_pem_sha256.certificate);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      ASSERT.ok(caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should add two PEM certificates to a store', function() {
+      var cert1 = _pem.certificate;
+      var cert2 = _pem_sha256.certificate;
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      ASSERT.ok(caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should remove a certificate object from a store', function() {
+      var cert1 = PKI.certificateFromPem(_pem.certificate);
+      var cert2 = PKI.certificateFromPem(_pem_sha256.certificate);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      var result = caStore.removeCertificate(cert1);
+      ASSERT.equal(PKI.certificateToPem(result), PKI.certificateToPem(cert1));
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should remove a PEM certificate from a store', function() {
+      var cert1 = _pem.certificate;
+      var cert2 = _pem_sha256.certificate;
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      var result = caStore.removeCertificate(cert1);
+      ASSERT.equal(PKI.certificateToPem(result), cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should remove a certificate object from a store with two remaining', function() {
+      var cert1 = PKI.certificateFromPem(_pem.certificate);
+      var cert2 = PKI.certificateFromPem(_pem_sha256.certificate);
+      var cert3 = PKI.certificateFromPem(_pem_sha512.certificate);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.addCertificate(cert3);
+      var result = caStore.removeCertificate(cert1);
+      ASSERT.equal(PKI.certificateToPem(result), PKI.certificateToPem(cert1));
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.ok(caStore.hasCertificate(cert3));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should remove a PEM certificate from a store with two remaining', function() {
+      var cert1 = _pem.certificate;
+      var cert2 = _pem_sha256.certificate;
+      var cert3 = _pem_sha512.certificate;
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.addCertificate(cert3);
+      var result = caStore.removeCertificate(cert1);
+      ASSERT.equal(PKI.certificateToPem(result), cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.ok(caStore.hasCertificate(cert3));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should add two certificate objects with the same subject to a store', function() {
+      var cert1 = PKI.certificateFromPem(_pem_same_subject[0]);
+      var cert2 = PKI.certificateFromPem(_pem_same_subject[1]);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      ASSERT.ok(caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should add two PEM certificates with the same subject to a store', function() {
+      var cert1 = _pem_same_subject[0];
+      var cert2 = _pem_same_subject[1];
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      ASSERT.ok(caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should remove a certificate object with the same subject from a store', function() {
+      var cert1 = PKI.certificateFromPem(_pem_same_subject[0]);
+      var cert2 = PKI.certificateFromPem(_pem_same_subject[1]);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.removeCertificate(cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should remove a PEM certificate with the same subject from a store', function() {
+      var cert1 = _pem_same_subject[0];
+      var cert2 = _pem_same_subject[1];
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.removeCertificate(cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.equal(caStore.listAllCertificates().length, 1);
+    });
+
+    it('should remove a certificate object from a store with the same subject with two remaining', function() {
+      var cert1 = PKI.certificateFromPem(_pem_same_subject[0]);
+      var cert2 = PKI.certificateFromPem(_pem_same_subject[1]);
+      var cert3 = PKI.certificateFromPem(_pem_sha512.certificate);
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.addCertificate(cert3);
+      caStore.removeCertificate(cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.ok(caStore.hasCertificate(cert3));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should remove a PEM certificate from a store with the same subject with two remaining', function() {
+      var cert1 = _pem_same_subject[0];
+      var cert2 = _pem_same_subject[1];
+      var cert3 = _pem_sha512.certificate;
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.addCertificate(cert3);
+      caStore.removeCertificate(cert1);
+      ASSERT.ok(!caStore.hasCertificate(cert1));
+      ASSERT.ok(caStore.hasCertificate(cert2));
+      ASSERT.ok(caStore.hasCertificate(cert3));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
+
+    it('should fail to remove a PEM certificate from a store', function() {
+      var cert1 = _pem.certificate;
+      var cert2 = _pem_sha256.certificate;
+      var cert3 = _pem_sha512.certificate;
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert1);
+      caStore.addCertificate(cert2);
+      caStore.addCertificate(cert3);
+      var result = caStore.removeCertificate(cert1);
+      ASSERT.equal(PKI.certificateToPem(result), cert1);
+      result = caStore.removeCertificate(cert2);
+      ASSERT.equal(PKI.certificateToPem(result), cert2);
+      result = caStore.removeCertificate(cert3);
+      ASSERT.equal(PKI.certificateToPem(result), cert3);
+      result = caStore.removeCertificate(cert1);
+      ASSERT.equal(result, null);
+      result = caStore.removeCertificate(cert2);
+      ASSERT.equal(result, null);
+      result = caStore.removeCertificate(cert3);
+      ASSERT.equal(result, null);
+      ASSERT.equal(caStore.listAllCertificates().length, 0);
     });
   });
 
