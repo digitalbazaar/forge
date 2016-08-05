@@ -21,7 +21,7 @@ try {
       }, {
         type: forge.pki.oids.signingTime,
         // value will be auto-populated at signing time
-        //value: new Date('Jan 1, 2050 00:00:00Z')
+        //value: new Date('2050-01-01T00:00:00Z')
       }]
     });
   }

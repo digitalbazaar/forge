@@ -1041,8 +1041,8 @@ function _attributeToAsn1(attr) {
       number of seconds is zero.  Midnight (GMT) must be represented as
       "YYMMDD000000Z". */
     // TODO: make these module-level constants
-    var jan_1_1950 = new Date('Jan 1, 1950 00:00:00Z');
-    var jan_1_2050 = new Date('Jan 1, 2050 00:00:00Z');
+    var jan_1_1950 = new Date('1950-01-01T00:00:00Z');
+    var jan_1_2050 = new Date('2050-01-01T00:00:00Z');
     var date = attr.value;
     if(typeof date === 'string') {
       // try to parse date

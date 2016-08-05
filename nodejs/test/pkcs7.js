@@ -496,7 +496,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         }, {
           type: forge.pki.oids.signingTime,
           // will be encoded as UTC time because it's >= 1950
-          value: new Date('Jan 1, 1950 00:00:00Z')
+          value: new Date('1950-01-01T00:00:00Z')
         }]
       });
       p7.sign();
@@ -525,7 +525,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         }, {
           type: forge.pki.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
-          value: new Date('Dec 31, 1949 23:59:59Z')
+          value: new Date('1949-12-31T23:59:59Z')
         }]
       });
       p7.sign();
@@ -556,7 +556,7 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
         }, {
           type: forge.pki.oids.signingTime,
           // will be encoded as generalized time because it's before 1950
-          value: new Date('Dec 31, 1949 23:59:59Z')
+          value: new Date('1949-12-31T23:59:59Z')
         }]
       });
       p7.sign();
