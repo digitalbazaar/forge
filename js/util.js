@@ -2426,28 +2426,6 @@ util.makeRequest = function(reqString) {
 };
 
 /**
- * Makes a URI out of a path, an object with query parameters, and a
- * fragment. Uses jQuery.param() internally for query string creation.
- * If the path is an array, it will be joined with '/'.
- *
- * @param path string path or array of strings.
- * @param query object with query parameters. (optional)
- * @param fragment fragment string. (optional)
- *
- * @return string object with request parameters.
- */
-util.makeLink = function(path, query, fragment) {
-  // join path parts if needed
-  path = jQuery.isArray(path) ? path.join('/') : path;
-
-  var qstr = jQuery.param(query || {});
-  fragment = fragment || '';
-  return path +
-    ((qstr.length > 0) ? ('?' + qstr) : '') +
-    ((fragment.length > 0) ? ('#' + fragment) : '');
-};
-
-/**
  * Follows a path of keys deep into an object hierarchy and set a value.
  * If a key does not exist or it's value is not an object, create an
  * object in it's place. This can be destructive to a object tree if
