@@ -12,6 +12,8 @@ function initModule(forge) {
 /* Utilities API */
 var util = forge.util = forge.util || {};
 
+var jQuery = (function(g) { return g.jQuery; })((0, eval)('this'));
+
 // define setImmediate and nextTick
 (function() {
   // use native nextTick
@@ -2423,6 +2425,28 @@ util.makeRequest = function(reqString) {
     }
   };
   return req;
+};
+
+/**
+ * Makes a URI out of a path, an object with query parameters, and a
+ * fragment. Uses jQuery.param() internally for query string creation.
+ * If the path is an array, it will be joined with '/'.
+ *
+ * @param path string path or array of strings.
+ * @param query object with query parameters. (optional)
+ * @param fragment fragment string. (optional)
+ *
+ * @return string object with request parameters.
+ */
+util.makeLink = function(path, query, fragment) {
+  // join path parts if needed
+  path = jQuery.isArray(path) ? path.join('/') : path;
+
+  var qstr = jQuery.param(query || {});
+  fragment = fragment || '';
+  return path +
+    ((qstr.length > 0) ? ('?' + qstr) : '') +
+    ((fragment.length > 0) ? ('#' + fragment) : '');
 };
 
 /**

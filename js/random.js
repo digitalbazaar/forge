@@ -22,7 +22,9 @@ if(forge.random && forge.random.getBytes) {
   return;
 }
 
-(function(global) {
+var jQuery = (function(g) { return g.jQuery; })((0, eval)('this'));
+
+(function(jQuery) {
 
 // the default prng plugin, uses AES-128
 var prng_aes = {};
@@ -151,21 +153,20 @@ if(forge.disableNativeCode || (!_nodejs && !getRandomValues)) {
     _navBytes = null;
   }
 
-  // if we are in the browser, use keyboard and mouse to gather entropy
-  if (global.document && global.document.addEventListener) {
+  // add mouse and keyboard collectors if jquery is available
+  if(jQuery) {
     // set up mouse entropy capture
-    document.addEventListener('mousemove', function(e) {
+    jQuery().mousemove(function(e) {
       // add mouse coords
       _ctx.collectInt(e.clientX, 16);
       _ctx.collectInt(e.clientY, 16);
-    }, false);
+    });
 
     // set up keyboard entropy capture
-    document.addEventListener('keypress', function(e) {
+    jQuery().keypress(function(e) {
       _ctx.collectInt(e.charCode, 8);
-    }, false);
+    });
   }
-
 }
 
 /* Random API */
@@ -181,7 +182,7 @@ if(!forge.random) {
 // expose spawn PRNG
 forge.random.createInstance = spawnPrng;
 
-})((0, eval)('this'));
+})(typeof(jQuery) !== 'undefined' ? jQuery : null);
 
 } // end module implementation
 
