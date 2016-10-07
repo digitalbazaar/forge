@@ -124,6 +124,28 @@ function Tests(ASSERT, PKI, RSA, MD, MGF, PSS, RANDOM, UTIL) {
     })();
 
     (function() {
+      var algorithms = ['aes128', 'aes192', 'aes256'];
+      var prfAlgorithms = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512'];
+      for(var i = 0; i < algorithms.length; ++i) {
+        var algorithm = algorithms[i];
+        for(var j = 0; j < algorithms.length; ++j) {
+          var prfAlgorithm = prfAlgorithms[j];
+          it('should PKCS#8 encrypt and decrypt private key with ' + algorithm +
+            ' encryption and ' + prfAlgorithm + ' PRF', function() {
+            var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+            var encryptedPem = PKI.encryptRsaPrivateKey(
+               privateKey, 'password', {
+                 algorithm: algorithm,
+                 prfAlgorithm: prfAlgorithm
+               });
+            privateKey = PKI.decryptRsaPrivateKey(encryptedPem, 'password');
+            ASSERT.equal(PKI.privateKeyToPem(privateKey), _pem.privateKey);
+          });
+        }
+      }
+    })();
+
+    (function() {
       var algorithms = ['aes128', 'aes192', 'aes256', '3des', 'des'];
       for(var i = 0; i < algorithms.length; ++i) {
         var algorithm = algorithms[i];

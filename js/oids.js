@@ -127,6 +127,18 @@ oids['pbeWithSHAAnd128BitRC2-CBC'] = '1.2.840.113549.1.12.1.5';
 oids['1.2.840.113549.1.12.1.6'] = 'pbewithSHAAnd40BitRC2-CBC';
 oids['pbewithSHAAnd40BitRC2-CBC'] = '1.2.840.113549.1.12.1.6';
 
+// hmac OIDs
+oids['1.2.840.113549.2.7'] = 'hmacWithSHA1';
+oids['hmacWithSHA1'] = '1.2.840.113549.2.7';
+oids['1.2.840.113549.2.8'] = 'hmacWithSHA224';
+oids['hmacWithSHA224'] = '1.2.840.113549.2.8';
+oids['1.2.840.113549.2.9'] = 'hmacWithSHA256';
+oids['hmacWithSHA256'] = '1.2.840.113549.2.9';
+oids['1.2.840.113549.2.10'] = 'hmacWithSHA384';
+oids['hmacWithSHA384'] = '1.2.840.113549.2.10';
+oids['1.2.840.113549.2.11'] = 'hmacWithSHA512';
+oids['hmacWithSHA512'] = '1.2.840.113549.2.11';
+
 // symmetric key algorithm oids
 oids['1.2.840.113549.3.7'] = 'des-EDE3-CBC';
 oids['des-EDE3-CBC'] = '1.2.840.113549.3.7';
