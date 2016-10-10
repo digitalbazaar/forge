@@ -204,7 +204,9 @@ oids['2.5.29.28'] = 'issuingDistributionPoint';
 oids['2.5.29.29'] = 'certificateIssuer';
 oids['2.5.29.30'] = 'nameConstraints';
 oids['2.5.29.31'] = 'cRLDistributionPoints';
+oids['cRLDistributionPoints'] = '2.5.29.31';
 oids['2.5.29.32'] = 'certificatePolicies';
+oids['certificatePolicies'] = '2.5.29.32';
 oids['2.5.29.33'] = 'policyMappings';
 oids['2.5.29.34'] = 'policyConstraints'; // deprecated use .36
 oids['2.5.29.35'] = 'authorityKeyIdentifier';
@@ -216,6 +218,10 @@ oids['2.5.29.46'] = 'freshestCRL';
 oids['2.5.29.54'] = 'inhibitAnyPolicy';
 
 // extKeyUsage purposes
+oids['1.3.6.1.4.1.11129.2.4.2'] = 'timestampList';
+oids['timestampList'] = '1.3.6.1.4.1.11129.2.4.2';
+oids['1.3.6.1.5.5.7.1.1'] = 'authorityInfoAccess';
+oids['authorityInfoAccess'] = '1.3.6.1.5.5.7.1.1';
 oids['1.3.6.1.5.5.7.3.1'] = 'serverAuth';
 oids['serverAuth'] = '1.3.6.1.5.5.7.3.1';
 oids['1.3.6.1.5.5.7.3.2'] = 'clientAuth';
