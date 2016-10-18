@@ -424,7 +424,19 @@ asn1.toDer = function(obj) {
         value.putInt16(obj.value.charCodeAt(i));
       }
     } else {
-      value.putBytes(obj.value);
+      // ensure integer is minimally-encoded
+      if(obj.type === asn1.Type.INTEGER &&
+        obj.value.length > 1 &&
+        // leading 0x00 for positive integer
+        ((obj.value.charCodeAt(0) === 0 &&
+        (obj.value.charCodeAt(1) & 0x80) === 0) ||
+        // leading 0xFF for negative integer
+        (obj.value.charCodeAt(0) === 0xFF &&
+        (obj.value.charCodeAt(1) & 0x80) === 0x80))) {
+        value.putBytes(obj.value.substr(1));
+      } else {
+        value.putBytes(obj.value);
+      }
     }
   }
 

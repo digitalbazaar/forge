@@ -1681,7 +1681,19 @@ function _bnToBytes(b) {
   if(hex[0] >= '8') {
     hex = '00' + hex;
   }
-  return forge.util.hexToBytes(hex);
+  var bytes = forge.util.hexToBytes(hex);
+
+  // ensure integer is minimally-encoded
+  if(bytes.length > 1 &&
+    // leading 0x00 for positive integer
+    ((bytes.charCodeAt(0) === 0 &&
+    (bytes.charCodeAt(1) & 0x80) === 0) ||
+    // leading 0xFF for negative integer
+    (bytes.charCodeAt(0) === 0xFF &&
+    (bytes.charCodeAt(1) & 0x80) === 0x80))) {
+    return bytes.substr(1);
+  }
+  return bytes;
 }
 
 /**
