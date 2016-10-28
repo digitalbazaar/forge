@@ -162,7 +162,6 @@ sha256.create = function() {
 
     // serialize message length in bits in big-endian order; since length
     // is stored in bytes we multiply by 8 and add carry from next int
-    var messageLength = forge.util.createBuffer();
     var next, carry;
     var bits = md.fullMessageLength[0] * 8;
     for(var i = 0; i < md.fullMessageLength.length; ++i) {
