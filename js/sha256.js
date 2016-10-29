@@ -303,11 +303,15 @@ function _update(s, w, bytes) {
       h = g;
       g = f;
       f = e;
-      e = (d + t1) | 0;
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      // can't truncate with `| 0`
+      e = (d + t1) >>> 0;
       d = c;
       c = b;
       b = a;
-      a = (t1 + t2) | 0;
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      // can't truncate with `| 0`
+      a = (t1 + t2) >>> 0;
     }
 
     // update hash state

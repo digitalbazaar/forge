@@ -234,7 +234,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -246,7 +247,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -259,7 +261,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -271,7 +274,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -284,7 +288,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -297,7 +302,8 @@ function _update(s, w, bytes) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      // `>>> 0` necessary to avoid iOS/Safari 10 optimization bug
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
