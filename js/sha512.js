@@ -209,7 +209,7 @@ sha512.create = function(algorithm) {
       carry = (next / 0x100000000) >>> 0;
       bits += carry;
       finalBlock.putInt32(bits >>> 0);
-      bits = next;
+      bits = next >>> 0;
     }
 
     var h = new Array(_h.length);
