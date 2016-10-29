@@ -82,7 +82,21 @@
    <input id="do_pbkdf2_sha384" type="checkbox"/>SHA-384 (slow) |
    <input id="do_pbkdf2_sha512" type="checkbox"/>SHA-512 (slow)<br/>
    <input id="hash_updates" value="10000"/> # of hash updates<br/>
-   <input id="pbkdf2_rounds" value="10000"/> # of pbkdf2 rounds
+   <input id="pbkdf2_rounds" value="10000"/> # of pbkdf2 rounds<br/>
+   AES ENCRYPT:
+   <input id="do_encrypt_AES-CBC" type="checkbox" checked="checked"/>AES-CBC |
+   <input id="do_encrypt_AES-CFB" type="checkbox"/>AES-CFB |
+   <input id="do_encrypt_AES-OFB" type="checkbox"/>AES-OFB |
+   <input id="do_encrypt_AES-CTR" type="checkbox"/>AES-CTR |
+   <input id="do_encrypt_AES-GCM" type="checkbox"/>AES-GCM<br/>
+   <input id="encryptions" value="100"/> # of aes encryptions<br/>
+   AES DECRYPT:
+   <input id="do_decrypt_AES-CBC" type="checkbox" checked="checked"/>AES-CBC |
+   <input id="do_decrypt_AES-CFB" type="checkbox"/>AES-CFB |
+   <input id="do_decrypt_AES-OFB" type="checkbox"/>AES-OFB |
+   <input id="do_decrypt_AES-CTR" type="checkbox"/>AES-CTR |
+   <input id="do_decrypt_AES-GCM" type="checkbox"/>AES-GCM<br/>
+   <input id="decryptions" value="100"/> # of aes decryptions<br/>
 </fieldset>
 
 <fieldset class="section">

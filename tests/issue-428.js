@@ -266,5 +266,110 @@ jQuery(function($) {
     });
   });
 
+  $.each(['AES-CBC','AES-CFB','AES-OFB','AES-CTR','AES-GCM'], function(i, algorithm) {
+    addTest(algorithm, function(task, test) {
+      var cipherAttempt = 0;
+      var encryptValues = [];
+      var encryptions = parseInt($('#encryptions')[0].value);
+
+      var size = 1024;
+      var key = forge.random.getBytesSync(16);
+      var iv = forge.random.getBytes(algorithm === 'AES-GCM' ? 12 : 16);
+      var plain = forge.random.getBytesSync(size);
+
+      iterationTests.push({
+        run: true,
+        loop: function() {
+          if($('#do_encrypt_' + algorithm)[0].checked) {
+            cipherAttempt++;
+            test.iterations(cipherAttempt);
+            test.changes(encryptValues.length);
+            var cipher;
+            for(var i = 0; i < encryptions; ++i) {
+              cipher = forge.cipher.createCipher(algorithm, key);
+              cipher.mode.pad = false;
+              cipher.start({iv: iv});
+              cipher.update(forge.util.createBuffer(plain));
+              cipher.finish();
+            }
+            var hex = cipher.output.toHex();
+            if(encryptValues.length === 0) {
+              encryptValues.push([cipherAttempt, hex]);
+              test.expect.html(JSON.stringify(encryptValues));
+              test.result.html(JSON.stringify(encryptValues));
+            } else {
+              if(encryptValues[encryptValues.length - 1][1] !== hex) {
+                encryptValues.push([cipherAttempt, hex]);
+                test.result.html(JSON.stringify(encryptValues));
+                test.fail(cipherAttempt);
+              }
+            }
+            if(stop) {
+              test.check(cipherAttempt);
+            }
+          }
+        }
+      });
+    });
+  });
+
+  $.each(['AES-CBC','AES-CFB','AES-OFB','AES-CTR','AES-GCM'], function(i, algorithm) {
+    addTest(algorithm, function(task, test) {
+      var cipherAttempt = 0;
+      var decryptValues = [];
+      var decryptions = parseInt($('#decryptions')[0].value);
+
+      var size = 1024;
+      var key = forge.random.getBytesSync(16);
+      var iv = forge.random.getBytes(algorithm === 'AES-GCM' ? 12 : 16);
+      var plain = forge.random.getBytesSync(size);
+
+      var cipher = forge.cipher.createCipher(algorithm, key);
+      cipher.mode.pad = false;
+      cipher.start({iv: iv});
+      cipher.update(forge.util.createBuffer(plain));
+      cipher.finish();
+      var encrypted = cipher.output.getBytes();
+      var tag = cipher.mode.tag;
+
+      iterationTests.push({
+        run: true,
+        loop: function() {
+          if($('#do_decrypt_' + algorithm)[0].checked) {
+            cipherAttempt++;
+            test.iterations(cipherAttempt);
+            test.changes(decryptValues.length);
+            var cipher;
+            for(var i = 0; i < decryptions; ++i) {
+              cipher = forge.cipher.createCipher(algorithm, key);
+              cipher.mode.unpad = false;
+
+              cipher.start({iv: iv, tag: tag});
+              cipher.update(forge.util.createBuffer(encrypted));
+              if(!cipher.finish()) {
+                test.fail(cipherAttempt);
+              }
+            }
+            var hex = cipher.output.toHex();
+            if(decryptValues.length === 0) {
+              decryptValues.push([cipherAttempt, hex]);
+              test.expect.html(JSON.stringify(decryptValues));
+              test.result.html(JSON.stringify(decryptValues));
+            } else {
+              if(decryptValues[decryptValues.length - 1][1] !== hex) {
+                decryptValues.push([cipherAttempt, hex]);
+                test.result.html(JSON.stringify(decryptValues));
+                test.fail(cipherAttempt);
+              }
+            }
+            if(stop) {
+              test.check(cipherAttempt);
+            }
+          }
+        }
+      });
+    });
+  });
+
   init();
 });
