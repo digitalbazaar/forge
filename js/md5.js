@@ -97,7 +97,7 @@ md5.create = function() {
       md.fullMessageLength[i] += len[1];
       len[1] = len[0] + ((md.fullMessageLength[i] / 0x100000000) >>> 0);
       md.fullMessageLength[i] = md.fullMessageLength[i] >>> 0;
-      len[0] = ((len[1] / 0x100000000) >>> 0);
+      len[0] = (len[1] / 0x100000000) >>> 0;
     }
 
     // add bytes to input buffer
