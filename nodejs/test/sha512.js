@@ -53,6 +53,20 @@ function Tests(ASSERT, SHA512, UTIL) {
         md.digest().toHex(),
         '204a8fc6dda82f0a0ced7beb8e08a41657c16ef468b228a8279be331a703c33596fd15c13b1b07f9aa1d3bea57789ca031ad85c7a71dd70354ec631238ca3445');
     });
+
+    it('should digest multiple long messages', function() {
+      // Note: might be too slow on old browsers
+      // done multiple times to check hot loop optimizations
+      for(var loop = 0; loop < 3; ++loop) {
+        var md = SHA512.create();
+        for(var i = 0; i < 10000; ++i) {
+          md.update('abc');
+        }
+        ASSERT.equal(
+          md.digest().toHex(),
+	  'd046212bac4588e4bf5e33fcac26183e548f7efe8d36df45db885a31c4c23bbb3b9da10225405b4be3491c4d923937f8b5e165ecd4cadc8d0680cadb164c112f')
+      }
+    });
   });
 
   var SHA384 = SHA512.sha384;
@@ -108,6 +122,20 @@ function Tests(ASSERT, SHA512, UTIL) {
       ASSERT.equal(
         md.digest().toHex(),
         '3391fdddfc8dc7393707a65b1b4709397cf8b1d162af05abfe8f450de5f36bc6b0455a8520bc4e6f5fe95b1fe3c8452b');
+    });
+
+    it('should digest multiple long messages', function() {
+      // Note: might be too slow on old browsers
+      // done multiple times to check hot loop optimizations
+      for(var loop = 0; loop < 3; ++loop) {
+        var md = SHA384.create();
+        for(var i = 0; i < 10000; ++i) {
+          md.update('abc');
+        }
+        ASSERT.equal(
+          md.digest().toHex(),
+	  'ade291a33b436cc10ed01090255e612f0d3868a795be7871e1f20183245aa48738d35a26d94ac5d791ef57e94763af6b');
+      }
     });
   });
 

@@ -90,6 +90,19 @@ function Tests(ASSERT, MD5, UTIL) {
       md.update(input);
       ASSERT.equal(md.digest().toHex(), 'd15a2da0e92c3da55dc573f885b6e653');
     });
+
+    it('should digest multiple long messages', function() {
+      // Note: might be too slow on old browsers
+      // done multiple times to check hot loop optimizations
+      for(var loop = 0; loop < 3; ++loop) {
+        var md = MD5.create();
+        for(var i = 0; i < 10000; ++i) {
+          md.update('abc');
+        }
+        ASSERT.equal(
+          md.digest().toHex(), 'b3e98306e7367f93cd7cb870af64f7b7');
+      }
+    });
   });
 }
 

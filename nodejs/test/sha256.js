@@ -54,6 +54,20 @@ function Tests(ASSERT, SHA256, UTIL) {
         md.digest().toHex(),
         'cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0');
     });
+
+    it('should digest multiple long messages', function() {
+      // Note: might be too slow on old browsers
+      // done multiple times to check hot loop optimizations
+      for(var loop = 0; loop < 3; ++loop) {
+        var md = SHA256.create();
+        for(var i = 0; i < 10000; ++i) {
+          md.update('abc');
+        }
+        ASSERT.equal(
+          md.digest().toHex(),
+	  '13b77af908a78a94f2e21cf8fc137ea16c8020873eeee7b6b96b6b0975555a02');
+      }
+    });
   });
 }
 

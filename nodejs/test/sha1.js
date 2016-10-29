@@ -48,6 +48,19 @@ function Tests(ASSERT, SHA1, UTIL) {
       ASSERT.equal(
         md.digest().toHex(), '34aa973cd4c4daa4f61eeb2bdbad27316534016f');
     });
+
+    it('should digest multiple long messages', function() {
+      // Note: might be too slow on old browsers
+      // done multiple times to check hot loop optimizations
+      for(var loop = 0; loop < 3; ++loop) {
+        var md = SHA1.create();
+        for(var i = 0; i < 10000; ++i) {
+          md.update('abc');
+        }
+        ASSERT.equal(
+          md.digest().toHex(), 'a838edb5dec47b84b4bfb0a528ea958a5d9d2350');
+      }
+    });
   });
 }
 
