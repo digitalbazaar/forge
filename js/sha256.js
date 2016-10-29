@@ -164,13 +164,14 @@ sha256.create = function() {
     // is stored in bytes we multiply by 8 and add carry from next int
     var next, carry;
     var bits = md.fullMessageLength[0] * 8;
-    for(var i = 0; i < md.fullMessageLength.length; ++i) {
+    for(var i = 0; i < md.fullMessageLength.length - 1; ++i) {
       next = md.fullMessageLength[i + 1] * 8;
       carry = (next / 0x100000000) >>> 0;
       bits += carry;
       finalBlock.putInt32(bits >>> 0);
       bits = next >>> 0;
     }
+    finalBlock.putInt32(bits);
 
     var s2 = {
       h0: _state.h0,
