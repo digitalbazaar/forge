@@ -38,7 +38,9 @@ var defineFunc = function(require, module) {
     }
     forge.defined[name] = true;
     for(var i = 0; i < mods.length; ++i) {
-      mods[i](forge);
+      if(typeof mods[i] === 'function') {
+        mods[i](forge);
+      }
     }
     return forge;
   };
