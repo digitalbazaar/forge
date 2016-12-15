@@ -23,10 +23,9 @@
     }
   ],
   "devDependencies": {
-    "almond": "~0.2.6",
     "jscs": "^3.0.7",
     "jshint": "^2.9.4",
-    "requirejs": "~2.1.8"
+    "webpack": "^1.14.0"
   },
   "repository": {
     "type": "git",
@@ -71,12 +70,16 @@
     "x509"
   ],
   "scripts": {
-    "bundle": "r.js -o minify.js optimize=none out=js/forge.bundle.js",
-    "minify": "r.js -o minify.js",
+    "build": "webpack",
     "jscs": "jscs *.js lib/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
     "jshint": "jshint *.js lib/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
   },
   "jspm": {
     "format": "amd"
+  },
+  "browser": {
+    "process": false,
+    "buffer": false,
+    "crypto": false
   }
 }
