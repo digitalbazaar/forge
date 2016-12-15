@@ -24,7 +24,8 @@
   ],
   "devDependencies": {
     "almond": "~0.2.6",
-    "jscs": "^1.8.1",
+    "jscs": "^3.0.7",
+    "jshint": "^2.9.4",
     "requirejs": "~2.1.8"
   },
   "repository": {
