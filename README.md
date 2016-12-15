@@ -234,8 +234,8 @@ Documentation
 
 If at any time you wish to disable the use of native code, where available,
 for particular forge features like its secure random number generator, you
-may set the ```disableNativeCode``` flag on ```forge``` to ```true```. It
-is not recommended that you set this flag as native code is typically more
+may set the ```forge.options.usePureJavaScript``` flag to ```true```. It is
+not recommended that you set this flag as native code is typically more
 performant and may have stronger security properties. It may be useful to
 set this flag to test certain features that you plan to run in environments
 that are different from your testing environment.
@@ -243,27 +243,15 @@ that are different from your testing environment.
 To disable native code when including forge in the browser:
 
 ```js
-forge = {disableNativeCode: true};
-// now include forge script file(s)
-// Note: with this approach, script files *must*
-// be included after initializing the global forge var
-
-// alternatively, include script files first and then call
-forge = forge({disableNativeCode: true});
-
-// Note: forge will be permanently reconfigured now;
-// to avoid this but use the same "forge" var name,
-// you can wrap your code in a function to shadow the
-// global var, eg:
-(function(forge) {
-  // ...
-})(forge({disableNativeCode: true}));
+// run this *after* including the forge script
+forge.options.usePureJavaScript = true;
 ```
 
 To disable native code when using node.js:
 
 ```js
-var forge = require('node-forge')({disableNativeCode: true});
+var forge = require('node-forge');
+forge.options.usePureJavaScript = true;
 ```
 
 Transports
