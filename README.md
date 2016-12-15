@@ -29,7 +29,7 @@ Getting Started
 
 ### Node.js
 
-If you want to use forge with [node.js][], it is available through `npm`:
+If you want to use forge with [Node.js][], it is available through `npm`:
 
 https://npmjs.org/package/node-forge
 
@@ -60,69 +60,40 @@ You can then use forge as a regular module:
   * Adobe Flex 3 SDK to build the Flash socket code.
   * http://opensource.adobe.com/wiki/display/flexsdk/
 
-### Building a browser bundle ###
+### Building for a web browser ###
 
-To create a minimized JavaScript bundle, run the following:
+To create single file bundles for use with browsers run the following:
 
 ```
 npm install
-npm run minify
+npm run build
 ```
 
-**Note for Windows users**: If you have trouble running the
-`npm run bundle` command, try this instead:
+This will create single non-minimized and minimized files that can be
+included in the browser:
 
 ```
-node node_modules\requirejs\bin\r.js -o minify.js
-```
-
-This will create a single minimized file that can be included in
-the browser:
-
-```
-js/forge.min.js
+dist/forge.js
+dist/forge.min.js
 ```
 
 Include the file via:
 
 ```html
-<script src="js/forge.min.js"></script>
+<script src="YOUR_SCRIPT_PATH/forge.js"></script>
 ```
-
-Note that the minify script depends on the requirejs package,
-and that the requirejs binary 'r.js' assumes that the name of
-the node binary is 'node' not 'nodejs', as it is on some
-systems. You may need to change the hashbang line to use
-'nodejs' or run the command manually.
-
-To create a single non-minimized file that can be included in
-the browser:
-
-```
-npm install
-npm run bundle
-```
-
-**Note for Windows users**: If you have trouble running the
-`npm run bundle` command, try this instead:
-
-```
-node node_modules\requirejs\bin\r.js -o minify.js optimize=none out=js/forge.bundle.js
-```
-
-This will create:
-
-```
-js/forge.bundle.js
-```
-
-Include the file via:
-
+or
 ```html
-<script src="js/forge.bundle.js"></script>
+<script src="YOUR_SCRIPT_PATH/forge.min.js"></script>
 ```
 
 The above bundles will synchronously create a global 'forge' object.
+
+The build process uses [webpack][] and the [config][./webpack.config.js] file
+or process can be modified to generate a file or files that only contain the
+parts of forge you need.
+
+[Browserify][] override support is also present in `package.json`.
 
 Keep in mind that these bundles will not include any WebWorker
 scripts (eg: prime.worker.js) or their dependencies, so these will
@@ -131,7 +102,7 @@ need to be accessible from the browser if any WebWorkers are used.
 <a name="testing" />
 ### Testing with NodeJS & RequireJS ###
 
-A test server for [node.js][] can be found at `./nodejs`. The following are included:
+A test server for [Node.js][] can be found at `./nodejs`. The following are included:
 
   * Example of how to use `forge` within NodeJS in the form of a [mocha](http://mochajs.org/) test.
   * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
@@ -169,7 +140,7 @@ More advanced tests need TLS enabled::
     $ ./tests/server.py --tls
 
 Contributing
--------------
+------------
 
 Any contributions (eg: PRs) that are accepted will be brought under the same
 license used by the rest of the Forge project. This license allows Forge to
@@ -247,7 +218,7 @@ To disable native code when including forge in the browser:
 forge.options.usePureJavaScript = true;
 ```
 
-To disable native code when using node.js:
+To disable native code when using Node.js:
 
 ```js
 var forge = require('node-forge');
@@ -641,7 +612,7 @@ if(pass) {
 }
 ```
 
-Using forge in node.js to match openssl's "enc" command line tool (**Note**: OpenSSL "enc" uses a non-standard file format with a custom key derivation function and a fixed iteration count of 1, which some consider less secure than alternatives such as [OpenPGP](https://tools.ietf.org/html/rfc4880)/[GnuPG](https://www.gnupg.org/)):
+Using forge in Node.js to match openssl's "enc" command line tool (**Note**: OpenSSL "enc" uses a non-standard file format with a custom key derivation function and a fixed iteration count of 1, which some consider less secure than alternatives such as [OpenPGP](https://tools.ietf.org/html/rfc4880)/[GnuPG](https://www.gnupg.org/)):
 
 ```js
 var forge = require('node-forge');
@@ -1746,12 +1717,12 @@ bytes.bytes(/* count */);
 // empty this buffer and get its contents
 bytes.getBytes(/* count */);
 
-// convert a forge buffer into a node.js Buffer
+// convert a forge buffer into a Node.js Buffer
 // make sure you specify the encoding as 'binary'
 var forgeBuffer = forge.util.createBuffer();
 var nodeBuffer = new Buffer(forgeBuffer.getBytes(), 'binary');
 
-// convert a node.js Buffer into a forge buffer
+// convert a Node.js Buffer into a forge buffer
 // make sure you specify the encoding as 'binary'
 var nodeBuffer = new Buffer();
 var forgeBuffer = forge.util.createBuffer(nodeBuffer.toString('binary'));
@@ -1820,6 +1791,7 @@ Financial support is welcome and helps contribute to futher development:
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
 [Apache]: http://httpd.apache.org/
+[Browserify]: http://browserify.org/
 [CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CTR]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
@@ -1830,6 +1802,7 @@ Financial support is welcome and helps contribute to futher development:
 [HMAC]: http://en.wikipedia.org/wiki/HMAC
 [JavaScript]: http://en.wikipedia.org/wiki/JavaScript
 [MD5]: http://en.wikipedia.org/wiki/MD5
+[Node.js]: http://nodejs.org/
 [OFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [PKCS#10]: http://en.wikipedia.org/wiki/Certificate_signing_request
 [PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
@@ -1844,4 +1817,4 @@ Financial support is welcome and helps contribute to futher development:
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [X.509]: http://en.wikipedia.org/wiki/X.509
 [freenode]: https://freenode.net/
-[node.js]: http://nodejs.org/
+[webpack]: https://webpack.github.io/
