@@ -1817,18 +1817,24 @@ Contact
 * Code: https://github.com/digitalbazaar/forge
 * Bugs: https://github.com/digitalbazaar/forge/issues
 * Email: support@digitalbazaar.com
+* IRC: [#forgejs][] on [freenode][]
 
-Donations welcome:
+Donations
+---------
 
-* Donate: paypal@digitalbazaar.com
+Financial support is welcome and helps contribute to futher development:
 
+* For [PayPal][] please send to paypal@digitalbazaar.com.
+* Something else? Please contact support@digitalbazaar.com.
+
+[#forgejs]: https://webchat.freenode.net/?channels=#forgejs
+[3DES]: http://en.wikipedia.org/wiki/Triple_DES
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
 [Apache]: http://httpd.apache.org/
-[CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CTR]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[3DES]: http://en.wikipedia.org/wiki/Triple_DES
 [DES]: http://en.wikipedia.org/wiki/Data_Encryption_Standard
 [ECB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [Fortuna]: http://en.wikipedia.org/wiki/Fortuna_(PRNG)
@@ -1837,10 +1843,11 @@ Donations welcome:
 [JavaScript]: http://en.wikipedia.org/wiki/JavaScript
 [MD5]: http://en.wikipedia.org/wiki/MD5
 [OFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[PKCS#5]: http://en.wikipedia.org/wiki/PKCS
-[PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
 [PKCS#10]: http://en.wikipedia.org/wiki/Certificate_signing_request
 [PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
+[PKCS#5]: http://en.wikipedia.org/wiki/PKCS
+[PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
+[PayPal]: https://www.paypal.com/
 [RC2]: http://en.wikipedia.org/wiki/RC2
 [SHA-1]: http://en.wikipedia.org/wiki/SHA-1
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
@@ -1848,4 +1855,5 @@ Donations welcome:
 [SHA-512]: http://en.wikipedia.org/wiki/SHA-512
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [X.509]: http://en.wikipedia.org/wiki/X.509
+[freenode]: https://freenode.net/
 [node.js]: http://nodejs.org/
