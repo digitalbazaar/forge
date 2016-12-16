@@ -5,7 +5,7 @@
  * @author Stefan Siegl
  *
  * Copyright (c) 2012-2015 Digital Bazaar, Inc.
- * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2012, 2015 Stefan Siegl <stesie@brokenpipe.de>
  *
  * The ASN.1 representation of PKCS#7 is as follows
  * (see RFC #2315 for details, http://www.ietf.org/rfc/rfc2315.txt):
@@ -396,7 +396,6 @@ p7v.recipientInfoValidator = {
     }, {
       name: 'RecipientInfo.keyEncryptionAlgorithm.parameter',
       tagClass: asn1.Class.UNIVERSAL,
-      constructed: false,
       captureAsn1: 'encParameter'
     }]
   }, {
@@ -405,6 +404,62 @@ p7v.recipientInfoValidator = {
     type: asn1.Type.OCTETSTRING,
     constructed: false,
     capture: 'encKey'
+  }]
+};
+
+p7v.oaepParametersValidator = {
+  name: 'oaepParameters',
+  tagClass: asn1.Class.UNIVERSAL,
+  type: asn1.Type.SEQUENCE,
+  constructed: true,
+  value: [{
+    name: 'hashFunc',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 0,
+    constructed: true,
+    optional: true,
+    value: [{
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+        name: 'hashFunc.Algorithm',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.OID,
+        constructed: false,
+        capture: 'digestAlgorithm'
+      }]
+    }]
+  }, {
+    name: 'maskGenFunc',
+    tagClass: asn1.Class.CONTEXT_SPECIFIC,
+    type: 1,
+    constructed: true,
+    optional: true,
+    value: [{
+      tagClass: asn1.Class.UNIVERSAL,
+      type: asn1.Type.SEQUENCE,
+      constructed: true,
+      value: [{
+        name: 'maskGenFunc.Algorithm',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.OID,
+        constructed: false,
+        capture: 'mgfAlgorithm'
+      }, {
+        name: 'maskGenFunc.Parameters',
+        tagClass: asn1.Class.UNIVERSAL,
+        type: asn1.Type.SEQUENCE,
+        constructed: true,
+        value: [{
+          name: 'maskGenFunc.Parameters.Algorithm',
+          tagClass: asn1.Class.UNIVERSAL,
+          type: asn1.Type.OID,
+          constructed: false,
+          capture: 'mgfDigestAlgorithm'
+        }]
+      }]
+    }]
   }]
 };
 

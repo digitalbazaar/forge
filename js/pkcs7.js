@@ -4,7 +4,7 @@
  * @author Stefan Siegl
  * @author Dave Longley
  *
- * Copyright (c) 2012 Stefan Siegl <stesie@brokenpipe.de>
+ * Copyright (c) 2012, 2015 Stefan Siegl <stesie@brokenpipe.de>
  * Copyright (c) 2012-2015 Digital Bazaar, Inc.
  *
  * Currently this implementation only supports ContentType of EnvelopedData,
@@ -660,6 +660,12 @@ p7.createEnvelopedData = function() {
             msg.encryptedContent.key = forge.util.createBuffer(key);
             break;
 
+          case forge.pki.oids['RSAES-OAEP']:
+            var key = privKey.decrypt(recipient.encryptedContent.content,
+              'RSAES-OAEP', recipient.encryptedContent.schemeOptions);
+            msg.encryptedContent.key = forge.util.createBuffer(key);
+            break;
+
           default:
             throw new Error('Unsupported asymmetric cipher, ' +
               'OID ' + recipient.encryptedContent.algorithm);
@@ -673,17 +679,26 @@ p7.createEnvelopedData = function() {
      * Add (another) entity to list of recipients.
      *
      * @param cert The certificate of the entity to add.
+     * @param options the options to use:
+     *          algorithm the algorithm to use for key encryption, undefined for RSA
+     *          schemeOptions the the options for key encryption algorithm (RSA-OAEP)
      */
-    addRecipient: function(cert) {
+    addRecipient: function(cert, options) {
+      var algorithm;
+      var schemeOptions;
+
+      if(options) {
+        algorithm = options.algorithm || undefined;
+        schemeOptions = options.schemeOptions || undefined;
+      }
+
       msg.recipients.push({
         version: 0,
         issuer: cert.issuer.attributes,
         serialNumber: cert.serialNumber,
         encryptedContent: {
-          // We simply assume rsaEncryption here, since forge.pki only
-          // supports RSA so far.  If the PKI module supports other
-          // ciphers one day, we need to modify this one as well.
-          algorithm: forge.pki.oids.rsaEncryption,
+          algorithm: algorithm || forge.pki.oids.rsaEncryption,
+          schemeOptions: schemeOptions || {},
           key: cert.publicKey
         }
       });
@@ -781,6 +796,13 @@ p7.createEnvelopedData = function() {
                 msg.encryptedContent.key.data);
             break;
 
+          case forge.pki.oids['RSAES-OAEP']:
+            recipient.encryptedContent.content =
+              recipient.encryptedContent.key.encrypt(
+                msg.encryptedContent.key.data, 'RSAES-OAEP',
+                recipient.encryptedContent.schemeOptions);
+            break;
+
           default:
             throw new Error('Unsupported asymmetric cipher, OID ' +
               recipient.encryptedContent.algorithm);
@@ -809,16 +831,60 @@ function _recipientFromAsn1(obj) {
     throw error;
   }
 
+  var schemeOpts = {};
+  if(asn1.derToOid(capture.encAlgorithm) === forge.pki.oids['RSAES-OAEP']) {
+    var oaepCapture = {};
+    if(!asn1.validate(capture.encParameter, p7.asn1.oaepParametersValidator,
+        oaepCapture, errors)) {
+      var error = new Error('Cannot read RSAES-OAEP Parameters. ' +
+        'ASN.1 object is not a RSAES-OAEP Parameters object.');
+      error.errors = errors;
+      throw error;
+    }
+
+    if(oaepCapture.digestAlgorithm) {
+      var digestOid = asn1.derToOid(oaepCapture.digestAlgorithm);
+
+      if(forge.md[forge.pki.oids[digestOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP hashFunc OID.');
+        error.oid = digestOid;
+        throw error;
+      }
+
+      schemeOpts.md = forge.md[forge.pki.oids[digestOid]].create();
+    };
+
+    if(oaepCapture.mgfAlgorithm) {
+      var mgfDigestOid = asn1.derToOid(oaepCapture.mgfDigestAlgorithm);
+      if(forge.md[forge.pki.oids[mgfDigestOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP maskGenFunc digest OID.');
+        error.oid = mgfDigestOid;
+        throw error;
+      }
+      var mgfMd = forge.md[forge.pki.oids[mgfDigestOid]].create();
+
+      var mgfOid = asn1.derToOid(oaepCapture.mgfAlgorithm);
+      if(forge.mgf[forge.pki.oids[mgfOid]] === undefined) {
+        var error = new Error('Unsupported RSAES-OAEP maskGenFunc OID.');
+        error.oid = mgfOid;
+        throw error;
+      }
+      schemeOpts.mgf = forge.mgf[forge.pki.oids[mgfOid]].create(mgfMd);
+    }
+  }
+
   return {
     version: capture.version.charCodeAt(0),
     issuer: forge.pki.RDNAttributesAsArray(capture.issuer),
     serialNumber: forge.util.createBuffer(capture.serial).toHex(),
     encryptedContent: {
       algorithm: asn1.derToOid(capture.encAlgorithm),
+      schemeOptions: schemeOpts,
       parameter: capture.encParameter.value,
       content: capture.encKey
     }
   };
+
 }
 
 /**
@@ -846,13 +912,87 @@ function _recipientToAsn1(obj) {
       // Algorithm
       asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
         asn1.oidToDer(obj.encryptedContent.algorithm).getBytes()),
-      // Parameter, force NULL, only RSA supported for now.
-      asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+      // Parameters
+      _encAlgorithmParametersToAsn1(obj.encryptedContent)
     ]),
     // EncryptedKey
     asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OCTETSTRING, false,
       obj.encryptedContent.content)
   ]);
+}
+
+/**
+ * Converts key encryption algorithm parameters to an ASN.1 object.
+ *
+ * @param encryptedContent the key encryption parameter object.
+ *
+ * @return the ASN.1 RecipientInfo.
+ */
+function _encAlgorithmParametersToAsn1(encryptedContent) {
+  switch(encryptedContent.algorithm) {
+    case forge.pki.oids.rsaEncryption:
+      // rsaEncryption has no parameters -> NULL
+      return asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '');
+
+    case forge.pki.oids['RSAES-OAEP']:
+      var seq = asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, []);
+
+      // add hashFunc (= AlgorithmIdentifier)
+      if(encryptedContent.schemeOptions.md
+          && encryptedContent.schemeOptions.md.algorithm
+          && encryptedContent.schemeOptions.md.algorithm !== 'sha1') {
+        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 0, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+            _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.md)
+          )
+        ]));
+      }
+
+      if(encryptedContent.schemeOptions.mgf
+          && encryptedContent.schemeOptions.mgf.algorithm
+          && (encryptedContent.schemeOptions.mgf.algorithm !== 'mgf1'
+              || encryptedContent.schemeOptions.mgf.md.algorithm != 'sha1')) {
+        seq.value.push(asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
+          asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true, [
+            // Algorithm
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+              asn1.oidToDer(
+                forge.oids[encryptedContent.schemeOptions.mgf.algorithm]
+              ).getBytes()),
+            // Parameter
+            asn1.create(asn1.Class.UNIVERSAL, asn1.Type.SEQUENCE, true,
+              _encodeMdAlgorithmToAsn1(encryptedContent.schemeOptions.mgf.md))
+          ])
+        ]));
+      }
+
+      // TODO write label
+
+      return seq;
+
+    default:
+      throw new Error('Unsupported asymmetric cipher, OID ' +
+        encryptedContent.algorithm);
+  }
+}
+
+/**
+ * Converts message digest algorithm parameters to an ASN.1 object.
+ *
+ * @param md the message digest object.
+ *
+ * @return the ASN.1 RecipientInfo.
+ */
+function _encodeMdAlgorithmToAsn1(md) {
+  return [
+    // Algorithm
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.OID, false,
+      asn1.oidToDer(
+        forge.oids[md.algorithm]
+      ).getBytes()),
+    // Parameter
+    asn1.create(asn1.Class.UNIVERSAL, asn1.Type.NULL, false, '')
+  ];
 }
 
 /**

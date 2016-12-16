@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
+function Tests(ASSERT, PKCS7, PKI, AES, DES, MGF1, MD, UTIL) {
   var _pem = {
     p7: '-----BEGIN PKCS7-----\r\n' +
       'MIICTgYJKoZIhvcNAQcDoIICPzCCAjsCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
@@ -329,6 +329,188 @@ function Tests(ASSERT, PKCS7, PKI, AES, DES, UTIL) {
       ASSERT.deepEqual(p7.recipients[0].encryptedContent.key, cert.publicKey);
     });
 
+    describe('RSA-OAEP support (Enveloped Data)', function() {
+      it('should accept alternative algorithm via addRecipient', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+        p7.addRecipient(cert, { algorithm: forge.pki.oids['RSAES-OAEP'] });
+
+        ASSERT.equal(p7.recipients[0].encryptedContent.algorithm, forge.pki.oids['RSAES-OAEP']);
+      });
+
+      it('should accept algorithm schemeOptions via addRecipient', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+        var md = MD.sha256.create();
+        var mgf = MGF1.create(md);
+
+        p7.addRecipient(cert, {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: { md: md, mgf: mgf }
+        });
+
+        ASSERT.equal(p7.recipients[0].encryptedContent.schemeOptions.mgf, mgf);
+        ASSERT.equal(p7.recipients[0].encryptedContent.schemeOptions.md, md);
+      });
+
+      it('should encode RSA-OAEP message digest option in ASN.1', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+        var md = MD.sha256.create();
+        var mgf = MGF1.create(md);
+
+        p7.addRecipient(cert, {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: { md: md, mgf: mgf }
+        });
+
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var recipientInfos = p7.toAsn1().value[1].value[0].value[1];
+        var keyEncryptionAlgo = recipientInfos.value[0].value[2];
+
+        // keyEncryptionAlgo (=AlgorithmIdentifier) .Algorithm = RSAES-OAEP
+        var algorithm = forge.asn1.derToOid(keyEncryptionAlgo.value[0].value);
+        ASSERT.equal(algorithm, forge.pki.oids['RSAES-OAEP']);
+
+        // OAEP has AlgorithmIdentifier.Parameter = SEQUENCE
+        var options = keyEncryptionAlgo.value[1];
+        ASSERT.equal(options.type, forge.asn1.Type.SEQUENCE);
+
+        // hashFunc is SHA-256, i.e. not default -> expect [0]
+        ASSERT.equal(options.value[0].tagClass, forge.asn1.Class.CONTEXT_SPECIFIC);
+        var hashFunc = options.value[0].value[0].value;
+
+        // AlgorithmIdentifier.Algorithm must be SHA-256
+        ASSERT.equal(forge.asn1.derToOid(hashFunc[0].value),
+            forge.pki.oids.sha256);
+
+        // message digests don't have parameters -> NULL
+        ASSERT.equal(hashFunc[1].type, forge.asn1.Type.NULL);
+      });
+
+      it('should not encode default RSA-OAEP options', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+
+        p7.addRecipient(cert, {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+        });
+
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var recipientInfos = p7.toAsn1().value[1].value[0].value[1];
+        var keyEncryptionAlgo = recipientInfos.value[0].value[2];
+        var options = keyEncryptionAlgo.value[1];
+
+        // options structures must be there ...
+        ASSERT.equal(options.type, forge.asn1.Type.SEQUENCE);
+
+        // ... but empty, since everything is in default state
+        ASSERT.equal(options.value.length, 0);
+      });
+
+      it('should not encode default RSA-OAEP options '
+          + '(even explicitly specified)', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+        var md = MD.sha1.create();
+        var mgf = MGF1.create(md);
+
+        p7.addRecipient(cert, {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: { md: md, mgf: mgf }
+        });
+
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var recipientInfos = p7.toAsn1().value[1].value[0].value[1];
+        var keyEncryptionAlgo = recipientInfos.value[0].value[2];
+        var options = keyEncryptionAlgo.value[1];
+
+        // options structures must be there ...
+        ASSERT.equal(options.type, forge.asn1.Type.SEQUENCE);
+
+        // ... but empty, since everything is in default state
+        ASSERT.equal(options.value.length, 0);
+      });
+
+      it('should encode used MGF in ASN.1', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        var cert = PKI.certificateFromPem(_pem.certificate);
+        var md = MD.sha256.create();
+        var mgf = MGF1.create(md);
+
+        p7.addRecipient(cert, {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: { md: md, mgf: mgf }
+        });
+
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var recipientInfos = p7.toAsn1().value[1].value[0].value[1];
+        var keyEncryptionAlgo = recipientInfos.value[0].value[2];
+
+        // keyEncryptionAlgo (=AlgorithmIdentifier) .Algorithm = RSAES-OAEP
+        var algorithm = forge.asn1.derToOid(keyEncryptionAlgo.value[0].value);
+        ASSERT.equal(algorithm, forge.pki.oids['RSAES-OAEP']);
+
+        // OAEP has AlgorithmIdentifier.Parameter = SEQUENCE
+        var options = keyEncryptionAlgo.value[1];
+        ASSERT.equal(options.type, forge.asn1.Type.SEQUENCE);
+        ASSERT.equal(options.value.length, 2); // Digest + MGF option
+
+        // maskGenFunc is MGF1(SHA-256), i.e. not default -> expect [1] SEQUENCE
+        ASSERT.equal(options.value[1].tagClass, forge.asn1.Class.CONTEXT_SPECIFIC);
+        ASSERT.equal(options.value[1].value[0].type, forge.asn1.Type.SEQUENCE);
+
+        var maskGenFunc = options.value[1].value[0].value;
+        ASSERT.equal(maskGenFunc.length, 2);
+
+        // AlgorithmIdentifier.Algorithm must be MGF1
+        ASSERT.equal(forge.asn1.derToOid(maskGenFunc[0].value),
+            forge.pki.oids.mgf1);
+
+        // AlgorithmIdentifier.Parameter is SEQUENCE, specifying MD
+        ASSERT.equal(maskGenFunc[1].type, forge.asn1.Type.SEQUENCE);
+
+        // message digests don't have parameters -> NULL
+        var hashFunc = maskGenFunc[1].value;
+        ASSERT.equal(hashFunc.length, 2);
+
+        // AlgorithmIdentifier.Algorithm must be SHA-256
+        ASSERT.equal(forge.asn1.derToOid(hashFunc[0].value),
+            forge.pki.oids.sha256);
+
+        // message digests don't have parameters -> NULL
+        ASSERT.equal(hashFunc[1].type, forge.asn1.Type.NULL);
+      });
+
+      it('should export message to PEM', function() {
+        var p7 = PKCS7.createEnvelopedData();
+        p7.addRecipient(PKI.certificateFromPem(_pem.certificate), {
+          algorithm: forge.pki.oids['RSAES-OAEP'],
+          schemeOptions: {
+            md: MD.sha256.create(),
+            mgf: MGF1.create(MD.sha256.create())
+          }
+        });
+        p7.content = UTIL.createBuffer('Just a little test');
+        p7.encrypt();
+
+        var pem = PKCS7.messageToPem(p7);
+
+        // convert back from PEM to new PKCS#7 object, decrypt, and test
+        p7 = PKCS7.messageFromPem(pem);
+        p7.decrypt(p7.recipients[0], PKI.privateKeyFromPem(_pem.privateKey));
+        ASSERT.equal(p7.content, 'Just a little test');
+      });
+    });
+
     it('should aes-encrypt a message', function() {
       var p7 = PKCS7.createEnvelopedData();
       var cert = PKI.certificateFromPem(_pem.certificate);
@@ -575,8 +757,10 @@ if(typeof define === 'function') {
     'forge/pki',
     'forge/aes',
     'forge/des',
+    'forge/mgf1',
+    'forge/md',
     'forge/util'
-  ], function(PKCS7, PKI, AES, DES, UTIL) {
+  ], function(PKCS7, PKI, AES, DES, MGF1, MD, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
@@ -584,6 +768,8 @@ if(typeof define === 'function') {
       PKI(forge),
       AES(forge),
       DES(forge),
+      MGF1(forge),
+      MD(forge),
       UTIL(forge)
     );
   });
@@ -595,6 +781,8 @@ if(typeof define === 'function') {
     require('../../js/pki')(forge),
     require('../../js/aes')(forge),
     require('../../js/des')(forge),
+    require('../../js/mgf1')(forge),
+    require('../../js/md')(forge),
     require('../../js/util')(forge));
 }
 
