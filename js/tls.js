@@ -866,6 +866,19 @@ tls.parseHelloMessage = function(c, record, length) {
       }
     }
 
+    // Check if TLS version in Hello message is supported
+    if((c.minSupportedVersion.major > msg.version.major || 
+          c.minSupportedVersion.minor > msg.version.minor)) {
+      return c.error(c, {
+        message: 'Requested TLS version is not supported.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.protocol_version
+        }
+      });
+    }
+
     // get the chosen (ServerHello) cipher suite
     if(client) {
       // FIXME: should be checking configured acceptable cipher suites
@@ -1080,12 +1093,28 @@ tls.handleClientHello = function(c, record, length) {
     c.session.sp = session.sp;
   } else {
     // use highest compatible minor version
-    var version;
-    for(var i = 1; i < tls.SupportedVersions.length; ++i) {
-      version = tls.SupportedVersions[i];
-      if(version.minor <= msg.version.minor) {
-        break;
+    var version = null;
+    for(var i = 0; i < tls.SupportedVersions.length; ++i) {
+      // If msg major and minor are lower than the supported version, that supported version cannot be used.
+      if ((msg.version.major >= tls.SupportedVersions[i].major) && (msg.version.minor >= tls.SupportedVersions[i].minor)) {
+        // If version is null this is the first supported version we find that is supported by the client.
+        // Otherwise if version is not null but either its major or minor is lower than the found supported version,
+        // this means we have found a higher supported version and should use that instead.
+        if (version === null || ((version.major < tls.SupportedVersions.major) || (version.minor < tls.SupportedVersions[i].minor))) {
+          version = tls.SupportedVersions[i];
+        }
       }
+    }
+    if(version === null) {
+      // If no supported version is found, we should return a error for a incompatible TLS version.
+      return c.error(c, {
+        message: 'Incompatible TLS version.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.protocol_version
+        }
+      });
     }
     c.version = {major: version.major, minor: version.minor};
     c.session.version = c.version;
@@ -3683,6 +3712,9 @@ tls.createConnection = function(options) {
     caStore = forge.pki.createCaStore();
   }
 
+  // setup enabled TLS protocol versions
+  var minSupportedVersion = options.minSupportedVersion || tls.Versions.TLS_1_0;
+
   // setup default cipher suites
   var cipherSuites = options.cipherSuites || null;
   if(cipherSuites === null) {
@@ -3708,6 +3740,7 @@ tls.createConnection = function(options) {
     caStore: caStore,
     sessionCache: sessionCache,
     cipherSuites: cipherSuites,
+    minSupportedVersion: minSupportedVersion,
     connected: options.connected,
     virtualHost: options.virtualHost || null,
     verifyClient: options.verifyClient || false,
