@@ -13,6 +13,14 @@
   // use w/angular directive templates?
   //"disallowMultipleLineStrings": true,
   "disallowNewlineBeforeBlockStatements": true,
+  //"disallowSpaceAfterKeywords": [
+  //  "if",
+  //  "for",
+  //  "while",
+  //  "do",
+  //  "switch",
+  //  "catch"
+  //],
   "disallowSpaceAfterObjectKeys": true,
   "disallowSpaceAfterPrefixUnaryOperators": ["++", "--", "+", "-", "~", "!"],
   "disallowSpaceBeforeBinaryOperators": [","],
@@ -20,26 +28,39 @@
   "disallowSpacesInAnonymousFunctionExpression": {
     "beforeOpeningRoundBrace": true
   },
+  //"disallowSpacesInCallExpression": true,
   "disallowSpacesInFunctionDeclaration": {
     "beforeOpeningRoundBrace": true
   },
   "disallowSpacesInNamedFunctionExpression": {
     "beforeOpeningRoundBrace": true
   },
+  //"disallowSpacesInsideArrayBrackets": true,
   "disallowSpacesInsideParentheses": true,
   "disallowTrailingComma": true,
   "disallowTrailingWhitespace": true,
+  //"maximumLineLength": {
+  //  "value": 80,
+  //  "allExcept": ["comments", "regex"]
+  //},
   "requireCommaBeforeLineBreak": true,
   "requireCurlyBraces": ["if", "else", "for", "while", "do", "try", "catch"],
   "requireLineFeedAtFileEnd": true,
+  "requireSemicolons": true,
   "requireSpaceAfterBinaryOperators": ["?", ":", "+", "-", "/", "*", "%", "==", "===", "!=", "!==", ">", ">=", "<", "<=", "&&", "||"],
   "requireSpaceBeforeBinaryOperators": ["?", ":", "+", "-", "/", "*", "%", "==", "===", "!=", "!==", ">", ">=", "<", "<=", "&&", "||"],
+  //"requireSpaceBeforeObjectValues": true,
   "requireSpaceAfterKeywords": [
     "else",
     "do",
     "return",
     "try"
   ],
+  //"requireSpaceBeforeKeywords": [
+  //  "else",
+  //  "while",
+  //  "catch"
+  //],
   "requireSpaceBeforeBlockStatements": true,
   "requireSpacesInConditionalExpression": {
     "afterTest": true,
@@ -47,10 +68,12 @@
     "afterConsequent": true,
     "beforeAlternate": true
   },
+  //"requireSpacesInForStatement": true,
   "requireSpacesInFunction": {
     "beforeOpeningCurlyBrace": true
   },
   "safeContextKeyword": "self",
+  //"validateIndentation": 2,
   "validateLineBreaks": "LF",
   // FIXME: enable doc checks (update to use newer jscs jsdoc module)
   //"validateJSDoc": {

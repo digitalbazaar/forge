@@ -67,7 +67,7 @@ var UTIL = require('../../lib/util');
         }
         ASSERT.equal(
           md.digest().toHex(),
-	  '13b77af908a78a94f2e21cf8fc137ea16c8020873eeee7b6b96b6b0975555a02');
+          '13b77af908a78a94f2e21cf8fc137ea16c8020873eeee7b6b96b6b0975555a02');
       }
     });
   });
