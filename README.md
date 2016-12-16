@@ -100,19 +100,37 @@ scripts (eg: prime.worker.js) or their dependencies, so these will
 need to be accessible from the browser if any WebWorkers are used.
 
 <a name="testing" />
-### Testing with NodeJS & RequireJS ###
+### Node.js testing ###
 
-A test server for [Node.js][] can be found at `./nodejs`. The following are included:
-
-  * Example of how to use `forge` within NodeJS in the form of a [mocha](http://mochajs.org/) test.
-  * Example of how to serve `forge` to the browser using [RequireJS](http://requirejs.org/).
-
-To run:
+Forge natively runs in a [Node.js][] environment:
 
     cd nodejs
     npm install
     npm test
+
+
+### Manual browser testing ###
+
+Testing in a browser uses [webpack][] to combine forge and all tests and then
+loading the result in a browser. A simple web server is provided that will
+output the URL to load.
+
+    cd nodejs
+    npm install
+    npm run build
     npm start
+
+
+### Automated browser testing with Karma ###
+
+Automated testing is done via [Karma][]. By default it will run the tests in a
+headless manner with PhantomJS. You can also specify one or more browsers to
+use.
+
+    cd nodejs
+    npm install
+    npm run test-karma # defaults to PhantomJS
+    npm run test-karma -- --browsers Chrome,Firefox,PhantomJS
 
 
 ### Old build system that includes flash support ###
@@ -1801,6 +1819,7 @@ Financial support is welcome and helps contribute to futher development:
 [GCM]: http://en.wikipedia.org/wiki/GCM_mode
 [HMAC]: http://en.wikipedia.org/wiki/HMAC
 [JavaScript]: http://en.wikipedia.org/wiki/JavaScript
+[Karma]: https://karma-runner.github.io/
 [MD5]: http://en.wikipedia.org/wiki/MD5
 [Node.js]: http://nodejs.org/
 [OFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation

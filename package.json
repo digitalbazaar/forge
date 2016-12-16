@@ -71,8 +71,8 @@
   ],
   "scripts": {
     "build": "webpack",
-    "jscs": "jscs *.js lib/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
-    "jshint": "jshint *.js lib/*.js minify.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
+    "jscs": "jscs *.js lib/*.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js",
+    "jshint": "jshint *.js lib/*.js nodejs/*.js nodejs/test/*.js nodejs/ui/*.js tests/*.js"
   },
   "jspm": {
     "format": "amd"

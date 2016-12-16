@@ -1,36 +1,23 @@
-var ASSERT = chai.assert;
-mocha.setup({
-    ui: 'bdd',
-    timeout: 30000
-});
-requirejs.config({
-    paths: {
-        forge: 'forge',
-        test: 'test'
-    }
-});
-requirejs([
-    'test/util',
-    'test/md5',
-    'test/sha1',
-    'test/sha256',
-    'test/hmac',
-    'test/pbkdf2',
-    'test/mgf1',
-    'test/random',
-    'test/asn1',
-    'test/pem',
-    'test/rsa',
-    'test/kem',
-    'test/pkcs1',
-    'test/x509',
-    'test/csr',
-    'test/aes',
-    'test/rc2',
-    'test/des',
-    'test/pkcs7',
-    'test/pkcs12',
-    'test/tls'
-], function() {
-    mocha.run();
-});
+require('../test/util');
+require('../test/md5');
+require('../test/sha1');
+require('../test/sha256');
+require('../test/sha512');
+require('../test/hmac');
+require('../test/pbkdf2');
+require('../test/mgf1');
+require('../test/random');
+require('../test/asn1');
+require('../test/pem');
+require('../test/rsa');
+require('../test/kem');
+require('../test/pkcs1');
+require('../test/x509');
+require('../test/csr');
+require('../test/aes');
+require('../test/rc2');
+require('../test/des');
+require('../test/pkcs7');
+require('../test/pkcs12');
+require('../test/tls');
+require('../test/ssh');

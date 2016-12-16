@@ -7,6 +7,7 @@ sudo: false
 install: (cd nodejs && npm install)
 script:
   - (cd nodejs && npm test)
+  - (cd nodejs && npm run test-karma)
 notifications:
   email:
     on_success: change
