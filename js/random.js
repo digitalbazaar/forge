@@ -22,6 +22,8 @@ if(forge.random && forge.random.getBytes) {
   return;
 }
 
+var jQuery = (function(g) { return g.jQuery; })((0, eval)('this'));
+
 (function(jQuery) {
 
 // the default prng plugin, uses AES-128

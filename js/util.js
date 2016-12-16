@@ -12,6 +12,8 @@ function initModule(forge) {
 /* Utilities API */
 var util = forge.util = forge.util || {};
 
+var jQuery = (function(g) { return g.jQuery; })((0, eval)('this'));
+
 // define setImmediate and nextTick
 (function() {
   // use native nextTick
