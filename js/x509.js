@@ -3131,7 +3131,7 @@ pki.verifyCertificateChain = function(caStore, chain, verify) {
         !caStore.hasCertificate(cert)) {
         // no parent issuer and certificate itself is not trusted
         error = {
-          message: 'Certificate is not trusted.',
+          message: 'Certificate is not trusted. A matching CA cert could not be found by subject or the DER-encoding did not match the CA certificate.',
           error: pki.certificateError.unknown_ca
         };
       }
