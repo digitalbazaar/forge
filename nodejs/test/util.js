@@ -164,7 +164,7 @@ var UTIL = require('../../lib/util');
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
       ASSERT.equal(UTIL.decode64(s2), s1);
     });
-    
+
     it('should base64 encode some bytes using util.binary.base64', function() {
       var s1 = new Uint8Array([
         0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30,
@@ -198,7 +198,7 @@ var UTIL = require('../../lib/util');
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
       ASSERT.deepEqual(UTIL.binary.base64.decode(s2), s1);
     });
-      
+
     it('should base64 decode some odd-length bytes using util.binary.base64', function() {
       var s1 = new Uint8Array([
         0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30,
@@ -210,7 +210,7 @@ var UTIL = require('../../lib/util');
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5MUExQg==';
       assertArrayEqual(UTIL.binary.base64.decode(s2), s1);
     });
-      
+
     it('should convert IPv4 0.0.0.0 textual address to 4-byte address', function() {
       var bytes = UTIL.bytesFromIP('0.0.0.0');
       var b = UTIL.createBuffer().fillWithByte(0, 4);

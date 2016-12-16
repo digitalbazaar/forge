@@ -66,7 +66,7 @@ var UTIL = require('../../lib/util');
         }
         ASSERT.equal(
           md.digest().toHex(),
-	  'd046212bac4588e4bf5e33fcac26183e548f7efe8d36df45db885a31c4c23bbb3b9da10225405b4be3491c4d923937f8b5e165ecd4cadc8d0680cadb164c112f')
+          'd046212bac4588e4bf5e33fcac26183e548f7efe8d36df45db885a31c4c23bbb3b9da10225405b4be3491c4d923937f8b5e165ecd4cadc8d0680cadb164c112f');
       }
     });
   });
@@ -136,7 +136,7 @@ var UTIL = require('../../lib/util');
         }
         ASSERT.equal(
           md.digest().toHex(),
-	  'ade291a33b436cc10ed01090255e612f0d3868a795be7871e1f20183245aa48738d35a26d94ac5d791ef57e94763af6b');
+          'ade291a33b436cc10ed01090255e612f0d3868a795be7871e1f20183245aa48738d35a26d94ac5d791ef57e94763af6b');
       }
     });
   });
