@@ -4,7 +4,7 @@ const webpack = require('webpack');
 // common to bundle and minified
 const common = {
   entry: {
-    forge: './lib/index.js',
+    forge: './lib/index.js'
     //sha1: ['./lib/sha1.js']
     //...
   },
