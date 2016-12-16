@@ -3,10 +3,18 @@
 <head>
     <link rel="stylesheet" href="mocha/mocha.css">
     <script src="mocha/mocha.js" type="text/javascript" charset="utf-8"></script>
-    <script src="chai/chai.js" type="text/javascript" charset="utf-8"></script>
-    <script src="require.js" data-main="test" type="text/javascript" charset="utf-8"></script>
 </head>
 <body>
     <div id="mocha"></div>
+    <script type="text/javascript" charset="utf-8">
+      mocha.setup({
+          ui: 'bdd',
+          timeout: 30000
+      });
+    </script>
+    <script src="forge-tests.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8">
+      mocha.run();
+    </script>
 </body>
 </html>

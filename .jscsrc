@@ -1,10 +1,7 @@
 {
   "excludeFiles": [
-    "./js/forge.bundle.js",
-    "./js/forge.min.js",
     "./lib/jsbn.js",
-    "./nodejs/ui/require.js",
-    "./nodejs/ui/test.min.js"
+    "./nodejs/ui/forge-tests.js"
   ],
   "disallowKeywords": ["with"],
   "disallowKeywordsOnNewLine": ["else", "catch"],

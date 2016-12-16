@@ -18,4 +18,5 @@ configure
 dist
 node_modules
 nodejs/coverage
+nodejs/ui/forge-tests.js
 tests/forge

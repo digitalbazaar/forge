@@ -1,6 +1,1 @@
-js/forge.bundle.js
-minify.js
-nodejs/build.js
-nodejs/minify.js
-nodejs/ui/require.js
-nodejs/ui/test.min.js
+nodejs/ui/forge-tests.js
