@@ -233,6 +233,22 @@ oids['emailProtection'] = '1.3.6.1.5.5.7.3.4';
 oids['1.3.6.1.5.5.7.3.8'] = 'timeStamping';
 oids['timeStamping'] = '1.3.6.1.5.5.7.3.8';
 
+// SCEP OIDs
+oids['2.16.840.1.113733.1.9.2'] = 'scep-messageType';
+oids['scep-messageType'] = '2.16.840.1.113733.1.9.2';
+oids['2.16.840.1.113733.1.9.3'] = 'scep-pkiStatus';
+oids['scep-pkiStatus'] = '2.16.840.1.113733.1.9.3';
+oids['2.16.840.1.113733.1.9.4'] = 'scep-failInfo';
+oids['scep-failInfo'] = '2.16.840.1.113733.1.9.4';
+oids['2.16.840.1.113733.1.9.5'] = 'scep-senderNonce';
+oids['scep-senderNonce'] = '2.16.840.1.113733.1.9.5';
+oids['2.16.840.1.113733.1.9.6'] = 'scep-recipientNonce';
+oids['scep-recipientNonce'] = '2.16.840.1.113733.1.9.6';
+oids['2.16.840.1.113733.1.9.7'] = 'scep-transId';
+oids['scep-transId'] = '2.16.840.1.113733.1.9.7';
+oids['2.16.840.1.113733.1.9.8'] = 'scep-extensionReq';
+oids['scep-extensionReq'] = '2.16.840.1.113733.1.9.8';
+
 } // end module implementation
 
 /* ########## Begin module wrapper ########## */
