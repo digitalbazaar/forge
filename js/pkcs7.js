@@ -136,7 +136,7 @@ p7.createSignedData = function() {
       msg.contentInfo = null;
       msg.signerInfos = [];
 
-      var certs = msg.rawCapture.certificates.value;
+      var certs = msg.rawCapture.certificates ? msg.rawCapture.certificates.value : [];
       for(var i = 0; i < certs.length; ++i) {
         msg.certificates.push(forge.pki.certificateFromAsn1(certs[i]));
       }
@@ -1067,6 +1067,8 @@ function _attributeToAsn1(attr) {
         asn1.Class.UNIVERSAL, asn1.Type.GENERALIZEDTIME, false,
         asn1.dateToGeneralizedTime(date));
     }
+  } else if(attr.rawValue) {
+    value = attr.rawValue;
   }
 
   // TODO: expose as common API call
