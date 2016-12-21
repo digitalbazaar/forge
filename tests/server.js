@@ -40,17 +40,6 @@ exports.main = function(callback) {
   }
 };
 
-function mountStaticDir(app, route, path) {
-  app.get(route, function(req, res, next) {
-    var originalUrl = req.url;
-    req.url = req.params[0];
-    express.static(path)(req, res, function() {
-      req.url = originalUrl;
-      return next.apply(null, arguments);
-    });
-  });
-}
-
 if(require.main === module) {
   exports.main(function(err) {
     if(err) {

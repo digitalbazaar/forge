@@ -137,7 +137,7 @@ additionally be needed:
   * Adobe Flex 3 SDK to build the Flash socket code.
   * http://opensource.adobe.com/wiki/display/flexsdk/
 
-### Building for a web browser ###
+### Building for a web browser
 
 To create single file bundles for use with browsers run the following:
 
@@ -171,7 +171,7 @@ The above bundles will synchronously create a global 'forge' object.
 `prime.worker.js`) or their dependencies (`jsbn.js`), so these will need to
 be accessible from the browser if any WebWorkers are used.
 
-### Building a custom browser bundle ###
+### Building a custom browser bundle
 
 The build process uses [webpack][] and the [config](./webpack.config.js) file
 can be modified to generate a file or files that only contain the parts of
@@ -184,14 +184,14 @@ Testing
 
 See the [testing README](./tests/README.md) for full details.
 
-### Automated Node.js testing ###
+### Automated Node.js testing
 
 Forge natively runs in a [Node.js][] environment:
 
     npm install
     npm test
 
-### Automated browser testing with Karma ###
+### Automated browser testing with Karma
 
 Automated testing is done via [Karma][]. By default it will run the tests in a
 headless manner with PhantomJS. You can also specify one or more browsers to
@@ -201,19 +201,27 @@ use.
     npm run test-karma # defaults to PhantomJS
     npm run test-karma -- --browsers Chrome,Firefox,PhantomJS
 
-### Manual browser testing ###
+### Manual browser testing
 
 Testing in a browser uses [webpack][] to combine forge and all tests and then
 loading the result in a browser. A simple web server is provided that will
 output the URL to load. Unit tests and older legacy tests are provided.
 
-    cd nodejs
     npm install
     npm run build
     npm run test-build
     npm run test-server
 
-### Old build system that includes flash support ###
+### Coverage testing
+
+To perform coverage testing of the unit tests, run the following. The results
+will be put in the `coverage/` directory. Note that coverage testing can slow
+down some tests considerably.
+
+    npm install
+    npm run coverage
+
+### Old build system that includes flash support
 
 To build the whole project, including Flash, run the following:
 
@@ -223,7 +231,7 @@ To build the whole project, including Flash, run the following:
 This will create the SWF, symlink all the JavaScript files, and build a Python
 SSL module for testing. To see configure options, run `./configure --help`.
 
-### Old test system including flash support ###
+### Old test system including flash support
 
 A test server is provided which can be run in TLS mode and non-TLS mode. Use
 the --help option to get help for configuring ports. The server will print out
