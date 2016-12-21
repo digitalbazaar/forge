@@ -4,10 +4,10 @@ node_js:
   - "6"
   - "node"
 sudo: false
-install: (cd nodejs && npm install)
+install: npm install
 script:
-  - (cd nodejs && npm test)
-  - (cd nodejs && npm run test-karma)
+  - npm test
+  - npm run test-karma
 notifications:
   email:
     on_success: change

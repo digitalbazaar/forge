@@ -1,7 +1,6 @@
 {
   "excludeFiles": [
-    "./lib/jsbn.js",
-    "./nodejs/ui/forge-tests.js"
+    "./lib/jsbn.js"
   ],
   "disallowKeywords": ["with"],
   "disallowKeywordsOnNewLine": ["else", "catch"],

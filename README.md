@@ -77,6 +77,13 @@ dist/forge.js
 dist/forge.min.js
 ```
 
+A bundle that adds some utilities and networking support is also available:
+
+```
+dist/forge.all.js
+dist/forge.all.min.js
+```
+
 Include the file via:
 
 ```html
@@ -90,36 +97,25 @@ or
 The above bundles will synchronously create a global 'forge' object.
 
 The build process uses [webpack][] and the [config][./webpack.config.js] file
-or process can be modified to generate a file or files that only contain the
-parts of forge you need.
+can be modified to generate a file or files that only contain the parts of
+forge you need.
 
 [Browserify][] override support is also present in `package.json`.
 
-Keep in mind that these bundles will not include any WebWorker
-scripts (eg: prime.worker.js) or their dependencies, so these will
-need to be accessible from the browser if any WebWorkers are used.
+Keep in mind that these bundles will not include any WebWorker scripts (eg:
+prime.worker.js) or their dependencies (jsbn.js), so these will need to be
+accessible from the browser if any WebWorkers are used.
 
 <a name="testing" />
-### Node.js testing ###
+
+See the [testing README][./tests/README.md] for full details.
+
+### Automated Node.js testing ###
 
 Forge natively runs in a [Node.js][] environment:
 
-    cd nodejs
     npm install
     npm test
-
-
-### Manual browser testing ###
-
-Testing in a browser uses [webpack][] to combine forge and all tests and then
-loading the result in a browser. A simple web server is provided that will
-output the URL to load.
-
-    cd nodejs
-    npm install
-    npm run build
-    npm start
-
 
 ### Automated browser testing with Karma ###
 
@@ -127,11 +123,21 @@ Automated testing is done via [Karma][]. By default it will run the tests in a
 headless manner with PhantomJS. You can also specify one or more browsers to
 use.
 
-    cd nodejs
     npm install
     npm run test-karma # defaults to PhantomJS
     npm run test-karma -- --browsers Chrome,Firefox,PhantomJS
 
+### Manual browser testing ###
+
+Testing in a browser uses [webpack][] to combine forge and all tests and then
+loading the result in a browser. A simple web server is provided that will
+output the URL to load. Unit tests and older legacy tests are provided.
+
+    cd nodejs
+    npm install
+    npm run build
+    npm run test-build
+    npm run test-server
 
 ### Old build system that includes flash support ###
 
