@@ -603,6 +603,7 @@ var key = forge.pkcs5.pbkdf2('password', salt, numIterations, 16);
 
 // encrypt some bytes using CBC mode
 // (other modes include: ECB, CFB, OFB, CTR, and GCM)
+// Note: CBC and ECB modes use PKCS#7 padding as default
 var cipher = forge.cipher.createCipher('AES-CBC', key);
 cipher.start({iv: iv});
 cipher.update(forge.util.createBuffer(someBytes));
