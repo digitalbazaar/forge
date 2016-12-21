@@ -61,13 +61,24 @@ function contentServer(callback) {
         '[http-server] listening: http://localhost:' +
         httpServer.address().port + '/');
     });
+
+  const tlsSessionStore = {};
   let httpsServer = https
     .createServer(httpsOptions, app)
-    .listen(program.httpsPort, () => {
-      console.log(
-        '[https-server] listening: https://localhost:' +
-        httpsServer.address().port + '/');
+    .on('newSession', (id, data, cb) => {
+      //console.log('[https-server] new session: ' + id.toString('hex'));
+      tlsSessionStore[id.toString('hex')] = data;
+      cb();
+    })
+    .on('resumeSession', (id, cb) => {
+      //console.log('[https-server] resume session: ' + id.toString('hex'));
+      cb(null, tlsSessionStore[id.toString('hex')] || null);
     });
+  httpsServer.listen(program.httpsPort, () => {
+    console.log(
+      '[https-server] listening: https://localhost:' +
+      httpsServer.address().port + '/');
+  });
 };
 
 // The policy file
