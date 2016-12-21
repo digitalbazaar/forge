@@ -91,10 +91,11 @@ function policyServer(callback) {
     socket.setEncoding('utf8');
 
     socket.on('data', (d) => {
-      console.log(prefix + 'connection data from %s: %j', remoteAddress, d);
       if(d.indexOf('<policy-file-request/>') === 0) {
-        console.log(prefix + 'sending policy file to: %s', remoteAddress);
+        console.log(prefix + 'policy file request from: %s', remoteAddress);
         socket.write(policyFile);
+      } else {
+        console.log(prefix + 'junk request from %s: %j', remoteAddress, d);
       }
     });
     socket.once('close', () => {
