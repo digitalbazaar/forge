@@ -10,9 +10,9 @@ A native implementation of [TLS][] (and various other cryptographic tools) in
 Introduction
 ------------
 
-The Forge software is a fully native implementation of the [TLS][] protocol in
-JavaScript as well as a set of tools for developing Web Apps that utilize many
-network resources.
+The Forge software is a fully native implementation of the [TLS][] protocol
+in JavaScript, a set of cryptography utilities, and a set of tools for
+developing Web Apps that utilize many network resources.
 
 Performance
 ------------
@@ -24,8 +24,75 @@ http://dominictarr.github.io/crypto-bench/
 
 http://cryptojs.altervista.org/test/simulate-threading-speed_test.html
 
-Getting Started
----------------
+Documentation
+-------------
+
+* [Introduction](#introduction)
+* [Performance](#performance)
+* [Installation](#installation)
+* [Testing](#testing)
+* [Contributing](#contributing)
+
+### API
+
+* [Options](#options)
+
+### Transports
+
+* [TLS](#tls)
+* [HTTP](#http)
+* [SSH](#ssh)
+* [XHR](#xhr)
+* [Sockets](#socket)
+
+### Ciphers
+
+* [CIPHER](#cipher)
+* [AES](#aes)
+* [DES](#des)
+* [RC2](#rc2)
+
+### PKI
+
+* [RSA](#rsa)
+* [RSA-KEM](#rsakem)
+* [X.509](#x509)
+* [PKCS#5](#pkcs5)
+* [PKCS#7](#pkcs7)
+* [PKCS#8](#pkcs8)
+* [PKCS#10](#pkcs10)
+* [PKCS#12](#pkcs12)
+* [ASN.1](#asn)
+
+### Message Digests
+
+* [SHA1](#sha1)
+* [SHA256](#sha256)
+* [SHA384](#sha384)
+* [SHA512](#sha512)
+* [MD5](#md5)
+* [HMAC](#hmac)
+
+### Utilities
+
+* [Prime](#prime)
+* [PRNG](#prng)
+* [Tasks](#task)
+* [Utilities](#util)
+* [Logging](#log)
+* [Debugging](#debug)
+* [Flash Socket Policy Module](#fsp)
+
+### Other
+
+* [Library Background](#library-background)
+* [Contact](#contact)
+* [Donations](#donations)
+
+---------------------------------------
+
+Installation
+------------
 
 ### Node.js
 
@@ -39,17 +106,28 @@ Installation:
 
 You can then use forge as a regular module:
 
-    var forge = require('node-forge');
+```js
+var forge = require('node-forge');
+```
 
 ### Requirements
 
-* General
-  * Optional: GNU autotools for the build infrastructure if using Flash.
-* Building a Browser Bundle:
-  * nodejs
+The core JavaScript has the following requirements:
+
+* Building a browser bundle:
+  * Node.js
   * npm
 * Testing
-  * nodejs
+  * Node.js
+  * npm
+  * Chrome, Firefox (optional)
+
+If you wish to use special networking features, the following may
+additionally be needed:
+
+* General
+  * Optional: GNU autotools for the build infrastructure if using Flash.
+* Testing
   * Optional: Python and OpenSSL development environment to build
   * a special SSL module with session cache support for testing with flash.
   * http://www.python.org/dev/
@@ -64,25 +142,19 @@ You can then use forge as a regular module:
 
 To create single file bundles for use with browsers run the following:
 
-```
-npm install
-npm run build
-```
+    npm install
+    npm run build
 
 This will create single non-minimized and minimized files that can be
 included in the browser:
 
-```
-dist/forge.js
-dist/forge.min.js
-```
+    dist/forge.js
+    dist/forge.min.js
 
 A bundle that adds some utilities and networking support is also available:
 
-```
-dist/forge.all.js
-dist/forge.all.min.js
-```
+    dist/forge.all.js
+    dist/forge.all.min.js
 
 Include the file via:
 
@@ -96,19 +168,22 @@ or
 
 The above bundles will synchronously create a global 'forge' object.
 
-The build process uses [webpack][] and the [config][./webpack.config.js] file
+**Note**: These bundles will not include any WebWorker scripts (eg:
+`prime.worker.js`) or their dependencies (`jsbn.js`), so these will need to
+be accessible from the browser if any WebWorkers are used.
+
+### Building a custom browser bundle ###
+
+The build process uses [webpack][] and the [config](./webpack.config.js) file
 can be modified to generate a file or files that only contain the parts of
 forge you need.
 
 [Browserify][] override support is also present in `package.json`.
 
-Keep in mind that these bundles will not include any WebWorker scripts (eg:
-prime.worker.js) or their dependencies (jsbn.js), so these will need to be
-accessible from the browser if any WebWorkers are used.
+Testing
+-------
 
-<a name="testing" />
-
-See the [testing README][./tests/README.md] for full details.
+See the [testing README](./tests/README.md) for full details.
 
 ### Automated Node.js testing ###
 
@@ -176,56 +251,11 @@ See: [LICENSE](https://github.com/digitalbazaar/forge/blob/cbebca3780658703d925b
 If a contribution contains 3rd party source code with its own license, it
 may retain it, so long as that license is compatible with the Forge license.
 
-Documentation
--------------
+API
+---
 
-### Transports
-
-* [TLS](#tls)
-* [HTTP](#http)
-* [SSH](#ssh)
-* [XHR](#xhr)
-* [Sockets](#socket)
-
-### Ciphers
-
-* [CIPHER](#cipher)
-* [AES](#aes)
-* [DES](#des)
-* [RC2](#rc2)
-
-### PKI
-
-* [RSA](#rsa)
-* [RSA-KEM](#rsakem)
-* [X.509](#x509)
-* [PKCS#5](#pkcs5)
-* [PKCS#7](#pkcs7)
-* [PKCS#8](#pkcs8)
-* [PKCS#10](#pkcs10)
-* [PKCS#12](#pkcs12)
-* [ASN.1](#asn)
-
-### Message Digests
-
-* [SHA1](#sha1)
-* [SHA256](#sha256)
-* [SHA384](#sha384)
-* [SHA512](#sha512)
-* [MD5](#md5)
-* [HMAC](#hmac)
-
-### Utilities
-
-* [Prime](#prime)
-* [PRNG](#prng)
-* [Tasks](#task)
-* [Utilities](#util)
-* [Logging](#log)
-* [Debugging](#debug)
-* [Flash Socket Policy Module](#fsp)
-
----------------------------------------
+<a name="options" />
+### Options
 
 If at any time you wish to disable the use of native code, where available,
 for particular forge features like its secure random number generator, you
@@ -1698,6 +1728,7 @@ Provides queuing and synchronizing tasks in a web application.
 __Examples__
 
 ```js
+// TODO
 ```
 
 <a name="util" />
@@ -1788,8 +1819,8 @@ Policy. See `mod_fsp/README` for more details. This module makes it easy to
 modify an [Apache][] server to allow cross domain requests to be made to it.
 
 
-Library Details
----------------
+Library Background
+------------------
 
 * http://digitalbazaar.com/2010/07/20/javascript-tls-1/
 * http://digitalbazaar.com/2010/07/20/javascript-tls-2/
