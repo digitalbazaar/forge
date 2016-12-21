@@ -866,6 +866,19 @@ tls.parseHelloMessage = function(c, record, length) {
       }
     }
 
+    // Check if TLS version in Hello message is supported
+    if((c.minSupportedVersion.major > msg.version.major || 
+          c.minSupportedVersion.minor > msg.version.minor)) {
+      return c.error(c, {
+        message: 'Requested TLS version is not supported.',
+        send: true,
+        alert: {
+          level: tls.Alert.Level.fatal,
+          description: tls.Alert.Description.protocol_version
+        }
+      });
+    }
+
     // get the chosen (ServerHello) cipher suite
     if(client) {
       // FIXME: should be checking configured acceptable cipher suites
@@ -1080,12 +1093,15 @@ tls.handleClientHello = function(c, record, length) {
     c.session.sp = session.sp;
   } else {
     // use highest compatible minor version
-    var version;
-    for(var i = 1; i < tls.SupportedVersions.length; ++i) {
-      version = tls.SupportedVersions[i];
-      if(version.minor <= msg.version.minor) {
+    var version = null;
+    for(var i = 0; i < tls.SupportedVersions.length; ++i) {
+      if(tls.SupportedVersions[i].minor === msg.version.minor) {
+        version = tls.SupportedVersions[i];
         break;
       }
+    }
+    if(version === null) {
+      throw new Error('Could not find TLS version compatible with version in Hello message.');
     }
     c.version = {major: version.major, minor: version.minor};
     c.session.version = c.version;
@@ -3683,6 +3699,9 @@ tls.createConnection = function(options) {
     caStore = forge.pki.createCaStore();
   }
 
+  // setup enabled TLS protocol versions
+  var minSupportedVersion = options.minSupportedVersion || tls.Versions.TLS_1_0;
+
   // setup default cipher suites
   var cipherSuites = options.cipherSuites || null;
   if(cipherSuites === null) {
@@ -3708,6 +3727,7 @@ tls.createConnection = function(options) {
     caStore: caStore,
     sessionCache: sessionCache,
     cipherSuites: cipherSuites,
+    minSupportedVersion: minSupportedVersion,
     connected: options.connected,
     virtualHost: options.virtualHost || null,
     verifyClient: options.verifyClient || false,
