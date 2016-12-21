@@ -15,8 +15,6 @@ build
 config.log
 config.status
 configure
+coverage
 dist
 node_modules
-nodejs/coverage
-nodejs/ui/forge-tests.js
-tests/forge

@@ -7,7 +7,7 @@
     "Digital Bazaar, Inc."
   ],
   "license": "BSD",
-  "main": ["js/forge.js"],
+  "main": ["dist/forge.js"],
   "dependencies": {},
   "ignore": [
     "node_modules",
