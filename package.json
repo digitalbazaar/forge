@@ -9,18 +9,10 @@
     "url": "http://digitalbazaar.com/"
   },
   "contributors": [
-    {
-      "name": "Dave Longley",
-      "email": "dlongley@digitalbazaar.com"
-    },
-    {
-      "name": "Stefan Siegl",
-      "email": "stesie@brokenpipe.de"
-    },
-    {
-      "name": "Christoph Dorn",
-      "email": "christoph@christophdorn.com"
-    }
+    "Dave Longley <dlongley@digitalbazaar.com>",
+    "David I. Lehn <dlehn@digitalbazaar.com>",
+    "Stefan Siegl <stesie@brokenpipe.de>",
+    "Christoph Dorn <christoph@christophdorn.com>"
   ],
   "devDependencies": {
     "browserify": "^13.1.1",
