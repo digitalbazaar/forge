@@ -3555,7 +3555,7 @@ tls.verifyCertificateChain = function(c, chain) {
         }
 
         return ret;
-      });
+      }, c.verifyOptions);
   } catch(ex) {
     // build tls error if not already customized
     var err = ex;
@@ -3712,6 +3712,7 @@ tls.createConnection = function(options) {
     virtualHost: options.virtualHost || null,
     verifyClient: options.verifyClient || false,
     verify: options.verify || function(cn, vfd, dpth, cts) {return vfd;},
+    verifyOptions: options.verifyOptions||{},
     getCertificate: options.getCertificate || null,
     getPrivateKey: options.getPrivateKey || null,
     getSignature: options.getSignature || null,
@@ -4241,6 +4242,7 @@ forge.tls.createSessionCache = tls.createSessionCache;
  *   verifyClient: true to require a client certificate in server mode,
  *     'optional' to request one, false not to (default: false).
  *   verify: a handler used to custom verify certificates in the chain.
+ *   verifyOptions: an object object with options for the certificate chain validation 
  *   getCertificate: an optional callback used to get a certificate or
  *     a chain of certificates (as an array).
  *   getPrivateKey: an optional callback used to get a private key.
