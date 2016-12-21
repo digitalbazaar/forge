@@ -50,7 +50,8 @@ function contentServer(callback) {
 
   const httpsOptions = {
     key: fs.readFileSync(path.join(__dirname, 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'server.crt'))
+    cert: fs.readFileSync(path.join(__dirname, 'server.crt')),
+    sessionIdContext: 'forgetest'
   };
 
   let httpServer = http
