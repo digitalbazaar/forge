@@ -20,9 +20,8 @@ Performance
 Forge is fast. Benchmarks against other popular JavaScript cryptography
 libraries can be found here:
 
-http://dominictarr.github.io/crypto-bench/
-
-http://cryptojs.altervista.org/test/simulate-threading-speed_test.html
+* http://dominictarr.github.io/crypto-bench/
+* http://cryptojs.altervista.org/test/simulate-threading-speed_test.html
 
 Documentation
 -------------
