@@ -16,6 +16,7 @@
   ],
   "devDependencies": {
     "browserify": "^13.1.1",
+    "commander": "^2.9.0",
     "express": "^4.14.0",
     "istanbul": "^0.4.5",
     "jscs": "^3.0.7",
