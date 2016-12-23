@@ -10,9 +10,9 @@ const express = require('express');
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
-const net = require('net');
 const path = require('path');
 const program = require('commander');
+const policyServer = require('../flash/policyserver');
 
 program
   //.option('--host [host]',
@@ -37,7 +37,8 @@ function contentServer(callback) {
 
   // legacy tests support
   app.use('/forge/SocketPool.swf',
-    express.static(path.join(__dirname, '..', 'swf', 'SocketPool.swf')));
+    express.static(path.join(
+      __dirname, '..', 'flash', 'swf', 'SocketPool.swf')));
   app.use('/forge/prime.worker.js',
     express.static(path.join(__dirname, '..', 'lib', 'prime.worker.js')));
   app.use('/forge/jsbn.js',
@@ -81,49 +82,6 @@ function contentServer(callback) {
   });
 };
 
-// The policy file
-// NOTE: This format is very strict. Edit with care.
-let policyFile =
-  '<?xml version="1.0"?>' +
-  '<!DOCTYPE cross-domain-policy' +
-  ' SYSTEM "http://www.adobe.com/xml/dtds/cross-domain-policy.dtd">' +
-  '<cross-domain-policy>' +
-  '<allow-access-from domain="*" to-ports="*"/>' +
-  '</cross-domain-policy>\0';
-
-// Simple non-robust policy file server.
-// Looks for a request string and returns the policy file.
-function policyServer(callback) {
-  let prefix = '[policy-server] ';
-  let server = net.createServer((socket) => {
-    let remoteAddress = socket.remoteAddress + ':' + socket.remotePort;
-    console.log(prefix + 'new client connection from %s', remoteAddress);
-
-    // deal with strings
-    socket.setEncoding('utf8');
-
-    socket.on('data', (d) => {
-      if(d.indexOf('<policy-file-request/>') === 0) {
-        console.log(prefix + 'policy file request from: %s', remoteAddress);
-        socket.write(policyFile);
-      } else {
-        console.log(prefix + 'junk request from %s: %j', remoteAddress, d);
-      }
-    });
-    socket.once('close', () => {
-      console.log(prefix + 'connection from %s closed', remoteAddress);
-    });
-    socket.on('error', (err) => {
-      console.error(
-        prefix + 'connection %s error: %s', remoteAddress, err.message);
-    });
-  }).on('error', (err) => {
-    throw err;
-  });
-  server.listen(program.policyPort, () => {
-    console.log(prefix + 'listening: ', server.address());
-  });
-}
-
+// start servers
 contentServer();
-policyServer();
+policyServer.policyServer(program.policyPort);
