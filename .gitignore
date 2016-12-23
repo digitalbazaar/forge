@@ -7,14 +7,7 @@
 .cproject
 .project
 .settings
-Makefile
 TAGS
-aclocal.m4
-autom4te.cache
-build
-config.log
-config.status
-configure
 coverage
 dist
 node_modules
