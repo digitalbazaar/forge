@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2009-2010 Digital Bazaar, Inc. All rights reserved.
- * 
+ *
  * @author Dave Longley
  */
 package
 {
    import flash.display.Sprite;
-   
+
    /**
     * A SocketPool is a flash object that can be embedded in a web page to
     * allow javascript access to pools of Sockets.
-    * 
+    *
     * Javascript can create a pool and then as many Sockets as it desires. Each
     * Socket will be assigned a unique ID that allows continued javascript
     * access to it. There is no limit on the number of persistent socket
@@ -31,19 +31,19 @@ package
       import flash.utils.ByteArray;
       import mx.utils.Base64Decoder;
       import mx.utils.Base64Encoder;
-      
+
       // a map of ID to Socket
       private var mSocketMap:Object;
-      
+
       // a counter for Socket IDs (Note: assumes there will be no overflow)
       private var mNextId:uint;
-      
+
       // an event dispatcher for sending events to javascript
       private var mEventDispatcher:EventDispatcher;
-      
+
       /**
        * Creates a new, unitialized SocketPool.
-       * 
+       *
        * @throws Error - if no external interface is available to provide
        *                 javascript access.
        */
@@ -62,43 +62,43 @@ package
             try
             {
                // set up javascript access:
-               
+
                // initializes/cleans up the SocketPool
                ExternalInterface.addCallback("init", init);
                ExternalInterface.addCallback("cleanup", cleanup);
-               
+
                // creates/destroys a socket
                ExternalInterface.addCallback("create", create);
                ExternalInterface.addCallback("destroy", destroy);
-               
+
                // connects/closes a socket
                ExternalInterface.addCallback("connect", connect);
                ExternalInterface.addCallback("close", close);
-               
+
                // checks for a connection
                ExternalInterface.addCallback("isConnected", isConnected);
-               
+
                // sends/receives data over the socket
                ExternalInterface.addCallback("send", send);
                ExternalInterface.addCallback("receive", receive);
-               
+
                // gets the number of bytes available on a socket
                ExternalInterface.addCallback(
                   "getBytesAvailable", getBytesAvailable);
-               
+
                // add a callback for subscribing to socket events
                ExternalInterface.addCallback("subscribe", subscribe);
-               
+
                // add callbacks for deflate/inflate
                ExternalInterface.addCallback("deflate", deflate);
                ExternalInterface.addCallback("inflate", inflate);
-               
+
                // add callbacks for local disk storage
                ExternalInterface.addCallback("setItem", setItem);
                ExternalInterface.addCallback("getItem", getItem);
                ExternalInterface.addCallback("removeItem", removeItem);
                ExternalInterface.addCallback("clearItems", clearItems);
-               
+
                // socket pool is now ready
                ExternalInterface.call("window.forge.socketPool.ready");
             }
@@ -107,14 +107,14 @@ package
                log("error=" + e.errorID + "," + e.name + "," + e.message);
                throw e;
             }
-            
+
             log("ready");
          }
       }
-      
+
       /**
        * A debug logging function.
-       * 
+       *
        * @param obj the string or error to log.
        */
       CONFIG::debugging
@@ -131,16 +131,16 @@ package
             log("error=" + e.errorID + "," + e.name + "," + e.message);
          }
       }
-      
+
       CONFIG::release
       private function log(obj:Object):void
       {
          // log nothing in release mode
       }
-      
+
       /**
        * Called by javascript to initialize this SocketPool.
-       * 
+       *
        * @param options:
        *        marshallExceptions: true to pass exceptions to and from
        *           javascript.
@@ -148,15 +148,15 @@ package
       private function init(... args):void
       {
          log("init()");
-         
+
          // get options from first argument
          var options:Object = args.length > 0 ? args[0] : null;
-         
+
          // create socket map, set next ID, and create event dispatcher
          mSocketMap = new Object();
          mNextId = 1;
          mEventDispatcher = new EventDispatcher();
-         
+
          // enable marshalling exceptions if appropriate
          if(options != null &&
             "marshallExceptions" in options &&
@@ -173,27 +173,27 @@ package
                log(e);
             }
          }
-         
+
          log("init() done");
       }
-      
+
       /**
        * Called by javascript to clean up a SocketPool.
        */
       private function cleanup():void
       {
          log("cleanup()");
-         
+
          mSocketMap = null;
          mNextId = 1;
          mEventDispatcher = null;
-         
+
          log("cleanup() done");
       }
-      
+
       /**
        * Handles events.
-       * 
+       *
        * @param e the event to handle.
        */
       private function handleEvent(e:Event):void
@@ -203,16 +203,16 @@ package
          mEventDispatcher.dispatchEvent(
             new SocketEvent(e.type, e.target as PooledSocket, message));
       }
-      
+
       /**
        * Called by javascript to create a Socket.
-       * 
+       *
        * @return the Socket ID.
        */
       private function create():String
       {
          log("create()");
-         
+
          // create a Socket
          var id:String = "" + mNextId++;
          var s:PooledSocket = new PooledSocket();
@@ -223,32 +223,32 @@ package
          s.addEventListener(IOErrorEvent.IO_ERROR, handleEvent);
          s.addEventListener(SecurityErrorEvent.SECURITY_ERROR, handleEvent);
          mSocketMap[id] = s;
-         
+
          log("socket " + id + " created");
          log("create() done");
-         
+
          return id;
       }
-      
+
       /**
        * Called by javascript to clean up a Socket.
-       * 
+       *
        * @param id the ID of the Socket to clean up.
        */
       private function destroy(id:String):void
       {
          log("destroy(" + id + ")");
-         
+
          if(id in mSocketMap)
          {
             // remove Socket
             delete mSocketMap[id];
             log("socket " + id + " destroyed");
          }
-         
+
          log("destroy(" + id + ") done");
       }
-      
+
       /**
        * Connects the Socket with the given ID to the given host and port,
        * using the given socket policy port.
@@ -265,12 +265,12 @@ package
       {
          log("connect(" +
             id + "," + host + "," + port + "," + spPort + "," + spUrl + ")");
-         
+
          if(id in mSocketMap)
          {
             // get the Socket
             var s:PooledSocket = mSocketMap[id];
-            
+
             // load socket policy file
             // (permits socket access to backend)
             if(spPort !== 0)
@@ -288,7 +288,7 @@ package
             {
                log("not loading any cross-domain url");
             }
-            
+
             // connect
             s.connect(host, port);
          }
@@ -297,10 +297,10 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("connect(" + id + ") done");
       }
-      
+
       /**
        * Closes the Socket with the given ID.
        *
@@ -309,7 +309,7 @@ package
       private function close(id:String):void
       {
          log("close(" + id + ")");
-         
+
          if(id in mSocketMap)
          {
             // close the Socket
@@ -324,10 +324,10 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("close(" + id + ") done");
       }
-      
+
       /**
        * Determines if the Socket with the given ID is connected or not.
        *
@@ -339,7 +339,7 @@ package
       {
          var rval:Boolean = false;
          log("isConnected(" + id + ")");
-         
+
          if(id in mSocketMap)
          {
             // check the Socket
@@ -351,24 +351,24 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("isConnected(" + id + ") done");
          return rval;
       }
-      
+
       /**
        * Writes bytes to a Socket.
        *
        * @param id the ID of the Socket.
        * @param bytes the string of base64-encoded bytes to write.
        *
-       * @return true on success, false on failure. 
+       * @return true on success, false on failure.
        */
       private function send(id:String, bytes:String):Boolean
       {
          var rval:Boolean = false;
          log("send(" + id + ")");
-         
+
          if(id in mSocketMap)
          {
          	// write bytes to socket
@@ -385,7 +385,7 @@ package
             catch(e:IOError)
             {
                log(e);
-               
+
                // dispatch IO error event
                mEventDispatcher.dispatchEvent(new SocketEvent(
                   IOErrorEvent.IO_ERROR, s, e.message));
@@ -400,11 +400,11 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("send(" + id + ") done");
          return rval;
       }
-      
+
       /**
        * Receives bytes from a Socket.
        *
@@ -418,7 +418,7 @@ package
       {
       	 var rval:String = null;
          log("receive(" + id + "," + count + ")");
-         
+
          if(id in mSocketMap)
          {
          	// only read what is available
@@ -427,7 +427,7 @@ package
             {
                count = s.bytesAvailable;
             }
-            
+
             try
             {
                // read bytes from socket
@@ -442,7 +442,7 @@ package
             catch(e:IOError)
             {
                log(e);
-               
+
                // dispatch IO error event
                mEventDispatcher.dispatchEvent(new SocketEvent(
                   IOErrorEvent.IO_ERROR, s, e.message));
@@ -457,11 +457,11 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("receive(" + id + "," + count + ") done");
          return {rval: rval};
       }
-      
+
       /**
        * Gets the number of bytes available from a Socket.
        *
@@ -473,7 +473,7 @@ package
       {
          var rval:uint = 0;
          log("getBytesAvailable(" + id + ")");
-         
+
          if(id in mSocketMap)
          {
             var s:PooledSocket = mSocketMap[id];
@@ -484,21 +484,21 @@ package
             // no such socket
             log("socket " + id + " does not exist");
          }
-         
+
          log("getBytesAvailable(" + id +") done");
          return rval;
-      }      
-      
+      }
+
       /**
        * Registers a javascript function as a callback for an event.
-       * 
+       *
        * @param eventType the type of event (socket event types).
        * @param callback the name of the callback function.
        */
       private function subscribe(eventType:String, callback:String):void
       {
          log("subscribe(" + eventType + "," + callback + ")");
-         
+
          switch(eventType)
          {
             case Event.CONNECT:
@@ -512,7 +512,7 @@ package
                   eventType, function(event:SocketEvent):void
                {
                   log("event dispatched: " + eventType);
-                  
+
                   // build event for javascript
                   var e:Object = new Object();
                   e.id = event.socket ? event.socket.id : 0;
@@ -529,7 +529,7 @@ package
                   {
                      e.message = event.message;
                   }
-                  
+
                   // send event to javascript
                   ExternalInterface.call(callback, e);
                });
@@ -540,21 +540,21 @@ package
                   "Could not subscribe to event. " +
                   "Invalid event type specified: " + eventType);
          }
-         
+
          log("subscribe(" + eventType + "," + callback + ") done");
       }
-      
+
       /**
        * Deflates the given data.
-       * 
+       *
        * @param data the base64-encoded data to deflate.
-       * 
+       *
        * @return an object with 'rval' set to deflated data, base64-encoded.
        */
       private function deflate(data:String):Object
       {
          log("deflate");
-         
+
          var b64d:Base64Decoder = new Base64Decoder();
          b64d.decode(data);
          var b:ByteArray = b64d.toByteArray();
@@ -563,16 +563,16 @@ package
          var b64e:Base64Encoder = new Base64Encoder();
          b64e.insertNewLines = false;
          b64e.encodeBytes(b, 0, b.length);
-         
+
          log("deflate done");
          return {rval: b64e.toString()};
       }
-      
+
       /**
        * Inflates the given data.
-       * 
+       *
        * @param data the base64-encoded data to inflate.
-       * 
+       *
        * @return an object with 'rval' set to the inflated data,
        *         base64-encoded, null on error.
        */
@@ -580,7 +580,7 @@ package
       {
          log("inflate");
          var rval:Object = {rval: null};
-      	 
+      	
       	 try
       	 {
             var b64d:Base64Decoder = new Base64Decoder();
@@ -602,19 +602,19 @@ package
                 message: e.message
             };
          }
-         
+
          log("inflate done");
          return rval;
       }
-      
+
       /**
        * Stores an item with a key and arbitrary base64-encoded data on local
        * disk.
-       * 
+       *
        * @param key the key for the item.
        * @param data the base64-encoded item data.
        * @param storeId the storage ID to use, defaults to "forge.storage".
-       * 
+       *
        * @return an object with rval set to true on success, false on failure
        *         with error included.
        */
@@ -644,13 +644,13 @@ package
          }
          return rval;
       }
-      
+
       /**
        * Gets an item from the local disk.
-       * 
+       *
        * @param key the key for the item.
        * @param storeId the storage ID to use, defaults to "forge.storage".
-       * 
+       *
        * @return an object with rval set to the item data (which may be null),
        *         check for error object if null.
        */
@@ -677,13 +677,13 @@ package
          }
          return rval;
       }
-      
+
       /**
        * Removes an item from the local disk.
-       * 
+       *
        * @param key the key for the item.
        * @param storeId the storage ID to use, defaults to "forge.storage".
-       * 
+       *
        * @return an object with rval set to true if removed, false if not.
        */
       private function removeItem(
@@ -696,7 +696,7 @@ package
             if('keys' in store.data && key in store.data.keys)
             {
                delete store.data.keys[key];
-               
+
                // clean up storage entirely if empty
                var empty:Boolean = true;
                for(var prop:String in store.data.keys)
@@ -722,12 +722,12 @@ package
          }
          return rval;
       }
-      
+
       /**
        * Clears an entire store of all of its items.
-       * 
+       *
        * @param storeId the storage ID to use, defaults to "forge.storage".
-       * 
+       *
        * @return an object with rval set to true if cleared, false if not.
        */
       private function clearItems(storeId:String = "forge.storage"):Object
