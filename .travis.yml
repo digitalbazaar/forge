@@ -7,7 +7,8 @@ sudo: false
 install: npm install
 script:
   - npm test
-  - npm run test-karma
+  - BUNDLER=webpack npm run test-karma
+  - BUNDLER=browserify npm run test-karma
 notifications:
   email:
     on_success: change
