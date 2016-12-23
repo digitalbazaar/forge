@@ -171,24 +171,41 @@ Testing
 
 See the [testing README](./tests/README.md) for full details.
 
-### Automated Node.js testing
+### Prepare to run tests
+
+    npm install
+
+### Running automated tests with Node.js
 
 Forge natively runs in a [Node.js][] environment:
 
-    npm install
     npm test
 
-### Automated browser testing with Karma
+### Running automated tests with PhantomJS
 
 Automated testing is done via [Karma][]. By default it will run the tests in a
-headless manner with PhantomJS. You can also specify one or more browsers to
-use.
+headless manner with PhantomJS.
 
-    npm install
-    npm run test-karma # defaults to PhantomJS
+    npm run test-karma
+
+Is 'mocha' reporter output too verbose? Other reporters are available. Try
+'dots' or 'progress'.
+
+    npm run test-karma -- --reporters progress
+
+By default [webpack][] is used. [Browserify][] can also be used.
+
+    BUNDLER=browserify npm run test-karma
+
+### Running automated tests with one or more browsers
+
+You can also specify one or more browsers to use.
+
     npm run test-karma -- --browsers Chrome,Firefox,PhantomJS
 
-### Manual browser testing
+The reporter option and `BUNDLER` environment variable can also be used.
+
+### Running manual tests in a browser
 
 Testing in a browser uses [webpack][] to combine forge and all tests and then
 loading the result in a browser. A simple web server is provided that will
@@ -196,10 +213,22 @@ output the HTTP or HTTPS URLs to load. It also will start a simple Flash Policy
 Server. Unit tests and older legacy tests are provided. Custom ports can be
 used by running `node tests/server.js` manually.
 
-    npm install
-    npm run build
+To run the unit tests in a browser a special forge build is required:
+
     npm run test-build
+
+To run legacy browser based tests the main forge build is required:
+
+    npm run build
+
+The tests are run with a custom server that prints out the URLs to use:
+
     npm run test-server
+
+### Running other tests
+
+There are some other random tests and benchmarks available in the tests
+directory.
 
 ### Coverage testing
 

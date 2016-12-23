@@ -1,14 +1,29 @@
 // Karma configuration
 
 module.exports = function(config) {
+  // bundler to test: webpack, browserify
+  let bundler = process.env.BUNDLER || 'webpack';
+
+  let frameworks = ['mocha'];
+  let preprocessors = [];
+
+  if(bundler === 'browserify') {
+    frameworks.push(bundler);
+    preprocessors.push(bundler);
+  } else if(bundler === 'webpack') {
+    preprocessors.push(bundler);
+  } else {
+    throw Error('Unknown bundler');
+  }
+
+
   config.set({
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: '',
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    //frameworks: ['browserify', 'mocha'],
-    frameworks: ['mocha'],
+    frameworks: frameworks,
 
     // list of files / patterns to load in the browser
     files: [
@@ -22,13 +37,12 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      //'tests/unit/index.js': ['browserify'],
-      'tests/unit/index.js': ['webpack']
+      'tests/unit/index.js': preprocessors
     },
 
     browserify: {
-      debug: true,
-      transform: ['uglifyify']
+      debug: true
+      //transform: ['uglifyify']
     },
 
     // test results reporter to use
