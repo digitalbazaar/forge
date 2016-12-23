@@ -1,14 +1,13 @@
-var sys = require('sys');
 var ws = require('./ws');
 var forge = require('../..');
 
 // function to create certificate
 var createCert = function(cn, data)
 {
-   sys.puts(
+   console.log(
       'Generating 512-bit key-pair and certificate for \"' + cn + '\".');
    var keys = forge.pki.rsa.generateKeyPair(512);
-   sys.puts('key-pair created.');
+   console.log('key-pair created.');
 
    var cert = forge.pki.createCertificate();
    cert.serialNumber = '01';
@@ -57,17 +56,17 @@ var createCert = function(cn, data)
    // FIXME: add subjectKeyIdentifier extension
    // FIXME: add authorityKeyIdentifier extension
    cert.publicKey = keys.publicKey;
-   
+
    // self-sign certificate
    cert.sign(keys.privateKey);
-   
+
    // save data
    data[cn] = {
       cert: forge.pki.certificateToPem(cert),
       privateKey: forge.pki.privateKeyToPem(keys.privateKey)
    };
-   
-   sys.puts('certificate created for \"' + cn + '\": \n' + data[cn].cert);
+
+   console.log('certificate created for \"' + cn + '\": \n' + data[cn].cert);
 };
 
 var data = {};
@@ -89,23 +88,23 @@ var createTls = function(websocket)
          forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
       connected: function(c)
       {
-         sys.puts('Server connected');
+         console.log('Server connected');
       },
       verifyClient: true,
       verify: function(c, verified, depth, certs)
       {
-         sys.puts(
+         console.log(
             'Server verifying certificate w/CN: \"' +
             certs[0].subject.getField('CN').value +
             '\", verified: ' + verified + '...');
-         
+
          // accept any certificate (could actually do WebID authorization from
          // here within the protocol)
          return true;
       },
       getCertificate: function(c, hint)
       {
-         sys.puts('Server getting certificate for \"' + hint[0] + '\"...');
+         console.log('Server getting certificate for \"' + hint[0] + '\"...');
          return data.server.cert;
       },
       getPrivateKey: function(c, cert)
@@ -119,19 +118,19 @@ var createTls = function(websocket)
       },
       dataReady: function(c)
       {
-         sys.puts('Server received \"' + c.data.getBytes() + '\"');
-         
+         console.log('Server received \"' + c.data.getBytes() + '\"');
+
          // send response
          c.prepare('Hello Client');
       },
       closed: function(c)
       {
-         sys.puts('Server disconnected.');
+         console.log('Server disconnected.');
          websocket.end();
       },
       error: function(c, error)
       {
-         sys.puts('Server error: ' + error.message);
+         console.log('Server error: ' + error.message);
       }
    });
 };
@@ -142,25 +141,25 @@ ws.createServer(function(websocket)
 {
    // create TLS server connection
    var tls = createTls(websocket);
-   
+
    websocket.addListener('connect', function(resource)
    {
-      sys.puts('connected: ' + resource);
-      
+      console.log('connected: ' + resource);
+
       // close connection after 10 seconds
       setTimeout(websocket.end, 10 * 1000);
    });
-   
+
    websocket.addListener('data', function(data)
    {
       // base64-decode data and process it
       tls.process(forge.util.decode64(data));
    });
-   
+
    websocket.addListener('close', function()
    {
-      sys.puts('closed');
+      console.log('closed');
    });
 }).listen(port);
 
-sys.puts('server running on port ' + port);
+console.log('server running on port ' + port);

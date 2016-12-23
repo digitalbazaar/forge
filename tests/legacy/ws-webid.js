@@ -1,7 +1,7 @@
 var websocket_webid = function(host, port)
 {
    var cat = 'ws';
-   
+
    // TODO: get private key and certificate from local storage
    var privateKey =
    '-----BEGIN RSA PRIVATE KEY-----\r\n' +
@@ -55,7 +55,7 @@ var websocket_webid = function(host, port)
       virtualHost: host,
       verify: function(c, verified, depth, certs)
       {
-         forge.log.debug(cat, 
+         forge.log.debug(cat,
             'TLS Client verifying certificate w/CN: \"' +
             certs[0].subject.getField('CN').value + '\"');
          // accept any certificate from the server for this test
@@ -87,7 +87,7 @@ var websocket_webid = function(host, port)
          {
             response = JSON.parse(response);
             success = response.success;
-            
+
             // TODO: call window.authenticate on response json, just like
             // w/flash version
          }

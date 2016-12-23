@@ -12,7 +12,7 @@ jQuery(function($)
    var tests = [];
    var passed = 0;
    var failed = 0;
-   
+
    var init = function() {
       passed = failed = 0;
       $('.ready,.testing,.pass,.fail')
@@ -85,11 +85,11 @@ jQuery(function($)
    $('#start').click(function() {
       start();
    });
-   
+
    $('#reset').click(function() {
       init();
    });
-   
+
    var addTest = function(name, run)
    {
       var container = $('<ul><li>Test ' + name + '</li><ul/></ul>');
@@ -292,7 +292,7 @@ jQuery(function($)
          test.pass();
       });
    });
-   
+
    addTest('serial 20 + sleep', function(task, test) {
       // total
       var n = 20;
@@ -309,7 +309,7 @@ jQuery(function($)
          test.check();
       });
    });
-   
+
    addTest('concurrent tasks', function(task, test)
    {
       var colors = [
@@ -329,7 +329,7 @@ jQuery(function($)
       {
          var main = task;
          task.block(count);
-         
+
          var tasks = [];
          for(var i = 0; i < count; ++i)
          {
@@ -362,13 +362,13 @@ jQuery(function($)
                run: makefunction(i)
             });
          }
-         
+
          for(var i = 0; i < count; ++i)
          {
             forge.task.start(tasks[i]);
          }
       });
-      
+
       task.next(function(task) {
          test.pass();
       });

@@ -33,7 +33,7 @@
 jQuery(function($)
 {
    var cat = 'forge.tests.webid';
-   
+
    // local alias
    var forge = window.forge;
 
@@ -44,7 +44,7 @@ jQuery(function($)
       var commonName = $('#commonName')[0].value;
       forge.log.debug(cat, 'generating ' + bits +
          '-bit RSA key-pair and certificate...');
-      
+
       // function to create cert
       var createCert = function(keys)
       {
@@ -97,42 +97,42 @@ jQuery(function($)
             // FIXME: add subjectKeyIdentifier extension
             // FIXME: add authorityKeyIdentifier extension
             cert.publicKey = keys.publicKey;
-            
+
             // self-sign certificate
             cert.sign(keys.privateKey);
-            
+
             // verify certificate
             forge.log.debug('verified', cert.verify(cert));
-            
+
             forge.log.debug(cat, 'certificate:', cert);
-            //forge.log.debug(cat, 
+            //forge.log.debug(cat,
             //   forge.asn1.prettyPrint(forge.pki.certificateToAsn1(cert)));
             var keyPem = forge.pki.privateKeyToPem(keys.privateKey);
             var certPem = forge.pki.certificateToPem(cert);
             forge.log.debug(cat, keyPem);
             forge.log.debug(cat, certPem);
-            
+
             forge.log.debug(cat, 'storing certificate and private key...');
             try
             {
                // get flash API
                var flashApi = document.getElementById('socketPool');
-               
+
                // get web ids collection
                var webids = forge.util.getItem(
                   flashApi, 'forge.test.webid', 'webids');
                webids = webids || {};
-               
+
                // add web id
                webids[uri] = {
                   certificate: certPem,
                   privateKey: keyPem
                };
-               
+
                // update web ids collection
                forge.util.setItem(
                   flashApi, 'forge.test.webid', 'webids', webids);
-               
+
                forge.log.debug(cat, 'certificate and private key stored');
                $('#show').click();
             }
@@ -146,7 +146,7 @@ jQuery(function($)
             forge.log.error(cat, ex, ex.message ? ex.message : '');
          }
       };
-      
+
       // create key-generation state and function to step algorithm
       var progress = $('#progress');
       progress.html('Generating ' + bits + '-bit key-pair.');
@@ -169,24 +169,24 @@ jQuery(function($)
             progress.html(progress.html() + 'done. Time=' + kgTime + 'ms');
          }
       };
-      
+
       // run key-gen algorithm
       setTimeout(step, 0);
    });
 
    $('#show').click(function()
-   {  
+   {
       forge.log.debug(cat, 'get stored web IDs...');
       try
       {
          // get flash API
          var flashApi = document.getElementById('socketPool');
-         
+
          // get web ids collection
          var webids = forge.util.getItem(
             flashApi, 'forge.test.webid', 'webids');
          webids = webids || {};
-         
+
          var html = '<ul>';
          var webid, cert;
          for(var key in webids)
@@ -194,14 +194,14 @@ jQuery(function($)
             webid = webids[key];
             cert = forge.pki.certificateFromPem(webid.certificate);
             html += '<li><p>' + key + '</p>';
-            
+
             var attr;
             for(var n = 0; n < cert.subject.attributes.length; ++n)
             {
                attr = cert.subject.attributes[n];
                html += attr.name + ': ' + attr.value + '<br/>';
             }
-            
+
             //html += '<p>' + webid.certificate + '</p></li>';
             html += '</li>';
          }
@@ -213,9 +213,9 @@ jQuery(function($)
          {
             html += '</ul>';
          }
-         
+
          $('#webids').html(html);
-         
+
          forge.log.debug(cat, 'Web IDs retrieved');
       }
       catch(ex)
@@ -223,9 +223,9 @@ jQuery(function($)
          forge.log.error(cat, ex);
       }
    });
-   
+
    $('#clear').click(function()
-   {  
+   {
       forge.log.debug(cat, 'clearing all web IDs...');
       try
       {
@@ -240,24 +240,24 @@ jQuery(function($)
          forge.log.error(cat, ex);
       }
    });
-   
+
    $('#authenticate').click(function()
    {
       forge.log.debug(cat, 'doing Web ID authentication...');
-      
+
       try
       {
          // get flash API
          var flashApi = document.getElementById('socketPool');
-         
+
          // get web ids collection
          var webids = forge.util.getItem(
             flashApi, 'forge.test.webid', 'webids');
          webids = webids || {};
-         
+
          var uri = $('#webid')[0].value;
          var webid = webids[uri];
-         
+
          $.ajax(
          {
             type: 'GET',
@@ -303,7 +303,7 @@ jQuery(function($)
                   }
                });
             }
-         });      
+         });
       }
       catch(ex)
       {
