@@ -119,7 +119,7 @@ The core JavaScript has the following requirements:
 * Testing
   * Node.js
   * npm
-  * Chrome, Firefox (optional)
+  * Chrome, Firefox, Safari (optional)
 
 Some special networking features can optionally use a Flash component.  See the
 [Flash README](./flash/README.md) for details.
@@ -201,7 +201,7 @@ By default [webpack][] is used. [Browserify][] can also be used.
 
 You can also specify one or more browsers to use.
 
-    npm run test-karma -- --browsers Chrome,Firefox,PhantomJS
+    npm run test-karma -- --browsers Chrome,Firefox,Safari,PhantomJS
 
 The reporter option and `BUNDLER` environment variable can also be used.
 
