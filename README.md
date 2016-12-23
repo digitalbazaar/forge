@@ -80,7 +80,7 @@ Documentation
 * [Utilities](#util)
 * [Logging](#log)
 * [Debugging](#debug)
-* [Flash Socket Policy Module](#fsp)
+* [Flash Networking Support](#flash)
 
 ### Other
 
@@ -121,15 +121,8 @@ The core JavaScript has the following requirements:
   * npm
   * Chrome, Firefox (optional)
 
-If you wish to use special networking features, the following may
-additionally be needed:
-
-* General
-  * Optional: GNU autotools for the build infrastructure if using Flash.
-* Optional: Flash
-  * A pre-built SocketPool.swf is included.
-  * Adobe Flex 3 SDK to build the Flash socket code.
-  * http://opensource.adobe.com/wiki/display/flexsdk/
+Some special networking features can optionally use a Flash component.  See the
+[Flash README](./flash/README.md) for details.
 
 ### Building for a web browser
 
@@ -199,7 +192,9 @@ use.
 
 Testing in a browser uses [webpack][] to combine forge and all tests and then
 loading the result in a browser. A simple web server is provided that will
-output the URL to load. Unit tests and older legacy tests are provided.
+output the HTTP or HTTPS URLs to load. It also will start a simple Flash Policy
+Server. Unit tests and older legacy tests are provided. Custom ports can be
+used by running `node tests/server.js` manually.
 
     npm install
     npm run build
@@ -214,30 +209,6 @@ down some tests considerably.
 
     npm install
     npm run coverage
-
-### Old build system that includes flash support
-
-To build the whole project, including Flash, run the following:
-
-    $ ./build-setup
-    $ make
-
-This will create the SWF and symlink all the JavaScript files. To see
-configure options, run `./configure --help`.
-
-### Old test system including flash support
-
-A test server is provided which can be run in TLS mode and non-TLS mode. Use
-the --help option to get help for configuring ports. The server will print out
-the local URL you can vist to run tests.
-
-Some of the simplier tests should be run with just the non-TLS server::
-
-    $ ./tests/server.py
-
-More advanced tests need TLS enabled::
-
-    $ ./tests/server.py --tls
 
 Contributing
 ------------
@@ -1812,13 +1783,12 @@ __Examples__
 // TODO
 ```
 
-<a name="fsp" />
-### Flash Socket Policy Module
+<a name="flash" />
+### Flash Networking Support
 
-Provides an [Apache][] module "mod_fsp" that can serve up a Flash Socket
-Policy. See `mod_fsp/README` for more details. This module makes it easy to
-modify an [Apache][] server to allow cross domain requests to be made to it.
-
+The [flash README](./flash/README.md) provides details on rebuilding the
+optional Flash component used for networking. It also provides details on
+Policy Server support.
 
 Library Background
 ------------------
@@ -1846,7 +1816,6 @@ Financial support is welcome and helps contribute to futher development:
 [3DES]: http://en.wikipedia.org/wiki/Triple_DES
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
-[Apache]: http://httpd.apache.org/
 [Browserify]: http://browserify.org/
 [CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
