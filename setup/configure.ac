@@ -130,24 +130,6 @@ PKG_PROG_PKG_CONFIG
 # Checking for standard build tools
 AC_PROG_CPP
 AC_PROG_INSTALL
-AS_PATH_PYTHON([2.7])
-
-if test "x$PYTHON" != x; then
-   save_CPPFLAGS="$CPPFLAGS"
-   AC_CHECK_PROGS([PYTHON_CONFIG], [python-config]) 
-   if test "x$PYTHON_CONFIG" != x; then
-      CPPFLAGS="$CPPFLAGS `$PYTHON_CONFIG --cflags`"
-   fi
-   AC_CHECK_HEADERS([Python.h],
-      [BUILD_PYTHON_MODULES=yes],
-      [BUILD_PYTHON_MODULES=no
-      AC_MSG_WARN([Python.h not found, SSL bindings will not be build.])])
-   CPPFLAGS="$save_CPPFLAGS"
-else
-   AC_MSG_WARN([Need at least Python 2.7 to build SSL bindings.])
-fi
-
-AC_SUBST(BUILD_PYTHON_MODULES)
 
 dnl ----------------------------------
 
@@ -180,12 +162,6 @@ if test "x$BUILD_FLASH" = "xyes" ; then
    echo "MXMLC Debug flags : $MXMLC_DEBUG_MODE"
 else
    echo "Adobe Flash       : using pre-built Flash"
-fi
-
-if test "x$BUILD_PYTHON_MODULES" = "xyes" ; then
-   echo "Python            : $PYTHON (version $PYTHON_VERSION)"
-else
-   echo "Python            : development environment not found"
 fi
 
 if test "x$BUILD_DOCS" = "xyes"; then
