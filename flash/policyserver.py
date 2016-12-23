@@ -91,7 +91,7 @@ def main():
 
     # log basic info
     logging.info("Flash Socket Policy Server. Use ctrl-c to exit.")
-    
+
     # create policy server
     logging.info("Socket policy serving on %s:%d." % (options.host, options.port))
     policyd = ThreadedTCPServer((options.host, options.port), PolicyHandler)

@@ -2,7 +2,6 @@ var forge = require('../..');
 var fs = require('fs');
 var http = require('http');
 //var rdf = require('./rdflib');
-var sys = require('sys');
 var urllib = require('url');
 var ws = require('./ws');
 
@@ -154,7 +153,7 @@ var getPublicKey = function(data, uri, callback) {
       }
     }
 
-    sys.log('Public keys from RDF: ' + JSON.stringify(keys));
+    console.log('Public keys from RDF: ' + JSON.stringify(keys));
     callback(keys);
   });
   parser.parseString(data);
@@ -172,7 +171,7 @@ var fetchUrl = function(url, callback, redirects) {
     redirects = 3;
   }
 
-  sys.log('Fetching URL: \"' + url + '\"');
+  console.log('Fetching URL: \"' + url + '\"');
 
   // parse URL
   url = forge.util.parseUrl(url);
@@ -227,7 +226,7 @@ var authenticateWebId = function(c, state) {
     exponent: cert.publicKey.e.toString(10)
   };
 
-  sys.log(
+  console.log(
     'Server verifying certificate w/CN: \"' +
     cert.subject.getField('CN').value + '\"\n' +
     'Public Key: ' + JSON.stringify(publicKey));
@@ -249,7 +248,7 @@ var authenticateWebId = function(c, state) {
     if(!auth) {
       // no more alt names, auth failed
       if(altNames.length === 0) {
-        sys.log('WebID authentication FAILED.');
+        console.log('WebID authentication FAILED.');
         c.prepare(JSON.stringify({
           success: false,
           error: 'Not Authenticated'
@@ -269,7 +268,7 @@ var authenticateWebId = function(c, state) {
             }
             if(auth) {
               // send authenticated notice to client
-              sys.log('WebID authentication PASSED.');
+              console.log('WebID authentication PASSED.');
               state.authenticated = true;
               c.prepare(JSON.stringify({
                 success: true,
@@ -294,9 +293,10 @@ var authenticateWebId = function(c, state) {
 
 // creates credentials (private key + certificate)
 var createCredentials = function(cn, credentials) {
-  sys.log('Generating 512-bit key-pair and certificate for \"' + cn + '\".');
+  console.log(
+    'Generating 512-bit key-pair and certificate for \"' + cn + '\".');
   var keys = forge.pki.rsa.generateKeyPair(512);
-  sys.log('key-pair created.');
+  console.log('key-pair created.');
 
   var cert = forge.pki.createCertificate();
   cert.serialNumber = '01';
@@ -352,7 +352,7 @@ var createCredentials = function(cn, credentials) {
   credentials.key = forge.pki.privateKeyToPem(keys.privateKey);
   credentials.cert = forge.pki.certificateToPem(cert);
 
-  sys.log('Certificate created for \"' + cn + '\": \n' + credentials.cert);
+  console.log('Certificate created for \"' + cn + '\": \n' + credentials.cert);
 };
 
 // initialize credentials
@@ -420,7 +420,7 @@ var createTls = function(websocket) {
        forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
        forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
     connected: function(c) {
-      sys.log('Server connected');
+      console.log('Server connected');
 
       // do WebID authentication
       try {
@@ -439,7 +439,7 @@ var createTls = function(websocket) {
       return verified;
     },
     getCertificate: function(c, hint) {
-       sys.log('Server using certificate for \"' + hint[0] + '\"');
+       console.log('Server using certificate for \"' + hint[0] + '\"');
        return credentials.cert;
     },
     getPrivateKey: function(c, cert) {
@@ -452,15 +452,15 @@ var createTls = function(websocket) {
     dataReady: function(c) {
       // ignore any data until connection is authenticated
       if(state.authenticated) {
-        sys.log('Server received \"' + c.data.getBytes() + '\"');
+        console.log('Server received \"' + c.data.getBytes() + '\"');
       }
     },
     closed: function(c) {
-      sys.log('Server disconnected');
+      console.log('Server disconnected');
       websocket.end();
     },
     error: function(c, error) {
-      sys.log('Server error: ' + error.message);
+      console.log('Server error: ' + error.message);
     }
   });
 };
@@ -472,7 +472,7 @@ ws.createServer(function(websocket) {
   var tls = createTls(websocket);
 
   websocket.addListener('connect', function(resource) {
-    sys.log('WebSocket connected: ' + resource);
+    console.log('WebSocket connected: ' + resource);
 
     // close connection after 30 second timeout
     setTimeout(websocket.end, 30 * 1000);
@@ -484,8 +484,8 @@ ws.createServer(function(websocket) {
   });
 
   websocket.addListener('close', function() {
-    sys.log('WebSocket closed');
+    console.log('WebSocket closed');
   });
 }).listen(port);
 
-sys.log('WebSocket WebID server running on port ' + port);
+console.log('WebSocket WebID server running on port ' + port);

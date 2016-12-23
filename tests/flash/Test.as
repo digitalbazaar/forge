@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2010 Digital Bazaar, Inc. All rights reserved.
- * 
+ *
  * @author Dave Longley
  */
 package
 {
    import flash.display.Sprite;
-   
+
    public class Test extends Sprite
    {
       import flash.events.*;
       import flash.net.*;
-      
+
       import flash.external.ExternalInterface;
       import flash.system.Security;
-      
+
       public function Test()
       {
          try
@@ -22,7 +22,7 @@ package
             // FIXME: replace 'localhost' with cross-domain host to hit
             var xhost:String = "localhost";
             Security.loadPolicyFile("xmlsocket://" + xhost + ":80");
-            
+
             var loader:URLLoader = new URLLoader();
             loader.addEventListener(
                Event.COMPLETE, completeHandler);
@@ -36,7 +36,7 @@ package
                HTTPStatusEvent.HTTP_STATUS, httpStatusHandler);
             loader.addEventListener(
                IOErrorEvent.IO_ERROR, ioErrorHandler);
-            
+
             var request:URLRequest = new URLRequest(
                "http://" + xhost + "/index.html");
             loader.load(request);
@@ -47,7 +47,7 @@ package
             throw e;
          }
       }
-      
+
       private function log(obj:Object):void
       {
          if(obj is String)
@@ -61,7 +61,7 @@ package
             log("error=" + e.errorID + "," + e.name + "," + e.message);
          }
       }
-      
+
       private function completeHandler(event:Event):void
       {
          var loader:URLLoader = URLLoader(event.target);

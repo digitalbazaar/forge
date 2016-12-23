@@ -17,17 +17,17 @@ const outputs = [
   // core forge library crypto and utils
   {
     entry: ['./lib/index.js'],
-    filenameBase: 'forge' 
+    filenameBase: 'forge'
   },
   // core forge library + extra utils and networking support
   {
     entry: ['./lib/index.all.js'],
-    filenameBase: 'forge.all' 
+    filenameBase: 'forge.all'
   },
   // jsbn module (used from prime.worker.js)
   {
     entry: ['./lib/jsbn.js', './lib/forge.js'],
-    filenameBase: 'jsbn' 
+    filenameBase: 'jsbn'
   }
   // custom builds can be created by specifying the high level files you need
   // webpack will pull in dependencies as needed

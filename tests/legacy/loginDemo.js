@@ -23,7 +23,7 @@ var init = function($)
 {
    // logging category
    var cat = 'forge.tests.loginDemo';
-   
+
    // local alias
    var forge = window.forge;
    try
@@ -38,11 +38,11 @@ var init = function($)
       if(domain)
       {
          $('#domain').html('`' + domain + '`');
-      } 
-      
+      }
+
       // for chosen webid
       var chosen = null;
-      
+
       // init forge xhr
       forge.xhr.init({
          flashId: 'socketPool',
@@ -67,15 +67,15 @@ var init = function($)
             return chosen.privateKey;
          }
       });
-      
+
       // get flash API
       var flashApi = document.getElementById('socketPool');
-      
+
       // get web ids collection
       var webids = forge.util.getItem(
          flashApi, 'forge.test.webid', 'webids');
       webids = webids || {};
-      
+
       var id = 0;
       var list = $('<ul/>');
       for(var key in webids)
@@ -90,10 +90,10 @@ var init = function($)
             button.click(function()
             {
                button.attr('disabled', 'disabled');
-               
+
                // set chosen webid
                chosen = webid;
-               
+
                // do webid call
                $.ajax(
                {
@@ -123,7 +123,7 @@ var init = function($)
             });
             item.append(button);
             item.append(' ' + key + '<br/>');
-            
+
             // display certificate attributes
             var attr;
             for(var n = 0; n < cert.subject.attributes.length; ++n)
@@ -131,7 +131,7 @@ var init = function($)
                attr = cert.subject.attributes[n];
                item.append(attr.name + ': ' + attr.value + '<br/>');
             }
-            
+
             list.append(item);
          })(webids[key]);
       }
@@ -139,7 +139,7 @@ var init = function($)
       {
          list.append('None');
       }
-      
+
       $('#webids').append(list);
    }
    catch(ex)
