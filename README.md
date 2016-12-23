@@ -189,7 +189,7 @@ headless manner with PhantomJS.
     npm run test-karma
 
 Is 'mocha' reporter output too verbose? Other reporters are available. Try
-'dots' or 'progress'.
+'dots', 'progress', or 'tap'.
 
     npm run test-karma -- --reporters progress
 
