@@ -35,7 +35,7 @@ To run legacy browser based tests the main forge build is required:
 The tests are run with a custom server that prints out the URL to use:
 
     npm run test-server
-    
+
 Running other tests
 -------------------
 
