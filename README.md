@@ -126,12 +126,6 @@ additionally be needed:
 
 * General
   * Optional: GNU autotools for the build infrastructure if using Flash.
-* Testing
-  * Optional: Python and OpenSSL development environment to build
-  * a special SSL module with session cache support for testing with flash.
-  * http://www.python.org/dev/
-  * http://www.openssl.org/
-  * Debian users should install python-dev and libssl-dev.
 * Optional: Flash
   * A pre-built SocketPool.swf is included.
   * Adobe Flex 3 SDK to build the Flash socket code.
@@ -228,8 +222,8 @@ To build the whole project, including Flash, run the following:
     $ ./build-setup
     $ make
 
-This will create the SWF, symlink all the JavaScript files, and build a Python
-SSL module for testing. To see configure options, run `./configure --help`.
+This will create the SWF and symlink all the JavaScript files. To see
+configure options, run `./configure --help`.
 
 ### Old test system including flash support
 
