@@ -474,13 +474,6 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(pem, _pem.signedDataNoAttrs);
     });
 
-    if(typeof define === 'function') {
-      // return here for phantomjs; it has date serialization and timezone
-      // bugs that prevent the following tests from running properly
-      // see: https://github.com/ariya/phantomjs/issues/11712
-      return;
-    }
-
     it('should create PKCS#7 SignedData with content-type, message-digest, ' +
       'and signing-time attributes using UTCTime', function() {
       // verify with:
