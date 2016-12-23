@@ -2,10 +2,10 @@
 
 module.exports = function(config) {
   // bundler to test: webpack, browserify
-  let bundler = process.env.BUNDLER || 'webpack';
+  var bundler = process.env.BUNDLER || 'webpack';
 
-  let frameworks = ['mocha'];
-  let preprocessors = [];
+  var frameworks = ['mocha'];
+  var preprocessors = [];
 
   if(bundler === 'browserify') {
     frameworks.push(bundler);
