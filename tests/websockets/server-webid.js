@@ -3,7 +3,7 @@ var fs = require('fs');
 var http = require('http');
 //var rdf = require('./rdflib');
 var urllib = require('url');
-var ws = require('./ws');
+var ws = require('nodejs-websocket');
 
 // remove xmlns from input
 var normalizeNs = function(input, ns) {
@@ -417,8 +417,8 @@ var createTls = function(websocket) {
     sessionCache: {},
     // supported cipher suites in order of preference
     cipherSuites: [
-       forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
-       forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+      forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+      forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
     connected: function(c) {
       console.log('Server connected');
 
@@ -439,15 +439,15 @@ var createTls = function(websocket) {
       return verified;
     },
     getCertificate: function(c, hint) {
-       console.log('Server using certificate for \"' + hint[0] + '\"');
-       return credentials.cert;
+      console.log('Server using certificate for \"' + hint[0] + '\"');
+      return credentials.cert;
     },
     getPrivateKey: function(c, cert) {
-       return credentials.key;
+      return credentials.key;
     },
     tlsDataReady: function(c) {
-       // send base64-encoded TLS data over websocket
-       websocket.write(forge.util.encode64(c.tlsData.getBytes()));
+      // send base64-encoded TLS data over websocket
+      websocket.send(forge.util.encode64(c.tlsData.getBytes()));
     },
     dataReady: function(c) {
       // ignore any data until connection is authenticated
@@ -457,7 +457,7 @@ var createTls = function(websocket) {
     },
     closed: function(c) {
       console.log('Server disconnected');
-      websocket.end();
+      websocket.close();
     },
     error: function(c, error) {
       console.log('Server error: ' + error.message);
@@ -466,26 +466,32 @@ var createTls = function(websocket) {
 };
 
 // create websocket server
-var port = opts.get('port') || 8080;
-ws.createServer(function(websocket) {
-  // create TLS server connection
-  var tls = createTls(websocket);
+let port = opts.get('port') || 8080;
+let wsServer = ws
+  .createServer({port: port/*, secure: true*/}, function(websocket) {
+    console.log('[ws-server] connection:', websocket.socket.address());
 
-  websocket.addListener('connect', function(resource) {
-    console.log('WebSocket connected: ' + resource);
+    // create TLS server connection
+    var tls = createTls(websocket);
 
-    // close connection after 30 second timeout
-    setTimeout(websocket.end, 30 * 1000);
+    // close connection after 30 seconds
+    let toId = setTimeout(websocket.close, 30 * 1000);
+
+    websocket.on('text', function(data) {
+      //console.log('[ws-server] data:', data);
+      // base64-decode data and process it
+      tls.process(forge.util.decode64(data));
+    });
+
+    websocket.on('close', function() {
+      clearTimeout(toId);
+      console.log('[ws-server]: closed');
+    });
+
+    websocket.on('error', function(err) {
+      console.error('[ws-server]: error:', err);
+    });
   });
-
-  websocket.addListener('data', function(data) {
-    // base64-decode data and process it
-    tls.process(forge.util.decode64(data));
-  });
-
-  websocket.addListener('close', function() {
-    console.log('WebSocket closed');
-  });
-}).listen(port);
-
-console.log('WebSocket WebID server running on port ' + port);
+wsServer.listen(port, () => {
+  console.log('[ws-server] listening:', wsServer.socket.address());
+});
