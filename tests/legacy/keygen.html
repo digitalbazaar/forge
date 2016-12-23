@@ -2,20 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <title>Forge KeyGen Tests</title>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
   <script type="text/javascript" src="/forge/forge.js"></script>
+
+  <link type="text/css" rel="stylesheet" media="all" href="/tests.css" />
 </head>
 
-<body>
-
 <script type="text/javascript">
-
+function init() {
+  forge.options.usePureJavaScript = ($('#purejs:checked').length === 1);
+  console.log('Using pure JavaScript: ' + forge.options.usePureJavaScript);
+  $('#time').text('...');
+  $('#private').text('...');
+  $('#public').text('...');
+  return {
+    bits: $('#bits')[0].value,
+    workers: $('#workers')[0].value
+  };
+}
 function async() {
-  var bits = 2048;
-  console.log('Generating ' + bits + '-bit key-pair...');
-  var st = +new Date();
+  var params = init();
+  console.log('Async generating ' + params.bits + '-bit key-pair...');
+  var start = +new Date();
   forge.pki.rsa.generateKeyPair({
-    bits: bits,
-    workers: -1,
+    bits: params.bits,
+    workers: params.workers,
     /*workLoad: 100,*/
     workerScript: '/forge/prime.worker.js'
   }, function(err, keypair) {
@@ -23,28 +35,79 @@ function async() {
       console.error(err);
       return;
     }
-    var et = +new Date();
-    console.log('Key-pair created in ' + (et - st) + 'ms.');
+    var dt = +new Date() - start;
+
+    $('#time').text(dt + 'ms');
+    $('#private').text(forge.pki.privateKeyToPem(keypair.privateKey));
+    $('#public').text(forge.pki.publicKeyToPem(keypair.publicKey));
+
+    console.log('Key-pair created in ' + dt + 'ms.');
     console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
     console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
   });
 }
 
 function sync() {
-  var bits = 2048;
-  console.log('Generating ' + bits + '-bit key-pair...');
-  var st = +new Date();
-  var keypair = forge.pki.rsa.generateKeyPair(bits);
-  var et = +new Date();
-  console.log('Key-pair created in ' + (et - st) + 'ms.');
+  var params = init();
+  console.log('Sync generating ' + params.bits + '-bit key-pair...');
+  var start = +new Date();
+  var keypair = forge.pki.rsa.generateKeyPair(params.bits);
+  var dt = +new Date() - start;
+
+  $('#time').text(dt + 'ms');
+  $('#private').text(forge.pki.privateKeyToPem(keypair.privateKey));
+  $('#public').text(forge.pki.publicKeyToPem(keypair.publicKey));
+
+  console.log('Key-pair created in ' + dt + 'ms.');
   console.log('private', forge.pki.privateKeyToPem(keypair.privateKey));
   console.log('public', forge.pki.publicKeyToPem(keypair.publicKey));
 }
-
 </script>
 
-<button onclick="async()">Async Generate Key</button>
-<button onclick="sync()">Sync Generate Key</button>
+<body>
+<div class="nav">
+   <a href="..">Forge Tests</a> /
+   <a href=".">Legacy</a> /
+   KeyGen
+</div>
+
+<div class="header">
+   <h1>KeyGen Tests</h1>
+</div>
+
+<div class="content">
+
+<fieldset class="section">
+   <ul>
+      <li>Test Forge key generation.</li>
+      <li>See JavaScript console for additional output.</li>
+   </ul>
+</fieldset>
+
+<fieldset class="section">
+<legend>Control</legend>
+   <button onclick="async()">Async Generate Key</button>
+   <button onclick="sync()">Sync Generate Key</button>
+   <br/>
+   <input id="purejs" type="checkbox" />Pure JavaScript
+   <br/>
+   <input id="workers" value="-1"/>workers (-1 for auto, if applicable)
+   <br/>
+   <input id="bits" value="2048"/>bits (1024, 2048, 4096, etc)
+</fieldset>
+
+<fieldset class="section">
+<legend>Output</legend>
+<dl>
+  <dt>Creation Time</dt>
+  <dd><span id="time"></span></dd>
+  <dt>Private</dt>
+  <dd><pre id="private"></pre>
+  <dt>Public</dt>
+  <dd><pre id="public"></pre>
+</fieldset>
+
+</div>
 
 </body>
 </html>
