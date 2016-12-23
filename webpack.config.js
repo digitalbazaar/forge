@@ -23,12 +23,20 @@ const outputs = [
   {
     entry: ['./lib/index.all.js'],
     filenameBase: 'forge.all' 
+  },
+  // jsbn module (used from prime.worker.js)
+  {
+    entry: ['./lib/jsbn.js', './lib/forge.js'],
+    filenameBase: 'jsbn' 
   }
   // custom builds can be created by specifying the high level files you need
   // webpack will pull in dependencies as needed
+  // Note: if using UMD or similar, add forge.js *last* to properly export
+  // the top level forge namespace.
   //{
-  //  entry: ['./lib/sha1.js', ...],
+  //  entry: ['./lib/sha1.js', ..., './lib/forge.js'],
   //  filenameBase: 'forge.custom'
+  //  libraryTarget: 'umd'
   //}
 ];
 
@@ -54,7 +62,7 @@ outputs.forEach((info) => {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
       library: '[name]',
-      libraryTarget: 'umd'
+      libraryTarget: info.libraryTarget || 'umd'
     }
   });
 
@@ -64,7 +72,7 @@ outputs.forEach((info) => {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
       library: '[name]',
-      libraryTarget: 'umd'
+      libraryTarget: info.libraryTarget || 'umd'
     },
     devtool: 'source-map',
     plugins: [

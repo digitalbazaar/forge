@@ -155,8 +155,8 @@ or
 The above bundles will synchronously create a global 'forge' object.
 
 **Note**: These bundles will not include any WebWorker scripts (eg:
-`prime.worker.js`) or their dependencies (`jsbn.js`), so these will need to
-be accessible from the browser if any WebWorkers are used.
+`lib/prime.worker.js`) or their dependencies (eg: `dist/jsbn.js`), so these
+will need to be accessible from the browser if any WebWorkers are used.
 
 ### Building a custom browser bundle
 
