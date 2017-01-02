@@ -30,7 +30,7 @@
     "karma-phantomjs-launcher": "^1.0.2",
     "karma-safari-launcher": "^1.0.0",
     "karma-tap-reporter": "0.0.6",
-    "karma-webpack": "^1.8.0",
+    "karma-webpack": "^1.8.1",
     "mocha": "^3.2.0",
     "mocha-lcov-reporter": "^1.2.0",
     "nodejs-websocket": "^1.7.1",
