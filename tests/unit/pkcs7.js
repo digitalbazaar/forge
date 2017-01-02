@@ -8,7 +8,8 @@ var UTIL = require('../../lib/util');
 
 (function() {
   var _pem = {
-    p7: '-----BEGIN PKCS7-----\r\n' +
+    p7:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIICTgYJKoZIhvcNAQcDoIICPzCCAjsCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
       'A1UEBhMCREUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEV\r\n' +
       'MBMGA1UECgwMU3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNV\r\n' +
@@ -23,7 +24,8 @@ var UTIL = require('../../lib/util');
       'gEAm2mfSF5xFPLEqqFkvKTM4w8PfhnF0ehmfQNApvoWQRQanNWLCT+Q9GHx6DCFj\r\n' +
       'TUHl+53x88BrCl1E7FhYPs92\r\n' +
       '-----END PKCS7-----\r\n',
-    certificate: '-----BEGIN CERTIFICATE-----\r\n' +
+    certificate:
+      '-----BEGIN CERTIFICATE-----\r\n' +
       'MIIDtDCCApwCCQDUVBxA2DXi8zANBgkqhkiG9w0BAQUFADCBmzELMAkGA1UEBhMC\r\n' +
       'REUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UE\r\n' +
       'CgwMU3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNVBAMMDUdl\r\n' +
@@ -45,7 +47,8 @@ var UTIL = require('../../lib/util');
       'HAMUc/0++80NhfQthmWZWlWM1R3dr4TrIPtWdn5z0MtGeDvqBk7HjGrhcVS6kAsy\r\n' +
       'Z9y/lfLPjBuxlQAHztEJCWgI4TW3/RLhgfg2gI1noM2n84Cdmisfkg==\r\n' +
       '-----END CERTIFICATE-----\r\n',
-    privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+    privateKey:
+      '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIIEowIBAAKCAQEAywBtDh9Z68eo/UrXL97CkxLe9ii8G2jsiwoGrS/c2YLaQ9/c\r\n' +
       '2HJpIp+M45Lm4A840t98tyT6IZ04ssWJro5KkzrS3JAhX2UehGHt84Rg5FpvRn5o\r\n' +
       'FRlwQZP3Ki0E6tpfVhspzl/1c77zR4bhdi9vm5rU0evFap7jDanfMYkIo77Aem8a\r\n' +
@@ -72,12 +75,14 @@ var UTIL = require('../../lib/util');
       'R8sRHNiIP2mcUECMOcaS+tcayi+8KTHWxIEed9qDmFu6XBbePfe/L6yxPSagcixH\r\n' +
       'BK0KuK/fgTPvZCmIs8hUIC+AxhXKnqn4fIWoO54xLsALc0gEjs2d\r\n' +
       '-----END RSA PRIVATE KEY-----\r\n',
-    encryptedData: '-----BEGIN PKCS7-----\r\n' +
+    encryptedData:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIGHBgkqhkiG9w0BBwagejB4AgEAMHMGCSqGSIb3DQEHATAUBggqhkiG9w0DBwQI\r\n' +
       'upMFou5X3DWAUAqObuHSlewM0ZtHzWk9MAmtYb7MSb//OBMKVfLCdbmrS5BpKm9J\r\n' +
       'gzwiDR5Od7xgfkqasLS2lOdKAvJ5jZjjTpAyrjBKpShqK9gtXDuO0zH+\r\n' +
       '-----END PKCS7-----\r\n',
-    p7IndefiniteLength: '-----BEGIN PKCS7-----\r\n' +
+    p7IndefiniteLength:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIAGCSqGSIb3DQEHA6CAMIACAQAxggHGMIIBwgIBADCBqTCBmzELMAkGA1UEBhMC\r\n' +
       'REUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UE\r\n' +
       'CgwMU3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNVBAMMDUdl\r\n' +
@@ -92,7 +97,8 @@ var UTIL = require('../../lib/util');
       'o01yl6dqqNBczH5FNTK88ypz38/jzjo47+DURlvGzjHJibiDsCz9KyiVmgbRrtvH\r\n' +
       '08rfnMbrU+grCkkx9wQI1GnLrYhr87oAAAAAAAAAAAAA\r\n' +
       '-----END PKCS7-----\r\n',
-    p73des: '-----BEGIN PKCS7-----\r\n' +
+    p73des:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIICTQYJKoZIhvcNAQcDoIICPjCCAjoCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
       'A1UEBhMCREUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEV\r\n' +
       'MBMGA1UECgwMU3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNV\r\n' +
@@ -107,7 +113,8 @@ var UTIL = require('../../lib/util');
       'L8GDk9JoqA8t9v3oXCT0nAMXoNpHZMnv+0UHHVljlSXBTQxwUP5VMY/ddquJ5O3N\r\n' +
       'rDEqqJuHB+KPIsW1kxrdplU=\r\n' +
       '-----END PKCS7-----\r\n',
-    degenerateP7: '-----BEGIN PKCS7-----\r\n' +
+    degenerateP7:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIID4wYJKoZIhvcNAQcCoIID1DCCA9ACAQExADALBgkqhkiG9w0BBwGgggO4MIID\r\n' +
       'tDCCApwCCQDUVBxA2DXi8zANBgkqhkiG9w0BAQUFADCBmzELMAkGA1UEBhMCREUx\r\n' +
       'EjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UECgwM\r\n' +
@@ -130,7 +137,8 @@ var UTIL = require('../../lib/util');
       'c/0++80NhfQthmWZWlWM1R3dr4TrIPtWdn5z0MtGeDvqBk7HjGrhcVS6kAsyZ9y/\r\n' +
       'lfLPjBuxlQAHztEJCWgI4TW3/RLhgfg2gI1noM2n84CdmisfkjEA\r\n' +
       '-----END PKCS7-----\r\n',
-    signedDataNoAttrs: '-----BEGIN PKCS7-----\r\n' +
+    signedDataNoAttrs:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIIF2gYJKoZIhvcNAQcCoIIFyzCCBccCAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
       'hkiG9w0BBwGgDwQNVG8gYmUgc2lnbmVkLqCCA7gwggO0MIICnAIJANRUHEDYNeLz\r\n' +
       'MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNv\r\n' +
@@ -164,7 +172,45 @@ var UTIL = require('../../lib/util');
       '0pRXsBgGNbe1FClekomqKBeeuTfBgyKd+HhabcCNc6Q7kZBfBU9T0JUFhPj5ut39\r\n' +
       'JYiOgKdXRs1MdQqnl0Q=\r\n' +
       '-----END PKCS7-----\r\n',
-    signedDataWithAttrsUTCTime: '-----BEGIN PKCS7-----\r\n' +
+    signedDataWithAttrs1949GeneralizedTime:
+      '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'JxV3HaZ/Jvfnx9uH9wpFYg5yFX6PBLxlHarf\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithAttrs1950UTCTime:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIIGRQYJKoZIhvcNAQcCoIIGNjCCBjICAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
       'hkiG9w0BBwGgDwQNVG8gYmUgc2lnbmVkLqCCA7gwggO0MIICnAIJANRUHEDYNeLz\r\n' +
       'MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNv\r\n' +
@@ -200,7 +246,45 @@ var UTIL = require('../../lib/util');
       'XyGjH28wwB1GzskEZ0oMNCtzqZ9RXvllYQoVkzvLluBfQiuiU97G4ys6B4nOTNi2\r\n' +
       'gwbBcDl+50dPc2TncPe0uPfHgo5/Pr2ckA==\r\n' +
       '-----END PKCS7-----\r\n',
-    signedDataWithAttrsGeneralizedTime: '-----BEGIN PKCS7-----\r\n' +
+    signedDataWithAttrs2049UTCTime:
+      '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'KkKsXLPyzevGPB1i5PCtiI/Tbuwa7fBrgQ==\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithAttrs2050GeneralizedTime:
+      '-----BEGIN PKCS7-----\r\n' +
       'MIIGRwYJKoZIhvcNAQcCoIIGODCCBjQCAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
       'hkiG9w0BBwGgDwQNVG8gYmUgc2lnbmVkLqCCA7gwggO0MIICnAIJANRUHEDYNeLz\r\n' +
       'MA0GCSqGSIb3DQEBBQUAMIGbMQswCQYDVQQGEwJERTESMBAGA1UECAwJRnJhbmNv\r\n' +
@@ -228,13 +312,13 @@ var UTIL = require('../../lib/util');
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
       'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGswGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
       'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHgYJKoZIhvcNAQkFMREYDzE5NDkxMjMxMjM1OTU5WjANBgkqhkiG\r\n' +
-      '9w0BAQEFAASCAQCNB13woMM5xYY5B0k/2dDF1flyAs5JaahqXSIH04ea+qgyFkgZ\r\n' +
-      'uRoialeVzXXXpSPmpgEubQimFMYFslle9Ozpu6ECrXtw53wWm1GAlj8T6w50lKyd\r\n' +
-      '6Ip/wclO/lPIB9qk7Ki3kN+ISBWXSgUMTTo94IdyZH3lbBqW3xsak1FM6STrGiUS\r\n' +
-      'CoinmPKajIbIQBUORZ9eF9qN5erdpKwYNMB43yLle5jNGIeq6ztbL9en9boFp04q\r\n' +
-      'PU+/ZeNY2QJhnoGQVYfHkK+8X6/ZKX1fRnca2L+DUUb9g7Tc0oeW5zwB3wzIEpTN\r\n' +
-      'JxV3HaZ/Jvfnx9uH9wpFYg5yFX6PBLxlHarf\r\n' +
+      'LFvTa+Sr82MwHgYJKoZIhvcNAQkFMREYDzIwNTAwMTAxMDAwMDAwWjANBgkqhkiG\r\n' +
+      '9w0BAQEFAASCAQB3OuKksiL1NjHq0qxkr6Cv/YmqSLbGebTDdHu0yIaN/E2OGXJh\r\n' +
+      'ccJ/9xbTutsGQjpqsmb2ZoWlO095vKkmw1qK5V1mi9qtfV/Y7wsho41iCq1c4t4r\r\n' +
+      'F5Jn+uOZS7sN61u/sR5rTD/JWCvQtfgMSuqzI0jo0D1wWzsTKl2MtK/K0hUB8Ehf\r\n' +
+      'acWHh2FyjHm7XLmEGgX0eqq2ZQTn5+oUzQYBzf6JXP6S+8X7AIszRu5d+dYHHC2y\r\n' +
+      'BNYbqBj3IQlM6XzmlHL39TuETQznWwN1VMfmW2rUniKmpwnOQynlOaFTd06Fxll3\r\n' +
+      'f0ah+JXCk6Rr7eVY0VptmG7S7CyZIjc5MkMw\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -475,7 +559,36 @@ var UTIL = require('../../lib/util');
     });
 
     it('should create PKCS#7 SignedData with content-type, message-digest, ' +
-      'and signing-time attributes using UTCTime', function() {
+      'and signing-time attributes using GeneralizedTime (1949)', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as generalized time because it's before 1950
+          value: new Date('1949-12-31T23:59:59Z')
+        }]
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataWithAttrs1949GeneralizedTime);
+    });
+
+    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+      'and signing-time attributes using UTCTime (1950)', function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \
       //   -out signedtext.txt -inform PEM -CAfile certificate.pem
@@ -500,11 +613,21 @@ var UTIL = require('../../lib/util');
       });
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
-      ASSERT.equal(pem, _pem.signedDataWithAttrsUTCTime);
+      ASSERT.equal(pem, _pem.signedDataWithAttrs1950UTCTime);
     });
 
-    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
-      'and signing-time attributes using GeneralizedTime', function() {
+    // FIXME: remove skipping PhantomJS tests when possible
+    // skip 2049/2050 tests in PhantomJS
+    // likely due to https://bugs.webkit.org/show_bug.cgi?id=130123
+    // can't parse dates between 2034-03-01 and 2100-02-28
+    var _isPhantomJS =
+      (typeof navigator !== 'undefined' && navigator.userAgent) ?
+      navigator.userAgent.indexOf('PhantomJS') !== -1 :
+      false;
+    var _it = _isPhantomJS ? it.skip : it;
+
+    _it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+      'and signing-time attributes using UTCTime (2049)', function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \
       //   -out signedtext.txt -inform PEM -CAfile certificate.pem
@@ -523,19 +646,46 @@ var UTIL = require('../../lib/util');
           // value will be auto-populated at signing time
         }, {
           type: forge.pki.oids.signingTime,
-          // will be encoded as generalized time because it's before 1950
-          value: new Date('1949-12-31T23:59:59Z')
+          // will be encoded as generalized time because it's before 2050
+          value: new Date('2049-12-31T23:59:59Z')
         }]
       });
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
-      ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
+      ASSERT.equal(pem, _pem.signedDataWithAttrs2049UTCTime);
     });
 
-    // TODO: add a test for Jan 1 2050 once phantomjs 2.0 is out and
-    // its date bugs are fixed (generalized time should be used for >= 2050)
+    _it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+      'and signing-time attributes using GeneralizedTime (2050)', function() {
+      // verify with:
+      // openssl smime -verify -in p7.pem -signer certificate.pem \
+      //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as UTC time because it's >= 2050
+          value: new Date('2050-01-01T00:00:00Z')
+        }]
+      });
+      p7.sign();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.signedDataWithAttrs2050GeneralizedTime);
+    });
 
-    it('should create PKCS#7 SignedData with PEM-encoded private key', function() {
+    it('should create PKCS#7 SignedData with PEM-encoded private key',
+      function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \
       //   -out signedtext.txt -inform PEM -CAfile certificate.pem
@@ -560,7 +710,7 @@ var UTIL = require('../../lib/util');
       });
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
-      ASSERT.equal(pem, _pem.signedDataWithAttrsGeneralizedTime);
+      ASSERT.equal(pem, _pem.signedDataWithAttrs1949GeneralizedTime);
     });
 
   });
