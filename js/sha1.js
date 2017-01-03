@@ -63,7 +63,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -75,7 +75,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x5A827999 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -88,7 +88,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -100,7 +100,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x6ED9EBA1 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -113,7 +113,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0x8F1BBCDC + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }
@@ -126,7 +126,7 @@ sha1.Algorithm.prototype.digest = function(s, input) {
       t = ((a << 5) | (a >>> 27)) + f + e + 0xCA62C1D6 + t;
       e = d;
       d = c;
-      c = (b << 30) | (b >>> 2);
+      c = ((b << 30) | (b >>> 2)) >>> 0;
       b = a;
       a = t;
     }

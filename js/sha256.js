@@ -98,11 +98,11 @@ sha256.Algorithm.prototype.digest = function(s, input) {
       h = g;
       g = f;
       f = e;
-      e = (d + t1) | 0;
+      e = (d + t1) >>> 0;
       d = c;
       c = b;
       b = a;
-      a = (t1 + t2) | 0;
+      a = (t1 + t2) >>> 0;
     }
 
     // update hash state
