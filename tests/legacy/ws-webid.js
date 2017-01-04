@@ -18,6 +18,10 @@ var websocket_webid = function(host, port) {
     'p29OvfmW7N3K6fVJXoECQHK8FDC0i8v1Ui8FoBmt+Z1c1+/9TCEE0abUQ6rfOUbm\r\n' +
     'XHMMac/n4qDs0OoCjR4u46dpoK+WN7zcg56tToFPVow=\r\n' +
     '-----END RSA PRIVATE KEY-----';
+  // FIXME: this hardcodes a specific URL for a demo server that is gone
+  // - hard coded cert is expired
+  // - reimplement to provide a server to host URL and return proper data
+  // - dynamically create the certificate for the custom URL
   var certificate =
     '-----BEGIN CERTIFICATE-----\r\n' +
     'MIICgDCCAemgAwIBAgIBATANBgkqhkiG9w0BAQUFADBYMRMwEQYDVQQDEwpKb2hu\r\n' +
@@ -93,7 +97,7 @@ var websocket_webid = function(host, port) {
       }
     },
     error: function(c, error) {
-      forge.log.debug(cat, 'Client error: ' + error.message);
+      forge.log.debug(cat, 'Client error: ' + error.message, error);
     }
   });
 
@@ -108,10 +112,9 @@ var websocket_webid = function(host, port) {
     tls.process(forge.util.decode64(evt.data));
   };
   ws.onclose = function(evt) {
-    forge.log.debug(cat, 'WebSocket closed');
+    forge.log.debug(cat, 'WebSocket closed', evt);
   };
   ws.onerror = function(evt) {
-    forge.log.debug(cat, 'WebSocket error', err);
+    forge.log.debug(cat, 'WebSocket error', evt);
   };
 };
-
