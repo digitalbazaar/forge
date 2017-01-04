@@ -1,5 +1,6 @@
-var ws = require('nodejs-websocket');
+// Forge WebSockets Test Server
 var forge = require('../..');
+var ws = require('nodejs-websocket');
 
 // function to create certificate
 var createCert = function(cn, data) {
