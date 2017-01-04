@@ -18,11 +18,11 @@ program
   //.option('--host [host]',
   //  'host to bind to [localhost]')
   .option('--http-port [port]',
-    'port to bind to HTTP [19400]', 19400)
+    'port for HTTP [19400]', 19400)
   .option('--https-port [port]',
-    'port to bind to HTTPS [19443]', 19443)
+    'port for HTTPS [19443]', 19443)
   .option('--policy-port [port]',
-    'port used to serve policy file [19945]', 19945)
+    'port for policy files [19945]', 19945)
   .parse(process.argv);
 
 function contentServer(callback) {
