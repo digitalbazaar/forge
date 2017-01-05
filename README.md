@@ -122,9 +122,9 @@ with [Bower][]:
 
     bower install forge
 
-### Requirements
+### Development Requirements
 
-The core JavaScript has the following requirements:
+The core JavaScript has the following requirements to build and test:
 
 * Building a browser bundle:
   * Node.js
