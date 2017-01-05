@@ -32,6 +32,7 @@ Forge ChangeLog
 - Run PhantomJS tests in Travis-CI.
 - Add "Donations" section to README.
 - Add IRC to "Contact" section of README.
+- Add "Security Considerations" section to README.
 
 ### Removed
 
