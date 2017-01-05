@@ -1,6 +1,7 @@
 var ASSERT = require('assert');
 var ASN1 = require('../../lib/asn1');
 var UTIL = require('../../lib/util');
+var support = require('./support');
 
 (function() {
   describe('asn1', function() {
@@ -208,14 +209,27 @@ var UTIL = require('../../lib/util');
     })();
 
     (function() {
-      // TODO: add a test for Jan 1 2050 once phantomjs 2.0 is out and
-      // its date bugs are fixed
+      // TODO: remove skipping PhantomJS tests when possible
+      // skip 2050 tests in PhantomJS
+      // likely due to https://bugs.webkit.org/show_bug.cgi?id=130123
+      // can't parse dates between 2034-03-01 and 2100-02-28
       var tests = [{
         in: 'Jan 1 1949 00:00:00 GMT',
         out: '19490101000000Z'
+      }, {
+        in: 'Jan 1 2000 00:00:00 GMT',
+        out: '20000101000000Z'
+      }, {
+        in: 'Jan 1 2050 00:00:00 GMT',
+        out: '20500101000000Z',
+        phantomjsskip: true
+      }, {
+        in: 'Mar 1 2100 00:00:00 GMT',
+        out: '21000301000000Z'
       }];
       tests.forEach(function(test) {
-        it('should convert date "' + test.in + '" to generalized time', function() {
+        var _it = (test.phantomjsskip && support.isPhantomJS) ? it.skip : it;
+        _it('should convert date "' + test.in + '" to generalized time', function() {
           var d = ASN1.dateToGeneralizedTime(new Date(test.in));
           ASSERT.equal(d, test.out);
         });
