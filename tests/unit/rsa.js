@@ -137,7 +137,7 @@ var support = require('./support');
       _pairCmp(pair1, pair2);
     });
 
-    it.skip('should generate the same 512 bit key pair (sync+async)', function(done) {
+    it('should generate the same 512 bit key pair (sync+async)', function(done) {
       var pair1 = _genSync({random: false});
       _genAsync({random: false}, function(pair2) {
         _pairCmp(pair1, pair2);
@@ -145,7 +145,7 @@ var support = require('./support');
       });
     });
 
-    it.skip('should generate the same 512 bit key pair (async+sync)', function(done) {
+    it('should generate the same 512 bit key pair (async+sync)', function(done) {
       _genAsync({random: false}, function(pair1) {
         var pair2 = _genSync({random: false});
         _pairCmp(pair1, pair2);
@@ -153,7 +153,7 @@ var support = require('./support');
       });
     });
 
-    it.skip('should generate the same 512 bit key pair (async+async)', function(done) {
+    it('should generate the same 512 bit key pair (async+async)', function(done) {
       var pair1;
       var pair2;
       // compare and finish when both complete
