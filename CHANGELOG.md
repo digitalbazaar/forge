@@ -36,6 +36,7 @@ Forge ChangeLog
 - Add IRC to "Contact" section of README.
 - Add "Security Considerations" section to README.
 - Add pbkdf2 usePureJavaScript test.
+- Add async rsa.generateKeyPair tests.
 
 ### Removed
 
