@@ -110,6 +110,18 @@ You can then use forge as a regular module:
 var forge = require('node-forge');
 ```
 
+### Bundle / Bower
+
+Pre-built and minimized basic forge bundles are built in the [UMD][] format for
+each release and distributed in a separate repository:
+
+https://github.com/digitalbazaar/forge-dist
+
+This bundle can be used in many environments. In particular it can be installed
+with [Bower][]:
+
+    bower install forge
+
 ### Requirements
 
 The core JavaScript has the following requirements:
@@ -1896,6 +1908,7 @@ Financial support is welcome and helps contribute to futher development:
 [SHA-384]: http://en.wikipedia.org/wiki/SHA-384
 [SHA-512]: http://en.wikipedia.org/wiki/SHA-512
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
+[UMD]: https://github.com/umdjs/umd
 [X.509]: http://en.wikipedia.org/wiki/X.509
 [freenode]: https://freenode.net/
 [webpack]: https://webpack.github.io/

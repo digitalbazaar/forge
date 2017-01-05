@@ -20,7 +20,9 @@ Versioning
 Release Process
 ---------------
 
-* commit changes
+## Update the main repository:
+
+* Commit changes.
 * `$EDITOR package.json`: update to release version and remove `-dev` suffix.
 * `git commit package.json -m "Release {version}."`
 * `git tag {version}`
@@ -29,12 +31,32 @@ Release Process
 * `git push`
 * `git push --tags`
 
+## Publish to NPM:
+
 To ensure a clean upload, use a clean updated checkout, and run the following:
 
 * `git checkout {version}`
 * `npm publish`
 
+## Update bundled distribution
+
+This is kept in a different repository due to accumulated per-release bundle
+sizes.
+
+* Checkout [forge-dist][].
+* Build a clean Forge version you want to distribute:
+  * `git checkout {version}`
+  * `npm run build`
+* Copy files to `forge-dist`:
+  * `cp FORGE/dist/forge.min.js FORGE/dist/jsbn.min.js FORGEDIST/dist/`
+* Release `forge-dist`:
+  * Commit changes.
+  * `git tag {version}`
+  * `git push`
+  * `git push --tags`
+
 [Node.js Style Guide]: http://nodeguide.com/style.html
-[jshint]: http://www.jshint.com/install/
-[Semantic Versioning]: http://semver.org/
 [README]: ./README.md
+[Semantic Versioning]: http://semver.org/
+[forge-dist]: https://github.com/digitalbazaar/forge-dist
+[jshint]: http://www.jshint.com/install/
