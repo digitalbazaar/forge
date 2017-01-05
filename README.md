@@ -84,6 +84,7 @@ Documentation
 
 ### Other
 
+* [Security Considerations](#security-considerations)
 * [Library Background](#library-background)
 * [Contact](#contact)
 * [Donations](#donations)
@@ -1819,6 +1820,30 @@ The [flash README](./flash/README.md) provides details on rebuilding the
 optional Flash component used for networking. It also provides details on
 Policy Server support.
 
+Security Considerations
+-----------------------
+
+When using this code please keep the following in mind:
+
+- Cryptography is hard. Please review and test this code before depending on it
+  for critical functionality.
+- The nature of JavaScript is that execution of this code depends on trusting a
+  very large set of JavaScript tools and systems. Consider runtime variations,
+  runtime characteristics, runtime optimization, code optimization, code
+  minimization, code obfuscation, bundling tools, possible bugs, the Forge code
+  itself, and so on.
+- If using pre-built bundles from [Bower][] or similar be aware someone else
+  ran the tools to create those files.
+- Use "native" functionality where possible. This can be critical when dealing
+  with performance and random number generation. Note that the JavaScript
+  random number algorithms should perform well if given suitable entropy.
+- Understand possible attacks against cryptographic systems. For instance
+  timing attacks may be possible due to the difficulty in implementing constant
+  time algorithms in pure JavaScript.
+- Certain features in this library are less susceptible to attacks depending on
+  usage. This primarily includes features that deal with data format
+  manipulation or those that are not involved in communication.
+
 Library Background
 ------------------
 
@@ -1845,6 +1870,7 @@ Financial support is welcome and helps contribute to futher development:
 [3DES]: http://en.wikipedia.org/wiki/Triple_DES
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
+[Bower]: https://bower.io/
 [Browserify]: http://browserify.org/
 [CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
