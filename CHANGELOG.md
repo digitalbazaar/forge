@@ -35,6 +35,7 @@ Forge ChangeLog
 - Add "Donations" section to README.
 - Add IRC to "Contact" section of README.
 - Add "Security Considerations" section to README.
+- Add pbkdf2 usePureJavaScript test.
 
 ### Removed
 
