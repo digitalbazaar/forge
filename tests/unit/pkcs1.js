@@ -1011,13 +1011,12 @@ var UTIL = require('../../lib/util');
         md = MD.sha256.create();
       }
 
-      for(var i = 0; i < examples.length; ++i) {
-        var ex = examples[i];
+      examples.forEach(function(ex) {
         it('should test ' + ex.title, function() {
           checkOAEPEncrypt(
             publicKey, privateKey, md, ex.message, ex.seed, ex.encrypted);
         });
-      }
+      });
     }
 
     function checkOAEPEncrypt(

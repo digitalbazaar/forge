@@ -161,14 +161,13 @@ var UTIL = require('../../lib/util');
         in: '20110223123400.123',
         out: 1298464440123
       }];
-      for(var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
+      tests.forEach(function(test) {
         it('should convert local generalized time "' + test.in + '" to a Date', function() {
           var d = ASN1.generalizedTimeToDate(test.in);
           var localOffset = d.getTimezoneOffset() * 60000;
           ASSERT.equal(d.getTime(), test.out + localOffset);
         });
-      }
+      });
     })();
 
     (function() {
@@ -200,13 +199,12 @@ var UTIL = require('../../lib/util');
         in: '20110223123400.123-0200', // Wed Feb 23 14:34:00.123 UTC 2011
         out: 1298471640123
       }];
-      for(var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
+      tests.forEach(function(test) {
         it('should convert utc generalized time "' + test.in + '" to a Date', function() {
           var d = ASN1.generalizedTimeToDate(test.in);
           ASSERT.equal(d.getTime(), test.out);
         });
-      }
+      });
     })();
 
     (function() {
@@ -216,13 +214,12 @@ var UTIL = require('../../lib/util');
         in: 'Jan 1 1949 00:00:00 GMT',
         out: '19490101000000Z'
       }];
-      for(var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
+      tests.forEach(function(test) {
         it('should convert date "' + test.in + '" to generalized time', function() {
           var d = ASN1.dateToGeneralizedTime(new Date(test.in));
           ASSERT.equal(d, test.out);
         });
-      }
+      });
     })();
 
     (function() {
@@ -248,13 +245,12 @@ var UTIL = require('../../lib/util');
         in: '500101000000Z',
         out: -631152000000
       }];
-      for(var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
+      tests.forEach(function(test) {
         it('should convert utc time "' + test.in + '" to a Date', function() {
           var d = ASN1.utcTimeToDate(test.in);
           ASSERT.equal(d.getTime(), test.out);
         });
-      }
+      });
     })();
 
     (function() {
@@ -262,13 +258,12 @@ var UTIL = require('../../lib/util');
         in: 'Sat Dec 31 1949 19:00:00 GMT-0500',
         out: '500101000000Z'
       }];
-      for(var i = 0; i < tests.length; ++i) {
-        var test = tests[i];
+      tests.forEach(function(test) {
         it('should convert date "' + test.in + '" to utc time', function() {
           var d = ASN1.dateToUtcTime(new Date(test.in));
           ASSERT.equal(d, test.out);
         });
-      }
+      });
     })();
   });
 })();
