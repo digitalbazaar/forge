@@ -1,4 +1,5 @@
 var ASSERT = require('assert');
+var FORGE = require('../../lib/forge');
 var PBKDF2 = require('../../lib/pbkdf2');
 var MD = require('../../lib/md');
 var UTIL = require('../../lib/util');
@@ -112,6 +113,22 @@ var UTIL = require('../../lib/util');
         ASSERT.equal(dkHex, '9da8a5f4ae605f35e82e5beac5f362df15c4255d88f738d641466a4107f9970238e768e72af29ac89a1b16ff277b31d2');
         done();
       });
+    });
+
+    it('should derive a password with "usePureJavaScript"', function() {
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test possible native mode
+      FORGE.options.usePureJavaScript = false;
+      var dkHex0 = UTIL.bytesToHex(PBKDF2('password', 'salt', 1024, 20));
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      var dkHex1 = UTIL.bytesToHex(PBKDF2('password', 'salt', 1024, 20));
+      // check
+      ASSERT.equal(dkHex0, 'f9d39c571d66a03c2a71a81535b0c2d0396b500a');
+      ASSERT.equal(dkHex0, dkHex1);
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
     });
   });
 })();
