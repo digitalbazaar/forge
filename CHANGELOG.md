@@ -16,6 +16,8 @@ Forge ChangeLog
 - Improve OID mapping code.
 - Change test servers from Python to JavaScript.
 - Improve PhantomJS support.
+- Move Bower/bundle support to
+  [forge-dist](https://github.com/digitalbazaar/forge-dist).
 
 ### Added
 
