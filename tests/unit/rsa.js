@@ -6,6 +6,7 @@ var MGF = require('../../lib/mgf');
 var PSS = require('../../lib/pss');
 var RANDOM = require('../../lib/random');
 var UTIL = require('../../lib/util');
+var support = require('./support');
 
 (function() {
   var _pem = {
@@ -54,8 +55,9 @@ var UTIL = require('../../lib/util');
     '5073af0337ff215a8e1b2332d668691f4fb731440055420c24ac451dd3c913f4';
 
   describe('rsa', function() {
-    it('should generate 512 bit key pair', function() {
-      var pair = RSA.generateKeyPair(512);
+    // check a pair
+    function _pairCheck(pair) {
+      // PEM check
       ASSERT.equal(PKI.privateKeyToPem(pair.privateKey).indexOf('-----BEGIN RSA PRIVATE KEY-----'), 0);
       ASSERT.equal(PKI.publicKeyToPem(pair.publicKey).indexOf('-----BEGIN PUBLIC KEY-----'), 0);
 
@@ -64,39 +66,116 @@ var UTIL = require('../../lib/util');
       md.update('0123456789abcdef');
       var signature = pair.privateKey.sign(md);
       ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
-    });
+    };
 
-    it('should generate the same 512 bit key pair', function() {
-      var prng = RANDOM.createInstance();
-      prng.seedFileSync = function(needed) {
-        return UTIL.fillString('a', needed);
+    // compare pairs
+    function _pairCmp(pair1, pair2) {
+      var pem1 = {
+        privateKey: PKI.privateKeyToPem(pair1.privateKey),
+        publicKey: PKI.publicKeyToPem(pair1.publicKey)
       };
-      var pair = RSA.generateKeyPair(512, {prng: prng});
-      var pem = {
-        privateKey: PKI.privateKeyToPem(pair.privateKey),
-        publicKey: PKI.publicKeyToPem(pair.publicKey)
-      };
-      ASSERT.equal(pem.privateKey.indexOf('-----BEGIN RSA PRIVATE KEY-----'), 0);
-      ASSERT.equal(pem.publicKey.indexOf('-----BEGIN PUBLIC KEY-----'), 0);
-
-      // sign and verify
-      var md = MD.sha1.create();
-      md.update('0123456789abcdef');
-      var signature = pair.privateKey.sign(md);
-      ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
-
-      // create same key pair by using same PRNG
-      prng = RANDOM.createInstance();
-      prng.seedFileSync = function(needed) {
-        return UTIL.fillString('a', needed);
-      };
-      var pair2 = RSA.generateKeyPair(512, {prng: prng});
       var pem2 = {
         privateKey: PKI.privateKeyToPem(pair2.privateKey),
         publicKey: PKI.publicKeyToPem(pair2.publicKey)
       };
-      ASSERT.equal(pem.privateKey, pem2.privateKey);
-      ASSERT.equal(pem.publicKey, pem2.publicKey);
+      ASSERT.equal(pem1.privateKey, pem2.privateKey);
+      ASSERT.equal(pem1.publicKey, pem2.publicKey);
+    }
+
+    // create constant prng
+    function _constPrng() {
+      var prng = RANDOM.createInstance();
+      prng.seedFileSync = function(needed) {
+        return UTIL.fillString('a', needed);
+      };
+      return prng;
+    }
+
+    // generate pair in sync mode
+    function _genSync(options) {
+      var pair;
+      if(options.random) {
+        pair = RSA.generateKeyPair(512);
+      } else {
+        pair = RSA.generateKeyPair(512, {prng: _constPrng()});
+      }
+      _pairCheck(pair);
+      return pair;
+    }
+
+    // generate pair in async mode
+    function _genAsync(options, callback) {
+      var genOptions = {
+        bits: 512
+      };
+      if(!options.random) {
+        genOptions.prng = _constPrng();
+      }
+      RSA.generateKeyPair(genOptions, function(err, pair) {
+        ASSERT.ifError(err);
+        _pairCheck(pair);
+        callback(pair);
+      });
+    }
+
+    // skip async tests if in PhantomJS
+    var _itAsync = support.isPhantomJS ? it.skip : it;
+
+    it('should generate 512 bit key pair (sync)', function() {
+      _genSync({random: true});
+    });
+
+    _itAsync('should generate 512 bit key pair (async)', function(done) {
+      _genAsync({random: true}, function() {
+        done();
+      });
+    });
+
+    it('should generate the same 512 bit key pair (sync+sync)', function() {
+      var pair1 = _genSync({random: false});
+      var pair2 = _genSync({random: false});
+      _pairCmp(pair1, pair2);
+    });
+
+    it.skip('should generate the same 512 bit key pair (sync+async)', function(done) {
+      var pair1 = _genSync({random: false});
+      _genAsync({random: false}, function(pair2) {
+        _pairCmp(pair1, pair2);
+        done();
+      });
+    });
+
+    it.skip('should generate the same 512 bit key pair (async+sync)', function(done) {
+      _genAsync({random: false}, function(pair1) {
+        var pair2 = _genSync({random: false});
+        _pairCmp(pair1, pair2);
+        done();
+      });
+    });
+
+    it.skip('should generate the same 512 bit key pair (async+async)', function(done) {
+      var pair1;
+      var pair2;
+      // compare and finish when both complete
+      function _done() {
+        if(pair1 && pair2) {
+          _pairCmp(pair1, pair2);
+          done();
+        }
+      }
+      _genAsync({random: false}, function(pair) {
+        pair1 = pair;
+        _done();
+      });
+      _genAsync({random: false}, function(pair) {
+        pair2 = pair;
+        _done();
+      });
+    });
+
+    it.skip('should generate the same 512 bit key pair (sync+async+purejs)', function(done) {
+      // FIXME: add sync+async+purejs
+      done();
     });
 
     it('should convert private key to/from PEM', function() {
