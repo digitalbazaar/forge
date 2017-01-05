@@ -400,14 +400,8 @@ var UTIL = require('../../lib/util');
         return;
       }
       var bytes = new Uint8Array([102, 111, 111]);
-      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
-      // or a fallback is implemented
-      try {
-        var result = UTIL.text.utf8.decode(bytes);
-        ASSERT.equal(result, 'foo');
-      } catch(e) {
-        ASSERT.isTrue(e instanceof TypeError);
-      }
+      var result = UTIL.text.utf8.decode(bytes);
+      ASSERT.equal(result, 'foo');
     });
 
     it('should convert "\ud83c\udc00" to its UTF-8 representation', function() {
@@ -427,14 +421,8 @@ var UTIL = require('../../lib/util');
         return;
       }
       var bytes = new Uint8Array([240, 159, 128, 128]);
-      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
-      // or a fallback is implemented
-      try {
-        var result = UTIL.text.utf8.decode(bytes);
-        ASSERT.equal(result, '\ud83c\udc00');
-      } catch(e) {
-        ASSERT.isTrue(e instanceof TypeError);
-      }
+      var result = UTIL.text.utf8.decode(bytes);
+      ASSERT.equal(result, '\ud83c\udc00');
     });
 
     it('should convert "foo" to its UTF-16 representation', function() {
@@ -456,14 +444,8 @@ var UTIL = require('../../lib/util');
         return;
       }
       var bytes = new Uint8Array([102, 0, 111, 0, 111, 0]);
-      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
-      // or a fallback is implemented
-      try {
-        var result = UTIL.text.utf16.decode(bytes);
-        ASSERT.equal(result, 'foo');
-      } catch(e) {
-        ASSERT.isTrue(e instanceof TypeError);
-      }
+      var result = UTIL.text.utf16.decode(bytes);
+      ASSERT.equal(result, 'foo');
     });
 
     it('should convert "\ud83c\udc00" to its UTF-16 representation', function() {
@@ -483,14 +465,8 @@ var UTIL = require('../../lib/util');
         return;
       }
       var bytes = new Uint8Array([60, 216, 0, 220]);
-      // FIXME: remove try/catch once phantomjs supports apply(TypedArray)
-      // or a fallback is implemented
-      try {
-        var result = UTIL.text.utf16.decode(bytes);
-        ASSERT.equal(result, '\ud83c\udc00');
-      } catch(e) {
-        ASSERT.isTrue(e instanceof TypeError);
-      }
+      var result = UTIL.text.utf16.decode(bytes);
+      ASSERT.equal(result, '\ud83c\udc00');
     });
   });
 })();
