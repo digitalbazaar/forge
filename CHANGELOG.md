@@ -53,7 +53,7 @@ Forge ChangeLog
   flag `forge.options.usePureJavaScript`.
 - (npm,bower) If you used the default main file there is little to nothing to
   change.
-- (npm) If you accsesed a sub-resource like `forge/js/pki` you should either
+- (npm) If you accessed a sub-resource like `forge/js/pki` you should either
   switch to just using the main `forge` and access `forge.pki` or update to
   `forge/lib/pki`.
 - (bower) If you used a sub-resource like `forge/js/pki` you should switch to
@@ -74,7 +74,7 @@ Forge ChangeLog
 - This major update requires updating the version to 0.7.x. The existing
   work-in-progress "0.7.x" branch will be painfully rebased on top of this new
   0.7.x and moved forward to 0.8.x or later as needed.
-- 0.7.x is a start of simplifing forge based on common issues and what has
+- 0.7.x is a start of simplifying forge based on common issues and what has
   appeared to be the most common usage. Please file issues with feedback if the
   changes are problematic for your use cases.
 
