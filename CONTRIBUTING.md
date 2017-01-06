@@ -50,7 +50,7 @@ sizes.
 * Copy files to `forge-dist`:
   * `cp dist/forge.min.js{,.map} dist/prime.worker.min.js{,.map} FORGEDIST/dist/`
 * Release `forge-dist`:
-  * Commit changes.
+  * `git commit -a -m "Release {version}."`
   * `git tag {version}`
   * `git push`
   * `git push --tags`
