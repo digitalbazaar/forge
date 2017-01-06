@@ -64,8 +64,8 @@ Forge ChangeLog
   `/bower_components/forge/dist/prime.worker.min.js`.
 - (all) If you used the networking support or flash socket support, you will
   need to use a custom build and/or adjust where files are loaded from. This
-  functionality is not included in the bower distribution by default and has
-  moved directories in the main repository.
+  functionality is not included in the bower distribution by default and is
+  also now in a different directory.
 - (all) The library should now directly support building custom bundles with
   webpack, browserify, or similar.
 
