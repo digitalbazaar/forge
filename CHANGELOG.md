@@ -22,7 +22,7 @@ Forge ChangeLog
 ### Added
 
 - webpack bundler support via `npm run build`:
-  - Builds .js, .min.js, and sourcemaps.
+  - Builds .js, .min.js, and basic sourcemaps.
   - Basic build: forge.js.
   - Build with extra utils and networking support: forge.all.js.
   - Build WebWorker support: prime.worker.js.

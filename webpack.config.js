@@ -82,7 +82,7 @@ outputs.forEach((info) => {
       library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
     },
-    devtool: 'source-map',
+    devtool: 'cheap-module-source-map',
     plugins: [
       new webpack.optimize.UglifyJsPlugin({
         compress: {
