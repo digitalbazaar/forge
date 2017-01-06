@@ -1,6 +1,6 @@
 {
   "name": "node-forge",
-  "version": "0.6.47-dev",
+  "version": "0.7.0-dev",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
   "homepage": "https://github.com/digitalbazaar/forge",
   "author": {
