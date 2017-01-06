@@ -48,7 +48,7 @@ sizes.
   * `git checkout {version}`
   * `npm run build`
 * Copy files to `forge-dist`:
-  * `cp dist/forge.min.js dist/prime.worker.min.js FORGEDIST/dist/`
+  * `cp dist/forge.min.js{,.map} dist/prime.worker.min.js{,.map} FORGEDIST/dist/`
 * Release `forge-dist`:
   * Commit changes.
   * `git tag {version}`
