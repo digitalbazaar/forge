@@ -40,9 +40,7 @@ function contentServer(callback) {
     express.static(path.join(
       __dirname, '..', 'flash', 'swf', 'SocketPool.swf')));
   app.use('/forge/prime.worker.js',
-    express.static(path.join(__dirname, '..', 'lib', 'prime.worker.js')));
-  app.use('/forge/jsbn.js',
-    express.static(path.join(__dirname, '..', 'dist', 'jsbn.js')));
+    express.static(path.join(__dirname, '..', 'dist', 'prime.worker.js')));
   app.use('/result.txt',
     express.static(path.join(__dirname, 'legacy', 'result.txt')));
 

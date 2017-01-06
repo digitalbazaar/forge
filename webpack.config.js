@@ -24,10 +24,12 @@ const outputs = [
     entry: ['./lib/index.all.js'],
     filenameBase: 'forge.all'
   },
-  // jsbn module (used from prime.worker.js)
+  // prime webworker
   {
-    entry: ['./lib/jsbn.js', './lib/forge.js'],
-    filenameBase: 'jsbn'
+    entry: ['./lib/prime.worker.js', './lib/forge.js'],
+    filenameBase: 'prime.worker',
+    library: null,
+    libraryTarget: null
   }
   // custom builds can be created by specifying the high level files you need
   // webpack will pull in dependencies as needed
@@ -61,17 +63,23 @@ outputs.forEach((info) => {
     output: {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
-      library: '[name]',
+      library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
     }
   });
+  if(info.library === null) {
+    delete bundle.output.library;
+  }
+  if(info.libraryTarget === null) {
+    delete bundle.output.libraryTarget;
+  }
 
   // optimized and minified bundle
   const minify = Object.assign({}, common, {
     output: {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
-      library: '[name]',
+      library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
     },
     devtool: 'source-map',
@@ -87,6 +95,12 @@ outputs.forEach((info) => {
       })
     ]
   });
+  if(info.library === null) {
+    delete minify.output.library;
+  }
+  if(info.libraryTarget === null) {
+    delete minify.output.libraryTarget;
+  }
 
   module.exports.push(bundle);
   module.exports.push(minify);

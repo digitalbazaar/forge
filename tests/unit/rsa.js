@@ -106,7 +106,8 @@ var support = require('./support');
     // generate pair in async mode
     function _genAsync(options, callback) {
       var genOptions = {
-        bits: 512
+        bits: 512,
+        workerScript: '/forge/prime.worker.js'
       };
       if(!options.random) {
         genOptions.prng = _constPrng();
