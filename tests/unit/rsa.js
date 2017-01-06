@@ -1,4 +1,5 @@
 var ASSERT = require('assert');
+var FORGE = require('../../lib/forge');
 var PKI = require('../../lib/pki');
 var RSA = require('../../lib/rsa');
 var MD = require('../../lib/md');
@@ -82,8 +83,8 @@ var support = require('./support');
       ASSERT.equal(pem1.publicKey, pem2.publicKey);
     }
 
-    // create constant prng
-    function _constPrng() {
+    // create same prng
+    function _samePrng() {
       var prng = RANDOM.createInstance();
       prng.seedFileSync = function(needed) {
         return UTIL.fillString('a', needed);
@@ -93,11 +94,12 @@ var support = require('./support');
 
     // generate pair in sync mode
     function _genSync(options) {
+      options = options || {samePrng: false};
       var pair;
-      if(options.random) {
-        pair = RSA.generateKeyPair(512);
+      if(options.samePrng) {
+        pair = RSA.generateKeyPair(512, {prng: _samePrng()});
       } else {
-        pair = RSA.generateKeyPair(512, {prng: _constPrng()});
+        pair = RSA.generateKeyPair(512);
       }
       _pairCheck(pair);
       return pair;
@@ -105,12 +107,19 @@ var support = require('./support');
 
     // generate pair in async mode
     function _genAsync(options, callback) {
+      if(typeof callback !== 'function') {
+        callback = options;
+        options = {samePrng: false};
+      }
       var genOptions = {
         bits: 512,
         workerScript: '/forge/prime.worker.js'
       };
-      if(!options.random) {
-        genOptions.prng = _constPrng();
+      if(options.samePrng) {
+        genOptions.prng = _samePrng();
+      }
+      if('workers' in options) {
+        genOptions.workers = options.workers;
       }
       RSA.generateKeyPair(genOptions, function(err, pair) {
         ASSERT.ifError(err);
@@ -119,64 +128,107 @@ var support = require('./support');
       });
     }
 
-    // skip async tests if in PhantomJS
-    var _itAsync = support.isPhantomJS ? it.skip : it;
-
     it('should generate 512 bit key pair (sync)', function() {
-      _genSync({random: true});
+      _genSync();
     });
 
-    _itAsync('should generate 512 bit key pair (async)', function(done) {
-      _genAsync({random: true}, function() {
+    it('should generate 512 bit key pair (sync+purejs)', function() {
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      _genSync();
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
+    });
+
+    it('should generate 512 bit key pair (async)', function(done) {
+      _genAsync(function() {
+        done();
+      });
+    });
+
+    it('should generate 512 bit key pair (async+purejs)', function(done) {
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      _genAsync(function() {
+        // restore
+        FORGE.options.usePureJavaScript = purejs;
+        done();
+      });
+    });
+
+    it('should generate 512 bit key pair (async+workers)', function(done) {
+      _genAsync({
+        workers: -1
+      }, function() {
         done();
       });
     });
 
     it('should generate the same 512 bit key pair (sync+sync)', function() {
-      var pair1 = _genSync({random: false});
-      var pair2 = _genSync({random: false});
+      var pair1 = _genSync({samePrng: true});
+      var pair2 = _genSync({samePrng: true});
       _pairCmp(pair1, pair2);
     });
 
-    it('should generate the same 512 bit key pair (sync+async)', function(done) {
-      var pair1 = _genSync({random: false});
-      _genAsync({random: false}, function(pair2) {
-        _pairCmp(pair1, pair2);
+    it('should generate the same 512 bit key pair (sync+purejs)', function() {
+      var pair1 = _genSync({samePrng: true});
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      var pair2 = _genSync({samePrng: true});
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
+      _pairCmp(pair1, pair2);
+    });
+
+    it('should generate 512 bit key pairs (sync+async)', function(done) {
+      var pair1 = _genSync({samePrng: true});
+      _genAsync({samePrng: true}, function(pair2) {
+        // check if the same on supported deterministic platforms
+        if(UTIL.isNodejs) {
+          _pairCmp(pair1, pair2);
+        }
         done();
       });
     });
 
-    it('should generate the same 512 bit key pair (async+sync)', function(done) {
-      _genAsync({random: false}, function(pair1) {
-        var pair2 = _genSync({random: false});
-        _pairCmp(pair1, pair2);
+    it('should generate 512 bit key pairs (async+sync)', function(done) {
+      _genAsync({samePrng: true}, function(pair1) {
+        var pair2 = _genSync({samePrng: true});
+        // check if the same on supported deterministic platforms
+        if(UTIL.isNodejs) {
+          _pairCmp(pair1, pair2);
+        }
         done();
       });
     });
 
-    it('should generate the same 512 bit key pair (async+async)', function(done) {
+    it('should generate 512 bit key pairs (async+async)', function(done) {
       var pair1;
       var pair2;
-      // compare and finish when both complete
+      // finish when both complete
       function _done() {
         if(pair1 && pair2) {
-          _pairCmp(pair1, pair2);
+          // check if the same on supported deterministic platforms
+          if(UTIL.isNodejs) {
+            _pairCmp(pair1, pair2);
+          }
           done();
         }
       }
-      _genAsync({random: false}, function(pair) {
+      _genAsync({samePrng: true}, function(pair) {
         pair1 = pair;
         _done();
       });
-      _genAsync({random: false}, function(pair) {
+      _genAsync({samePrng: true}, function(pair) {
         pair2 = pair;
         _done();
       });
-    });
-
-    it.skip('should generate the same 512 bit key pair (sync+async+purejs)', function(done) {
-      // FIXME: add sync+async+purejs
-      done();
     });
 
     it('should convert private key to/from PEM', function() {
