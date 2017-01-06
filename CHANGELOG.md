@@ -37,6 +37,7 @@ Forge ChangeLog
 - Add "Security Considerations" section to README.
 - Add pbkdf2 usePureJavaScript test.
 - Add rsa.generateKeyPair async and usePureJavaScript tests.
+- Add .editorconfig support.
 
 ### Removed
 
