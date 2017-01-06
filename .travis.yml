@@ -6,9 +6,15 @@ node_js:
 sudo: false
 install: npm install
 script:
-  - npm test
-  - BUNDLER=webpack npm run test-karma
-  - BUNDLER=browserify npm run test-karma
+  - if [ "x$BUNDLER" = "x" ]; then npm test; fi
+  - if [ "x$BUNDLER" != "x" ]; then npm run test-karma; fi
+# only run karma tests for one node version
+matrix:
+  include:
+  - node_js: "6"
+    env: BUNDLER=webpack
+  - node_js: "6"
+    env: BUNDLER=browserify
 notifications:
   email:
     on_success: change
