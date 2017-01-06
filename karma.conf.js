@@ -5,7 +5,10 @@ module.exports = function(config) {
   var bundler = process.env.BUNDLER || 'webpack';
 
   var frameworks = ['mocha'];
+  // main bundle preprocessors
   var preprocessors = [];
+  // webworker bundle preprocessors (always use webpack)
+  var workerPreprocessors = ['webpack'];
 
   if(bundler === 'browserify') {
     frameworks.push(bundler);
@@ -15,7 +18,6 @@ module.exports = function(config) {
   } else {
     throw Error('Unknown bundler');
   }
-
 
   config.set({
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -43,7 +45,7 @@ module.exports = function(config) {
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
       'tests/unit/index.js': preprocessors,
-      'lib/prime.worker.js': preprocessors
+      'lib/prime.worker.js': workerPreprocessors
     },
 
     browserify: {
