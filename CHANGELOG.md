@@ -25,7 +25,7 @@ Forge ChangeLog
   - Builds .js, .min.js, and sourcemaps.
   - Basic build: forge.js.
   - Build with extra utils and networking support: forge.all.js.
-  - Builds extra support: jsbn.js.
+  - Build WebWorker support: prime.worker.js.
 - Browserify support in package.json.
 - Karma browser testing.
 - `forge.options` field.

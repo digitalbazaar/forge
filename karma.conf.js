@@ -27,7 +27,12 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'tests/unit/index.js'
+      'tests/unit/index.js',
+      // for webworkers
+      {
+        pattern: 'lib/prime.worker.js',
+        watched: false, included: false, served: true, nocache: false
+      }
     ],
 
     // list of files to exclude
@@ -37,7 +42,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'tests/unit/index.js': preprocessors
+      'tests/unit/index.js': preprocessors,
+      'lib/prime.worker.js': preprocessors
     },
 
     browserify: {
@@ -83,6 +89,11 @@ module.exports = function(config) {
         // increase from default 2s
         timeout: 10000
       }
+    },
+
+    // Proxied paths
+    proxies: {
+      '/forge/prime.worker.js': '/base/lib/prime.worker.js'
     }
   });
 };
