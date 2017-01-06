@@ -1,0 +1,43 @@
+# cruft
+*.py[co]
+*.sw[nop]
+*~
+.bower.json
+.cdtproject
+.classpath
+.cproject
+.project
+.settings
+TAGS
+
+# development
+.editorconfig
+.istanbul.yml
+.jscsrc
+.jshintignore
+.jshintrc
+.npmignore
+.travis.yml
+CONTRIBUTING.md
+examples
+karma*.js
+tests
+webpack*.js
+
+# installed
+node_modules
+
+# built
+dist
+coverage
+
+# browser WebWorker files
+lib/prime.worker.js
+
+# index.all.js
+lib/index.all.js
+lib/form.js
+lib/http.js
+lib/socket.js
+lib/tlssocket.js
+lib/xhr.js
