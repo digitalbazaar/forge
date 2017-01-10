@@ -1846,12 +1846,15 @@ When using this code please keep the following in mind:
   itself, and so on.
 - If using pre-built bundles from [Bower][] or similar be aware someone else
   ran the tools to create those files.
+- Use a secure transport channel such as [TLS][] to load scripts and consider
+  using additional security mechanisms such as [Subresource Integrity][] script
+  attributes.
 - Use "native" functionality where possible. This can be critical when dealing
   with performance and random number generation. Note that the JavaScript
   random number algorithms should perform well if given suitable entropy.
-- Understand possible attacks against cryptographic systems. For instance
-  timing attacks may be possible due to the difficulty in implementing constant
-  time algorithms in pure JavaScript.
+- Understand possible attacks against cryptographic systems. For instance side
+  channel and timing attacks may be possible due to the difficulty in
+  implementing constant time algorithms in pure JavaScript.
 - Certain features in this library are less susceptible to attacks depending on
   usage. This primarily includes features that deal with data format
   manipulation or those that are not involved in communication.
@@ -1907,6 +1910,7 @@ Financial support is welcome and helps contribute to futher development:
 [SHA-256]: http://en.wikipedia.org/wiki/SHA-256
 [SHA-384]: http://en.wikipedia.org/wiki/SHA-384
 [SHA-512]: http://en.wikipedia.org/wiki/SHA-512
+[Subresource Integrity]: https://www.w3.org/TR/SRI/
 [TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
 [UMD]: https://github.com/umdjs/umd
 [X.509]: http://en.wikipedia.org/wiki/X.509
