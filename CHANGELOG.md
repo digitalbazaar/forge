@@ -9,7 +9,7 @@ Forge ChangeLog
 
 ### Changed
 
-- Major refactor to CommonJS plus a browser build system.
+- Major refactor to use CommonJS plus a browser build system.
 - Updated tests, examples, docs.
 - Updated dependencies.
 - Updated flash build system.
@@ -41,7 +41,7 @@ Forge ChangeLog
 
 ### Removed
 
-- Can no longer call `forge({...})` to create new instances.
+- **BREAKING**: Can no longer call `forge({...})` to create new instances.
 - Remove a large amount of old cruft.
 
 ### Migration from 0.6.x to 0.7.x
