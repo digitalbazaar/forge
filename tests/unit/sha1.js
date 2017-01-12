@@ -26,7 +26,7 @@ var UTIL = require('../../lib/util');
 
     it('should digest "c\'\u00e8"', function() {
       var md = SHA1.create();
-      md.update("c\'\u00e8", 'utf8');
+      md.update('c\'\u00e8', 'utf8');
       ASSERT.equal(
         md.digest().toHex(), '98c9a3f804daa73b68a5660d032499a447350c0d');
     });

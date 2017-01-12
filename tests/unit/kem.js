@@ -4,7 +4,6 @@ var MD = require('../../lib/md');
 var RSA = require('../../lib/rsa');
 var UTIL = require('../../lib/util');
 var JSBN = require('../../lib/jsbn');
-var RANDOM = require('../../lib/random');
 
 (function() {
   function FixedSecureRandom(str) {

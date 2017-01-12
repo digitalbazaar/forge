@@ -23,7 +23,7 @@ var UTIL = require('../../lib/util');
 
     it('should digest "c\'\u00e8"', function() {
       var md = MD5.create();
-      md.update("c\'\u00e8", 'utf8');
+      md.update('c\'\u00e8', 'utf8');
       ASSERT.equal(md.digest().toHex(), '8ef7c2941d78fe89f31e614437c9db59');
     });
 

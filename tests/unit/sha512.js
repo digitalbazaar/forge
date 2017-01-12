@@ -1,6 +1,5 @@
 var ASSERT = require('assert');
 var SHA512 = require('../../lib/sha512');
-var UTIL = require('../../lib/util');
 
 (function() {
   describe('sha512', function() {
@@ -37,7 +36,7 @@ var UTIL = require('../../lib/util');
 
     it('should digest "c\'\u00e8"', function() {
       var md = SHA512.create();
-      md.update("c\'\u00e8", 'utf8');
+      md.update('c\'\u00e8', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '9afdc0390dd91e81c63f858d1c6fcd9f949f3fc89dbdaed9e4211505bad63d8e8787797e2e9ea651285eb6954e51c4f0299837c3108cb40f1420bca1d237355c');
@@ -107,7 +106,7 @@ var UTIL = require('../../lib/util');
 
     it('should digest "c\'\u00e8"', function() {
       var md = SHA384.create();
-      md.update("c\'\u00e8", 'utf8');
+      md.update('c\'\u00e8', 'utf8');
       ASSERT.equal(
         md.digest().toHex(),
         '382ec8a92d50abf57f7d0f934ff3969d6d354d30c96f1616678a920677867aba49521d2d535c0f285a3c2961c2034ea3');

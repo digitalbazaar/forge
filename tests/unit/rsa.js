@@ -7,7 +7,6 @@ var MGF = require('../../lib/mgf');
 var PSS = require('../../lib/pss');
 var RANDOM = require('../../lib/random');
 var UTIL = require('../../lib/util');
-var support = require('./support');
 
 (function() {
   var _pem = {
@@ -67,7 +66,7 @@ var support = require('./support');
       md.update('0123456789abcdef');
       var signature = pair.privateKey.sign(md);
       ASSERT.ok(pair.publicKey.verify(md.digest().getBytes(), signature));
-    };
+    }
 
     // compare pairs
     function _pairCmp(pair1, pair2) {
@@ -515,7 +514,7 @@ var support = require('./support');
         var keySize = params.keySize;
 
         it('should rsa encrypt using a ' + keySize + '-bit key', function() {
-          var message = "it need's to be about 20% cooler"; // it need's better grammar too
+          var message = 'it need\'s to be about 20% cooler'; // it need's better grammar too
 
           /* First step, do public key encryption */
           var key = PKI.publicKeyFromPem(params.publicKeyPem);

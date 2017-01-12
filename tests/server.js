@@ -78,7 +78,7 @@ function contentServer(callback) {
       '[https-server] listening: https://localhost:' +
       httpsServer.address().port + '/');
   });
-};
+}
 
 // start servers
 contentServer();

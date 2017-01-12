@@ -6,7 +6,6 @@
  * Copyright 2011-2016 Digital Bazaar, Inc.
  */
 const path = require('path');
-const webpack = require('webpack');
 
 module.exports = {
   entry: {
