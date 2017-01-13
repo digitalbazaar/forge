@@ -22,6 +22,11 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(dkHex, 'd1daa78615f287e6');
     });
 
+    it('should derive a utf8 password with hmac-sha-1 c=1 keylen=16', function() {
+      var dkHex = UTIL.bytesToHex(PBKDF2('中', 'salt', 1, 16));
+      ASSERT.equal(dkHex, '5f719aa196edc4df6b1556de503faaf3');
+    });
+
     it('should derive a password with hmac-sha-1 c=4096', function() {
       // Note: might be too slow on old browsers
       var dkHex = UTIL.bytesToHex(PBKDF2('password', 'salt', 4096, 20));
