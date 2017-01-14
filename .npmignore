@@ -1,0 +1,53 @@
+# cruft
+*.py[co]
+*.sw[nop]
+*.tgz
+*~
+.bower.json
+.cdtproject
+.classpath
+.cproject
+.project
+.settings
+TAGS
+
+# development
+.istanbul.yml
+.jscsrc
+.jshintignore
+.jshintrc
+.npmignore
+.travis.yml
+CONTRIBUTING.md
+Makefile.in
+bower.json
+build-flash.xml
+build-setup
+end.frag
+examples
+minify.js
+nodejs
+setup
+start.frag
+tests
+
+# installed
+node_modules
+
+# built
+Makefile
+aclocal.m4
+autom4te.cache
+build
+config.log
+config.status
+configure
+dist
+js/forge.bundle.js
+js/forge.min.js
+nodejs/coverage
+tests/forge
+
+# flash and related source
+flash
+mod_fsp
