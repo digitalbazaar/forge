@@ -18,14 +18,16 @@ Forge ChangeLog
 - Improve PhantomJS support.
 - Move Bower/bundle support to
   [forge-dist](https://github.com/digitalbazaar/forge-dist).
+- **BREAKING**: Require minimal digest algorithm dependencies from individual
+  modules.
 
 ### Added
 
 - webpack bundler support via `npm run build`:
-  - Builds .js, .min.js, and basic sourcemaps.
-  - Basic build: forge.js.
-  - Build with extra utils and networking support: forge.all.js.
-  - Build WebWorker support: prime.worker.js.
+  - Builds `.js`, `.min.js`, and basic sourcemaps.
+  - Basic build: `forge.js`.
+  - Build with extra utils and networking support: `forge.all.js`.
+  - Build WebWorker support: `prime.worker.js`.
 - Browserify support in package.json.
 - Karma browser testing.
 - `forge.options` field.
@@ -38,6 +40,7 @@ Forge ChangeLog
 - Add pbkdf2 usePureJavaScript test.
 - Add rsa.generateKeyPair async and usePureJavaScript tests.
 - Add .editorconfig support.
+- Add `md.all.js` which includes all digest algorithms.
 
 ### Removed
 
@@ -68,6 +71,13 @@ Forge ChangeLog
   also now in a different directory.
 - (all) The library should now directly support building custom bundles with
   webpack, browserify, or similar.
+- (all) If building a custom bundle ensure the correct dependencies are
+  included. In particular, note there is now a `md.all.js` file to include all
+  digest algorithms. Individual files limit what they include by default to
+  allow smaller custom builds. For instance, `pbdkf2.js` has a `sha1` default
+  but does not include any algorithm files by default. This allows the
+  possibility to include only `sha256` without the overhead of `sha1` and
+  `sha512`.
 
 ### Notes
 

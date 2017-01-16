@@ -1,6 +1,6 @@
 var ASSERT = require('assert');
 var KEM = require('../../lib/kem');
-var MD = require('../../lib/md');
+var MD = require('../../lib/md.all');
 var RSA = require('../../lib/rsa');
 var UTIL = require('../../lib/util');
 var JSBN = require('../../lib/jsbn');
