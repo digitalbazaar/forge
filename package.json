@@ -31,6 +31,7 @@
     "karma-mocha-reporter": "^2.2.1",
     "karma-phantomjs-launcher": "^1.0.2",
     "karma-safari-launcher": "^1.0.0",
+    "karma-sauce-launcher": "^1.1.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-tap-reporter": "0.0.6",
     "karma-webpack": "^2.0.2",
@@ -96,6 +97,7 @@
 
     "test": "mocha -t 30000 -R spec tests/unit/index.js",
     "test-karma": "karma start",
+    "test-karma-sauce": "karma start karma-sauce.conf",
     "test-server": "node tests/server.js",
     "test-server-ws": "node tests/websockets/server-ws.js",
     "test-server-webid": "node tests/websockets/server-webid.js",
