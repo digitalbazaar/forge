@@ -1,8 +1,8 @@
 var ASSERT = require('assert');
-var PKI = require('../../lib/pki');
-var PKCS1 = require('../../lib/pkcs1');
-var MD = require('../../lib/md');
 var JSBN = require('../../lib/jsbn');
+var MD = require('../../lib/md.all');
+var PKCS1 = require('../../lib/pkcs1');
+var PKI = require('../../lib/pki');
 var UTIL = require('../../lib/util');
 
 (function() {

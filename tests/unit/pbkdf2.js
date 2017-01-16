@@ -1,7 +1,7 @@
 var ASSERT = require('assert');
 var FORGE = require('../../lib/forge');
+var MD = require('../../lib/md.all');
 var PBKDF2 = require('../../lib/pbkdf2');
-var MD = require('../../lib/md');
 var UTIL = require('../../lib/util');
 
 (function() {

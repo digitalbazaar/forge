@@ -1,6 +1,6 @@
 var ASSERT = require('assert');
+var MD = require('../../lib/md.all');
 var MGF = require('../../lib/mgf');
-var MD = require('../../lib/md');
 var UTIL = require('../../lib/util');
 
 (function() {

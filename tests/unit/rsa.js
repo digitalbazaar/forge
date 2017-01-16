@@ -1,11 +1,11 @@
 var ASSERT = require('assert');
 var FORGE = require('../../lib/forge');
-var PKI = require('../../lib/pki');
-var RSA = require('../../lib/rsa');
-var MD = require('../../lib/md');
+var MD = require('../../lib/md.all');
 var MGF = require('../../lib/mgf');
+var PKI = require('../../lib/pki');
 var PSS = require('../../lib/pss');
 var RANDOM = require('../../lib/random');
+var RSA = require('../../lib/rsa');
 var UTIL = require('../../lib/util');
 
 (function() {

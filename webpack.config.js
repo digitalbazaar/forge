@@ -31,13 +31,31 @@ const outputs = [
     library: null,
     libraryTarget: null
   }
-  // custom builds can be created by specifying the high level files you need
-  // webpack will pull in dependencies as needed
-  // Note: if using UMD or similar, add forge.js *last* to properly export
+  // Custom builds can be created by specifying the high level files you need
+  // webpack will pull in dependencies as needed.
+  //
+  // Note: Some modules, such as pbkdf2, may require explicitly listing other
+  // modules they require, such as sha1 or sha256. This is to allow smaller
+  // builds when you don't require a default dependency.
+  //
+  // Note: If using UMD or similar, add forge.js *last* to properly export
   // the top level forge namespace.
+  //
+  // Example: sha1 + ...
   //{
   //  entry: ['./lib/sha1.js', ..., './lib/forge.js'],
   //  filenameBase: 'forge.custom'
+  //  libraryTarget: 'umd'
+  //}
+  // Example: PBKDF2 + sha1, explicitly include sha1 default
+  //{
+  //  entry: ['./lib/pbkdf2.js', './lib/sha1.js', './lib/forge.js'],
+  //  filenameBase: 'forge.pbkdf2-sha1'
+  //  libraryTarget: 'umd'
+  // Example: PBKDF2 + sha256, without the sha1 default
+  //{
+  //  entry: ['./lib/pbkdf2.js', './lib/sha256.js', './lib/forge.js'],
+  //  filenameBase: 'forge.pbkdf2-sha256'
   //  libraryTarget: 'umd'
   //}
 ];
