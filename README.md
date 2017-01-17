@@ -94,6 +94,9 @@ Documentation
 Installation
 ------------
 
+Please see the [Security Considerations][] section before using packaging
+systems and pre-built files.
+
 ### Node.js
 
 If you want to use forge with [Node.js][], it is available through `npm`:
@@ -110,10 +113,13 @@ You can then use forge as a regular module:
 var forge = require('node-forge');
 ```
 
+The npm package includes pre-built `forge.min.js`, `forge.all.min.js`, and
+`prime.worker.min.js` using the [UMD][] format.
+
 ### Bundle / Bower
 
-Pre-built and minimized basic forge bundles are built in the [UMD][] format for
-each release and distributed in a separate repository:
+Each release is published in a separate repository as pre-built and minimized
+basic forge bundles using the [UMD][] format.
 
 https://github.com/digitalbazaar/forge-dist
 
