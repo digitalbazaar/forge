@@ -37,6 +37,10 @@
   },
   "license": "(BSD-3-Clause OR GPL-2.0)",
   "main": "js/forge.js",
+  "files": [
+    "js/*.js",
+    "swf/*.swf"
+  ],
   "engines": {
     "node": "*"
   },
