@@ -47,6 +47,10 @@
   },
   "license": "(BSD-3-Clause OR GPL-2.0)",
   "main": "lib/index.js",
+  "files": [
+    "lib/*.js",
+    "flash/swf/*.swf"
+  ],
   "engines": {
     "node": "*"
   },
