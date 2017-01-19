@@ -1506,7 +1506,7 @@ var object = asn1.fromDer(derBuffer);
 var derOidBuffer = asn1.oidToDer('1.2.840.113549.1.1.5');
 
 // convert a byte buffer with a DER-encoded OID to a dot-separated string
-console.log(asn1.derToDer(derOidBuffer));
+console.log(asn1.derToOid(derOidBuffer));
 // output: 1.2.840.113549.1.1.5
 
 // validates that an ASN.1 object matches a particular ASN.1 structure and
