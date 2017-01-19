@@ -97,6 +97,10 @@ Installation
 Please see the [Security Considerations][] section before using packaging
 systems and pre-built files.
 
+Forge uses a [CommonJS][] module structure with a build process for browser
+bundles. The older [0.6.x][] branch with standalone files is available but will
+not be regularly updated.
+
 ### Node.js
 
 If you want to use forge with [Node.js][], it is available through `npm`:
@@ -1889,6 +1893,7 @@ Financial support is welcome and helps contribute to futher development:
 * Something else? Please contact support@digitalbazaar.com.
 
 [#forgejs]: https://webchat.freenode.net/?channels=#forgejs
+[0.6.x]: https://github.com/digitalbazaar/forge/tree/0.6.x
 [3DES]: http://en.wikipedia.org/wiki/Triple_DES
 [AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: http://en.wikipedia.org/wiki/ASN.1
@@ -1897,6 +1902,7 @@ Financial support is welcome and helps contribute to futher development:
 [CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CTR]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CommonJS]: https://en.wikipedia.org/wiki/CommonJS
 [DES]: http://en.wikipedia.org/wiki/Data_Encryption_Standard
 [ECB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [Fortuna]: http://en.wikipedia.org/wiki/Fortuna_(PRNG)
