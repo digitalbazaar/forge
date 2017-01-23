@@ -109,7 +109,7 @@ function Tests(ASSERT, UTIL) {
       var n = 8;
       var b = UTIL.createBuffer();
       b.putSignedInt(x, n);
-      ASSERT.equal(b.getSignedInt(x, n), x);
+      ASSERT.equal(b.getSignedInt(n), x);
     });
 
     it('should get 127 from a buffer using two\'s complement', function() {
