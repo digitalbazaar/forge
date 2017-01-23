@@ -120,6 +120,21 @@ util.isArrayBufferView = function(x) {
   return x && util.isArrayBuffer(x.buffer) && x.byteLength !== undefined;
 };
 
+/**
+ * Ensure a bits param is 8, 16, 24, or 32. Used to validate input for
+ * algorithms where bit manipulation, JavaScript limitations, and/or algorithm
+ * design only allow for byte operations of a limited size.
+ *
+ * @param n number of bits.
+ *
+ * Throw Error if n invalid.
+ */
+function _checkBitsParam(n) {
+  if(!(n === 8 || n === 16 || n === 24 || n === 32)) {
+    throw new Error('Only 8, 16, 24, or 32 bits supported: ' + n);
+  }
+}
+
 // TODO: set ByteBuffer to best available backing
 util.ByteBuffer = ByteStringBuffer;
 
@@ -351,11 +366,12 @@ util.ByteStringBuffer.prototype.putInt32Le = function(i) {
  * Puts an n-bit integer in this buffer in big-endian order.
  *
  * @param i the n-bit integer.
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putInt = function(i, n) {
+  _checkBitsParam(n);
   var bytes = '';
   do {
     n -= 8;
@@ -369,11 +385,12 @@ util.ByteStringBuffer.prototype.putInt = function(i, n) {
  * complement representation is used.
  *
  * @param i the n-bit integer.
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return this buffer.
  */
 util.ByteStringBuffer.prototype.putSignedInt = function(i, n) {
+  // putInt checks n
   if(i < 0) {
     i += 2 << (n - 1);
   }
@@ -492,15 +509,17 @@ util.ByteStringBuffer.prototype.getInt32Le = function() {
 
 /**
  * Gets an n-bit integer from this buffer in big-endian order and advances the
- * read pointer by n/8.
+ * read pointer by ceil(n/8).
  *
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return the integer.
  */
 util.ByteStringBuffer.prototype.getInt = function(n) {
+  _checkBitsParam(n);
   var rval = 0;
   do {
+    // TODO: Use (rval * 0x100) if adding support for 33 to 53 bits.
     rval = (rval << 8) + this.data.charCodeAt(this.read++);
     n -= 8;
   } while(n > 0);
@@ -511,11 +530,12 @@ util.ByteStringBuffer.prototype.getInt = function(n) {
  * Gets a signed n-bit integer from this buffer in big-endian order, using
  * two's complement, and advances the read pointer by n/8.
  *
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return the integer.
  */
 util.ByteStringBuffer.prototype.getSignedInt = function(n) {
+  // getInt checks n
   var x = this.getInt(n);
   var max = 2 << (n - 2);
   if(x >= max) {
@@ -1032,11 +1052,12 @@ util.DataBuffer.prototype.putInt32Le = function(i) {
  * Puts an n-bit integer in this buffer in big-endian order.
  *
  * @param i the n-bit integer.
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return this buffer.
  */
 util.DataBuffer.prototype.putInt = function(i, n) {
+  _checkBitsParam(n);
   this.accommodate(n / 8);
   do {
     n -= 8;
@@ -1055,6 +1076,7 @@ util.DataBuffer.prototype.putInt = function(i, n) {
  * @return this buffer.
  */
 util.DataBuffer.prototype.putSignedInt = function(i, n) {
+  _checkBitsParam(n);
   this.accommodate(n / 8);
   if(i < 0) {
     i += 2 << (n - 1);
@@ -1151,13 +1173,15 @@ util.DataBuffer.prototype.getInt32Le = function() {
  * Gets an n-bit integer from this buffer in big-endian order and advances the
  * read pointer by n/8.
  *
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return the integer.
  */
 util.DataBuffer.prototype.getInt = function(n) {
+  _checkBitsParam(n);
   var rval = 0;
   do {
+    // TODO: Use (rval * 0x100) if adding support for 33 to 53 bits.
     rval = (rval << 8) + this.data.getInt8(this.read++);
     n -= 8;
   } while(n > 0);
@@ -1168,11 +1192,12 @@ util.DataBuffer.prototype.getInt = function(n) {
  * Gets a signed n-bit integer from this buffer in big-endian order, using
  * two's complement, and advances the read pointer by n/8.
  *
- * @param n the number of bits in the integer.
+ * @param n the number of bits in the integer (8, 16, 24, or 32).
  *
  * @return the integer.
  */
 util.DataBuffer.prototype.getSignedInt = function(n) {
+  // getInt checks n
   var x = this.getInt(n);
   var max = 2 << (n - 2);
   if(x >= max) {
