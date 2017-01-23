@@ -153,6 +153,75 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(b.getSignedInt(n), x);
     });
 
+    it('should getInt(8) from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('12'));
+      ASSERT.equal(b.getInt(8), 0x12);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(8)x2 from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('1221'));
+      ASSERT.equal(b.getInt(8), 0x12);
+      ASSERT.equal(b.getInt(8), 0x21);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(16) from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('1234'));
+      ASSERT.equal(b.getInt(16), 0x1234);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(16)x2 from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('12344321'));
+      ASSERT.equal(b.getInt(16), 0x1234);
+      ASSERT.equal(b.getInt(16), 0x4321);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(24) from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('123456'));
+      ASSERT.equal(b.getInt(24), 0x123456);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(24)x2 from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('123456654321'));
+      ASSERT.equal(b.getInt(24), 0x123456);
+      ASSERT.equal(b.getInt(24), 0x654321);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(32) from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('12345678'));
+      ASSERT.equal(b.getInt(32), 0x12345678);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should getInt(32)x2 from buffer', function() {
+      var b = UTIL.createBuffer(UTIL.hexToBytes('1234567887654321'));
+      ASSERT.equal(b.getInt(32), 0x12345678);
+      // FIXME: getInt bit shifts create signed int
+      ASSERT.equal(b.getInt(32), 0x87654321<<0);
+      ASSERT.equal(b.length(), 0);
+    });
+
+    it('should throw for getInt(1) from buffer', function() {
+      var b = UTIL.createBuffer();
+      ASSERT.throws(function() {
+        b.getInt(1);
+      });
+    });
+
+    it('should throw for getInt(33) from buffer', function() {
+      var b = UTIL.createBuffer();
+      ASSERT.throws(function() {
+        b.getInt(33);
+      });
+    });
+
+    // TODO: add get/put tests at limits of signed/unsigned types
+
     it('should base64 encode some bytes', function() {
       var s1 = '00010203050607080A0B0C0D0F1011121415161719';
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
