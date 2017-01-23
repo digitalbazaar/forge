@@ -1,6 +1,7 @@
 var ASSERT = require('assert');
 var forge = require('../../lib/forge');
 var PKCS7 = require('../../lib/pkcs7');
+var ASN1 = require('../../lib/asn1');
 var PKI = require('../../lib/pki');
 var AES = require('../../lib/aes');
 var DES = require('../../lib/des');
@@ -517,6 +518,23 @@ var support = require('./support');
       p7.decrypt(p7.recipients[0], PKI.privateKeyFromPem(_pem.privateKey));
       ASSERT.equal(p7.content, 'Just a little test');
     });
+
+    it('should export message to PEM with content in DER-format', function() {
+      var p7 = PKCS7.createEnvelopedData();
+      p7.addRecipient(PKI.certificateFromPem(_pem.certificate));
+      p7.content = UTIL.createBuffer(ASN1.toDer(ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.OCTETSTRING, false, 'Just a little test')));
+      p7.encrypt();
+
+      var pem = PKCS7.messageToPem(p7);
+
+      // convert back from PEM to new PKCS#7 object, decrypt, and test
+      p7 = PKCS7.messageFromPem(pem);
+      p7.decrypt(p7.recipients[0], PKI.privateKeyFromPem(_pem.privateKey));
+      var asn1 = ASN1.fromDer(p7.content);
+      ASSERT.equal(asn1.value, 'Just a little test');
+    });
+
+
 
     it('should decrypt encrypted data from PEM', function() {
       var result = '1f8b08000000000000000b2e494d4bcc5308ce4c4dcfd15130b0b430d4b7343732b03437d05170cc2b4e4a4cced051b034343532d25170492d2d294ecec849cc4b0100bf52f02437000000';
