@@ -378,6 +378,823 @@ function Tests(ASSERT, ASN1, UTIL) {
         });
       });
     })();
+
+    (function() {
+      function _h2b(str) {
+        return UTIL.hexToBytes(str.replace(/ /g, ''));
+      }
+      function _add(b, str) {
+        b.putBytes(_h2b(str));
+      }
+      function _asn1dump(asn1) {
+        console.log(ASN1.prettyPrint(asn1));
+        console.log(JSON.stringify(asn1, null, 2));
+      }
+      function _asn1TestOne(strict, throws, options) {
+        options = options || {};
+        if(!('decodeBitStrings' in options)) {
+          options.decodeBitStrings = true;
+        }
+        // buffer strict test
+        var b = UTIL.createBuffer();
+        // init
+        options.init(b);
+        // bytes for round-trip comparison
+        var bytes = b.copy().bytes();
+        // copy for non-strict test
+        var bns = b.copy();
+        // create strict and non-strict asn1
+        var asn1assert = throws ? ASSERT.throws : function(f) { f(); };
+        var asn1;
+        var der;
+        asn1assert(function() {
+          asn1 = ASN1.fromDer(b, {
+            strict: strict,
+            decodeBitStrings: options.decodeBitStrings
+          });
+        });
+        // debug
+        if(options.dump && asn1) {
+          console.log('=== ' + (strict ? 'Strict' : 'Non Strict') + ' ===');
+          _asn1dump(asn1);
+        }
+        // basic check
+        if(!throws) {
+          ASSERT.ok(asn1);
+        }
+
+        // round-trip(ish) check
+        if(!throws) {
+          der = ASN1.toDer(asn1);
+          if(options.roundtrip) {
+            // byte comparisons for round-trip testing can fail due to
+            // symantically safe changes such as changing the length encoding.
+            // test a roundtrip for data where it makes sense.
+            ASSERT.equal(
+              UTIL.bytesToHex(bytes),
+              UTIL.bytesToHex(der.bytes()));
+          }
+        }
+
+        // validator check
+        if(!throws && options.v) {
+          var capture = {};
+          var errors = []
+          var asn1ok = ASN1.validate(asn1, options.v, capture, errors);
+          ASSERT.deepEqual(errors, []);
+          if(options.captured) {
+            ASSERT.deepEqual(capture, options.captured);
+          } else {
+            ASSERT.deepEqual(capture, {});
+          }
+          ASSERT.ok(asn1ok);
+        }
+
+        return {
+          asn1: asn1,
+          der: der
+        };
+      }
+      function _asn1Test(options) {
+        var s = _asn1TestOne(true, options.strictThrows, options);
+        var ns = _asn1TestOne(false, options.nonStrictThrows, options);
+
+        // check asn1 equality
+        if(s.asn1 && ns.asn1) {
+          ASSERT.deepEqual(s.asn1, ns.asn1);
+        }
+
+        // check der equality
+        if(s.der && ns.der) {
+          ASSERT.equal(
+            UTIL.bytesToHex(s.der.bytes()),
+            UTIL.bytesToHex(ns.der.bytes()));
+        }
+
+        if(options.done) {
+          options.done({
+            strict: s,
+            nonStrict: ns
+          });
+        }
+      }
+
+      it('should convert BIT STRING from DER (short,empty)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=none
+            _add(b, '03 00');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: ''
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (short,empty2)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=none
+            _add(b, '03 01 00');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bitsC',
+            captureBitStringValue: 'bitsV'
+          },
+          captured: {
+            bitsC: _h2b('00'),
+            bitsV: ''
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (short,invalid)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=partial
+            // invalid in strict mode, non-strict will read 1 of 2 bytes
+            _add(b, '03 02 00');
+          },
+          dump: false,
+          roundtrip: false,
+          strictThrows: true,
+          nonStrictThrows: false,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            // only for non-strict mode, truncated value
+            bits: _h2b('00')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (short)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=0110111001011101
+            _add(b, '03 03 00 6e 5d');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b('00 6e 5d')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (short2)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=0110111001011101
+            // contains an INTEGER=0x12
+            _add(b, '03 04 00 02 01 12');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // note captureBitStringContents used to get all bytes
+            // 'capture' would get the value structure
+            // 'captureAsn1' would get the value and sub-value structures
+            captureBitStringContents: 'bits',
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.INTEGER,
+              constructed: false,
+              capture: 'int0'
+            }]
+          },
+          captured: {
+            bits: _h2b('00 02 01 12'),
+            int0: _h2b('12')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (short,unused1z)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING value=01101110010111011010111, unused=0
+            _add(b, '03 04 01 6e 5d ae');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b('01 6e 5d ae')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (short,unused6z)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING short len, value=011011100101110111, unused=000000
+            _add(b, '03 04 06 6e 5d c0');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b('06 6e 5d c0')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (short,unused6d)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING short len, value=011011100101110111, unused=100000
+            _add(b, '03 04 06 6e 5d e0');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b('06 6e 5d e0')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (long,unused6z)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING long len, value=011011100101110111, unused=000000
+            _add(b, '03 81 04 06 6e 5d c0');
+          },
+          dump: false,
+          // length is compressed
+          roundtrip: false,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b('06 6e 5d c0')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (unused6z)', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING constructed, value=0110111001011101+11, unused=000000
+            _add(b, '23 09');
+            _add(b, '03 03 00 6e 5d');
+            _add(b, '03 02 06 c0');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: true,
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.BITSTRING,
+              constructed: false,
+              capture: 'bits0'
+            }, {
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.BITSTRING,
+              constructed: false,
+              capture: 'bits1'
+            }]
+          },
+          captured: {
+            bits0: _h2b('00 6e 5d'),
+            bits1: _h2b('06 c0')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (decode)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data that includes encapsulated
+            // data.  often used to store SEQUENCE of INTEGERs.
+            // add bit stream of bytes using long length
+            _add(b, '03 82 00 10');
+            // no padding
+            _add(b, '00');
+            // sequence of two ints
+            _add(b, '30 0D');
+            // add test int, long len
+            _add(b, '02 81 04 12 34 56 78');
+            // add test int, short len
+            _add(b, '02 04 87 65 43 21');
+          },
+          dump: false,
+          decodeBitStrings: true,
+          // long len will compress to short len
+          roundtrip: false,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits',
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.SEQUENCE,
+              constructed: true,
+              value: [{
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int0'
+              }, {
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int1'
+              }]
+            }]
+          },
+          captured: {
+            bits: _h2b(
+              '00' +
+              '30 0D' +
+              '02 81 04 12 34 56 78' +
+              '02 04 87 65 43 21'),
+            int0: _h2b('12 34 56 78'),
+            int1: _h2b('87 65 43 21')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (no decode)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data that includes encapsulated
+            // data.  often used to store SEQUENCE of INTEGERs.
+            // add bit stream
+            _add(b, '03 82 00 10');
+            // no padding
+            _add(b, '00');
+            // sequence of two ints
+            _add(b, '30 0D');
+            // add test int, long len
+            _add(b, '02 81 04 12 34 56 78');
+            // add test int, short len
+            _add(b, '02 04 87 65 43 21');
+          },
+          dump: false,
+          decodeBitStrings: false,
+          // long length is compressed
+          roundtrip: false,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits'
+          },
+          captured: {
+            bits: _h2b(
+              '00' +
+              '30 0D' +
+              '02 81 04 12 34 56 78' +
+              '02 04 87 65 43 21')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (decode2)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data that includes encapsulated
+            // data.  often used to store SEQUENCE of INTEGERs.
+            // bit stream
+            _add(b, '03 81 8D');
+            // no padding
+            _add(b, '00');
+            // sequence
+            _add(b, '30 81 89');
+            // int header and leading 0
+            _add(b, '02 81 81 00');
+            // 1024 bit int
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F0');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F1');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F2');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F3');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F4');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F5');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F6');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F7');
+            // int header and 3 byte int
+            _add(b, '02 03 01 00 01');
+          },
+          dump: false,
+          decodeBitStrings: true,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.SEQUENCE,
+              constructed: true,
+              value: [{
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int0'
+              }, {
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int1'
+              }]
+            }]
+          },
+          captured: {
+            int0: _h2b('00' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F0' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F1' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F2' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F3' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F4' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F5' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F6' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F7'),
+            int1: _h2b('01 00 01')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (sig)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data similar to a signature that
+            // could be interpreted incorrectly as encapsulated data.
+            // add bit stream of 257 bytes
+            _add(b, '03 82 01 01');
+            // no unused
+            _add(b, '00');
+            // signature bits
+            _add(b, '25 81 FD 6E D3 AB 34 45 DE AE F1 5B EC 6A FB 79');
+            _add(b, '14 CD 7B B2 8E 48 59 AE 89 B1 55 60 11 AB BC 7F');
+            _add(b, '6D 6D FE 16 22 42 AC 57 CC E9 C0 3A 8D 1E F3 C3');
+            _add(b, '97 C8 23 53 DE E0 34 C3 A9 43 8B 2B D9 C0 24 FF');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F4');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F5');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F6');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F7');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F8');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FA');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FB');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FC');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FD');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FE');
+            _add(b, 'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // captureBitStringContents not used to check if valude decoded
+            capture: 'sig'
+          },
+          captured: {
+            sig: _h2b(
+              '00' +
+              '25 81 FD 6E D3 AB 34 45 DE AE F1 5B EC 6A FB 79' +
+              '14 CD 7B B2 8E 48 59 AE 89 B1 55 60 11 AB BC 7F' +
+              '6D 6D FE 16 22 42 AC 57 CC E9 C0 3A 8D 1E F3 C3' +
+              '97 C8 23 53 DE E0 34 C3 A9 43 8B 2B D9 C0 24 FF' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F4' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F5' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F6' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F7' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F8' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF F9' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FA' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FB' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FC' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FD' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FE' +
+              'FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from BER (decodable sig)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data similar to a signature that
+            // could be interpreted as encapsulated data. data is such that
+            // a round trip process could change the data due to INTEGER
+            // optimization (removal of leading bytes) or length structure
+            // compression (long to short).
+            // add a basic bit stream "signature" with test data
+            _add(b, '03 22');
+            // no unused
+            _add(b, '00');
+            // everything after this point might be important bits, not ASN.1
+            // SEQUENCE of tests
+            _add(b, '30 1E');
+            // signature bits
+            // '02 02' prefix will be cause parsing as an integer
+            // toDer will try to remove the extra 00.
+            // tests the BIT STRING content/value saving feature
+            _add(b, '02 02 00 7F');
+            // similar example for -1:
+            _add(b, '02 02 FF FF');
+            // could extend out to any structure size:
+            _add(b, '02 06 FF FF FF FF FF FF');
+            // the roundtrip issue can exist for long lengths that could
+            // compress to short lenghts, this could be output as '02 02 01 23':
+            _add(b, '02 81 02 01 23');
+            // also an issue for indefinite length structures that will
+            // have a known length later:
+            _add(b, '30 80');
+            // a few INTEGERs
+            _add(b, '02 01 00');
+            _add(b, '02 01 01');
+            // done
+            _add(b, '00 00');
+            // other examples may exist
+          },
+          dump: false,
+          // NOTE: arbitrary data can be recompacted, check saved data worked
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringValue: 'sig'
+          },
+          captured: {
+            sig: _h2b(
+              '30 1E' +
+              '02 02 00 7F' +
+              '02 02 FF FF' +
+              '02 06 FF FF FF FF FF FF' +
+              '02 81 02 01 23' +
+              '30 80' +
+              '02 01 00' +
+              '02 01 01' +
+              '00 00')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from strict DER', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data that includes encapsulated
+            // data.  include valid data that would only parse in strict
+            // mode.
+            _add(b, '03 06');
+            // no padding
+            _add(b, '00');
+            // sub-BIT STRING with valid length
+            _add(b, '03 03 00 01 02');
+          },
+          dump: false,
+          decodeBitStrings: true,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // default capture value has structural data
+            // check contents and value
+            captureBitStringContents: 'bitsC',
+            captureBitStringValue: 'bitsV'
+          },
+          captured: {
+            bitsC: _h2b('00 03 03 00 01 02'),
+            bitsV: _h2b('03 03 00 01 02')
+          }
+        });
+      });
+      it('should convert BIT STRING from non-strict DER', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data that includes encapsulated
+            // data.  include invalid data that would only parse in non-strict
+            // mode.  ensure it is never parsed.
+            _add(b, '03 05');
+            // no padding
+            _add(b, '00');
+            // sub-BIT STRING with invalid length, missing a byte
+            _add(b, '03 03 00 01');
+          },
+          dump: false,
+          decodeBitStrings: true,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // ensure default captures contents vs decoded structure
+            capture: 'bits0',
+            // check contents and value
+            captureBitStringContents: 'bitsC',
+            captureBitStringValue: 'bitsV'
+          },
+          captured: {
+            bits0: _h2b('00 03 03 00 01'),
+            bitsC: _h2b('00 03 03 00 01'),
+            bitsV: _h2b('03 03 00 01')
+          }
+        });
+      });
+
+      it('should convert indefinite length seq from BER', function() {
+        _asn1Test({
+          init: function(b) {
+            // SEQUENCE
+            _add(b, '30 80');
+            // a few INTEGERs
+            _add(b, '02 01 00');
+            _add(b, '02 01 01');
+            _add(b, '02 01 02');
+            // done
+            _add(b, '00 00');
+          },
+          dump: false,
+          // roundtrip will know the sequence length
+          roundtrip: false,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.SEQUENCE,
+            constructed: true,
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.INTEGER,
+              constructed: false,
+              capture: 'int0'
+            }, {
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.INTEGER,
+              constructed: false,
+              capture: 'int1'
+            }, {
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.INTEGER,
+              constructed: false,
+              capture: 'int2'
+            }]
+          },
+          captured: {
+            int0: _h2b('00'),
+            int1: _h2b('01'),
+            int2: _h2b('02')
+          }
+        });
+      });
+
+      it('should handle ASN.1 mutations', function() {
+        _asn1Test({
+          init: function(b) {
+            // BIT STRING
+            _add(b, '03 09 00');
+            // SEQUENCE
+            _add(b, '30 06');
+            // a few INTEGERs
+            _add(b, '02 01 00');
+            _add(b, '02 01 01');
+          },
+          dump: false,
+          // roundtrip will know the sequence length
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            captureBitStringContents: 'bits',
+            value: [{
+              tagClass: ASN1.Class.UNIVERSAL,
+              type: ASN1.Type.SEQUENCE,
+              constructed: true,
+              value: [{
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int0'
+              }, {
+                tagClass: ASN1.Class.UNIVERSAL,
+                type: ASN1.Type.INTEGER,
+                constructed: false,
+                capture: 'int1'
+              }]
+            }]
+          },
+          captured: {
+            bits: _h2b('00 30 06 02 01 00 02 01 01'),
+            int0: _h2b('00'),
+            int1: _h2b('01')
+          },
+          done: function(data) {
+            var asn1 = data.strict.asn1;
+            // mutate
+            asn1.value[0].value[0].value = _h2b('02');
+            asn1.value[0].value[1].value = _h2b('03');
+            // convert
+            // must use new data vs saved BIT STRING data
+            var der = ASN1.toDer(asn1);
+            var expect = _h2b('03 09 00 30 06 02 01 02 02 01 03');
+            // compare
+            ASSERT.equal(UTIL.bytesToHex(der), UTIL.bytesToHex(expect));
+          }
+        });
+      });
+
+      it('should convert BMP STRING from DER', function() {
+        _asn1Test({
+          init: function(b) {
+            // BPMSTRING
+            _add(b, '1e 08');
+            _add(b, '01 02 03 04 05 06 07 08');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BPMSTRING,
+            constructed: false,
+            capture: 'bits'
+          },
+          captured: {
+            bits: '\u0102\u0304\u0506\u0708'
+          }
+        });
+      });
+
+      // TODO: how minimal should INTEGERs be encoded?
+      // .. fromDer will create the full integer
+      // .. toDer will remove only first byte if possible
+      it('should minimally encode INTEGERs', function() {
+        function _test(hin, hout) {
+          var derIn = _h2b(hin);
+          var derOut = ASN1.toDer(ASN1.fromDer(derIn));
+          ASSERT.equal(
+            UTIL.bytesToHex(derOut),
+            UTIL.bytesToHex(_h2b(hout)));
+        }
+        // optimial
+        _test('02 01 01', '02 01 01');
+        _test('02 01 FF', '02 01 FF');
+        _test('02 02 00 FF', '02 02 00 FF');
+
+        // remove leading 00s before a 0b0xxxxxxx
+        _test('02 04 00 00 00 01', '02 03 00 00 01');
+        // this would be more optimal
+        //_test('02 04 00 00 00 01', '02 01 01');
+
+        // remove leading FFs before a 0b1xxxxxxx
+        _test('02 04 FF FF FF FF', '02 03 FF FF FF');
+        // this would be more optimal
+        //_test('02 04 FF FF FF FF', '02 01 FF');
+      });
+    })();
   });
 }
 
