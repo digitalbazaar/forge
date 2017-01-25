@@ -323,12 +323,23 @@ function Tests(ASSERT, ASN1, UTIL) {
         obj1: _asn1('03 04 00 02 01 01'),
         obj2: _asn1('03 04 00 02 01 01'),
         equal: true
+      }, {
+        name: 'mutated BIT STRINGs',
+        obj1: _asn1('03 04 00 02 01 01'),
+        obj2: _asn1('03 04 00 02 01 01'),
+        mutate: function(obj1, obj2) {
+          obj2.value[0].value = '\u0002';
+        },
+        equal: false
       }];
       tests.forEach(function(test, index) {
         var name = 'should check ASN.1 ' +
           (test.equal ? '' : 'not ') + 'equal: ' +
           (test.name || '#' + index);
         it(name, function() {
+          if(test.mutate) {
+            test.mutate(test.obj1, test.obj2);
+          }
           ASSERT.equal(ASN1.equals(test.obj1, test.obj2), test.equal);
         });
       });
