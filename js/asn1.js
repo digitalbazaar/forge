@@ -997,11 +997,11 @@ asn1.prettyPrint = function(obj, level, indentation) {
     case asn1.Type.BOOLEAN:
       rval += ' (Boolean)';
       break;
-    case asn1.Type.BITSTRING:
-      rval += ' (Bit string)';
-      break;
     case asn1.Type.INTEGER:
       rval += ' (Integer)';
+      break;
+    case asn1.Type.BITSTRING:
+      rval += ' (Bit string)';
       break;
     case asn1.Type.OCTETSTRING:
       rval += ' (Octet string)';
@@ -1091,6 +1091,23 @@ asn1.prettyPrint = function(obj, level, indentation) {
         rval += asn1.derToInteger(obj.value);
       } catch(ex) {
         rval += '0x' + forge.util.bytesToHex(obj.value);
+      }
+    } else if(obj.type === asn1.Type.BITSTRING) {
+      // TODO: shift bits as needed to display without padding
+      if(obj.value.length > 1) {
+        // remove unused bits field
+        rval += '0x' + forge.util.bytesToHex(obj.value.slice(1));
+      } else {
+        rval += '(none)';
+      }
+      // show unused bit count
+      if(obj.value.length > 0) {
+        var unused = obj.value.charCodeAt(0);
+        if(unused == 1) {
+          rval += ' (1 unused bit shown)';
+        } else if(unused > 1) {
+          rval += ' (' + unused + ' unused bits shown)';
+        }
       }
     } else if(obj.type === asn1.Type.OCTETSTRING) {
       if(!_nonLatinRegex.test(obj.value)) {
