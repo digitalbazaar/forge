@@ -39,7 +39,10 @@
   "main": "js/forge.js",
   "files": [
     "js/*.js",
-    "swf/*.swf"
+    "swf/*.swf",
+    "minify.js",
+    "start.frag",
+    "end.frag"
   ],
   "engines": {
     "node": "*"
