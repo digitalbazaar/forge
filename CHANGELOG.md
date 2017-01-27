@@ -6,6 +6,9 @@ Forge ChangeLog
 ### Fixed
 
 - Fix test looping bugs so all tests are run.
+- Improved ASN.1 parsing. Many failure cases eliminated. More sanity checks.
+  Better behavior in default mode of parsing BIT STRINGs. Better handling of
+  parsed BIT STRINGs in `toDer()`. More tests.
 
 ### Changed
 
@@ -20,6 +23,9 @@ Forge ChangeLog
   [forge-dist](https://github.com/digitalbazaar/forge-dist).
 - **BREAKING**: Require minimal digest algorithm dependencies from individual
   modules.
+- Enforce currently supported bit param values for byte buffer access. May be
+  **BREAKING** for code that depended on unspecified and/or incorrect behavior.
+- Improve `asn1.prettyPrint()` BIT STRING display.
 
 ### Added
 
@@ -41,6 +47,8 @@ Forge ChangeLog
 - Add rsa.generateKeyPair async and usePureJavaScript tests.
 - Add .editorconfig support.
 - Add `md.all.js` which includes all digest algorithms.
+- Add asn1 `equals()` and `copy()`.
+- Add asn1 `validate()` capture options for BIT STRING contents and value.
 
 ### Removed
 
