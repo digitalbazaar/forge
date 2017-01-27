@@ -2,31 +2,21 @@
  * Karma Sauce Labs configuration
  *
  * `SAUCE_USERNAME` and `SAUCE_ACCESS_KEY` environmental variables should
- * be set. For configuration details, see: https://github.com/karma-runner/karma-sauce-launcher
+ * be set. For configuration details, see:
+ * https://github.com/karma-runner/karma-sauce-launcher
  */
+
+var baseConfig = require('./karma.conf');
+
 module.exports = function(config) {
-  // bundler to test: webpack, browserify
-  var bundler = process.env.BUNDLER || 'webpack';
-
-  var frameworks = ['mocha'];
-  // main bundle preprocessors
-  var preprocessors = [];
-  // webworker bundle preprocessors (always use webpack)
-  var workerPreprocessors = ['webpack'];
-
-  if(bundler === 'browserify') {
-    frameworks.push(bundler);
-    preprocessors.push(bundler);
-  } else if(bundler === 'webpack') {
-    preprocessors.push(bundler);
-  } else {
-    throw Error('Unknown bundler');
-  }
+  // load base forge karma config
+  baseConfig(config);
 
   // Define an unlimited number of browser/OS combinations here. Sauce Labs
   // will manage concurrency based on user's account restrictions.
-  // Platform Configurator Tool: https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
-  var customLaunchers = {
+  // Platform Configurator Tool:
+  // https://wiki.saucelabs.com/display/DOCS/Platform+Configurator#/
+  var sauceLabsCustomLaunchers = {
     sl_chrome: {
       base: 'SauceLabs',
       browserName: 'chrome',
@@ -72,80 +62,18 @@ module.exports = function(config) {
   };
 
   config.set({
-    // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: '',
-
-    // frameworks to use
-    // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: frameworks,
-
-    // list of files / patterns to load in the browser
-    files: [
-      'tests/unit/index.js',
-      // for webworkers
-      {
-        pattern: 'lib/prime.worker.js',
-        watched: false, included: false, served: true, nocache: false
-      }
-    ],
-
-    // list of files to exclude
-    exclude: [
-    ],
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-      'tests/unit/index.js': preprocessors,
-      'lib/prime.worker.js': workerPreprocessors
-    },
-
-    browserify: {
-      debug: true
-      //transform: ['uglifyify']
-    },
-
-    // web server port
-    port: 9876,
-
-    // enable / disable colors in the output (reporters and logs)
-    colors: true,
-
-    // level of logging
-    // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_INFO,
-
-    // enable / disable watching file and executing tests whenever any file changes
-    autoWatch: false,
-
     sauceLabs: {
       testName: 'Forge Unit Tests',
       startConnect: true
     },
     captureTimeout: 180000,
-    customLaunchers: customLaunchers,
-    browsers: Object.keys(customLaunchers),
-    reporters: ['dots', 'saucelabs'],
 
-    // Continuous Integration mode
-    // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true,
+    // merge SauceLabs launchers
+    customLaunchers: sauceLabsCustomLaunchers,
 
-    // Concurrency level
-    // how many browser should be started simultaneous
-    concurrency: Infinity,
+    // default to only SauceLabs launchers
+    browsers: Object.keys(sauceLabsCustomLaunchers),
 
-    // Mocha
-    client: {
-      mocha: {
-        // increase from default 2s
-        timeout: 20000
-      }
-    },
-
-    // Proxied paths
-    proxies: {
-      '/forge/prime.worker.js': '/base/lib/prime.worker.js'
-    }
+    reporters: ['dots', 'saucelabs']
   });
 };
