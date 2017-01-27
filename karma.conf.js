@@ -8,13 +8,14 @@ module.exports = function(config) {
   // main bundle preprocessors
   var preprocessors = [];
   // webworker bundle preprocessors (always use webpack)
-  var workerPreprocessors = ['webpack'];
+  var workerPreprocessors = ['webpack', 'sourcemap'];
 
   if(bundler === 'browserify') {
     frameworks.push(bundler);
     preprocessors.push(bundler);
   } else if(bundler === 'webpack') {
     preprocessors.push(bundler);
+    preprocessors.push('sourcemap');
   } else {
     throw Error('Unknown bundler');
   }
@@ -46,6 +47,10 @@ module.exports = function(config) {
     preprocessors: {
       'tests/unit/index.js': preprocessors,
       'lib/prime.worker.js': workerPreprocessors
+    },
+
+    webpack: {
+      devtool: 'inline-source-map'
     },
 
     browserify: {
