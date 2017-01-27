@@ -103,6 +103,7 @@ outputs.forEach((info) => {
     devtool: 'cheap-module-source-map',
     plugins: [
       new webpack.optimize.UglifyJsPlugin({
+        sourceMap: true,
         compress: {
           warnings: true
         },

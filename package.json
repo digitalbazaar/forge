@@ -33,12 +33,12 @@
     "karma-safari-launcher": "^1.0.0",
     "karma-sourcemap-loader": "^0.3.7",
     "karma-tap-reporter": "0.0.6",
-    "karma-webpack": "^1.8.1",
+    "karma-webpack": "^2.0.2",
     "mocha": "^3.2.0",
     "mocha-lcov-reporter": "^1.2.0",
     "nodejs-websocket": "^1.7.1",
     "opts": "^1.2.2",
-    "webpack": "^1.14.0"
+    "webpack": "^2.2.0"
   },
   "repository": {
     "type": "git",
