@@ -50,7 +50,13 @@ module.exports = function(config) {
     },
 
     webpack: {
-      devtool: 'inline-source-map'
+      devtool: 'inline-source-map',
+      node: {
+        Buffer: false,
+        process: false,
+        crypto: false,
+        setImmediate: false
+      }
     },
 
     browserify: {
