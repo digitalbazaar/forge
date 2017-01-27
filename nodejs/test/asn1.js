@@ -268,6 +268,105 @@ function Tests(ASSERT, ASN1, UTIL) {
         });
       }
     })();
+
+    (function() {
+      function _asn1(str) {
+        return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+      }
+      var tests = [{
+        name: 'empty strings',
+        obj1: '',
+        obj2: '',
+        equal: true
+      }, {
+        name: 'simple strings',
+        obj1: '\u0001',
+        obj2: '\u0001',
+        equal: true
+      }, {
+        name: 'simple strings',
+        obj1: '\u0000',
+        obj2: '\u0001',
+        equal: false
+      }, {
+        name: 'simple arrays',
+        obj1: ['', ''],
+        obj2: ['', ''],
+        equal: true
+      }, {
+        name: 'simple arrays',
+        obj1: ['', ''],
+        obj2: [''],
+        equal: false
+      }, {
+        name: 'INTEGERs',
+        obj1: _asn1('02 01 00'),
+        obj2: _asn1('02 01 00'),
+        equal: true
+      }, {
+        name: 'BER INTEGERs',
+        obj1: _asn1('02 01 01'),
+        obj2: _asn1('02 02 00 01'),
+        equal: false
+      }, {
+        name: 'BIT STRINGs',
+        obj1: _asn1('03 02 00 01'),
+        obj2: _asn1('03 02 00 01'),
+        equal: true
+      }, {
+        name: 'BIT STRINGs',
+        obj1: _asn1('03 02 00 01'),
+        obj2: _asn1('03 02 00 02'),
+        equal: false
+      }, {
+        name: 'BIT STRINGs sub INTEGER',
+        obj1: _asn1('03 04 00 02 01 01'),
+        obj2: _asn1('03 04 00 02 01 01'),
+        equal: true
+      }];
+      tests.forEach(function(test, index) {
+        var name = 'should check ASN.1 ' +
+          (test.equal ? '' : 'not ') + 'equal: ' +
+          (test.name || '#' + index);
+        it(name, function() {
+          ASSERT.equal(ASN1.equals(test.obj1, test.obj2), test.equal);
+        });
+      });
+    })();
+
+    (function() {
+      function _asn1(str) {
+        return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+      }
+      var tests = [{
+        name: 'empty string',
+        obj: ''
+      }, {
+        name: 'simple string',
+        obj: '\u0001'
+      }, {
+        name: 'simple array',
+        obj: ['', '']
+      }, {
+        name: 'INTEGER',
+        obj: _asn1('02 01 00')
+      }, {
+        name: 'BER INTEGER',
+        obj: _asn1('02 01 01')
+      }, {
+        name: 'BIT STRING',
+        obj: _asn1('03 02 00 01')
+      }, {
+        name: 'BIT STRING sub INTEGER',
+        obj: _asn1('03 04 00 02 01 01')
+      }];
+      tests.forEach(function(test, index) {
+        var name = 'should check ASN.1 copy: ' + (test.name || '#' + index);
+        it(name, function() {
+          ASSERT.equal(ASN1.equals(ASN1.copy(test.obj), test.obj), true);
+        });
+      });
+    })();
   });
 }
 
