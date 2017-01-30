@@ -91,21 +91,17 @@
   ],
   "scripts": {
     "prepublish": "npm run build",
-
     "build": "webpack",
     "test-build": "webpack --config webpack-tests.config.js",
-
     "test": "mocha -t 30000 -R spec tests/unit/index.js",
     "test-karma": "karma start",
     "test-karma-sauce": "karma start karma-sauce.conf",
     "test-server": "node tests/server.js",
     "test-server-ws": "node tests/websockets/server-ws.js",
     "test-server-webid": "node tests/websockets/server-webid.js",
-
     "coverage": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -u exports -t 30000 -R spec tests/unit/index.js",
     "coverage-lcov": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- -u exports -t 30000 -R spec tests/unit/index.js",
     "coverage-report": "./node_modules/.bin/istanbul report",
-
     "jscs": "jscs *.js lib/*.js tests/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
     "jshint": "jshint *.js lib/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
     "_jscs": "jscs *.js lib/*.js tests/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
