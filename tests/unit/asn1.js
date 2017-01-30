@@ -281,8 +281,11 @@ var support = require('./support');
     })();
 
     (function() {
+      // use function to avoid calling apis during setup
       function _asn1(str) {
-        return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+        return function() {
+          return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+        };
       }
       var tests = [{
         name: 'empty strings',
@@ -348,17 +351,22 @@ var support = require('./support');
           (test.equal ? '' : 'not ') + 'equal: ' +
           (test.name || '#' + index);
         it(name, function() {
+          var obj1 = typeof test.obj1 === 'function' ? test.obj1() : test.obj1;
+          var obj2 = typeof test.obj2 === 'function' ? test.obj2() : test.obj2;
           if(test.mutate) {
-            test.mutate(test.obj1, test.obj2);
+            test.mutate(obj1, obj2);
           }
-          ASSERT.equal(ASN1.equals(test.obj1, test.obj2), test.equal);
+          ASSERT.equal(ASN1.equals(obj1, obj2), test.equal);
         });
       });
     })();
 
     (function() {
+      // use function to avoid calling apis during setup
       function _asn1(str) {
-        return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+        return function() {
+          return ASN1.fromDer(UTIL.hexToBytes(str.replace(/ /g, '')));
+        };
       }
       var tests = [{
         name: 'empty string',
@@ -385,7 +393,8 @@ var support = require('./support');
       tests.forEach(function(test, index) {
         var name = 'should check ASN.1 copy: ' + (test.name || '#' + index);
         it(name, function() {
-          ASSERT.equal(ASN1.equals(ASN1.copy(test.obj), test.obj), true);
+          var obj = typeof test.obj === 'function' ? test.obj() : test.obj;
+          ASSERT.equal(ASN1.equals(ASN1.copy(obj), obj), true);
         });
       });
     })();
