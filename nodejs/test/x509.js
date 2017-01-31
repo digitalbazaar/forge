@@ -1,6 +1,6 @@
 (function() {
 
-function Tests(ASSERT, PKI, MD, UTIL) {
+function Tests(ASSERT, ASN1, PKI, MD, UTIL) {
   var _pem = {
     privateKey: '-----BEGIN RSA PRIVATE KEY-----\r\n' +
       'MIICXQIBAAKBgQDL0EugUiNGMWscLAVM0VoMdhDZEJOqdsUMpx9U0YZI7szokJqQ\r\n' +
@@ -853,6 +853,44 @@ function Tests(ASSERT, PKI, MD, UTIL) {
       var issuer = PKI.certificateFromPem(issuerPem);
       ASSERT.ok(issuer.verify(cert));
     });
+
+    it('should parse certificate with ASN.1 signature data', function() {
+      // signature has bytes that could look like ASN.1 data
+      // TODO: add more similar tests with possible ASN.1 data in BIT
+      // .. STRINGS that are just data.
+      var certPem =
+        '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIDsjCCApqgAwIBAgIUR+JnrOX42d+AXaXwLDWYsxmr+DwwDQYJKoZIhvcNAQEL\r\n' +
+        'BQAwgYgxJjAkBgNVBAMMHVRlc3QgSW50ZXJtZWRpYXRlIENlcnRpZmljYXRlMSEw\r\n' +
+        'HwYDVQQLDBhUZXN0IE9yZ2FuaXphdGlvbmFsIFVuaXQxGjAYBgNVBAoMEVRlc3Qg\r\n' +
+        'T3JnYW5pemF0aW9uMRIwEAYDVQQHDAlUZXN0IENpdHkxCzAJBgNVBAYTAlVTMB4X\r\n' +
+        'DTE3MDEzMDE1NTk0MloXDTIyMDEzMDE1NTk0MlowezEZMBcGA1UEAwwQVGVzdCBD\r\n' +
+        'ZXJ0aWZpY2F0ZTEhMB8GA1UECwwYVGVzdCBPcmdhbml6YXRpb25hbCBVbml0MRow\r\n' +
+        'GAYDVQQKDBFUZXN0IE9yZ2FuaXphdGlvbjESMBAGA1UEBwwJVGVzdCBDaXR5MQsw\r\n' +
+        'CQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMEBoBE9\r\n' +
+        'Kprzj7LRbK0JHKSNI93eKFDgkRc1lQWVf2cVyU6bncBDdxrCFLG6vadpQzPQDCJs\r\n' +
+        'ePlzM4J2TueTtbNTgLj3EBwwB1Ju9kOidxn5hCASWR0EObLiHSq3zlM/ABZOEOtz\r\n' +
+        'hPTGWnp7jfoDeTgK/zNnCsqdT1w1nzsz1u8zZ+96dEul6RC313CxV5Xq+Qacky8f\r\n' +
+        '2tug0wgvmcYqfd6AIg0btIjhREsulJK0QqSjqmzkLiDBJRsOHzi9zAusYBkvqUMj\r\n' +
+        '9ae2j4adIHKNzzgRAif8Bu9yXZ0iK3im6BQhBiC+unwMRAjbHdPI73ASJFdqjHb0\r\n' +
+        'uAkno0WIORHnQvECAwEAAaMgMB4wDgYDVR0PAQH/BAQDAgbAMAwGA1UdEwEB/wQC\r\n' +
+        'MAAwDQYJKoZIhvcNAQELBQADggEBACsFnYH7ByzOFQo5zdOJp4NcmV6yDaTgJoEg\r\n' +
+        '71oPI0bgRkpde2rJT7E41fxxajIGbGgVnvIT2yo2QZNRTJjrnzIoVAfOsgWSp8jf\r\n' +
+        'L6HjyZwK5L6ziBfPYnCAzRC4mwjgR2EkEhbA/HDZCko5CfRR8WIKVmtGweIL/5I+\r\n' +
+        '9aUG7lUKbf3aGLnBMG6YzThNnMW1a4EZt7EZUlz4mZ3C7KH1lqdmeaZT+BdnZFL2\r\n' +
+        'Mjf0zXRaL1k1BpBrzPfmfWfE+gx7EAWF6E/iDu+g1PhX678vFEJiAQkINVwkjA1d\r\n' +
+        '/fpSWNjJEEVPrhWwmoK5+xfM5qC9una9BfFwaUOdYDH59BN6jHE=\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      // round trip pem -> cert -> asn1 -> der -> asn1 -> cert -> pem
+      var inCert = PKI.certificateFromPem(certPem);
+      var inAsn1 = PKI.certificateToAsn1(inCert);
+      var inDer = ASN1.toDer(inAsn1);
+      var outAsn1 = ASN1.fromDer(inDer);
+      var outCert = PKI.certificateFromAsn1(outAsn1);
+      var outPem = PKI.certificateToPem(outCert);
+      ASSERT.equal(certPem, outPem);
+    });
+
   });
 
   // TODO: add sha-512 and sha-256 fingerprint tests
@@ -1222,13 +1260,15 @@ function Tests(ASSERT, PKI, MD, UTIL) {
 // check for AMD
 if(typeof define === 'function') {
   define([
+    'forge/asn1',
     'forge/pki',
     'forge/md',
     'forge/util'
-  ], function(PKI, MD, UTIL) {
+  ], function(ASN1, PKI, MD, UTIL) {
     Tests(
       // Global provided by test harness
       ASSERT,
+      ASN1(),
       PKI(),
       MD(),
       UTIL()
@@ -1238,6 +1278,7 @@ if(typeof define === 'function') {
   // assume NodeJS
   Tests(
     require('assert'),
+    require('../../js/asn1')(),
     require('../../js/pki')(),
     require('../../js/md')(),
     require('../../js/util')());

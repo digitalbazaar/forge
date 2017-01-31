@@ -257,7 +257,8 @@ var x509CertificateValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.BITSTRING,
         constructed: false,
-        capture: 'certIssuerUniqueId'
+        // TODO: support arbitrary bit length ids
+        captureBitStringValue: 'certIssuerUniqueId'
       }]
     }, {
       // subjectUniqueID (optional)
@@ -271,7 +272,8 @@ var x509CertificateValidator = {
         tagClass: asn1.Class.UNIVERSAL,
         type: asn1.Type.BITSTRING,
         constructed: false,
-        capture: 'certSubjectUniqueId'
+        // TODO: support arbitrary bit length ids
+        captureBitStringValue: 'certSubjectUniqueId'
       }]
     }, {
       // Extensions (optional)
@@ -307,7 +309,7 @@ var x509CertificateValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.BITSTRING,
     constructed: false,
-    capture: 'certSignature'
+    captureBitStringValue: 'certSignature'
   }]
 };
 
@@ -478,7 +480,7 @@ var certificationRequestValidator = {
     tagClass: asn1.Class.UNIVERSAL,
     type: asn1.Type.BITSTRING,
     constructed: false,
-    capture: 'csrSignature'
+    captureBitStringValue: 'csrSignature'
   }]
 };
 
@@ -947,6 +949,7 @@ pki.createCertificate = function() {
     cert.subject.attributes = attrs;
     delete cert.subject.uniqueId;
     if(uniqueId) {
+      // TODO: support arbitrary bit length ids
       cert.subject.uniqueId = uniqueId;
     }
     cert.subject.hash = null;
@@ -964,6 +967,7 @@ pki.createCertificate = function() {
     cert.issuer.attributes = attrs;
     delete cert.issuer.uniqueId;
     if(uniqueId) {
+      // TODO: support arbitrary bit length ids
       cert.issuer.uniqueId = uniqueId;
     }
     cert.issuer.hash = null;
@@ -1264,15 +1268,6 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
     throw error;
   }
 
-  // ensure signature is not interpreted as an embedded ASN.1 object
-  if(typeof capture.certSignature !== 'string') {
-    var certSignature = '\x00';
-    for(var i = 0; i < capture.certSignature.length; ++i) {
-      certSignature += asn1.toDer(capture.certSignature[i]).getBytes();
-    }
-    capture.certSignature = certSignature;
-  }
-
   // get oid
   var oid = asn1.derToOid(capture.publicKeyOid);
   if(oid !== pki.oids.rsaEncryption) {
@@ -1291,10 +1286,7 @@ pki.certificateFromAsn1 = function(obj, computeHash) {
   cert.siginfo.algorithmOid = forge.asn1.derToOid(capture.certinfoSignatureOid);
   cert.siginfo.parameters = _readSignatureParameters(cert.siginfo.algorithmOid,
     capture.certinfoSignatureParams, false);
-  // skip "unused bits" in signature value BITSTRING
-  var signature = forge.util.createBuffer(capture.certSignature);
-  ++signature.read;
-  cert.signature = signature.getBytes();
+  cert.signature = capture.certSignature;
 
   var validity = [];
   if(capture.certValidity1UTCTime !== undefined) {
@@ -1646,15 +1638,6 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
     throw error;
   }
 
-  // ensure signature is not interpreted as an embedded ASN.1 object
-  if(typeof capture.csrSignature !== 'string') {
-    var csrSignature = '\x00';
-    for(var i = 0; i < capture.csrSignature.length; ++i) {
-      csrSignature += asn1.toDer(capture.csrSignature[i]).getBytes();
-    }
-    capture.csrSignature = csrSignature;
-  }
-
   // get oid
   var oid = asn1.derToOid(capture.publicKeyOid);
   if(oid !== pki.oids.rsaEncryption) {
@@ -1670,10 +1653,7 @@ pki.certificationRequestFromAsn1 = function(obj, computeHash) {
   csr.siginfo.algorithmOid = forge.asn1.derToOid(capture.csrSignatureOid);
   csr.siginfo.parameters = _readSignatureParameters(
     csr.siginfo.algorithmOid, capture.csrSignatureParams, false);
-  // skip "unused bits" in signature value BITSTRING
-  var signature = forge.util.createBuffer(capture.csrSignature);
-  ++signature.read;
-  csr.signature = signature.getBytes();
+  csr.signature = capture.csrSignature;
 
   // keep CertificationRequestInfo to preserve signature when exporting
   csr.certificationRequestInfo = capture.certificationRequestInfo;
@@ -2515,6 +2495,7 @@ pki.getTBSCertificate = function(cert) {
     tbs.value.push(
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 1, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+          // TODO: support arbitrary bit length ids
           String.fromCharCode(0x00) +
           cert.issuer.uniqueId
         )
@@ -2526,6 +2507,7 @@ pki.getTBSCertificate = function(cert) {
     tbs.value.push(
       asn1.create(asn1.Class.CONTEXT_SPECIFIC, 2, true, [
         asn1.create(asn1.Class.UNIVERSAL, asn1.Type.BITSTRING, false,
+          // TODO: support arbitrary bit length ids
           String.fromCharCode(0x00) +
           cert.subject.uniqueId
         )
