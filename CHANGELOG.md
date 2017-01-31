@@ -9,6 +9,7 @@ Forge ChangeLog
 - Improved ASN.1 parsing. Many failure cases eliminated. More sanity checks.
   Better behavior in default mode of parsing BIT STRINGs. Better handling of
   parsed BIT STRINGs in `toDer()`. More tests.
+- Improve X.509 BIT STRING handling by using new capture modes.
 
 ### Changed
 
