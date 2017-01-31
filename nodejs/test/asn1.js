@@ -932,6 +932,92 @@ function Tests(ASSERT, ASN1, UTIL) {
         });
       });
 
+      it('should convert BIT STRING from DER (sig2)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data similar to a signature that
+            // could be interpreted incorrectly as encapsulated data.
+            // add bit stream of 257 bytes
+            _add(b, '03 82 01 01');
+            // no unused
+            _add(b, '00');
+            // signature bits
+            _add(b, '2B 05 9D 81 FB 07 2C CE 15 0A 39 CD D3 89 A7 83');
+            _add(b, '5C 99 5E B2 0D A4 E0 26 81 20 EF 5A 0F 23 46 E0');
+            _add(b, '46 4A 5D 7B 6A C9 4F B1 38 D5 FC 71 6A 32 06 6C');
+            _add(b, '68 15 9E F2 13 DB 2A 36 41 93 51 4C 98 EB 9F 32');
+            _add(b, '28 54 07 CE B2 05 92 A7 C8 DF 2F A1 E3 C9 9C 0A');
+            _add(b, 'E4 BE B3 88 17 CF 62 70 80 CD 10 B8 9B 08 E0 47');
+            _add(b, '61 24 12 16 C0 FC 70 D9 0A 4A 39 09 F4 51 F1 62');
+            _add(b, '0A 56 6B 46 C1 E2 0B FF 92 3E F5 A5 06 EE 55 0A');
+            _add(b, '6D FD DA 18 B9 C1 30 6E 98 CD 38 4D 9C C5 B5 6B');
+            _add(b, '81 19 B7 B1 19 52 5C F8 99 9D C2 EC A1 F5 96 A7');
+            _add(b, '66 79 A6 53 F8 17 67 64 52 F6 32 37 F4 CD 74 5A');
+            _add(b, '2F 59 35 06 90 6B CC F7 E6 7D 67 C4 FA 0C 7B 10');
+            _add(b, '05 85 E8 4F E2 0E EF A0 D4 F8 57 EB BF 2F 14 42');
+            _add(b, '62 01 09 08 35 5C 24 8C 0D 5D FD FA 52 58 D8 C9');
+            _add(b, '10 45 4F AE 15 B0 9A 82 B9 FB 17 CC E6 A0 BD BA');
+            _add(b, '76 BD 05 F1 70 69 43 9D 60 31 F9 F4 13 7A 8C 71');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // captureBitStringContents not used to check if valude decoded
+            captureBitStringValue: 'bits'
+          },
+          captured: {
+            bits: _h2b(
+              '2B 05 9D 81 FB 07 2C CE 15 0A 39 CD D3 89 A7 83' +
+              '5C 99 5E B2 0D A4 E0 26 81 20 EF 5A 0F 23 46 E0' +
+              '46 4A 5D 7B 6A C9 4F B1 38 D5 FC 71 6A 32 06 6C' +
+              '68 15 9E F2 13 DB 2A 36 41 93 51 4C 98 EB 9F 32' +
+              '28 54 07 CE B2 05 92 A7 C8 DF 2F A1 E3 C9 9C 0A' +
+              'E4 BE B3 88 17 CF 62 70 80 CD 10 B8 9B 08 E0 47' +
+              '61 24 12 16 C0 FC 70 D9 0A 4A 39 09 F4 51 F1 62' +
+              '0A 56 6B 46 C1 E2 0B FF 92 3E F5 A5 06 EE 55 0A' +
+              '6D FD DA 18 B9 C1 30 6E 98 CD 38 4D 9C C5 B5 6B' +
+              '81 19 B7 B1 19 52 5C F8 99 9D C2 EC A1 F5 96 A7' +
+              '66 79 A6 53 F8 17 67 64 52 F6 32 37 F4 CD 74 5A' +
+              '2F 59 35 06 90 6B CC F7 E6 7D 67 C4 FA 0C 7B 10' +
+              '05 85 E8 4F E2 0E EF A0 D4 F8 57 EB BF 2F 14 42' +
+              '62 01 09 08 35 5C 24 8C 0D 5D FD FA 52 58 D8 C9' +
+              '10 45 4F AE 15 B0 9A 82 B9 FB 17 CC E6 A0 BD BA' +
+              '76 BD 05 F1 70 69 43 9D 60 31 F9 F4 13 7A 8C 71')
+          }
+        });
+      });
+
+      it('should convert BIT STRING from DER (sig3)', function() {
+        _asn1Test({
+          init: function(b) {
+            // create crafted DER BIT STRING data similar to a signature that
+            // could be interpreted incorrectly as encapsulated data.
+            _add(b, '03 0B');
+            // no unused
+            _add(b, '00');
+            // signature bits with structure with bad type and length
+            _add(b, '2B 05 9D 05 F0 F1 F2 F3 F4 F5');
+          },
+          dump: false,
+          roundtrip: true,
+          v: {
+            tagClass: ASN1.Class.UNIVERSAL,
+            type: ASN1.Type.BITSTRING,
+            constructed: false,
+            // captureBitStringContents not used to check if value decoded
+            capture: 'sig'
+          },
+          captured: {
+            sig: _h2b(
+              '00' +
+              '2B 05 9D 05 F0 F1 F2 F3 F4 F5')
+          }
+        });
+      });
+
       it('should convert BIT STRING from BER (decodable sig)', function() {
         _asn1Test({
           init: function(b) {

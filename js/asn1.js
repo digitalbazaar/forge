@@ -521,7 +521,7 @@ function _fromDer(bytes, remaining, depth, options) {
       // parsing asn1 object of definite length
       while(length > 0) {
         start = bytes.length();
-        value.push(_fromDer(bytes, remaining, depth + 1, options));
+        value.push(_fromDer(bytes, length, depth + 1, options));
         remaining -= start - bytes.length();
         length -= start - bytes.length();
       }
