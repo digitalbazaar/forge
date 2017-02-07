@@ -132,6 +132,12 @@ with [Bower][]:
 
     bower install forge
 
+### unpkg
+
+[unpkg][] provides a CDN that can serve files from npm packages directly.
+
+https://unpkg.com/node-forge@0.7.0/dist/forge.min.js
+
 ### Development Requirements
 
 The core JavaScript has the following requirements to build and test:
@@ -1928,4 +1934,5 @@ Financial support is welcome and helps contribute to futher development:
 [UMD]: https://github.com/umdjs/umd
 [X.509]: http://en.wikipedia.org/wiki/X.509
 [freenode]: https://freenode.net/
+[unpkg]: https://unpkg.com/
 [webpack]: https://webpack.github.io/
