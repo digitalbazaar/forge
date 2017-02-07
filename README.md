@@ -94,8 +94,8 @@ Documentation
 Installation
 ------------
 
-Please see the [Security Considerations][] section before using packaging
-systems and pre-built files.
+**Note**: Please see the [Security Considerations](#security-considerations)
+section before using packaging systems and pre-built files.
 
 Forge uses a [CommonJS][] module structure with a build process for browser
 bundles. The older [0.6.x][] branch with standalone files is available but will
