@@ -16,6 +16,8 @@ Master Branch Release Process
 ## Update the main repository:
 
 * Commit changes.
+* Update the [CHANGELOG](./CHANGELOG.md) as needed using rougly
+  [Keep a CHANGELOG][] style.
 * `$EDITOR package.json`: update to release version and remove `-dev` suffix.
 * `git commit package.json -m "Release {version}."`
 * `git tag {version}`
@@ -70,5 +72,6 @@ following:
   * `git push`
   * `git push origin {version}`
 
+[Keep a CHANGELOG]: http://keepachangelog.com/
 [Semantic Versioning]: http://semver.org/
 [forge-dist]: https://github.com/digitalbazaar/forge-dist
