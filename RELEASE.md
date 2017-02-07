@@ -48,7 +48,7 @@ adding per-release bundles.
   * `git commit -a -m "Release {version}."`
   * `git tag {version}`
   * `git push`
-  * `git push --tags`
+  * `git push origin {version}`
 
 Older Branch Release Process
 ----------------------------
