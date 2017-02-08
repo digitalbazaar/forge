@@ -44,18 +44,19 @@ const outputs = [
   // Example: sha1 + ...
   //{
   //  entry: ['./lib/sha1.js', ..., './lib/forge.js'],
-  //  filenameBase: 'forge.custom'
+  //  filenameBase: 'forge.custom',
   //  libraryTarget: 'umd'
   //}
   // Example: PBKDF2 + sha1, explicitly include sha1 default
   //{
   //  entry: ['./lib/pbkdf2.js', './lib/sha1.js', './lib/forge.js'],
-  //  filenameBase: 'forge.pbkdf2-sha1'
+  //  filenameBase: 'forge.pbkdf2-sha1',
   //  libraryTarget: 'umd'
+  //}
   // Example: PBKDF2 + sha256, without the sha1 default
   //{
   //  entry: ['./lib/pbkdf2.js', './lib/sha256.js', './lib/forge.js'],
-  //  filenameBase: 'forge.pbkdf2-sha256'
+  //  filenameBase: 'forge.pbkdf2-sha256',
   //  libraryTarget: 'umd'
   //}
 ];
