@@ -4,6 +4,11 @@ var UTIL = require('../../lib/util');
 
 (function() {
   describe('sha1', function() {
+    it('should have correct digest length', function() {
+      var md = SHA1.create();
+      ASSERT.equal(md.digestLength, 20);
+    });
+
     it('should digest the empty string', function() {
       var md = SHA1.create();
       ASSERT.equal(

@@ -4,6 +4,11 @@ var UTIL = require('../../lib/util');
 
 (function() {
   describe('md5', function() {
+    it('should have correct digest length', function() {
+      var md = MD5.create();
+      ASSERT.equal(md.digestLength, 16);
+    });
+
     it('should digest the empty string', function() {
       var md = MD5.create();
       ASSERT.equal(md.digest().toHex(), 'd41d8cd98f00b204e9800998ecf8427e');

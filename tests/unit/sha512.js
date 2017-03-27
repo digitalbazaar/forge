@@ -3,6 +3,11 @@ var SHA512 = require('../../lib/sha512');
 
 (function() {
   describe('sha512', function() {
+    it('should have correct digest length', function() {
+      var md = SHA512.create();
+      ASSERT.equal(md.digestLength, 64);
+    });
+
     it('should digest the empty string', function() {
       var md = SHA512.create();
       ASSERT.equal(
@@ -73,6 +78,11 @@ var SHA512 = require('../../lib/sha512');
   var SHA384 = SHA512.sha384;
 
   describe('sha384', function() {
+    it('should have correct digest length', function() {
+      var md = SHA384.create();
+      ASSERT.equal(md.digestLength, 48);
+    });
+
     it('should digest the empty string', function() {
       var md = SHA384.create();
       ASSERT.equal(
@@ -143,6 +153,11 @@ var SHA512 = require('../../lib/sha512');
   var SHA256 = SHA512.sha256;
 
   describe('sha512/256', function() {
+    it('should have correct digest length', function() {
+      var md = SHA256.create();
+      ASSERT.equal(md.digestLength, 32);
+    });
+
     it('should digest the empty string', function() {
       var md = SHA256.create();
       ASSERT.equal(
@@ -162,6 +177,11 @@ var SHA512 = require('../../lib/sha512');
   var SHA224 = SHA512.sha224;
 
   describe('sha512/224', function() {
+    it('should have correct digest length', function() {
+      var md = SHA224.create();
+      ASSERT.equal(md.digestLength, 28);
+    });
+
     it('should digest the empty string', function() {
       var md = SHA224.create();
       ASSERT.equal(
