@@ -1,6 +1,10 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+
+- Fix digestLength for hashes based on SHA-512.
+
 ## 0.7.0 - 2017-02-07
 
 ### Fixed
