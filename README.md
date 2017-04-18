@@ -285,6 +285,7 @@ API
 ---
 
 <a name="options" />
+
 ### Options
 
 If at any time you wish to disable the use of native code, where available,
@@ -313,6 +314,7 @@ Transports
 ----------
 
 <a name="tls" />
+
 ### TLS
 
 Provides a native javascript client and server-side [TLS][] implementation.
@@ -523,6 +525,7 @@ socket.connect(443, 'google.com');
 ```
 
 <a name="http" />
+
 ### HTTP
 
 Provides a native [JavaScript][] mini-implementation of an http client that
@@ -558,6 +561,7 @@ var someAsyncDataHandler = function(bytes) {
 ```
 
 <a name="ssh" />
+
 ### SSH
 
 Provides some SSH utility functions.
@@ -582,6 +586,7 @@ forge.ssh.getPublicKeyFingerprint(key, {encoding: 'hex', delimiter: ':'});
 ```
 
 <a name="xhr" />
+
 ### XHR
 
 Provides an XmlHttpRequest implementation using forge.http as a backend.
@@ -593,6 +598,7 @@ __Examples__
 ```
 
 <a name="socket" />
+
 ### Sockets
 
 Provides an interface to create and use raw sockets provided via Flash.
@@ -607,6 +613,7 @@ Ciphers
 -------
 
 <a name="cipher" />
+
 ### CIPHER
 
 Provides a basic API for block encryption and decryption. There is built-in
@@ -776,18 +783,21 @@ function decrypt(password) {
 ```
 
 <a name="aes" />
+
 ### AES
 
 Provides [AES][] encryption and decryption in [CBC][], [CFB][], [OFB][],
 [CTR][], and [GCM][] modes. See [CIPHER](#cipher) for examples.
 
 <a name="des" />
+
 ### DES
 
 Provides [3DES][] and [DES][] encryption and decryption in [ECB][] and
 [CBC][] modes. See [CIPHER](#cipher) for examples.
 
 <a name="rc2" />
+
 ### RC2
 
 __Examples__
@@ -822,6 +832,7 @@ Provides [X.509][] certificate and RSA public and private key encoding,
 decoding, encryption/decryption, and signing/verifying.
 
 <a name="rsa" />
+
 ### RSA
 
 __Examples__
@@ -940,6 +951,7 @@ var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
 ```
 
 <a name="rsakem" />
+
 ### RSA-KEM
 
 __Examples__
@@ -988,6 +1000,7 @@ if(pass) {
 ```
 
 <a name="x509" />
+
 ### X.509
 
 __Examples__
@@ -1155,6 +1168,7 @@ var asn1Cert = pki.certificateToAsn1(cert);
 ```
 
 <a name="pkcs5" />
+
 ### PKCS#5
 
 Provides the password-based key-derivation function from [PKCS#5][].
@@ -1175,6 +1189,7 @@ forge.pkcs5.pbkdf2('password', salt, numIterations, 16, function(err, derivedKey
 ```
 
 <a name="pkcs7" />
+
 ### PKCS#7
 
 Provides cryptographically protected messages from [PKCS#7][].
@@ -1242,6 +1257,7 @@ var pem = forge.pkcs7.messageToPem(p7);
 ```
 
 <a name="pkcs8" />
+
 ### PKCS#8
 
 __Examples__
@@ -1298,6 +1314,7 @@ var publicKey = pki.setRsaPublicKey(privateKey.n, privateKey.e);
 ```
 
 <a name="pkcs10" />
+
 ### PKCS#10
 
 Provides certification requests or certificate signing requests (CSR) from
@@ -1377,6 +1394,7 @@ csr.getAttribute({name: 'extensionRequest'}).extensions;
 ```
 
 <a name="pkcs12" />
+
 ### PKCS#12
 
 Provides the cryptographic archive file format from [PKCS#12][].
@@ -1468,6 +1486,7 @@ a.appendChild(document.createTextNode('Download'));
 ```
 
 <a name="asn" />
+
 ### ASN.1
 
 Provides [ASN.1][] DER encoding and decoding.
@@ -1575,6 +1594,7 @@ Message Digests
 ----------------
 
 <a name="sha1" />
+
 ### SHA1
 
 Provides [SHA-1][] message digests.
@@ -1589,6 +1609,7 @@ console.log(md.digest().toHex());
 ```
 
 <a name="sha256" />
+
 ### SHA256
 
 Provides [SHA-256][] message digests.
@@ -1603,6 +1624,7 @@ console.log(md.digest().toHex());
 ```
 
 <a name="sha384" />
+
 ### SHA384
 
 Provides [SHA-384][] message digests.
@@ -1617,6 +1639,7 @@ console.log(md.digest().toHex());
 ```
 
 <a name="sha512" />
+
 ### SHA512
 
 Provides [SHA-512][] message digests.
@@ -1644,6 +1667,7 @@ console.log(md.digest().toHex());
 ```
 
 <a name="md5" />
+
 ### MD5
 
 Provides [MD5][] message digests.
@@ -1658,6 +1682,7 @@ console.log(md.digest().toHex());
 ```
 
 <a name="hmac" />
+
 ### HMAC
 
 Provides [HMAC][] w/any supported message digest algorithm.
@@ -1676,6 +1701,7 @@ Utilities
 ---------
 
 <a name="prime" />
+
 ### Prime
 
 Provides an API for generating large, random, probable primes.
@@ -1704,6 +1730,7 @@ forge.prime.generateProbablePrime(bits, options, function(err, num) {
 ```
 
 <a name="prng" />
+
 ### PRNG
 
 Provides a [Fortuna][]-based cryptographically-secure pseudo-random number
@@ -1752,6 +1779,7 @@ var myPrng = forge.random.createInstance();
 ```
 
 <a name="task" />
+
 ### Tasks
 
 Provides queuing and synchronizing tasks in a web application.
@@ -1763,6 +1791,7 @@ __Examples__
 ```
 
 <a name="util" />
+
 ### Utilities
 
 Provides utility functions, including byte buffer support, base64,
@@ -1819,6 +1848,7 @@ var parsed = forge.util.parseUrl('http://example.com/foo?bar=baz');
 ```
 
 <a name="log" />
+
 ### Logging
 
 Provides logging to a javascript console using various categories and
@@ -1831,6 +1861,7 @@ __Examples__
 ```
 
 <a name="debug" />
+
 ### Debugging
 
 Provides storage of debugging information normally inaccessible in
@@ -1843,6 +1874,7 @@ __Examples__
 ```
 
 <a name="flash" />
+
 ### Flash Networking Support
 
 The [flash README](./flash/README.md) provides details on rebuilding the
