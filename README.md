@@ -667,7 +667,7 @@ console.log(encrypted.toHex());
 var decipher = forge.cipher.createDecipher('AES-CBC', key);
 decipher.start({iv: iv});
 decipher.update(encrypted);
-decipher.finish();
+var result = decipher.finish(); // check 'result' for true/false
 // outputs decrypted hex
 console.log(decipher.output.toHex());
 
