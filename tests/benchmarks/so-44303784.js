@@ -32,9 +32,9 @@ function test_forge(bytes) {
   };
 }
 
-function test_forge_chunk(bytes, blockSize) {
-  if(!blockSize) {
-    blockSize = 1024 * 16;
+function test_forge_chunk(bytes, chunkSize) {
+  if(!chunkSize) {
+    chunkSize = 1024 * 16;
   }
   const start = new Date();
 
@@ -45,9 +45,9 @@ function test_forge_chunk(bytes, blockSize) {
   let plain = '';
   do {
     plain += decipher.output.getBytes();
-    const buf = forge.util.createBuffer(bytes.substr(index, blockSize));
+    const buf = forge.util.createBuffer(bytes.substr(index, chunkSize));
     decipher.update(buf);
-    index += blockSize;
+    index += chunkSize;
   } while(index < length);
   const result = decipher.finish();
   assert(result);
@@ -126,11 +126,11 @@ function compareImpl() {
     const tf = tfs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
 
     // forge w/ chunks
-    const blockSize = 1024 * 64;
+    const chunkSize = 1024 * 64;
     const tfcs = [
-      test_forge_chunk(input.encrypted, blockSize),
-      test_forge_chunk(input.encrypted, blockSize),
-      test_forge_chunk(input.encrypted, blockSize)
+      test_forge_chunk(input.encrypted, chunkSize),
+      test_forge_chunk(input.encrypted, chunkSize),
+      test_forge_chunk(input.encrypted, chunkSize)
     ];
     tfcs.forEach(res => assert(input.plain == res.plain));
     const tfc = tfcs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
@@ -155,18 +155,18 @@ function compareBlockSize() {
   let csv = '';
   const input = data(megs);
   function _test(k) {
-    blockSize = 1024 * k;
+    chunkSize = 1024 * k;
     const tfcs = [
-      test_forge_chunk(input.encrypted, blockSize),
-      test_forge_chunk(input.encrypted, blockSize),
-      test_forge_chunk(input.encrypted, blockSize)
+      test_forge_chunk(input.encrypted, chunkSize),
+      test_forge_chunk(input.encrypted, chunkSize),
+      test_forge_chunk(input.encrypted, chunkSize)
     ];
     tfcs.forEach(res => assert(input.plain == res.plain));
     const tfc = tfcs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
     csv += `${k}\t${tfc.time}\t${megs/tfc.time}\n`;
     console.log(`k:${k} tfc:${tfc.time} tfc/s:${megs/tfc.time}`);
   }
-  // sweek KB blockSize
+  // sweep KB chunkSize
   const sweep = [
     1,2,4,8,16,32,64,96,128,160,192,256,
     320,384,448,512,576,640,704,768,832,896,960,1024

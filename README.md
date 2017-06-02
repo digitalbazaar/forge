@@ -680,14 +680,14 @@ var encryptedBytes = encrypted.bytes();
 var decipher = forge.cipher.createDecipher('AES-CBC', key);
 decipher.start({iv: iv});
 var length = encryptedBytes.length;
-var blockSize = 1024 * 64;
+var chunkSize = 1024 * 64;
 var index = 0;
 var decrypted = '';
 do {
   decrypted += decipher.output.getBytes();
-  var buf = forge.util.createBuffer(encryptedBytes.substr(index, blockSize));
+  var buf = forge.util.createBuffer(encryptedBytes.substr(index, chunkSize));
   decipher.update(buf);
-  index += blockSize;
+  index += chunkSize;
 } while(index < length);
 var result = decipher.finish();
 assert(result);
