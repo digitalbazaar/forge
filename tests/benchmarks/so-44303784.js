@@ -3,7 +3,7 @@
 // Test decryption with single update(), many update()s, and node
 // Test chunk size for many update()s
 
-const forge = require('..');
+const forge = require('../..');
 const assert = require('assert');
 const crypto = require('crypto');
 
