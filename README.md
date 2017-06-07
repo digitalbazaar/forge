@@ -677,7 +677,7 @@ console.log(decipher.output.toHex());
 // improvement. CPU intensive update() calls could also be performed with
 // setImmediate/setTimeout to avoid blocking the main browser UI thread (not
 // shown here). Optimal block size depends on the JavaScript VM and other
-// factors.
+// factors. Encryption can use a simple technique for increased performance.
 var encryptedBytes = encrypted.bytes();
 var decipher = forge.cipher.createDecipher('AES-CBC', key);
 decipher.start({iv: iv});
