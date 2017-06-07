@@ -191,10 +191,10 @@ function compareImpl() {
   console.log(csv);
 }
 
-function compareDecBlockSize() {
+function compareDecChunkSize() {
   const megs = 10;
   let csv = '';
-  const input = data(megs);
+  const input = data_chunk(megs, 1024 * 64);
   function _test(k) {
     chunkSize = 1024 * k;
     const tfcs = [
@@ -216,7 +216,7 @@ function compareDecBlockSize() {
   console.log(csv);
 }
 
-function compareEncBlockSize() {
+function compareEncChunkSize() {
   const megs = 10;
   let csv = '';
   function _test(k) {
@@ -240,5 +240,5 @@ function compareEncBlockSize() {
 }
 
 compareImpl();
-//compareDecBlockSize();
-//compareEncBlockSize();
+//compareDecChunkSize();
+//compareEncChunkSize();
