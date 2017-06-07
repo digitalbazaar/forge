@@ -84,7 +84,7 @@ function test_node(bytes) {
 }
 
 function data(megs) {
-  // FIXME: slow to build/enc data
+  // slower single chunk
   const start = new Date();
   var x = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
   var plain = '';
@@ -100,7 +100,47 @@ function data(megs) {
   const encrypted = cipher.output.getBytes();
 
   const time = (new Date() - start) / 1000;
-  //console.log(`setup in ${time}s`);
+  //console.log(`data m:${megs} t:${time}s m/s:${megs/time}`);
+
+  return {
+    plain,
+    encrypted,
+    time
+  };
+}
+
+function data_chunk(megs, chunkSize) {
+  if(!chunkSize) {
+    chunkSize = 1024 * 16;
+  }
+
+  // faster with chunksize
+  const start = new Date();
+  // make some large plain text bigger than some size
+  var x = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  var plain = '';
+  const minlen = megs * 1024 * 1024;
+  while(plain.length < minlen) {
+    plain += x;
+  }
+
+  const cipher = forge.cipher.createCipher('AES-CBC', key);
+  cipher.start({iv: iv});
+  const length = plain.length;
+  let index = 0;
+  let encrypted = '';
+  do {
+    encrypted += cipher.output.getBytes();
+    const buf = forge.util.createBuffer(plain.substr(index, chunkSize));
+    cipher.update(buf);
+    index += chunkSize;
+  } while(index < length);
+  const result = cipher.finish();
+  assert(result);
+  encrypted += cipher.output.getBytes();
+
+  const time = (new Date() - start) / 1000;
+  //console.log(`data_chunk m:${megs} t:${time}s m/s:${megs/time}`);
 
   return {
     plain,
@@ -114,7 +154,8 @@ function compareImpl() {
   let csv = '';
   // sweep input size
   for(let i = 1; i <= maxmegs; ++i) {
-    const input = data(i);
+    //const input = data(i);
+    const input = data_chunk(i, 1024 * 64);
 
     // forge w/ one chunk
     const tfs = [
@@ -150,7 +191,7 @@ function compareImpl() {
   console.log(csv);
 }
 
-function compareBlockSize() {
+function compareDecBlockSize() {
   const megs = 10;
   let csv = '';
   const input = data(megs);
@@ -175,5 +216,29 @@ function compareBlockSize() {
   console.log(csv);
 }
 
+function compareEncBlockSize() {
+  const megs = 10;
+  let csv = '';
+  function _test(k) {
+    chunkSize = 1024 * k;
+    const dcs = [
+      data_chunk(megs, chunkSize),
+      data_chunk(megs, chunkSize),
+      data_chunk(megs, chunkSize)
+    ];
+    const dc = dcs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
+    csv += `${k}\t${dc.time}\t${megs/dc.time}\n`;
+    console.log(`k:${k} dc:${dc.time} dc/s:${megs/dc.time}`);
+  }
+  // sweep KB chunkSize
+  const sweep = [
+    1,2,4,8,16,32,64,96,128,160,192,256,
+    320,384,448,512,576,640,704,768,832,896,960,1024
+  ];
+  sweep.forEach(k => _test(k));
+  console.log(csv);
+}
+
 compareImpl();
-//compareBlockSize();
+//compareDecBlockSize();
+//compareEncBlockSize();
