@@ -17,8 +17,8 @@ function init() {
   $('#private').text('...');
   $('#public').text('...');
   return {
-    bits: $('#bits')[0].value,
-    workers: $('#workers')[0].value
+    bits: parseInt($('#bits')[0].value, 10),
+    workers: parseInt($('#workers')[0].value, 10)
   };
 }
 function async() {
