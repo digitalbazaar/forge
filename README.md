@@ -1095,6 +1095,10 @@ var cert = pki.createCertificate();
 cert.publicKey = keys.publicKey;
 // alternatively set public key from a csr
 //cert.publicKey = csr.publicKey;
+// NOTE: serialNumber is the hex encoded value of an ASN.1 INTEGER.
+// Conforming CAs should ensure serialNumber is:
+// - no more than 20 octets
+// - non-negative (prefix a '00' if your value starts with a '1' bit)
 cert.serialNumber = '01';
 cert.validity.notBefore = new Date();
 cert.validity.notAfter = new Date();
