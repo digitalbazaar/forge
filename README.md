@@ -132,11 +132,21 @@ with [Bower][]:
 
     bower install forge
 
-### unpkg
+### jsDelivr CDN
 
-[unpkg][] provides a CDN that can serve files from npm packages directly.
+To use it via [jsDelivr](https://www.jsdelivr.com/package/npm/node-forge) include this in your html:
 
-https://unpkg.com/node-forge@0.7.0/dist/forge.min.js
+```html
+<script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+```
+
+### unpkg CDN
+
+To use it via [unpkg](https://unpkg.com/#/) include this in your html:
+
+```html
+<script src="https://unpkg.com/node-forge@0.7.0/dist/forge.min.js"></script>
+```
 
 ### Development Requirements
 
