@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Added
+- Support verification of SHA-384 certificates.
+
 ## 0.7.1 - 2017-03-27
 
 ### Fixed
