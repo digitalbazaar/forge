@@ -4,6 +4,10 @@ Forge ChangeLog
 ### Added
 - Support verification of SHA-384 certificates.
 
+### Fixed
+- Support importing PKCS#7 data with no certificates. RFC 2315 sec 9.1 states
+  certificates are optional.
+
 ## 0.7.1 - 2017-03-27
 
 ### Fixed
