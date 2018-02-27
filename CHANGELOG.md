@@ -8,6 +8,7 @@ Forge ChangeLog
 ### Fixed
 - Support importing PKCS#7 data with no certificates. RFC 2315 sec 9.1 states
   certificates are optional.
+- `asn1.equals` loop bug.
 
 ## 0.7.1 - 2017-03-27
 
