@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 0.7.2 - 2018-02-27
+
 ### Added
 - Support verification of SHA-384 certificates.
 - `1.2.840.10040.4.3'`/`dsa-with-sha1` OID.
