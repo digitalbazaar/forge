@@ -2,6 +2,7 @@ language: node_js
 node_js:
   - "4"
   - "6"
+  - "8"
   - "node"
 sudo: false
 install: npm install
