@@ -17,8 +17,8 @@
   "devDependencies": {
     "browserify": "^16.1.0",
     "commander": "^2.14.1",
+    "cross-env": "^5.1.3",
     "express": "^4.16.2",
-    "istanbul": "^0.4.5",
     "jscs": "^3.0.7",
     "jshint": "^2.9.5",
     "karma": "^2.0.0",
@@ -38,6 +38,7 @@
     "mocha": "^5.0.1",
     "mocha-lcov-reporter": "^1.2.0",
     "nodejs-websocket": "^1.7.1",
+    "nyc": "^11.4.1",
     "opts": "^1.2.2",
     "webpack": "^3.11.0"
   },
@@ -93,19 +94,23 @@
     "prepublish": "npm run build",
     "build": "webpack",
     "test-build": "webpack --config webpack-tests.config.js",
-    "test": "mocha -t 30000 -R spec tests/unit/index.js",
+    "test": "cross-env NODE_ENV=test mocha -t 30000 -R ${REPORTER:-spec} tests/unit/index.js",
     "test-karma": "karma start",
     "test-karma-sauce": "karma start karma-sauce.conf",
     "test-server": "node tests/server.js",
     "test-server-ws": "node tests/websockets/server-ws.js",
     "test-server-webid": "node tests/websockets/server-webid.js",
-    "coverage": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -u exports -t 30000 -R spec tests/unit/index.js",
-    "coverage-lcov": "rm -rf coverage && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --report lcovonly -- -u exports -t 30000 -R spec tests/unit/index.js",
-    "coverage-report": "./node_modules/.bin/istanbul report",
+    "coverage": "rm -rf coverage && nyc --reporter=lcov --reporter=text-summary npm test",
+    "coverage-report": "nyc report",
     "jscs": "jscs *.js lib/*.js tests/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
     "jshint": "jshint *.js lib/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
     "_jscs": "jscs *.js lib/*.js tests/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js",
     "_jshint": "jshint *.js lib/*.js tests/*.js tests/unit/*.js tests/legacy/*.js tests/issues/*.js tests/websockets/*.js"
+  },
+  "nyc": {
+    "exclude": [
+      "tests"
+    ]
   },
   "jspm": {
     "format": "amd"
