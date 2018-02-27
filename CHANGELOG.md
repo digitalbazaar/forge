@@ -3,6 +3,7 @@ Forge ChangeLog
 
 ### Added
 - Support verification of SHA-384 certificates.
+- `1.2.840.10040.4.3'`/`dsa-with-sha1` OID.
 
 ### Fixed
 - Support importing PKCS#7 data with no certificates. RFC 2315 sec 9.1 states
