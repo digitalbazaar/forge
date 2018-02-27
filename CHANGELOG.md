@@ -1,6 +1,10 @@
 Forge ChangeLog
 ===============
 
+## 0.7.3 - 2018-03-05
+
+- Re-publish with npm 5.6.0 due to file timestamp issues.
+
 ## 0.7.2 - 2018-02-27
 
 ### Added
