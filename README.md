@@ -53,6 +53,7 @@ Documentation
 
 ### PKI
 
+* [ED25519](#ed25519)
 * [RSA](#rsa)
 * [RSA-KEM](#rsakem)
 * [X.509](#x509)
@@ -863,8 +864,92 @@ console.log(cipher.output.toHex());
 PKI
 ---
 
-Provides [X.509][] certificate and RSA public and private key encoding,
-decoding, encryption/decryption, and signing/verifying.
+Provides [X.509][] certificate support, ED25519 key generation and
+signing/verifying, and RSA public and private key encoding, decoding,
+encryption/decryption, and signing/verifying.
+
+<a name="ed25519" />
+
+### ED25519
+
+Special thanks to [TweetNaCl.js][] for providing the bulk of the implementation.
+
+__Examples__
+
+```js
+var ed25519 = forge.pki.ed25519;
+
+// generate a random ED25519 keypair
+var keypair = ed25519.generateKeyPair();
+// `keypair.publicKey` is a node.js Buffer or Uint8Array
+// `keypair.privateKey` is a node.js Buffer or Uint8Array
+
+// generate a random ED25519 keypair based on a random 32-byte seed
+var seed = forge.random.getBytesSync(32);
+var keypair = ed25519.generateKeyPair({seed: seed});
+
+// generate a random ED25519 keypair based on a "password" 32-byte seed
+var password = 'Mai9ohgh6ahxee0jutheew0pungoozil';
+var seed = new forge.util.ByteBuffer(password, 'utf8');
+var keypair = ed25519.generateKeyPair({seed: seed});
+
+// sign a UTF-8 message
+var signature = ED25519.sign({
+  message: 'test',
+  // also accepts `binary` if you want to pass a binary string
+  encoding: 'utf8',
+  // node.js Buffer, Uint8Array, forge ByteBuffer, binary string
+  privateKey: privateKey
+});
+// `signature` is a node.js Buffer or Uint8Array
+
+// sign a message passed as a buffer
+var signature = ED25519.sign({
+  // also accepts a forge ByteBuffer or Uint8Array
+  message: new Buffer('test', 'utf8'),
+  privateKey: privateKey
+});
+
+// sign a message digest (shorter "message" == better performance)
+var md = forge.md.sha256.create();
+md.update('test', 'utf8');
+var signature = ED25519.sign({
+  md: md,
+  privateKey: privateKey
+});
+
+// verify a signature on a UTF-8 message
+var verified = ED25519.verify({
+  message: 'test',
+  encoding: 'utf8',
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  signature: signature,
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  publicKey: publicKey
+});
+// `verified` is true/false
+
+// sign a message passed as a buffer
+var verified = ED25519.verify({
+  // also accepts a forge ByteBuffer or Uint8Array
+  message: new Buffer('test', 'utf8'),
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  signature: signature,
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  publicKey: publicKey
+});
+
+// verify a signature on a message digest
+var md = forge.md.sha256.create();
+md.update('test', 'utf8');
+var verified = ED25519.verify({
+  md: md,
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  signature: signature,
+  // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
+  publicKey: publicKey
+});
+```
 
 <a name="rsa" />
 
@@ -2007,3 +2092,4 @@ Financial support is welcome and helps contribute to futher development:
 [freenode]: https://freenode.net/
 [unpkg]: https://unpkg.com/
 [webpack]: https://webpack.github.io/
+[TweetNaCl]: https://github.com/dchest/tweetnacl-js
