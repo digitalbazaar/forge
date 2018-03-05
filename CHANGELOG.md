@@ -3,6 +3,7 @@ Forge ChangeLog
 
 ### Added
 - Support for ED25519.
+- Support for baseN/base58.
 
 ## 0.7.3 - 2018-03-05
 
