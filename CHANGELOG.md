@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Added
+- Support for ED25519.
+
 ## 0.7.3 - 2018-03-05
 
 - Re-publish with npm 5.6.0 due to file timestamp issues.
