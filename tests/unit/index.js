@@ -7,6 +7,7 @@ require('./hmac');
 require('./pbkdf2');
 require('./mgf1');
 require('./random');
+require('./ed25519');
 require('./asn1');
 require('./pem');
 require('./rsa');
