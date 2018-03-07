@@ -93,12 +93,12 @@ var UTIL = require('../../lib/util');
 
     // generate pair in sync mode
     function _genSync(options) {
-      options = options || {samePrng: false};
+      options = options || {samePrng: false, pythonic: false};
       var pair;
       if(options.samePrng) {
-        pair = RSA.generateKeyPair(512, {prng: _samePrng()});
+        pair = RSA.generateKeyPair(512, {prng: _samePrng(), pythonic: options.pythonic});
       } else {
-        pair = RSA.generateKeyPair(512);
+        pair = RSA.generateKeyPair(512, {pythonic: options.pythonic});
       }
       _pairCheck(pair);
       return pair;
@@ -137,6 +137,16 @@ var UTIL = require('../../lib/util');
       // test pure mode
       FORGE.options.usePureJavaScript = true;
       _genSync();
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
+    });
+
+    it('should generate 512 bit key pair (sync+purejs+pythonic)', function() {
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      _genSync({pythonic: true});
       // restore
       FORGE.options.usePureJavaScript = purejs;
     });
@@ -180,6 +190,18 @@ var UTIL = require('../../lib/util');
       // test pure mode
       FORGE.options.usePureJavaScript = true;
       var pair2 = _genSync({samePrng: true});
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
+      _pairCmp(pair1, pair2);
+    });
+
+    it('should generate the same 512 bit key pair (sync+purejs+pythonic)', function() {
+      var pair1 = _genSync({samePrng: true, pythonic: true});
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      var pair2 = _genSync({samePrng: true, pythonic: true});
       // restore
       FORGE.options.usePureJavaScript = purejs;
       _pairCmp(pair1, pair2);
