@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Potential regex denial of service in form.js.
+
 ### Added
 - Support for ED25519.
 - Support for baseN/base58.
