@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 0.7.4 - 2018-03-07
+
 ### Fixed
 - Potential regex denial of service in form.js.
 
