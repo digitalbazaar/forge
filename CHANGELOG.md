@@ -1,6 +1,11 @@
 Forge ChangeLog
 ===============
 
+## 0.7.5 - 2018-03-30
+
+### Fixed
+- Remove use of `const`.
+
 ## 0.7.4 - 2018-03-07
 
 ### Fixed
