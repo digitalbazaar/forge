@@ -1,6 +1,36 @@
 Forge ChangeLog
 ===============
 
+## 0.7.5 - 2018-03-30
+
+### Fixed
+- Remove use of `const`.
+
+## 0.7.4 - 2018-03-07
+
+### Fixed
+- Potential regex denial of service in form.js.
+
+### Added
+- Support for ED25519.
+- Support for baseN/base58.
+
+## 0.7.3 - 2018-03-05
+
+- Re-publish with npm 5.6.0 due to file timestamp issues.
+
+## 0.7.2 - 2018-02-27
+
+### Added
+- Support verification of SHA-384 certificates.
+- `1.2.840.10040.4.3'`/`dsa-with-sha1` OID.
+
+### Fixed
+- Support importing PKCS#7 data with no certificates. RFC 2315 sec 9.1 states
+  certificates are optional.
+- `asn1.equals` loop bug.
+- Fortuna implementation bugs.
+
 ## 0.7.1 - 2017-03-27
 
 ### Fixed

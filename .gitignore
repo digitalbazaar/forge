@@ -5,6 +5,7 @@
 .cdtproject
 .classpath
 .cproject
+.nyc_output
 .project
 .settings
 TAGS

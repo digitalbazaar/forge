@@ -320,6 +320,24 @@ var support = require('./support');
       'acWHh2FyjHm7XLmEGgX0eqq2ZQTn5+oUzQYBzf6JXP6S+8X7AIszRu5d+dYHHC2y\r\n' +
       'BNYbqBj3IQlM6XzmlHL39TuETQznWwN1VMfmW2rUniKmpwnOQynlOaFTd06Fxll3\r\n' +
       'f0ah+JXCk6Rr7eVY0VptmG7S7CyZIjc5MkMw\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithNoCertificate:
+      '-----BEGIN PKCS7-----\r\n' +
+      'MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAaCAJIAEggHVewog\r\n' +
+      'ICJkZXZwYXlQcm9kdWN0Q29kZXMiIDogbnVsbCwKICAibWFya2V0cGxhY2VQcm9kdWN0Q29kZXMi\r\n' +
+      'IDogbnVsbCwKICAiYXZhaWxhYmlsaXR5Wm9uZSIgOiAidXMtZWFzdC0xZCIsCiAgInZlcnNpb24i\r\n' +
+      'IDogIjIwMTctMDktMzAiLAogICJpbnN0YW5jZUlkIiA6ICJpLTAzYWUxNGMzNDZiYTY0M2ExIiwK\r\n' +
+      'ICAiYmlsbGluZ1Byb2R1Y3RzIiA6IG51bGwsCiAgImluc3RhbmNlVHlwZSIgOiAibTQueGxhcmdl\r\n' +
+      'IiwKICAiYXJjaGl0ZWN0dXJlIiA6ICJ4ODZfNjQiLAogICJrZXJuZWxJZCIgOiBudWxsLAogICJy\r\n' +
+      'YW1kaXNrSWQiIDogbnVsbCwKICAiYWNjb3VudElkIiA6ICI2OTI0MDYxODM1MjEiLAogICJpbWFn\r\n' +
+      'ZUlkIiA6ICJhbWktNDI3YjRlMzgiLAogICJwZW5kaW5nVGltZSIgOiAiMjAxOC0wMS0yMlQxMjoy\r\n' +
+      'OTo1NFoiLAogICJwcml2YXRlSXAiIDogIjE3Mi4zMS4yMy4yMjUiLAogICJyZWdpb24iIDogInVz\r\n' +
+      'LWVhc3QtMSIKfQAAAAAAADGCARgwggEUAgEBMGkwXDELMAkGA1UEBhMCVVMxGTAXBgNVBAgTEFdh\r\n' +
+      'c2hpbmd0b24gU3RhdGUxEDAOBgNVBAcTB1NlYXR0bGUxIDAeBgNVBAoTF0FtYXpvbiBXZWIgU2Vy\r\n' +
+      'dmljZXMgTExDAgkAlrpI2eVeGmcwCQYFKw4DAhoFAKBdMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0B\r\n' +
+      'BwEwHAYJKoZIhvcNAQkFMQ8XDTE4MDEyMjEyMzAwMlowIwYJKoZIhvcNAQkEMRYEFK1hHB7W5la2\r\n' +
+      'AWAHCWVgYPYyJzAxMAkGByqGSM44BAMELzAtAhUAsQXD04cP48o7HVHWJtVRHZEUkBICFHcuPVAu\r\n' +
+      '7KVSbiWnFnDL0v87RSxhAAAAAAAA\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -365,6 +383,11 @@ var support = require('./support');
         ASSERT.equal(p7.encryptedContent.parameter.toHex(), '536da6a06653733d');
         ASSERT.equal(p7.encryptedContent.content.length(), 80);
       });
+    });
+
+    it('should import a message with no certificate', function() {
+      var p7 = PKCS7.messageFromPem(_pem.signedDataWithNoCertificate);
+      ASSERT.equal(p7.type, PKI.oids.signedData);
     });
 
     it('should find recipient by serial number', function() {

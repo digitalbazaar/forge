@@ -280,6 +280,60 @@ var UTIL = require('../../lib/util');
       assertArrayEqual(UTIL.binary.base64.decode(s2), s1);
     });
 
+    it('should base58 encode some bytes', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var buffer = new Uint8Array([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+      var encoded = UTIL.binary.base58.encode(buffer);
+      ASSERT.equal(encoded, '13DUyZY2dc');
+    });
+
+    it('should base58 encode some bytes from a ByteBuffer', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var buffer = UTIL.createBuffer(new Uint8Array([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]));
+      var encoded = UTIL.binary.base58.encode(buffer);
+      ASSERT.equal(encoded, '13DUyZY2dc');
+    });
+
+    it('should base58 decode some bytes', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var decoded = UTIL.binary.base58.decode('13DUyZY2dc');
+      var buffer = new Uint8Array([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+      ASSERT.equal(
+        UTIL.createBuffer(decoded).toHex(),
+        UTIL.createBuffer(buffer).toHex());
+    });
+
+    it('should base58 encode some bytes with whitespace', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var buffer = new Uint8Array([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+      var encoded = UTIL.binary.base58.encode(buffer, 4);
+      ASSERT.equal(encoded, '13DU\r\nyZY2\r\ndc');
+    });
+
+    it('should base58 decode some bytes with whitespace', function() {
+      if(typeof Uint8Array === 'undefined') {
+        return;
+      }
+      var decoded = UTIL.binary.base58.decode('13DU\r\nyZY2\r\ndc');
+      var buffer = new Uint8Array([
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07]);
+      ASSERT.equal(
+        UTIL.createBuffer(decoded).toHex(),
+        UTIL.createBuffer(buffer).toHex());
+    });
+
     it('should convert IPv4 0.0.0.0 textual address to 4-byte address', function() {
       var bytes = UTIL.bytesFromIP('0.0.0.0');
       var b = UTIL.createBuffer().fillWithByte(0, 4);
