@@ -40,7 +40,8 @@
     "nodejs-websocket": "^1.7.1",
     "nyc": "^11.5.0",
     "opts": "^1.2.2",
-    "webpack": "^3.11.0"
+    "webpack": "^3.11.0",
+    "worker-loader": "^2.0.0"
   },
   "repository": {
     "type": "git",
