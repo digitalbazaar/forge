@@ -30,7 +30,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'tests/unit/index.js',
+      'tests/karma/index.js',
       // for webworkers
       {
         pattern: 'lib/prime.worker.js',
@@ -45,7 +45,7 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'tests/unit/index.js': preprocessors,
+      'tests/karma/index.js': preprocessors,
       'lib/prime.worker.js': workerPreprocessors
     },
 
