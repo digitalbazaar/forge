@@ -338,6 +338,43 @@ var support = require('./support');
       'BwEwHAYJKoZIhvcNAQkFMQ8XDTE4MDEyMjEyMzAwMlowIwYJKoZIhvcNAQkEMRYEFK1hHB7W5la2\r\n' +
       'AWAHCWVgYPYyJzAxMAkGByqGSM44BAMELzAtAhUAsQXD04cP48o7HVHWJtVRHZEUkBICFHcuPVAu\r\n' +
       '7KVSbiWnFnDL0v87RSxhAAAAAAAA\r\n' +
+      '-----END PKCS7-----\r\n',
+    detachedSignature:
+      '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'x4KOfz69nJA=\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -638,6 +675,31 @@ var support = require('./support');
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataWithAttrs1950UTCTime);
+    });
+
+    it('should create PKCS#7 detached signature', function() {
+      var p7 = PKCS7.createSignedData();
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest
+          // value will be auto-populated at signing time
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as UTC time because it's >= 1950
+          value: new Date('1950-01-01T00:00:00Z')
+        }]
+      });
+      p7.signDetached();
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.detachedSignature);
     });
 
     // FIXME: remove skipping PhantomJS tests when possible
