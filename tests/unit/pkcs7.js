@@ -697,7 +697,7 @@ var support = require('./support');
           value: new Date('1950-01-01T00:00:00Z')
         }]
       });
-      p7.signDetached();
+      p7.sign({detached: true});
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.detachedSignature);
     });
