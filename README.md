@@ -1378,6 +1378,10 @@ p7.addSigner({
 p7.sign();
 var pem = forge.pkcs7.messageToPem(p7);
 
+// PKCS#7 Sign in detached mode.
+// Includes the signature and certificate without the signed data.
+p7.sign({detached: true});
+
 ```
 
 <a name="pkcs8" />
