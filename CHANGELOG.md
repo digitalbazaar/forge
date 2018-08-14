@@ -1,6 +1,15 @@
 Forge ChangeLog
 ===============
 
+## 0.7.6 - 2018-08-14
+
+### Added
+- Test on Node.js 10.x.
+- Support for PKCS#7 detached signatures.
+
+### Changed
+- Improve webpack/browser detection.
+
 ## 0.7.5 - 2018-03-30
 
 ### Fixed
