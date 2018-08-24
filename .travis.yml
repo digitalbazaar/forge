@@ -14,9 +14,6 @@ script:
 matrix:
   include:
   - node_js: "6"
-    env: BUNDLER=webpack
-  - node_js: "6"
-    env: BUNDLER=browserify
 notifications:
   email:
     on_success: change

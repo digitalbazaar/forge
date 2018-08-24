@@ -204,8 +204,6 @@ The build process uses [webpack][] and the [config](./webpack.config.js) file
 can be modified to generate a file or files that only contain the parts of
 forge you need.
 
-[Browserify][] override support is also present in `package.json`.
-
 Testing
 -------
 
@@ -233,17 +231,13 @@ Is 'mocha' reporter output too verbose? Other reporters are available. Try
 
     npm run test-karma -- --reporters progress
 
-By default [webpack][] is used. [Browserify][] can also be used.
-
-    BUNDLER=browserify npm run test-karma
-
 ### Running automated tests with one or more browsers
 
 You can also specify one or more browsers to use.
 
     npm run test-karma -- --browsers Chrome,Firefox,Safari,PhantomJS
 
-The reporter option and `BUNDLER` environment variable can also be used.
+The reporter option can also be used.
 
 ### Running manual tests in a browser
 

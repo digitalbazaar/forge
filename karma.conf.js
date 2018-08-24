@@ -1,8 +1,7 @@
 // Karma configuration
 
 module.exports = function(config) {
-  // bundler to test: webpack, browserify
-  var bundler = process.env.BUNDLER || 'webpack';
+  var bundler = 'webpack';
 
   var frameworks = ['mocha'];
   // main bundle preprocessors
@@ -10,15 +9,8 @@ module.exports = function(config) {
   // webworker bundle preprocessors (always use webpack)
   var workerPreprocessors = ['webpack', 'sourcemap'];
 
-  if(bundler === 'browserify') {
-    frameworks.push(bundler);
-    preprocessors.push(bundler);
-  } else if(bundler === 'webpack') {
-    preprocessors.push(bundler);
-    preprocessors.push('sourcemap');
-  } else {
-    throw Error('Unknown bundler');
-  }
+  preprocessors.push(bundler);
+  preprocessors.push('sourcemap');
 
   config.set({
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -57,11 +49,6 @@ module.exports = function(config) {
         crypto: false,
         setImmediate: false
       }
-    },
-
-    browserify: {
-      debug: true
-      //transform: ['uglifyify']
     },
 
     // test results reporter to use
