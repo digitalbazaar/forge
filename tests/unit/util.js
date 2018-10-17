@@ -234,6 +234,18 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(UTIL.decode64(s2), s1);
     });
 
+    it('should base64Url encode some bytes', function() {
+      var s1 = '00010203050607080A0B0C0D0F1011121415161719';
+      var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
+      ASSERT.equal(UTIL.encodeBase64Url(s1), s2);
+    });
+
+    it('should base64Url decode some bytes', function() {
+      var s1 = '00010203050607080A0B0C0D0F1011121415161719';
+      var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
+      ASSERT.equal(UTIL.decodeBase64Url(s2), s1);
+    });
+
     it('should base64 encode some bytes using util.binary.base64', function() {
       var s1 = new Uint8Array([
         0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30,
