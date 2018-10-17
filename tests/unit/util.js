@@ -234,6 +234,8 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(UTIL.decode64(s2), s1);
     });
 
+
+
     it('should base64 encode some bytes using util.binary.base64', function() {
       var s1 = new Uint8Array([
         0x30, 0x30, 0x30, 0x31, 0x30, 0x32, 0x30, 0x33, 0x30,
