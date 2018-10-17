@@ -115,12 +115,6 @@
   "jspm": {
     "format": "amd"
   },
-  "eslintConfig": {
-    "env": {
-      "mocha": true,
-      "node": true
-    }
-  },
   "browser": {
     "buffer": false,
     "crypto": false,
