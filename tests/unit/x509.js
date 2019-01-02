@@ -200,6 +200,60 @@ var UTIL = require('../../lib/util');
     '-----END CERTIFICATE-----\r\n'
   ];
 
+  var _pem_past_2050 = {
+    privateKey: '-----BEGIN PRIVATE KEY-----\r\n' +
+      'MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCtQM1R5VoB8Hrr\r\n' +
+      'hdL514H+oQN/FSIiHXsdoZlQqUEQ7yUBgC2c7fbq4Wm9AUHBkc/KfUGb9+ZeX6xo\r\n' +
+      '6L06M57QBD8nkSTStNHozlOwjnKu7DnlyW4j3ej9rBZzshLzAvWGZkx5sR1Eyz/2\r\n' +
+      '2Ns9PL+S4h3eiRGpTw3g3geI1wxBv3CCb/LUF5Wa4NWwIU1GP9S6d8MrOb3WGhR3\r\n' +
+      '64ZxajxSeX8R9WLsAo1Qx0dhsJ/UMwIibZ3hA9y1VBma2QyqQMzdY9OYC4oyE646\r\n' +
+      'WfyJzHscpc6KNiVsWnYDP9+NStQlvaXMwhaPFpyVkLLB0vHho4oMXgEDTCH1iIe4\r\n' +
+      'YGw01wQ/AgMBAAECggEAdx1wjHfFNEQkHr25WbDDXU9SWhMrjoz6UlsCT6SuaXgh\r\n' +
+      '1zBLK/OnqcEks5+jl/QqCqunahY8OnJI1S/+uX84Fwh0az2tNXjAQPFqNJ8bVgxv\r\n' +
+      'mf6tTNeLEq04Gn856/4C1E6NEbWly+B5r7tUsHuNsuznYFKY4/DIN+wu/fPsJ17X\r\n' +
+      'vbZiev6+OID/XCKPYWNRYiszBcmktGM5L+JLcYYPpxFYGFtw+khhUlazx0OmIuDB\r\n' +
+      'AaePTtyXb1qQNKHv6wy7l+BTBKAlxoQQHMCw5qsnCr9RHed7LJr0kssUbVaseUOg\r\n' +
+      'KMWtRG0Ms3ovOPWsVFC509gbGal8q+NSwyKd07SlQQKBgQDZX6bwE1H+V7r5GJwz\r\n' +
+      'EGRLrMUDbbCb2qqZcSn+TCk9hsJ6jeSwz9KjZ2qONcmMl3WY6XAOdTjmJZl20wF9\r\n' +
+      'GV58pZAoPhLh6tByX9RlUffXz+1KKMP0/5cxmwV8N0RBWrHcmRc6yMwJGZE7qBUh\r\n' +
+      'JX/77xj9yPoDW+uOSGp+f0nZMQKBgQDMChqQF1cw7iIljzmtOhSnSEiCH7WYCJgp\r\n' +
+      'um7KEGfFXxbNX07g6pojdjVFFf9uA6tPaiTnwXLc8wI8yiuwt8yPh60QTrcW/E/0\r\n' +
+      '+iQQGkwrFvWybbEuI++K6rOXdNMq7FEU467qN26lzHpagSEn6bXdss8L7AOcGRif\r\n' +
+      '0E/rSXlYbwKBgQDHFAA6vScJzmUxvyVG6ws/90IT6sClbHVzxB1WhX/7llDElvFM\r\n' +
+      'MXlTJ+KBzacB+LC904VJ6Hes5+CN35/sZ3COrb7B7F+0wi4XocZO6OwYnZhPo9gb\r\n' +
+      'qH1a9APpCGCdjid4xkhtEPs0llLZlQ2M5uA45ng37Xlz3Bp2m8HUilUi8QKBgQCa\r\n' +
+      'RpV5F7zciWIWRipVGZJePeBdSz6SOwVan9V/QVJFQTXLiWHp3Fk5sPpsR0rAU1Pn\r\n' +
+      'kxlehr2j5LZvYmoQj5jDedHYf7weTB7k23IDHu8ysYSLKjeK7K8FuZqbTUERtmdE\r\n' +
+      'RTePbuRhxq9I2VRJioPxom680/KSx8L/q5GSFRcETwKBgDZhnBZ7+dIKlPAgfwPC\r\n' +
+      'OCA2kKE+5UxyeAUeojNrSfHGdzF891PX+90D7sPfJi7SJU4E/UOMG/u8wUv5i2/+\r\n' +
+      '/nKOI6NwKB/m0FqpvxamuNJapn9RQ9bC7oz0Rj2Tho90mohwQG4DHF2uO8364Wb+\r\n' +
+      '9Bu1FCWmILPGcJM5iw6TJPA0\r\n' +
+      '-----END PRIVATE KEY-----\r\n',
+    certificate: '-----BEGIN CERTIFICATE-----\r\n' +
+      'MIIDqjCCApKgAwIBAgIJAJvrXrdlRWTTMA0GCSqGSIb3DQEBCwUAMGgxCzAJBgNV\r\n' +
+      'BAYTAlVTMRAwDgYDVQQIDAdWaXJnaW5hMRMwEQYDVQQHDApCbGFja3NidXJnMQ0w\r\n' +
+      'CwYDVQQKDARUZXN0MQ0wCwYDVQQLDARUZXN0MRQwEgYDVQQDDAtleGFtcGxlLm9y\r\n' +
+      'ZzAiGA8yMDUwMDIwMTIzMDAyOVoYDzIwNTEwMjAxMjMwMDI5WjBoMQswCQYDVQQG\r\n' +
+      'EwJVUzEQMA4GA1UECAwHVmlyZ2luYTETMBEGA1UEBwwKQmxhY2tzYnVyZzENMAsG\r\n' +
+      'A1UECgwEVGVzdDENMAsGA1UECwwEVGVzdDEUMBIGA1UEAwwLZXhhbXBsZS5vcmcw\r\n' +
+      'ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCtQM1R5VoB8HrrhdL514H+\r\n' +
+      'oQN/FSIiHXsdoZlQqUEQ7yUBgC2c7fbq4Wm9AUHBkc/KfUGb9+ZeX6xo6L06M57Q\r\n' +
+      'BD8nkSTStNHozlOwjnKu7DnlyW4j3ej9rBZzshLzAvWGZkx5sR1Eyz/22Ns9PL+S\r\n' +
+      '4h3eiRGpTw3g3geI1wxBv3CCb/LUF5Wa4NWwIU1GP9S6d8MrOb3WGhR364ZxajxS\r\n' +
+      'eX8R9WLsAo1Qx0dhsJ/UMwIibZ3hA9y1VBma2QyqQMzdY9OYC4oyE646WfyJzHsc\r\n' +
+      'pc6KNiVsWnYDP9+NStQlvaXMwhaPFpyVkLLB0vHho4oMXgEDTCH1iIe4YGw01wQ/\r\n' +
+      'AgMBAAGjUzBRMB0GA1UdDgQWBBRxifZwjEsDjYgbajBq+e1r4krdwjAfBgNVHSME\r\n' +
+      'GDAWgBRxifZwjEsDjYgbajBq+e1r4krdwjAPBgNVHRMBAf8EBTADAQH/MA0GCSqG\r\n' +
+      'SIb3DQEBCwUAA4IBAQB0V8zdJ1WebOvZNwl6WcbzNJRQePPnGp9pAbGuqpLZHvs6\r\n' +
+      'geAocgmEqleGOsU9GT30MV1vtkR1IY6CWkVPeSiXS43HT8enoYCJX3AZd6ItUrQH\r\n' +
+      '8UonY8UqAmzsGLO+ttO5o6kEY6K0e1QUdmFkOh9Z6M9U3s3DASwrKQ/xFlHQ2mNi\r\n' +
+      'h7pKaH2+XlDTrCjhO1ip0n4AwG5lgFJpJlVOZ9+Axzc146q/YZqrhXHYU152Wqo/\r\n' +
+      'mFlygydsKNwWdpK5fwGBZkBR8AsZvNZaQ9Rr3Rr3y5Xz7+aPfLfWF5hW+d11ghuy\r\n' +
+      'FDeZMUBehXXEJLXrirfmO2KFmy3iKrniJDDa35Lg\r\n' +
+      '-----END CERTIFICATE-----\r\n'
+  };
+
+
   describe('x509', function() {
     it('should convert SHA-1 based certificate to/from PEM', function() {
       var certificate = PKI.certificateFromPem(_pem.certificate);
@@ -209,6 +263,11 @@ var UTIL = require('../../lib/util');
     it('should convert SHA-256 based certificate to/from PEM', function() {
       var certificate = PKI.certificateFromPem(_pem_sha256.certificate);
       ASSERT.equal(PKI.certificateToPem(certificate), _pem_sha256.certificate);
+    });
+
+    it('should convert certificate not before < 2050 < not after to/from PEM', function() {
+      var certificate = PKI.certificateFromPem(_pem_past_2050.certificate);
+      ASSERT.equal(PKI.certificateToPem(certificate), _pem_past_2050.certificate);
     });
 
     it('should convert SHA-512 based certificate to/from PEM', function() {
@@ -230,6 +289,12 @@ var UTIL = require('../../lib/util');
       var certificate = PKI.certificateFromPem(_pem_sha512.certificate);
       ASSERT.ok(certificate.verify(certificate));
     });
+
+    it('should verify not before < 2050 < not after self-signed certificate', function() {
+      var certificate = PKI.certificateFromPem(_pem_past_2050.certificate);
+      ASSERT.ok(certificate.verify(certificate));
+    });
+
 
     it('should generate a certificate with authorityKeyIdentifier extension', function() {
       var keys = {
@@ -391,6 +456,53 @@ var UTIL = require('../../lib/util');
         subject: attrs,
         issuer: attrs,
         isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
+        ASSERT.equal(vfd, true);
+        ASSERT.ok(cert.verifySubjectKeyIdentifier());
+        return true;
+      });
+    });
+
+	it('should generate a self-signed certificate after 2050', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+	  var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true,
+		notBefore : new Date("2050-02-02")
       });
 
       var pem = PKI.certificateToPem(cert);
@@ -1203,11 +1315,12 @@ var UTIL = require('../../lib/util');
     var issuer = options.issuer;
     var isCA = options.isCA;
     var serialNumber = options.serialNumber || '01';
+	var notBefore = options.notBefore || new Date();
 
     var cert = PKI.createCertificate();
     cert.publicKey = publicKey;
     cert.serialNumber = serialNumber;
-    cert.validity.notBefore = new Date();
+    cert.validity.notBefore = notBefore;
     cert.validity.notAfter = new Date();
     cert.validity.notAfter.setFullYear(
       cert.validity.notBefore.getFullYear() + 1);
