@@ -471,7 +471,7 @@ var UTIL = require('../../lib/util');
       });
     });
 
-	it('should generate a self-signed certificate after 2050', function() {
+    it('should generate a self-signed certificate after 2050', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
         publicKey: PKI.publicKeyFromPem(_pem.publicKey)
@@ -495,6 +495,7 @@ var UTIL = require('../../lib/util');
         shortName: 'OU',
         value: 'Test'
       }];
+      let notBefore = new Date("2050-02-02");
       var cert = createCertificate({
         publicKey: keys.publicKey,
         signingKey: keys.privateKey,
@@ -502,20 +503,15 @@ var UTIL = require('../../lib/util');
         subject: attrs,
         issuer: attrs,
         isCA: true,
-		notBefore : new Date("2050-02-02")
+        notBefore : notBefore
       });
 
       var pem = PKI.certificateToPem(cert);
       cert = PKI.certificateFromPem(pem);
 
-      // verify certificate chain
-      var caStore = PKI.createCaStore();
-      caStore.addCertificate(cert);
-      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
-        ASSERT.equal(vfd, true);
-        ASSERT.ok(cert.verifySubjectKeyIdentifier());
-        return true;
-      });
+      let notAfter = new Date("2051-02-02");
+      ASSERT.equal(cert.validity.notBefore.toString(), notBefore.toString());
+      ASSERT.equal(cert.validity.notAfter.toString(), notAfter.toString());
     });
 
     it('should generate and fail to verify a self-signed certificate that is not in the CA store', function() {
@@ -1315,13 +1311,13 @@ var UTIL = require('../../lib/util');
     var issuer = options.issuer;
     var isCA = options.isCA;
     var serialNumber = options.serialNumber || '01';
-	var notBefore = options.notBefore || new Date();
+    var notBefore = options.notBefore || new Date();
 
     var cert = PKI.createCertificate();
     cert.publicKey = publicKey;
     cert.serialNumber = serialNumber;
     cert.validity.notBefore = notBefore;
-    cert.validity.notAfter = new Date();
+    cert.validity.notAfter = new Date(cert.validity.notBefore);
     cert.validity.notAfter.setFullYear(
       cert.validity.notBefore.getFullYear() + 1);
     cert.setSubject(subject);
