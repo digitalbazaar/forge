@@ -802,6 +802,143 @@ var UTIL = require('../../lib/util');
       });
     });
 
+    it('should verify based on a custom specified validity date', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        extensions: [{
+          name: 'authorityKeyIdentifier',
+          keyIdentifier: true,
+          authorityCertIssuer: true,
+          serialNumber: true
+        }],
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+
+      var verifyDate = new Date();
+      PKI.verifyCertificateChain(caStore, [cert], {
+        validityCheckDate: verifyDate,
+        verify: function(vfd, depth, chain) {
+          ASSERT.equal(vfd, true);
+          return true;
+        }
+      });
+
+      verifyDate = new Date();
+      verifyDate.setFullYear(verifyDate.getFullYear() + 2);
+      PKI.verifyCertificateChain(caStore, [cert], {
+        validityCheckDate: verifyDate,
+        verify: function(vfd, depth, chain) {
+          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          return true;
+        }
+      });
+
+      verifyDate = new Date();
+      verifyDate.setFullYear(verifyDate.getFullYear() - 1);
+      PKI.verifyCertificateChain(caStore, [cert], {
+        validityCheckDate: verifyDate,
+        verify: function(vfd, depth, chain) {
+          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          return true;
+        }
+      });
+    });
+
+    it('should not verify the validity period if null is passed as validityCheckDate', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+
+      var pastDate = new Date();
+      pastDate.setFullYear(pastDate.getFullYear() - 1);
+
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        extensions: [{
+          name: 'authorityKeyIdentifier',
+          keyIdentifier: true,
+          authorityCertIssuer: true,
+          serialNumber: true
+        }],
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true,
+        notBefore: pastDate,
+        notAfter: pastDate
+      });
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+
+      PKI.verifyCertificateChain(caStore, [cert], {
+        verify: function(vfd, depth, chain) {
+          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          return true;
+        }
+      });
+
+      PKI.verifyCertificateChain(caStore, [cert], {
+        validityCheckDate: null,
+        verify: function(vfd, depth, chain) {
+          ASSERT.equal(vfd, true);
+          return true;
+        }
+      });
+    });
+
     it('should verify certificate with sha1WithRSAEncryption signature', function() {
       var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
         'MIIDZDCCAs2gAwIBAgIKQ8fjjgAAAABh3jANBgkqhkiG9w0BAQUFADBGMQswCQYD\r\n' +
@@ -1370,14 +1507,18 @@ var UTIL = require('../../lib/util');
     var isCA = options.isCA;
     var serialNumber = options.serialNumber || '01';
     var notBefore = options.notBefore || new Date();
+    if(options.notAfter) {
+      var notAfter = options.notAfter;
+    } else {
+      var notAfter = new Date(notBefore);
+      notAfter.setFullYear(notAfter.getFullYear() + 1);
+    }
 
     var cert = PKI.createCertificate();
     cert.publicKey = publicKey;
     cert.serialNumber = serialNumber;
     cert.validity.notBefore = notBefore;
-    cert.validity.notAfter = new Date(cert.validity.notBefore);
-    cert.validity.notAfter.setFullYear(
-      cert.validity.notBefore.getFullYear() + 1);
+    cert.validity.notAfter = notAfter;
     cert.setSubject(subject);
     cert.setIssuer(issuer);
     var extensions = options.extensions || [];
