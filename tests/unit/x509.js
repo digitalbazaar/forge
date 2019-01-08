@@ -495,7 +495,7 @@ var UTIL = require('../../lib/util');
         shortName: 'OU',
         value: 'Test'
       }];
-      let notBefore = new Date("2050-02-02");
+      var notBefore = new Date("2050-02-02");
       var cert = createCertificate({
         publicKey: keys.publicKey,
         signingKey: keys.privateKey,
@@ -509,7 +509,7 @@ var UTIL = require('../../lib/util');
       var pem = PKI.certificateToPem(cert);
       cert = PKI.certificateFromPem(pem);
 
-      let notAfter = new Date("2051-02-02");
+      var notAfter = new Date("2051-02-02");
       ASSERT.equal(cert.validity.notBefore.toString(), notBefore.toString());
       ASSERT.equal(cert.validity.notAfter.toString(), notAfter.toString());
     });
