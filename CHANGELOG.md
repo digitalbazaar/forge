@@ -1,6 +1,13 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Handle creation of certificates with notBefore and notAfter dates less than
+  Jan 1, 1950 or greater than or equal to Jan 1, 2050.
+
+### Added
+- Add OID 2.5.4.13 "description".
+
 ## 0.7.6 - 2018-08-14
 
 ### Added
