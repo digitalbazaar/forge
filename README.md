@@ -2096,4 +2096,4 @@ Financial support is welcome and helps contribute to futher development:
 [freenode]: https://freenode.net/
 [unpkg]: https://unpkg.com/
 [webpack]: https://webpack.github.io/
-[TweetNaCl]: https://github.com/dchest/tweetnacl-js
+[TweetNaCl.js]: https://github.com/dchest/tweetnacl-js
