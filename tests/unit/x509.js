@@ -425,6 +425,64 @@ var UTIL = require('../../lib/util');
       });
     });
 
+    it('should generate a certificate with nsComment extension', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var dummyTestStr = 'node-forge is awesome';
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        extensions: [{
+          name: 'nsComment',
+          comment: dummyTestStr
+        }],
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      // verify certificate encoding/parsing
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+
+      // verify cRLDistributionPoints extension
+      var index = findIndex(cert.extensions, {id: '2.16.840.1.113730.1.13'});
+      ASSERT.ok(index !== -1);
+      var ext = cert.extensions[index];
+      ASSERT.equal(ASN1.fromDer(ext.value).value, dummyTestStr);
+
+      // verify certificate chain
+      var caStore = PKI.createCaStore();
+      caStore.addCertificate(cert);
+      PKI.verifyCertificateChain(caStore, [cert], function(vfd, depth, chain) {
+        ASSERT.equal(vfd, true);
+        ASSERT.ok(cert.verifySubjectKeyIdentifier());
+        return true;
+      });
+    });
+
     it('should generate and verify a self-signed certificate', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
