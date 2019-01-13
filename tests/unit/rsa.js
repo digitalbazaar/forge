@@ -189,7 +189,7 @@ var UTIL = require('../../lib/util');
       var pair1 = _genSync({samePrng: true});
       _genAsync({samePrng: true}, function(pair2) {
         // check if the same on supported deterministic platforms
-        if(UTIL.isNodejs) {
+        if(UTIL.isDeterministic) {
           _pairCmp(pair1, pair2);
         }
         done();
@@ -200,7 +200,7 @@ var UTIL = require('../../lib/util');
       _genAsync({samePrng: true}, function(pair1) {
         var pair2 = _genSync({samePrng: true});
         // check if the same on supported deterministic platforms
-        if(UTIL.isNodejs) {
+        if(UTIL.isDeterministic) {
           _pairCmp(pair1, pair2);
         }
         done();
@@ -214,7 +214,7 @@ var UTIL = require('../../lib/util');
       function _done() {
         if(pair1 && pair2) {
           // check if the same on supported deterministic platforms
-          if(UTIL.isNodejs) {
+          if(UTIL.isDeterministic) {
             _pairCmp(pair1, pair2);
           }
           done();
