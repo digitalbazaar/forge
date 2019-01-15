@@ -467,7 +467,7 @@ var UTIL = require('../../lib/util');
       var pem = PKI.certificateToPem(cert);
       cert = PKI.certificateFromPem(pem);
 
-      // verify cRLDistributionPoints extension
+      // verify nsComment extension
       var index = findIndex(cert.extensions, {id: '2.16.840.1.113730.1.13'});
       ASSERT.ok(index !== -1);
       var ext = cert.extensions[index];
