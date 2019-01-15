@@ -209,8 +209,6 @@ forge you need.
 Testing
 -------
 
-See the [testing README](./tests/README.md) for full details.
-
 ### Prepare to run tests
 
     npm install
