@@ -7,6 +7,8 @@ Forge ChangeLog
 
 ### Added
 - Add OID 2.5.4.13 "description".
+- Add OID 2.16.840.1.113730.1.13 "nsComment".
+  - Also handled extension when creating a certificate.
 
 ## 0.7.6 - 2018-08-14
 
