@@ -127,6 +127,11 @@ var UTIL = require('../../lib/util');
       });
     }
 
+    // Node versions >= 10.12.0 support native keyPair generation,
+    // which is non-deterministic
+    var isDeterministic = UTIL.isNodejs &&
+      typeof require('crypto').generateKeyPair !== 'function';
+
     it('should generate 512 bit key pair (sync)', function() {
       _genSync();
     });
@@ -189,7 +194,7 @@ var UTIL = require('../../lib/util');
       var pair1 = _genSync({samePrng: true});
       _genAsync({samePrng: true}, function(pair2) {
         // check if the same on supported deterministic platforms
-        if(UTIL.isDeterministic) {
+        if(isDeterministic) {
           _pairCmp(pair1, pair2);
         }
         done();
@@ -200,7 +205,7 @@ var UTIL = require('../../lib/util');
       _genAsync({samePrng: true}, function(pair1) {
         var pair2 = _genSync({samePrng: true});
         // check if the same on supported deterministic platforms
-        if(UTIL.isDeterministic) {
+        if(isDeterministic) {
           _pairCmp(pair1, pair2);
         }
         done();
@@ -214,7 +219,7 @@ var UTIL = require('../../lib/util');
       function _done() {
         if(pair1 && pair2) {
           // check if the same on supported deterministic platforms
-          if(UTIL.isDeterministic) {
+          if(isDeterministic) {
             _pairCmp(pair1, pair2);
           }
           done();
