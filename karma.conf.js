@@ -9,6 +9,15 @@ module.exports = function(config) {
   var preprocessors = [];
   // webworker bundle preprocessors (always use webpack)
   var workerPreprocessors = ['webpack', 'sourcemap'];
+  // files/patterns to load
+  var files = [
+    'tests/karma/index.js',
+    // for webworkers
+    {
+      pattern: 'lib/prime.worker.js',
+      watched: false, included: false, served: true, nocache: false
+    }
+  ];
 
   if(bundler === 'browserify') {
     frameworks.push(bundler);
@@ -16,6 +25,7 @@ module.exports = function(config) {
   } else if(bundler === 'webpack') {
     preprocessors.push(bundler);
     preprocessors.push('sourcemap');
+    files.push('tests/karma/web-worker-rsa.js');
   } else {
     throw Error('Unknown bundler');
   }
@@ -29,14 +39,7 @@ module.exports = function(config) {
     frameworks: frameworks,
 
     // list of files / patterns to load in the browser
-    files: [
-      'tests/karma/index.js',
-      // for webworkers
-      {
-        pattern: 'lib/prime.worker.js',
-        watched: false, included: false, served: true, nocache: false
-      }
-    ],
+    files: files,
 
     // list of files to exclude
     exclude: [
@@ -45,7 +48,8 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'tests/karma/index.js': preprocessors,
+      'tests/unit/**.js': preprocessors,
+      'tests/karma/**.js': preprocessors,
       'lib/prime.worker.js': workerPreprocessors
     },
 
