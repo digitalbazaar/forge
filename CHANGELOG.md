@@ -18,6 +18,10 @@ Forge ChangeLog
   - Use JS fallback in `rsa.generateKeyPair` if `prng` option specified since
     this isn't supported by current native APIs.
   - Only run key generation comparison tests if keys will be deterministic.
+- PhantomJS is deprecated, now using headless Chrome with Karma.
+- **Note**: Using headless Chrome vs PhantomJS may cause newer JS features to
+  slip into releases without proper support for older runtimes and browsers.
+  Please report such issues and they will be addressed.
 
 ## 0.7.6 - 2018-08-14
 

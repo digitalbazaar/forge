@@ -5,7 +5,6 @@ var PKI = require('../../lib/pki');
 var AES = require('../../lib/aes');
 var DES = require('../../lib/des');
 var UTIL = require('../../lib/util');
-var support = require('./support');
 
 (function() {
   var _pem = {
@@ -702,13 +701,7 @@ var support = require('./support');
       ASSERT.equal(pem, _pem.detachedSignature);
     });
 
-    // FIXME: remove skipping PhantomJS tests when possible
-    // skip 2049/2050 tests in PhantomJS
-    // likely due to https://bugs.webkit.org/show_bug.cgi?id=130123
-    // can't parse dates between 2034-03-01 and 2100-02-28
-    var _it = support.isPhantomJS ? it.skip : it;
-
-    _it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
       'and signing-time attributes using UTCTime (2049)', function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \
@@ -737,7 +730,7 @@ var support = require('./support');
       ASSERT.equal(pem, _pem.signedDataWithAttrs2049UTCTime);
     });
 
-    _it('should create PKCS#7 SignedData with content-type, message-digest, ' +
+    it('should create PKCS#7 SignedData with content-type, message-digest, ' +
       'and signing-time attributes using GeneralizedTime (2050)', function() {
       // verify with:
       // openssl smime -verify -in p7.pem -signer certificate.pem \

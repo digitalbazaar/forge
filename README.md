@@ -219,10 +219,10 @@ Forge natively runs in a [Node.js][] environment:
 
     npm test
 
-### Running automated tests with PhantomJS
+### Running automated tests with headless Chrome
 
 Automated testing is done via [Karma][]. By default it will run the tests in a
-headless manner with PhantomJS.
+headless manner with Chrome.
 
     npm run test-karma
 
@@ -239,7 +239,7 @@ By default [webpack][] is used. [Browserify][] can also be used.
 
 You can also specify one or more browsers to use.
 
-    npm run test-karma -- --browsers Chrome,Firefox,Safari,PhantomJS
+    npm run test-karma -- --browsers Chrome,Firefox,Safari,ChromeHeadless
 
 The reporter option and `BUNDLER` environment variable can also be used.
 
