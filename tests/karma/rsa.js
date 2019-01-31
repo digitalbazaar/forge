@@ -1,5 +1,4 @@
 var ASSERT = require('assert');
-var RSA = require('../../lib/rsa');
 
 // The worker-loader build the ./testWorker.js as a separate bundle and returns a constructor
 // that saves us from having to know the public script path
