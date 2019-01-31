@@ -959,14 +959,14 @@ __Examples__
 var rsa = forge.pki.rsa;
 
 // generate an RSA key pair synchronously
-// *NOT RECOMMENDED* -- can be significantly slower than async and will not
-// use native APIs if available.
+// *NOT RECOMMENDED*: Can be significantly slower than async and may block
+// JavaScript execution. Will use native Node.js 10.12.0+ API if possible.
 var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
 
 // generate an RSA key pair asynchronously (uses web workers if available)
 // use workers: -1 to run a fast core estimator to optimize # of workers
-// *RECOMMENDED* - can be significantly faster than sync -- and will use
-// native APIs if available.
+// *RECOMMENDED*: Can be significantly faster than sync. Will use native
+// Node.js 10.12.0+ or WebCrypto API if possible.
 rsa.generateKeyPair({bits: 2048, workers: 2}, function(err, keypair) {
   // keypair.privateKey, keypair.publicKey
 });

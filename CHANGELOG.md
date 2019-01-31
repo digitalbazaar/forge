@@ -12,6 +12,12 @@ Forge ChangeLog
 
 ### Changed
 - Support WebCrypto API in web workers.
+- `rsa.generateKeyPair`:
+  - Use `crypto.generateKeyPair`/`crypto.generateKeyPairSync` on Node.js if
+    available (10.12.0+) and not in pure JS mode.
+  - Use JS fallback in `rsa.generateKeyPair` if `prng` option specified since
+    this isn't supported by current native APIs.
+  - Only run key generation comparison tests if keys will be deterministic.
 
 ## 0.7.6 - 2018-08-14
 

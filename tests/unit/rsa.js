@@ -127,10 +127,33 @@ var UTIL = require('../../lib/util');
       });
     }
 
-    // Node versions >= 10.12.0 support native keyPair generation,
-    // which is non-deterministic
-    var isDeterministic = UTIL.isNodejs &&
-      typeof require('crypto').generateKeyPair !== 'function';
+    // check if keygen params use deterministic algorithm
+    // NOTE: needs to match implementation details
+    function isDeterministic(isPrng, isAsync, isPurejs) {
+      // always needs to have a prng
+      if(!isPrng) {
+        return false;
+      }
+      if(UTIL.isNodejs) {
+        // Node versions >= 10.12.0 support native keyPair generation,
+        // which is non-deterministic
+        if(isAsync && !isPurejs &&
+          typeof require('crypto').generateKeyPair === 'function') {
+          return false;
+        };
+        if(!isAsync && !isPurejs &&
+          typeof require('crypto').generateKeyPairSync === 'function') {
+          return false;
+        }
+      } else {
+        // async browser code has race conditions with multiple workers
+        if(isAsync) {
+          return false;
+        }
+      }
+      // will run deterministic algorithm
+      return true;
+    }
 
     it('should generate 512 bit key pair (sync)', function() {
       _genSync();
@@ -172,13 +195,19 @@ var UTIL = require('../../lib/util');
       });
     });
 
-    it('should generate the same 512 bit key pair (sync+sync)', function() {
+    it('should generate same 512 bit key pair (prng+sync,prng+sync)',
+      function() {
       var pair1 = _genSync({samePrng: true});
       var pair2 = _genSync({samePrng: true});
       _pairCmp(pair1, pair2);
     });
 
-    it('should generate the same 512 bit key pair (sync+purejs)', function() {
+    it('should generate same 512 bit key pair (prng+sync,prng+sync+purejs)',
+      function() {
+      if(!isDeterministic(true,false,false) ||
+        !isDeterministic(true,false,true)) {
+        this.skip();
+      }
       var pair1 = _genSync({samePrng: true});
       // save
       var purejs = FORGE.options.usePureJavaScript;
@@ -190,38 +219,61 @@ var UTIL = require('../../lib/util');
       _pairCmp(pair1, pair2);
     });
 
-    it('should generate 512 bit key pairs (sync+async)', function(done) {
+    it('should generate same 512 bit key pair ' +
+      '(prng+sync+purejs,prng+sync+purejs)', function() {
+      if(!isDeterministic(true,false,true) ||
+        !isDeterministic(true,false,true)) {
+        this.skip();
+      }
+      // save
+      var purejs = FORGE.options.usePureJavaScript;
+      // test pure mode
+      FORGE.options.usePureJavaScript = true;
+      var pair1 = _genSync({samePrng: true});
+      var pair2 = _genSync({samePrng: true});
+      // restore
+      FORGE.options.usePureJavaScript = purejs;
+      _pairCmp(pair1, pair2);
+    });
+
+    it('should generate same 512 bit key pair (prng+sync,prng+async)',
+      function(done) {
+      if(!isDeterministic(true,false,false) ||
+        !isDeterministic(true,true,false)) {
+        this.skip();
+      }
       var pair1 = _genSync({samePrng: true});
       _genAsync({samePrng: true}, function(pair2) {
-        // check if the same on supported deterministic platforms
-        if(isDeterministic) {
-          _pairCmp(pair1, pair2);
-        }
+        _pairCmp(pair1, pair2);
         done();
       });
     });
 
-    it('should generate 512 bit key pairs (async+sync)', function(done) {
+    it('should generate same 512 bit key pair (prng+async,prng+sync)',
+      function(done) {
+      if(!isDeterministic(true,true,false) ||
+        !isDeterministic(true,false,false)) {
+        this.skip();
+      }
       _genAsync({samePrng: true}, function(pair1) {
         var pair2 = _genSync({samePrng: true});
-        // check if the same on supported deterministic platforms
-        if(isDeterministic) {
-          _pairCmp(pair1, pair2);
-        }
+        _pairCmp(pair1, pair2);
         done();
       });
     });
 
-    it('should generate 512 bit key pairs (async+async)', function(done) {
+    it('should generate same 512 bit key pair (prng+async,prng+async)',
+      function(done) {
+      if(!isDeterministic(true,true,false) ||
+        !isDeterministic(true,true,false)) {
+        this.skip();
+      }
       var pair1;
       var pair2;
       // finish when both complete
       function _done() {
         if(pair1 && pair2) {
-          // check if the same on supported deterministic platforms
-          if(isDeterministic) {
-            _pairCmp(pair1, pair2);
-          }
+          _pairCmp(pair1, pair2);
           done();
         }
       }
