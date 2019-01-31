@@ -10,6 +10,9 @@ Forge ChangeLog
 - Add OID 2.16.840.1.113730.1.13 "nsComment".
   - Also handled extension when creating a certificate.
 
+### Changed
+- Support WebCrypto API in web workers.
+
 ## 0.7.6 - 2018-08-14
 
 ### Added
