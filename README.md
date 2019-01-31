@@ -219,10 +219,10 @@ Forge natively runs in a [Node.js][] environment:
 
     npm test
 
-### Running automated tests with headless Chrome
+### Running automated tests with Headless Chrome
 
-Automated testing is done via [Karma][]. By default it will run the tests in a
-headless manner with Chrome.
+Automated testing is done via [Karma][]. By default it will run the tests with
+Headless Chrome.
 
     npm run test-karma
 
