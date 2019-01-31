@@ -7,9 +7,9 @@ var TestWorker = require('worker-loader!./testWorker');
 var testWorker = new TestWorker();
 
 
-describe('rsa', function() {
+describe('web worker rsa', function() {
   it('should generate key pairs when running forge in a web worker', function(done) {
-    // Make test worker call rsa.generateKeyPair() on its own side 
+    // Make test worker call rsa.generateKeyPair() on its own side
     testWorker.postMessage({ method: 'rsa.generateKeyPair' });
 
     // Wait for a result (see testWorker.js for what event data to expect)
