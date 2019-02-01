@@ -2,13 +2,13 @@ Forge ChangeLog
 ===============
 
 ### Fixed
-- Handle creation of certificates with notBefore and notAfter dates less than
-  Jan 1, 1950 or greater than or equal to Jan 1, 2050.
+- Handle creation of certificates with `notBefore` and `notAfter` dates less
+  than Jan 1, 1950 or greater than or equal to Jan 1, 2050.
 
 ### Added
 - Add OID 2.5.4.13 "description".
 - Add OID 2.16.840.1.113730.1.13 "nsComment".
-  - Also handled extension when creating a certificate.
+  - Also handle extension when creating a certificate.
 - `pki.verifyCertificateChain`:
   - Add `validityCheckDate` option to allow checking the certificate validity
     period against an arbitrary `Date` or `null` for no check at all. The
