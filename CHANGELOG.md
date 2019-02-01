@@ -9,6 +9,14 @@ Forge ChangeLog
 - Add OID 2.5.4.13 "description".
 - Add OID 2.16.840.1.113730.1.13 "nsComment".
   - Also handled extension when creating a certificate.
+- `pki.verifyCertificateChain`:
+  - Add `validityCheckDate` option to allow checking the certificate validity
+    period against an arbitrary `Date` or `null` for no check at all. The
+    current date is used by default.
+- `tls.createConnection`:
+  - Add `verifyOptions` option that passes through to
+    `pki.verifyCertificateChain`. Can be used for the above `validityCheckDate`
+    option.
 
 ### Changed
 - Support WebCrypto API in web workers.
@@ -22,6 +30,10 @@ Forge ChangeLog
 - **Note**: Using Headless Chrome vs PhantomJS may cause newer JS features to
   slip into releases without proper support for older runtimes and browsers.
   Please report such issues and they will be addressed.
+- `pki.verifyCertificateChain`:
+  - Signature changed to `(caStore, chain, options)`. Older `(caStore, chain,
+    verify)` signature is still supported. New style is to to pass in a
+    `verify` option.
 
 ## 0.7.6 - 2018-08-14
 
