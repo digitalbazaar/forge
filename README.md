@@ -2037,8 +2037,8 @@ When using this code please keep the following in mind:
 Library Background
 ------------------
 
-* http://digitalbazaar.com/2010/07/20/javascript-tls-1/
-* http://digitalbazaar.com/2010/07/20/javascript-tls-2/
+* https://digitalbazaar.com/2010/07/20/javascript-tls-1/
+* https://digitalbazaar.com/2010/07/20/javascript-tls-2/
 
 Contact
 -------
@@ -2058,39 +2058,39 @@ Financial support is welcome and helps contribute to futher development:
 
 [#forgejs]: https://webchat.freenode.net/?channels=#forgejs
 [0.6.x]: https://github.com/digitalbazaar/forge/tree/0.6.x
-[3DES]: http://en.wikipedia.org/wiki/Triple_DES
-[AES]: http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
-[ASN.1]: http://en.wikipedia.org/wiki/ASN.1
+[3DES]: https://en.wikipedia.org/wiki/Triple_DES
+[AES]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+[ASN.1]: https://en.wikipedia.org/wiki/ASN.1
 [Bower]: https://bower.io/
 [Browserify]: http://browserify.org/
-[CBC]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[CFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[CTR]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CBC]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CFB]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[CTR]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CommonJS]: https://en.wikipedia.org/wiki/CommonJS
-[DES]: http://en.wikipedia.org/wiki/Data_Encryption_Standard
-[ECB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[Fortuna]: http://en.wikipedia.org/wiki/Fortuna_(PRNG)
-[GCM]: http://en.wikipedia.org/wiki/GCM_mode
-[HMAC]: http://en.wikipedia.org/wiki/HMAC
-[JavaScript]: http://en.wikipedia.org/wiki/JavaScript
+[DES]: https://en.wikipedia.org/wiki/Data_Encryption_Standard
+[ECB]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[Fortuna]: https://en.wikipedia.org/wiki/Fortuna_(PRNG)
+[GCM]: https://en.wikipedia.org/wiki/GCM_mode
+[HMAC]: https://en.wikipedia.org/wiki/HMAC
+[JavaScript]: https://en.wikipedia.org/wiki/JavaScript
 [Karma]: https://karma-runner.github.io/
-[MD5]: http://en.wikipedia.org/wiki/MD5
-[Node.js]: http://nodejs.org/
-[OFB]: http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
-[PKCS#10]: http://en.wikipedia.org/wiki/Certificate_signing_request
-[PKCS#12]: http://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
-[PKCS#5]: http://en.wikipedia.org/wiki/PKCS
-[PKCS#7]: http://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
+[MD5]: https://en.wikipedia.org/wiki/MD5
+[Node.js]: https://nodejs.org/
+[OFB]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
+[PKCS#10]: https://en.wikipedia.org/wiki/Certificate_signing_request
+[PKCS#12]: https://en.wikipedia.org/wiki/PKCS_%E2%99%AF12
+[PKCS#5]: https://en.wikipedia.org/wiki/PKCS
+[PKCS#7]: https://en.wikipedia.org/wiki/Cryptographic_Message_Syntax
 [PayPal]: https://www.paypal.com/
-[RC2]: http://en.wikipedia.org/wiki/RC2
-[SHA-1]: http://en.wikipedia.org/wiki/SHA-1
-[SHA-256]: http://en.wikipedia.org/wiki/SHA-256
-[SHA-384]: http://en.wikipedia.org/wiki/SHA-384
-[SHA-512]: http://en.wikipedia.org/wiki/SHA-512
+[RC2]: https://en.wikipedia.org/wiki/RC2
+[SHA-1]: https://en.wikipedia.org/wiki/SHA-1
+[SHA-256]: https://en.wikipedia.org/wiki/SHA-256
+[SHA-384]: https://en.wikipedia.org/wiki/SHA-384
+[SHA-512]: https://en.wikipedia.org/wiki/SHA-512
 [Subresource Integrity]: https://www.w3.org/TR/SRI/
-[TLS]: http://en.wikipedia.org/wiki/Transport_Layer_Security
+[TLS]: https://en.wikipedia.org/wiki/Transport_Layer_Security
 [UMD]: https://github.com/umdjs/umd
-[X.509]: http://en.wikipedia.org/wiki/X.509
+[X.509]: https://en.wikipedia.org/wiki/X.509
 [freenode]: https://freenode.net/
 [unpkg]: https://unpkg.com/
 [webpack]: https://webpack.github.io/
