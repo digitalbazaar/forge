@@ -61,7 +61,7 @@ const outputs = [
   //}
 ];
 
-outputs.forEach((info) => {
+outputs.forEach(info => {
   // common to bundle and minified
   const common = {
     // each output uses the "forge" name but with different contents
