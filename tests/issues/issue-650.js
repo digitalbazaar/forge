@@ -71,8 +71,8 @@ reencoding should generally not result in a changed signature AlgorithmIdentifie
             var reencoded = PKI.certificateToPem(parsed);
 
             var actual = ASN1.prettyPrint(ASN1.fromDer(PEM.decode(reencoded)[0].body));
-        
-            ASSERT.strictEqual(expected, actual, 'reencoding the certificate lead to ASN1 changes')
+
+            ASSERT.strictEqual(expected, actual, 'reencoding the certificate lead to ASN1 changes');
         });
 
         it('should decode the certificate in the original form from the PKCS#12', function() {
@@ -88,7 +88,7 @@ reencoding should generally not result in a changed signature AlgorithmIdentifie
 
             var actual = ASN1.prettyPrint(ASN1.fromDer(PKI.pemToDer(PKI.certificateToPem(cert))));
 
-            ASSERT.strictEqual(expected, actual, 'extracting the certificate from PKCS#12 lead to ASN1 changes')
+            ASSERT.strictEqual(expected, actual, 'extracting the certificate from PKCS#12 lead to ASN1 changes');
         });
     });
 })();
