@@ -68,7 +68,7 @@ var getPublicKey = function(data, uri, callback) {
   //var RSA  = rdf.Namespace('http://www.w3.org/ns/auth/rsa#');
   var RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
   var CERT = 'http://www.w3.org/ns/auth/cert#';
-  var RSA  = 'http://www.w3.org/ns/auth/rsa#';
+  var RSA = 'http://www.w3.org/ns/auth/rsa#';
   var desc = RDF + 'Description';
   var about = RDF + 'about';
   var type = RDF + 'type';
@@ -92,9 +92,9 @@ var getPublicKey = function(data, uri, callback) {
     }
     // any other resource
     else if(
-       key in node &&
-       typeof node[key] === 'object' && !forge.util.isArray(node[key]) &&
-       '@' in node[key] && resource in node[key]['@']) {
+      key in node &&
+      typeof node[key] === 'object' && !forge.util.isArray(node[key]) &&
+      '@' in node[key] && resource in node[key]['@']) {
       rval = node[key]['@'][resource];
     }
 
@@ -115,8 +115,7 @@ var getPublicKey = function(data, uri, callback) {
       // normalize RDF descriptions to array
       if(!forge.util.isArray(result[desc])) {
         desc = [result[desc]];
-      }
-      else {
+      } else {
         desc = result[desc];
       }
 
@@ -179,23 +178,22 @@ var fetchUrl = function(url, callback, redirects) {
   var client = http.createClient(
     url.port, url.fullHost, url.scheme === 'https');
   var request = client.request('GET', url.path, {
-    'Host': url.host,
-    'Accept': 'application/rdf+xml'
+    Host: url.host,
+    Accept: 'application/rdf+xml'
   });
   request.addListener('response', function(response) {
     var body = '';
 
     // error, return empty body
     if(response.statusCode >= 400) {
-       callback(body);
+      callback(body);
     }
     // follow redirect
     else if(response.statusCode === 302) {
       if(redirects > 0) {
         // follow redirect
         fetchUrl(response.headers.location, callback, --redirects);
-      }
-      else {
+      } else {
         // return empty body
         callback(body);
       }
@@ -277,8 +275,7 @@ var authenticateWebId = function(c, state) {
                 webID: url,
                 rdf: forge.util.encode64(body)
               }));
-            }
-            else {
+            } else {
               // try next alt name
               authNext();
             }
@@ -426,8 +423,7 @@ var createTls = function(websocket) {
       // do WebID authentication
       try {
         authenticateWebId(c, state);
-      }
-      catch(ex) {
+      } catch(ex) {
         c.close();
       }
     },

@@ -19,7 +19,7 @@ try {
         type: forge.pki.oids.messageDigest
         // value will be auto-populated at signing time
       }, {
-        type: forge.pki.oids.signingTime,
+        type: forge.pki.oids.signingTime
         // value will be auto-populated at signing time
         //value: new Date('2050-01-01T00:00:00Z')
       }]

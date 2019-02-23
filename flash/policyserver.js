@@ -23,14 +23,14 @@ let policyFile =
 // Looks for a request string and returns the policy file.
 exports.policyServer = function(port) {
   let prefix = '[policy-server] ';
-  let server = net.createServer((socket) => {
+  let server = net.createServer(socket => {
     let remoteAddress = socket.remoteAddress + ':' + socket.remotePort;
     console.log(prefix + 'new client connection from %s', remoteAddress);
 
     // deal with strings
     socket.setEncoding('utf8');
 
-    socket.on('data', (d) => {
+    socket.on('data', d => {
       if(d.indexOf('<policy-file-request/>') === 0) {
         console.log(prefix + 'policy file request from: %s', remoteAddress);
         socket.write(policyFile);
@@ -41,11 +41,11 @@ exports.policyServer = function(port) {
     socket.once('close', () => {
       console.log(prefix + 'connection from %s closed', remoteAddress);
     });
-    socket.on('error', (err) => {
+    socket.on('error', err => {
       console.error(
         prefix + 'connection %s error: %s', remoteAddress, err.message);
     });
-  }).on('error', (err) => {
+  }).on('error', err => {
     throw err;
   });
   server.listen(port, () => {

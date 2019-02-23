@@ -140,7 +140,7 @@ var UTIL = require('../../lib/util');
         if(isAsync && !isPurejs &&
           typeof require('crypto').generateKeyPair === 'function') {
           return false;
-        };
+        }
         if(!isAsync && !isPurejs &&
           typeof require('crypto').generateKeyPairSync === 'function') {
           return false;
@@ -204,8 +204,8 @@ var UTIL = require('../../lib/util');
 
     it('should generate same 512 bit key pair (prng+sync,prng+sync+purejs)',
       function() {
-      if(!isDeterministic(true,false,false) ||
-        !isDeterministic(true,false,true)) {
+      if(!isDeterministic(true, false, false) ||
+        !isDeterministic(true, false, true)) {
         this.skip();
       }
       var pair1 = _genSync({samePrng: true});
@@ -221,8 +221,8 @@ var UTIL = require('../../lib/util');
 
     it('should generate same 512 bit key pair ' +
       '(prng+sync+purejs,prng+sync+purejs)', function() {
-      if(!isDeterministic(true,false,true) ||
-        !isDeterministic(true,false,true)) {
+      if(!isDeterministic(true, false, true) ||
+        !isDeterministic(true, false, true)) {
         this.skip();
       }
       // save
@@ -238,8 +238,8 @@ var UTIL = require('../../lib/util');
 
     it('should generate same 512 bit key pair (prng+sync,prng+async)',
       function(done) {
-      if(!isDeterministic(true,false,false) ||
-        !isDeterministic(true,true,false)) {
+      if(!isDeterministic(true, false, false) ||
+        !isDeterministic(true, true, false)) {
         this.skip();
       }
       var pair1 = _genSync({samePrng: true});
@@ -251,8 +251,8 @@ var UTIL = require('../../lib/util');
 
     it('should generate same 512 bit key pair (prng+async,prng+sync)',
       function(done) {
-      if(!isDeterministic(true,true,false) ||
-        !isDeterministic(true,false,false)) {
+      if(!isDeterministic(true, true, false) ||
+        !isDeterministic(true, false, false)) {
         this.skip();
       }
       _genAsync({samePrng: true}, function(pair1) {
@@ -264,8 +264,8 @@ var UTIL = require('../../lib/util');
 
     it('should generate same 512 bit key pair (prng+async,prng+async)',
       function(done) {
-      if(!isDeterministic(true,true,false) ||
-        !isDeterministic(true,true,false)) {
+      if(!isDeterministic(true, true, false) ||
+        !isDeterministic(true, true, false)) {
         this.skip();
       }
       var pair1;
@@ -310,7 +310,7 @@ var UTIL = require('../../lib/util');
         it('should PKCS#8 encrypt and decrypt private key with ' + algorithm, function() {
           var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
           var encryptedPem = PKI.encryptRsaPrivateKey(
-             privateKey, 'password', {algorithm: algorithm});
+            privateKey, 'password', {algorithm: algorithm});
           privateKey = PKI.decryptRsaPrivateKey(encryptedPem, 'password');
           ASSERT.equal(PKI.privateKeyToPem(privateKey), _pem.privateKey);
         });
@@ -326,10 +326,10 @@ var UTIL = require('../../lib/util');
             ' encryption and ' + prfAlgorithm + ' PRF', function() {
             var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
             var encryptedPem = PKI.encryptRsaPrivateKey(
-               privateKey, 'password', {
-                 algorithm: algorithm,
-                 prfAlgorithm: prfAlgorithm
-               });
+              privateKey, 'password', {
+                algorithm: algorithm,
+                prfAlgorithm: prfAlgorithm
+              });
             privateKey = PKI.decryptRsaPrivateKey(encryptedPem, 'password');
             ASSERT.equal(PKI.privateKeyToPem(privateKey), _pem.privateKey);
           });

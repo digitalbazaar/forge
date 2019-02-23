@@ -253,7 +253,6 @@ var UTIL = require('../../lib/util');
       '-----END CERTIFICATE-----\r\n'
   };
 
-
   describe('x509', function() {
     it('should convert SHA-1 based certificate to/from PEM', function() {
       var certificate = PKI.certificateFromPem(_pem.certificate);
@@ -294,7 +293,6 @@ var UTIL = require('../../lib/util');
       var certificate = PKI.certificateFromPem(_pem_past_2050.certificate);
       ASSERT.ok(certificate.verify(certificate));
     });
-
 
     it('should generate a certificate with authorityKeyIdentifier extension', function() {
       var keys = {
@@ -534,7 +532,7 @@ var UTIL = require('../../lib/util');
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
         publicKey: PKI.publicKeyFromPem(_pem.publicKey)
       };
-	  var attrs = [{
+      var attrs = [{
         name: 'commonName',
         value: 'example.org'
       }, {
@@ -553,7 +551,7 @@ var UTIL = require('../../lib/util');
         shortName: 'OU',
         value: 'Test'
       }];
-      var notBefore = new Date("2050-02-02");
+      var notBefore = new Date('2050-02-02');
       var cert = createCertificate({
         publicKey: keys.publicKey,
         signingKey: keys.privateKey,
@@ -561,13 +559,13 @@ var UTIL = require('../../lib/util');
         subject: attrs,
         issuer: attrs,
         isCA: true,
-        notBefore : notBefore
+        notBefore: notBefore
       });
 
       var pem = PKI.certificateToPem(cert);
       cert = PKI.certificateFromPem(pem);
 
-      var notAfter = new Date("2051-02-02");
+      var notAfter = new Date('2051-02-02');
       ASSERT.equal(cert.validity.notBefore.toString(), notBefore.toString());
       ASSERT.equal(cert.validity.notAfter.toString(), notAfter.toString());
     });
@@ -859,7 +857,7 @@ var UTIL = require('../../lib/util');
       PKI.verifyCertificateChain(caStore, [cert], {
         validityCheckDate: verifyDate,
         verify: function(vfd, depth, chain) {
-          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          ASSERT.equal(vfd, 'forge.pki.CertificateExpired');
           return true;
         }
       });
@@ -869,7 +867,7 @@ var UTIL = require('../../lib/util');
       PKI.verifyCertificateChain(caStore, [cert], {
         validityCheckDate: verifyDate,
         verify: function(vfd, depth, chain) {
-          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          ASSERT.equal(vfd, 'forge.pki.CertificateExpired');
           return true;
         }
       });
@@ -925,7 +923,7 @@ var UTIL = require('../../lib/util');
 
       PKI.verifyCertificateChain(caStore, [cert], {
         verify: function(vfd, depth, chain) {
-          ASSERT.equal(vfd, "forge.pki.CertificateExpired");
+          ASSERT.equal(vfd, 'forge.pki.CertificateExpired');
           return true;
         }
       });
@@ -1507,10 +1505,11 @@ var UTIL = require('../../lib/util');
     var isCA = options.isCA;
     var serialNumber = options.serialNumber || '01';
     var notBefore = options.notBefore || new Date();
+    var notAfter;
     if(options.notAfter) {
-      var notAfter = options.notAfter;
+      notAfter = options.notAfter;
     } else {
-      var notAfter = new Date(notBefore);
+      notAfter = new Date(notBefore);
       notAfter.setFullYear(notAfter.getFullYear() + 1);
     }
 

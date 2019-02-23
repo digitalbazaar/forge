@@ -12,7 +12,7 @@ require('../../lib/util');
       // But that link is now dead.
       var secret = forge.util.createBuffer().fillWithByte(0xAB, 48).getBytes();
       var seed = forge.util.createBuffer().fillWithByte(0xCD, 64).getBytes();
-      var bytes = forge.tls.prf_tls1(secret, 'PRF Testvector',  seed, 104);
+      var bytes = forge.tls.prf_tls1(secret, 'PRF Testvector', seed, 104);
       var expect =
         'd3d4d1e349b5d515044666d51de32bab258cb521' +
         'b6b053463e354832fd976754443bcf9a296519bc' +
