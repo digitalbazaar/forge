@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 0.8.1 - 2019-02-xx
+## 0.8.1 - 2019-02-23
 
 ### Fixed
 - Fix off-by-1 bug with kem random generation.
