@@ -1,7 +1,5 @@
 var ASSERT = require('assert');
-var FORGE = require('../../lib/forge');
 var ED25519 = require('../../lib/ed25519');
-var RANDOM = require('../../lib/random');
 var SHA256 = require('../../lib/sha256');
 var UTIL = require('../../lib/util');
 

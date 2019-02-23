@@ -409,7 +409,7 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(p7.recipients[0].encryptedContent.content.length, 256);
 
       ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['aes256-CBC']);
-      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16);  // IV
+      ASSERT.equal(p7.encryptedContent.parameter.data.length, 16); // IV
     });
 
     it('should import indefinite length message from PEM', function() {

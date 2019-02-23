@@ -7,7 +7,7 @@ const forge = require('../..');
 const assert = require('assert');
 const crypto = require('crypto');
 
-const pwd = "aStringPassword";
+const pwd = 'aStringPassword';
 const iv = forge.random.getBytesSync(16);
 const salt = forge.random.getBytesSync(16);
 const key = forge.pkcs5.pbkdf2(pwd, salt, 100, 16);
@@ -86,7 +86,7 @@ function test_node(bytes) {
 function data(megs) {
   // slower single chunk
   const start = new Date();
-  var x = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  var x = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
   var plain = '';
   const minlen = megs * 1024 * 1024;
   while(plain.length < minlen) {
@@ -117,7 +117,7 @@ function data_chunk(megs, chunkSize) {
   // faster with chunksize
   const start = new Date();
   // make some large plain text bigger than some size
-  var x = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+  var x = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
   var plain = '';
   const minlen = megs * 1024 * 1024;
   while(plain.length < minlen) {
@@ -185,8 +185,10 @@ function compareImpl() {
     tns.forEach(res => assert(input.plain == res.plain));
     const tn = tns.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
 
-    csv += `${i}\t${tf.time}\t${i/tf.time}\t${tfc.time}\t${i/tfc.time}\t${tn.time}\t${i/tn.time}\t${tf.time/tn.time}\t${tfc.time/tn.time}\n`;
-    console.log(`m:${i} tf:${tf.time} tf/s:${i/tf.time} tfc:${tfc.time} tfc/s:${i/tfc.time} tn:${tn.time} tn/s:${i/tn.time} sf:${tf.time/tn.time} sfc:${tfc.time/tn.time}`);
+    /* eslint-disable max-len */
+    csv += `${i}\t${tf.time}\t${i / tf.time}\t${tfc.time}\t${i / tfc.time}\t${tn.time}\t${i / tn.time}\t${tf.time / tn.time}\t${tfc.time / tn.time}\n`;
+    console.log(`m:${i} tf:${tf.time} tf/s:${i / tf.time} tfc:${tfc.time} tfc/s:${i / tfc.time} tn:${tn.time} tn/s:${i / tn.time} sf:${tf.time / tn.time} sfc:${tfc.time / tn.time}`);
+    /* eslint-enable max-len */
   }
   console.log(csv);
 }
@@ -196,7 +198,7 @@ function compareDecChunkSize() {
   let csv = '';
   const input = data_chunk(megs, 1024 * 64);
   function _test(k) {
-    chunkSize = 1024 * k;
+    const chunkSize = 1024 * k;
     const tfcs = [
       test_forge_chunk(input.encrypted, chunkSize),
       test_forge_chunk(input.encrypted, chunkSize),
@@ -204,13 +206,13 @@ function compareDecChunkSize() {
     ];
     tfcs.forEach(res => assert(input.plain == res.plain));
     const tfc = tfcs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
-    csv += `${k}\t${tfc.time}\t${megs/tfc.time}\n`;
-    console.log(`k:${k} tfc:${tfc.time} tfc/s:${megs/tfc.time}`);
+    csv += `${k}\t${tfc.time}\t${megs / tfc.time}\n`;
+    console.log(`k:${k} tfc:${tfc.time} tfc/s:${megs / tfc.time}`);
   }
   // sweep KB chunkSize
   const sweep = [
-    1,2,4,8,16,32,64,96,128,160,192,256,
-    320,384,448,512,576,640,704,768,832,896,960,1024
+    1, 2, 4, 8, 16, 32, 64, 96, 128, 160, 192, 256,
+    320, 384, 448, 512, 576, 640, 704, 768, 832, 896, 960, 1024
   ];
   sweep.forEach(k => _test(k));
   console.log(csv);
@@ -220,20 +222,20 @@ function compareEncChunkSize() {
   const megs = 10;
   let csv = '';
   function _test(k) {
-    chunkSize = 1024 * k;
+    const chunkSize = 1024 * k;
     const dcs = [
       data_chunk(megs, chunkSize),
       data_chunk(megs, chunkSize),
       data_chunk(megs, chunkSize)
     ];
     const dc = dcs.reduce((prev, cur) => prev.time < cur.time ? prev : cur);
-    csv += `${k}\t${dc.time}\t${megs/dc.time}\n`;
-    console.log(`k:${k} dc:${dc.time} dc/s:${megs/dc.time}`);
+    csv += `${k}\t${dc.time}\t${megs / dc.time}\n`;
+    console.log(`k:${k} dc:${dc.time} dc/s:${megs / dc.time}`);
   }
   // sweep KB chunkSize
   const sweep = [
-    1,2,4,8,16,32,64,96,128,160,192,256,
-    320,384,448,512,576,640,704,768,832,896,960,1024
+    1, 2, 4, 8, 16, 32, 64, 96, 128, 160, 192, 256,
+    320, 384, 448, 512, 576, 640, 704, 768, 832, 896, 960, 1024
   ];
   sweep.forEach(k => _test(k));
   console.log(csv);

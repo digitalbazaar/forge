@@ -103,7 +103,7 @@ try {
         console.log('Certificate verified.');
       }
       return true;
-  });
+    });
 } catch(ex) {
   console.log('Certificate verification failure: ' +
     JSON.stringify(ex, null, 2));

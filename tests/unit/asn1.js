@@ -452,7 +452,7 @@ var UTIL = require('../../lib/util');
         // validator check
         if(!throws && options.v) {
           var capture = {};
-          var errors = []
+          var errors = [];
           var asn1ok = ASN1.validate(asn1, options.v, capture, errors);
           ASSERT.deepEqual(errors, []);
           if(options.captured) {

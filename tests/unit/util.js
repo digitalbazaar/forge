@@ -5,7 +5,7 @@ var UTIL = require('../../lib/util');
   // custom assertion to test array-like objects
   function assertArrayEqual(actual, expected) {
     ASSERT.equal(actual.length, expected.length);
-    for (var idx = 0; idx < expected.length; idx++) {
+    for(var idx = 0; idx < expected.length; idx++) {
       ASSERT.equal(actual[idx], expected[idx]);
     }
   }
@@ -202,7 +202,7 @@ var UTIL = require('../../lib/util');
       var b = UTIL.createBuffer(UTIL.hexToBytes('1234567887654321'));
       ASSERT.equal(b.getInt(32), 0x12345678);
       // FIXME: getInt bit shifts create signed int
-      ASSERT.equal(b.getInt(32), 0x87654321<<0);
+      ASSERT.equal(b.getInt(32), 0x87654321 << 0);
       ASSERT.equal(b.length(), 0);
     });
 
