@@ -1080,7 +1080,8 @@ var UTIL = require('../../lib/util');
         'feffe9928665731c6d6a8f9467308308',
         'feffe9928665731c6d6a8f9467308308',
         'feffe9928665731c6d6a8f9467308308',
-        '00000000000000000000000000000000'
+        '00000000000000000000000000000000',
+        '31313131323232323333333334343434'
       ];
 
       var ivs = [
@@ -1093,7 +1094,8 @@ var UTIL = require('../../lib/util');
           '6a7a9538534f7da1e4c303d2a318a728' +
           'c3c0c95156809539fcf0e2429a6b5254' +
           '16aedbf5a0de6a57a637b39b',
-        '000000000000000000000000'
+        '000000000000000000000000',
+        '313131323232333333343434'
       ];
 
       var adatas = [
@@ -1106,6 +1108,7 @@ var UTIL = require('../../lib/util');
           'abaddad2',
         'feedfacedeadbeeffeedfacedeadbeef' +
           'abaddad2',
+        '',
         ''
       ];
 
@@ -1128,7 +1131,9 @@ var UTIL = require('../../lib/util');
           '86a7a9531534f7da2e4c303d8a318a72' +
           '1c3c0c95956809532fcf0e2449a6b525' +
           'b16aedf5aa0de657ba637b39',
-        '0000'
+        '0000',
+        '3131313131323232323231313131313232' +
+        '3232323131313131323232323231313131313232323232'
       ];
 
       var outputs = [
@@ -1150,7 +1155,9 @@ var UTIL = require('../../lib/util');
           'be9112a5c3a211a8ba262a3cca7e2ca7' +
           '01e4a9a4fba43c90ccdcb281d48c7c6f' +
           'd62875d2aca417034c34aee5',
-        '0388'
+        '0388',
+        '0d75de6b0ddea90e4846e5fafeccf82d91' +
+        '927f1b5e5074e29911be7d7fd2b317aea570a359354f2d'
       ];
 
       var tags = [
@@ -1160,7 +1167,8 @@ var UTIL = require('../../lib/util');
         '5bc94fbc3221a5db94fae95ae7121a47',
         '3612d2e79e3b0785561be14aaca2fccb',
         '619cc5aefffe0bfa462af43c1699d050',
-        '93dcdd26f79ec1dd9bff57204d9b33f5'
+        '93dcdd26f79ec1dd9bff57204d9b33f5',
+        '766028a0b2fa2fff04c564f3b960988f'
       ];
 
       for(var i = 0; i < keys.length; ++i) {
@@ -1206,6 +1214,22 @@ var UTIL = require('../../lib/util');
               cipher.update(UTIL.createBuffer(input_.getBytes(1)));
               ASSERT.equal(cipher.output.length(), 1);
               out.putByte(cipher.output.getByte());
+            }
+            cipher.finish();
+            ASSERT.equal(out.toHex(), outputs[i]);
+            ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
+          });
+
+          it('should aes-128-gcm encrypt (blockSize/2+1 bytes at a time): ' + inputs[i], function() {
+            // encrypt
+            var cipher = CIPHER.createCipher('AES-GCM', key);
+            var size = cipher.blockSize / 2 + 1;
+            cipher.start({iv: iv, additionalData: adata});
+            var input_ = UTIL.createBuffer(input);
+            var out = UTIL.createBuffer();
+            while(input_.length() > 0) {
+              cipher.update(UTIL.createBuffer(input_.getBytes(size)));
+              out.putBytes(cipher.output.getBytes(size));
             }
             cipher.finish();
             ASSERT.equal(out.toHex(), outputs[i]);
@@ -1443,7 +1467,7 @@ var UTIL = require('../../lib/util');
           var input = UTIL.hexToBytes(inputs[i]);
           var output = UTIL.hexToBytes(outputs[i]);
 
-          it('should aes-128-gcm encrypt: ' + inputs[i], function() {
+          it('should aes-256-gcm encrypt: ' + inputs[i], function() {
             // encrypt
             var cipher = CIPHER.createCipher('AES-GCM', key);
             cipher.start({iv: iv, additionalData: adata});
@@ -1453,7 +1477,7 @@ var UTIL = require('../../lib/util');
             ASSERT.equal(cipher.mode.tag.toHex(), tags[i]);
           });
 
-          it('should aes-128-gcm decrypt: ' + outputs[i], function() {
+          it('should aes-256-gcm decrypt: ' + outputs[i], function() {
             // decrypt
             var cipher = CIPHER.createDecipher('AES-GCM', key);
             cipher.start({
