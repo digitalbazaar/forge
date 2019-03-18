@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Fix tag calculation when continuing an AES-GCM block.
+
 ### Changed
 - Switch to eslint.
 
