@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 0.8.2 - 2019-03-18
+
 ### Fixed
 - Fix tag calculation when continuing an AES-GCM block.
 
