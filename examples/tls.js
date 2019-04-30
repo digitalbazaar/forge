@@ -50,9 +50,14 @@ var createCert = function(cn, data) {
       type: 6, // URI
       value: 'http://myuri.com/webid#me'
     }]
+  }, {
+    name: 'subjectKeyIdentifier'
+  }, {
+    name: 'authorityKeyIdentifier',
+    keyIdentifier: true,
+    authorityCertIssuer: true,
+    serialNumber: true
   }]);
-  // FIXME: add subjectKeyIdentifier extension
-  // FIXME: add authorityKeyIdentifier extension
   cert.publicKey = keys.publicKey;
 
   // self-sign certificate

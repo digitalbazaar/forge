@@ -70,8 +70,12 @@ cert.setExtensions([{
   }]
 }, {
   name: 'subjectKeyIdentifier'
+}, {
+  name: 'authorityKeyIdentifier',
+  keyIdentifier: true,
+  authorityCertIssuer: true,
+  serialNumber: true
 }]);
-// FIXME: add authorityKeyIdentifier extension
 
 // self-sign certificate
 cert.sign(keys.privateKey/*, forge.md.sha256.create()*/);
