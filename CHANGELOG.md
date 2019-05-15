@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Use basic character set for code.
+
 ## 0.8.2 - 2019-03-18
 
 ### Fixed
