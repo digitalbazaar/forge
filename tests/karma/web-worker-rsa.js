@@ -10,7 +10,7 @@ function _log(message) {
   console.log('[main] ' + message);
 }
 
-describe.only('web worker rsa', function() {
+describe('web worker rsa', function() {
   it('should generate key pairs when running forge in a web worker', function(done) {
     // Make test worker call rsa.generateKeyPair() on its own side
     //testWorker.postMessage({type: 'ping'});
