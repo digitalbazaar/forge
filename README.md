@@ -1965,7 +1965,7 @@ var nodeBuffer = Buffer.from(forgeBuffer.getBytes(), 'binary');
 
 // convert a Node.js Buffer into a forge buffer
 // make sure you specify the encoding as 'binary'
-var nodeBuffer = Buffer.alloc(10);
+var nodeBuffer = Buffer.from('CAFE', 'hex');
 var forgeBuffer = forge.util.createBuffer(nodeBuffer.toString('binary'));
 
 // parse a URL
