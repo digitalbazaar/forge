@@ -904,7 +904,7 @@ var signature = ED25519.sign({
 // sign a message passed as a buffer
 var signature = ED25519.sign({
   // also accepts a forge ByteBuffer or Uint8Array
-  message: new Buffer('test', 'utf8'),
+  message: Buffer.from('test', 'utf8'),
   privateKey: privateKey
 });
 
@@ -930,7 +930,7 @@ var verified = ED25519.verify({
 // sign a message passed as a buffer
 var verified = ED25519.verify({
   // also accepts a forge ByteBuffer or Uint8Array
-  message: new Buffer('test', 'utf8'),
+  message: Buffer.from('test', 'utf8'),
   // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
   signature: signature,
   // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
@@ -1961,11 +1961,11 @@ bytes.getBytes(/* count */);
 // convert a forge buffer into a Node.js Buffer
 // make sure you specify the encoding as 'binary'
 var forgeBuffer = forge.util.createBuffer();
-var nodeBuffer = new Buffer(forgeBuffer.getBytes(), 'binary');
+var nodeBuffer = Buffer.from(forgeBuffer.getBytes(), 'binary');
 
 // convert a Node.js Buffer into a forge buffer
 // make sure you specify the encoding as 'binary'
-var nodeBuffer = new Buffer();
+var nodeBuffer = Buffer.alloc(10);
 var forgeBuffer = forge.util.createBuffer(nodeBuffer.toString('binary'));
 
 // parse a URL

@@ -63,9 +63,9 @@ function test_forge_chunk(bytes, chunkSize) {
 }
 
 function test_node(bytes) {
-  const bufb = new Buffer(bytes, 'binary');
-  const ivb = new Buffer(iv, 'binary');
-  const keyb = new Buffer(key, 'binary');
+  const bufb = Buffer.from(bytes, 'binary');
+  const ivb = Buffer.from(iv, 'binary');
+  const keyb = Buffer.from(key, 'binary');
 
   const start = new Date();
 
