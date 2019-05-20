@@ -59,7 +59,7 @@
     "dist/*.min.js.map"
   ],
   "engines": {
-    "node": "*"
+    "node": ">= 4.5.0"
   },
   "keywords": [
     "aes",
