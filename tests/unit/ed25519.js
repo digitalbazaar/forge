@@ -338,26 +338,28 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(verified, true);
     });
 
-    it('should extract the key value from a node public key', function() {
-      const keyBuffer = Buffer.from(nodePublicKeyHex, 'hex');
+    it('should extract the key value from a der public key', function() {
+      const keyBuffer = UTIL.binary.hex.decode(nodePublicKeyHex);
       const keyValue = ED25519.extractPublicKey(keyBuffer);
-      const valueBuffer = Buffer.from(nodePublicValueHex, 'hex');
+      const valueBuffer = UTIL.binary.hex.decode(nodePublicValueHex);
       const same = keyValue.equals(valueBuffer);
       ASSERT.equal(same, true);
     });
 
-    it('should extract the key value from a node private key', function() {
-      const keyBuffer = Buffer.from(nodePrivateKeyHex, 'hex');
+    it('should extract the key value from a der private key', function() {
+      const keyBuffer = UTIL.binary.hex.decode(nodePrivateKeyHex);
       const keyValue = ED25519.extractPrivateKey(keyBuffer);
-      const valueBuffer = Buffer.from(nodePrivateValueHex, 'hex');
+      const valueBuffer = UTIL.binary.hex.decode(nodePrivateValueHex);
       const same = keyValue.equals(valueBuffer);
       ASSERT.equal(same, true);
     });
 
-    it('should sign and verify using node ed25519 keys', function() {
-      const privateBuffer = Buffer.from(nodePrivateValueHex, 'hex');
-      const publicKey = Buffer.from(nodePublicValueHex, 'hex');
-      const privateKey = Buffer.concat([privateBuffer, publicKey]);
+    it('should sign and verify using der ed25519 keys', function() {
+      const privateBuffer = UTIL.binary.hex.decode(nodePrivateValueHex);
+      const publicKey = UTIL.binary.hex.decode(nodePublicValueHex);
+      const privateKey = new Uint8Array(64);
+      privateKey.set(privateBuffer);
+      privateKey.set(publicKey, privateBuffer.length);
       const message = 'test';
       const encoding = 'utf8';
       const signature = ED25519.sign({encoding, message, privateKey});
