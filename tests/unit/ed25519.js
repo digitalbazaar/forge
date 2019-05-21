@@ -340,18 +340,16 @@ var UTIL = require('../../lib/util');
 
     it('should extract the key value from a der public key', function() {
       const keyBuffer = UTIL.binary.hex.decode(nodePublicKeyHex);
-      const keyValue = ED25519.extractPublicKey(keyBuffer);
-      const valueBuffer = UTIL.binary.hex.decode(nodePublicValueHex);
-      const same = keyValue.equals(valueBuffer);
-      ASSERT.equal(same, true);
+      const keyValue = ED25519.publicKeyFromDer(keyBuffer);
+      const expectedValue = UTIL.binary.hex.decode(nodePublicValueHex);
+      ASSERT.deepEqual(keyValue, expectedValue);
     });
 
     it('should extract the key value from a der private key', function() {
       const keyBuffer = UTIL.binary.hex.decode(nodePrivateKeyHex);
-      const keyValue = ED25519.extractPrivateKey(keyBuffer);
-      const valueBuffer = UTIL.binary.hex.decode(nodePrivateValueHex);
-      const same = keyValue.equals(valueBuffer);
-      ASSERT.equal(same, true);
+      const keyValue = ED25519.privateKeyFromDer(keyBuffer);
+      const expectedValue = UTIL.binary.hex.decode(nodePrivateValueHex);
+      ASSERT.deepEqual(keyValue, expectedValue);
     });
 
     it('should sign and verify using der ed25519 keys', function() {
