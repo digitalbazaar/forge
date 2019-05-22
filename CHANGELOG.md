@@ -5,7 +5,7 @@ Forge ChangeLog
 ## 0.8.4 -
 
 ### Removed
-- All instances of Node.js `new Buffer` in favor of `Buffer.from` and `Buffer.alloc`.
+- Replace all instances of Node.js `new Buffer` with `Buffer.from` and `Buffer.alloc`.
 
 ## 0.8.3 - 2019-05-15
 
