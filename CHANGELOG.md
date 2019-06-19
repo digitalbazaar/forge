@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Remove use of `const`.
+
 ## 0.8.4 - 2019-05-22
 
 ### Changed
