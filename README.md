@@ -1409,15 +1409,17 @@ var privateKeyInfo = pki.wrapRsaPrivateKey(rsaPrivateKey);
 // convert a PKCS#8 ASN.1 PrivateKeyInfo to PEM
 var pem = pki.privateKeyInfoToPem(privateKeyInfo);
 
-// encrypts a PrivateKeyInfo and outputs an EncryptedPrivateKeyInfo
+// encrypts a PrivateKeyInfo using a custom password and
+// outputs an EncryptedPrivateKeyInfo
 var encryptedPrivateKeyInfo = pki.encryptPrivateKeyInfo(
-  privateKeyInfo, 'password', {
+  privateKeyInfo, 'myCustomPasswordHere', {
     algorithm: 'aes256', // 'aes128', 'aes192', 'aes256', '3des'
   });
 
-// decrypts an ASN.1 EncryptedPrivateKeyInfo
+// decrypts an ASN.1 EncryptedPrivateKeyInfo that was encrypted
+// with a custom password
 var privateKeyInfo = pki.decryptPrivateKeyInfo(
-  encryptedPrivateKeyInfo, 'password');
+  encryptedPrivateKeyInfo, 'myCustomPasswordHere');
 
 // converts an EncryptedPrivateKeyInfo to PEM
 var pem = pki.encryptedPrivateKeyToPem(encryptedPrivateKeyInfo);
