@@ -481,6 +481,231 @@ var UTIL = require('../../lib/util');
       });
     });
 
+    it('should generate a certificate with postalCode attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'postalCode',
+        value: '1234'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '2.5.4.17'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'postalCode');
+      ASSERT.equal(attribute.value, '1234');
+    });
+
+    it('should generate a certificate with businessCategory attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'businessCategory',
+        value: 'Test Organization'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '2.5.4.15'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'businessCategory');
+      ASSERT.equal(attribute.value, 'Test Organization');
+    });
+
+    it('should generate a certificate with streetAddress attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'streetAddress',
+        value: 'Test Avenue'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '2.5.4.9'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'streetAddress');
+      ASSERT.equal(attribute.value, 'Test Avenue');
+    });
+
+    it('should generate a certificate with jurisdictionOfIncorporationStateOrProvinceName attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'jurisdictionOfIncorporationStateOrProvinceName',
+        value: 'Delaware'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '1.3.6.1.4.1.311.60.2.1.2'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'jurisdictionOfIncorporationStateOrProvinceName');
+      ASSERT.equal(attribute.value, 'Delaware');
+    });
+
+    it('should generate a certificate with jurisdictionOfIncorporationCountryName attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'jurisdictionOfIncorporationCountryName',
+        value: 'US'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '1.3.6.1.4.1.311.60.2.1.3'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'jurisdictionOfIncorporationCountryName');
+      ASSERT.equal(attribute.value, 'US');
+    });
+
     it('should generate and verify a self-signed certificate', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
