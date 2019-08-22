@@ -771,12 +771,14 @@ var UTIL = require('../../lib/util');
     it('should callback with a status and certificate', function() {
       var p7 = PKCS7.messageFromPem(_pem.detachedSignature);
       p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      var callback = (err, res) => {
+        ASSERT.equal(err, null);
+        ASSERT.equal(res.verified, true);
+        ASSERT.equal(res.signer.serialNumber, '00d4541c40d835e2f3');
+      };
       var options = {
+        onSignatureVerificationComplete: callback,
         validityCheckDate: new Date('2012-12-25T00:00:00Z'),
-        callback: (cbstatus, cert) => {
-          ASSERT.equal(cbstatus, true);
-          ASSERT.equal(cert.serialNumber, '00d4541c40d835e2f3');
-        },
       };
       var verified = p7.verify(PKI.createCaStore([_pem.certificate]), options);
       ASSERT.equal(verified, true);
