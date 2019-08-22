@@ -738,19 +738,19 @@ var UTIL = require('../../lib/util');
 
     it('should verify PKCS#7 signature w/o attributes', function() {
       var p7 = PKCS7.messageFromPem(_pem.signedDataNoAttrs);
-      var verified = p7.verify();
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
       ASSERT.equal(verified, true);
     });
 
     it('should fail to verify bad PKCS#7 signature w/o attributes', function() {
       var p7 = PKCS7.messageFromPem(_pem.signedDataNoAttrsBadSig);
-      var verified = p7.verify();
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
       ASSERT.equal(verified, false);
     });
 
     it('should verify PKCS#7 signature w/attributes', function() {
       var p7 = PKCS7.messageFromPem(_pem.signedDataWithAttrs1950UTCTime);
-      var verified = p7.verify();
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
       ASSERT.equal(verified, true);
     });
 
