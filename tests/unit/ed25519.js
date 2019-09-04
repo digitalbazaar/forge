@@ -60,6 +60,22 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(eb64(signature), b64Sha256Signature);
     });
 
+    it('should sign a digest given 32 private key bytes', function() {
+      var pwd = 'password';
+      var md = SHA256.create();
+      md.update(pwd, 'utf8');
+      var seed = md.digest().getBytes();
+      var kp = ED25519.generateKeyPair({seed: seed});
+      md = SHA256.create();
+      md.update('test', 'utf8');
+      var privateKey = kp.privateKey.slice(0, 32);
+      var signature = ED25519.sign({
+        md: md,
+        privateKey: privateKey
+      });
+      ASSERT.equal(eb64(signature), b64Sha256Signature);
+    });
+
     it('should sign a UTF-8 message', function() {
       var pwd = 'password';
       var md = SHA256.create();
