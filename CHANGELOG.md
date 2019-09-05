@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 0.9.0 - TBD
+## 0.9.0 - 2019-09-04
 
 ### Added
 - Add ed25519.publicKeyFromAsn1 and ed25519.privateKeyFromAsn1 APIs.
