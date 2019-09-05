@@ -506,7 +506,7 @@ var UTIL = require('../../lib/util');
         value: 'Test'
       }, {
         name: 'postalCode',
-        value: '1234'
+        value: '24060'
       }];
       var cert = createCertificate({
         publicKey: keys.publicKey,
@@ -523,7 +523,7 @@ var UTIL = require('../../lib/util');
       ASSERT.ok(index !== -1);
       var attribute = cert.subject.attributes[index];
       ASSERT.equal(attribute.name, 'postalCode');
-      ASSERT.equal(attribute.value, '1234');
+      ASSERT.equal(attribute.value, '24060');
     });
 
     it('should generate a certificate with businessCategory attribute', function() {
