@@ -5,6 +5,10 @@ Forge ChangeLog
 
 ### Added
 - Add ed25519.publicKeyFromAsn1 and ed25519.privateKeyFromAsn1 APIs.
+- A few OIDs used in EV certs.
+
+### Fixed
+- Improve ed25519 NativeBuffer check.
 
 ## 0.8.5 - 2019-06-18
 
