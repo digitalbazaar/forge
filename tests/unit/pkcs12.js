@@ -1,9 +1,9 @@
 var ASSERT = require('assert');
-var forge = require('../../lib/forge');
+import {default as forge} from '../../lib/forge.js';
 var PKCS12 = require('../../lib/pkcs12');
-var ASN1 = require('../../lib/asn1');
+import {default as ASN1} from '../../lib/asn1.js';
 var PEM = require('../../lib/pem');
-var PKI = require('../../lib/pki');
+import {default as PKI} from '../../lib/pki.js';
 var UTIL = require('../../lib/util');
 
 (function() {

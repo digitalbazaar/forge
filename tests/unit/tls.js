@@ -1,8 +1,10 @@
 var ASSERT = require('assert');
-var forge = require('../../lib/forge');
+import {default as forge} from '../../lib/forge.js';
 require('../../lib/tls');
 require('../../lib/aesCipherSuites');
-require('../../lib/util');
+import {
+  createBuffer as forge_util_createBuffer
+} from '../../lib/util.js';
 
 (function() {
   describe('tls', function() {
@@ -10,8 +12,8 @@ require('../../lib/util');
       // Note: This test vector is originally from:
       // http://www.imc.org/ietf-tls/mail-archive/msg01589.html
       // But that link is now dead.
-      var secret = forge.util.createBuffer().fillWithByte(0xAB, 48).getBytes();
-      var seed = forge.util.createBuffer().fillWithByte(0xCD, 64).getBytes();
+      var secret = forge_util_createBuffer().fillWithByte(0xAB, 48).getBytes();
+      var seed = forge_util_createBuffer().fillWithByte(0xCD, 64).getBytes();
       var bytes = forge.tls.prf_tls1(secret, 'PRF Testvector', seed, 104);
       var expect =
         'd3d4d1e349b5d515044666d51de32bab258cb521' +

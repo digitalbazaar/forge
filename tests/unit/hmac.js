@@ -1,5 +1,7 @@
 var ASSERT = require('assert');
-var HMAC = require('../../lib/hmac');
+import {default as HMAC} from '../../lib/hmac.js';
+import '../../lib/md5.js';
+import '../../lib/sha1.js';
 var UTIL = require('../../lib/util');
 
 (function() {

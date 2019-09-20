@@ -15,12 +15,12 @@ module.exports = [];
 const outputs = [
   // core forge library crypto and utils
   {
-    entry: ['./lib/index.js'],
+    entry: ['./lib/main.js'],
     filenameBase: 'forge'
   },
   // core forge library + extra utils and networking support
   {
-    entry: ['./lib/index.all.js'],
+    entry: ['./lib/main.all.js'],
     filenameBase: 'forge.all'
   },
   // prime webworker

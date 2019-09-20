@@ -9,7 +9,7 @@ module.exports = {
     'digitalbazaar'
   ],
   parserOptions: {
-    ecmaVersion: 5,
+    ecmaVersion: 2015,
     sourceType: 'script'
   },
   rules: {

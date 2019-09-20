@@ -1,8 +1,8 @@
 var ASSERT = require('assert');
 var JSBN = require('../../lib/jsbn');
-var MD = require('../../lib/md.all');
+import {default as MD} from '../../lib/md.all.js';
 var PKCS1 = require('../../lib/pkcs1');
-var PKI = require('../../lib/pki');
+import {default as PKI} from '../../lib/pki.js';
 var UTIL = require('../../lib/util');
 
 (function() {

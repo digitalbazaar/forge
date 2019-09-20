@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-var forge = require('../../lib/forge');
+import {default as forge} from '../../lib/forge.js';
 require('../../lib/pki');
 require('../../lib/ssh');
 

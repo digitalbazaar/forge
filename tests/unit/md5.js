@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-var MD5 = require('../../lib/md5');
+import {default as MD5} from '../../lib/md5.js';
 var UTIL = require('../../lib/util');
 
 (function() {

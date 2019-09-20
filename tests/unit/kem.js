@@ -1,7 +1,7 @@
 var ASSERT = require('assert');
-var KEM = require('../../lib/kem');
-var MD = require('../../lib/md.all');
-var RSA = require('../../lib/rsa');
+import {default as KEM} from '../../lib/kem.js';
+import {default as MD} from '../../lib/md.all.js';
+import {default as RSA} from '../../lib/rsa.js';
 var UTIL = require('../../lib/util');
 var JSBN = require('../../lib/jsbn');
 

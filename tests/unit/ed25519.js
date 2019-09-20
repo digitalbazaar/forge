@@ -1,6 +1,6 @@
 var ASSERT = require('assert');
-var ED25519 = require('../../lib/ed25519');
-var SHA256 = require('../../lib/sha256');
+import {default as ED25519} from '../../lib/ed25519.js';
+import {default as SHA256} from '../../lib/sha256.js';
 var UTIL = require('../../lib/util');
 
 (function() {

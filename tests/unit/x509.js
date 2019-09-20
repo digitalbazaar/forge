@@ -1,7 +1,7 @@
 var ASSERT = require('assert');
-var ASN1 = require('../../lib/asn1');
-var MD = require('../../lib/md.all');
-var PKI = require('../../lib/pki');
+import {default as ASN1} from '../../lib/asn1.js';
+import {default as MD} from '../../lib/md.all.js';
+import {default as PKI} from '../../lib/pki.js';
 var UTIL = require('../../lib/util');
 
 (function() {

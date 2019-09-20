@@ -1,6 +1,6 @@
 var ASSERT = require('assert');
-var FORGE = require('../../lib/forge');
-var MD = require('../../lib/md.all');
+import {default as FORGE} from '../../lib/forge.js';
+import {default as MD} from '../../lib/md.all.js';
 var PBKDF2 = require('../../lib/pbkdf2');
 var UTIL = require('../../lib/util');
 
