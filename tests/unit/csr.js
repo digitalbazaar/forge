@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-import {default as PKI} from '../../lib/pki.js';
+import PKI from '../../lib/pki.js';
 
 (function() {
   var _pem = {

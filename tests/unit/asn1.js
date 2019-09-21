@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-import {default as ASN1} from '../../lib/asn1.js';
+import ASN1 from '../../lib/asn1.js';
 var UTIL = require('../../lib/util');
 
 (function() {

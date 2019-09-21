@@ -1,8 +1,8 @@
 var ASSERT = require('assert');
 import {BigInteger} from '../../lib/jsbn.js';
-import {default as MD} from '../../lib/md.all.js';
+import MD from '../../lib/md.all.js';
 var PKCS1 = require('../../lib/pkcs1');
-import {default as PKI} from '../../lib/pki.js';
+import PKI from '../../lib/pki.js';
 var UTIL = require('../../lib/util');
 
 (function() {

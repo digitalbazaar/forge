@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-import {default as forge} from '../../lib/forge.js';
+import forge from '../../lib/forge.js';
 require('../../lib/tls');
 require('../../lib/aesCipherSuites');
 import {

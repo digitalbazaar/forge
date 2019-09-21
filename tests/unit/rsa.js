@@ -1,11 +1,11 @@
 var ASSERT = require('assert');
-import {default as FORGE} from '../../lib/forge.js';
-import {default as MD} from '../../lib/md.all.js';
-import {default as MGF} from '../../lib/mgf.js';
-import {default as PKI} from '../../lib/pki.js';
-import {default as PSS} from '../../lib/pss.js';
+import FORGE from '../../lib/forge.js';
+import MD from '../../lib/md.all.js';
+import MGF from '../../lib/mgf.js';
+import PKI from '../../lib/pki.js';
+import PSS from '../../lib/pss.js';
 var RANDOM = require('../../lib/random');
-import {default as RSA} from '../../lib/rsa.js';
+import RSA from '../../lib/rsa.js';
 var UTIL = require('../../lib/util');
 
 (function() {

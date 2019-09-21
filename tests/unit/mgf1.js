@@ -1,6 +1,6 @@
 var ASSERT = require('assert');
-import {default as MD} from '../../lib/md.all.js';
-import {default as MGF} from '../../lib/mgf.js';
+import MD from '../../lib/md.all.js';
+import MGF from '../../lib/mgf.js';
 var UTIL = require('../../lib/util');
 
 (function() {

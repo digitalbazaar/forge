@@ -1,5 +1,5 @@
 var ASSERT = require('assert');
-import {default as SHA512} from '../../lib/sha512.js';
+import SHA512 from '../../lib/sha512.js';
 
 (function() {
   describe('sha512', function() {
