@@ -6,7 +6,7 @@ module.exports = {
   },
   extends: ['eslint-config-digitalbazaar'],
   parserOptions: {
-    ecmaVersion: 5
+    ecmaVersion: 2015
   },
   rules: {
     // overrides to support ES5, remove when updated to ES20xx
