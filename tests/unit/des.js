@@ -75,6 +75,20 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(cipher.output.toHex(), '3a97fa79e631');
     });
 
+    // play.golang.org/p/6_MQBYzn04c
+    it('should des-ctr decrypt: foobar', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('beefdeadbeefdead'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('deadbeefdeadbeef'));
+
+      var cipher = CIPHER.createDecipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer(UTIL.hexToBytes('6df74b7b4437')));
+      cipher.finish();
+      ASSERT.equal(cipher.output.getBytes(), 'foobar');
+    });
+
     // play.golang.org/p/i892aR7YsGK
     it('should des-ctr encrypt: dead parrot', function() {
       var key = new UTIL.createBuffer(
@@ -89,6 +103,20 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(cipher.output.toHex(), '389df47fa733dcf4b99b7c');
     });
 
+    // play.golang.org/p/6L0LqPS9ARt
+    it('should des-ctr decrypt: 79f1527c5737f774f85c1a9399755d895ae7', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('beefdeadbeefdead'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('deadbeefdeadbeef'));
+
+      var cipher = CIPHER.createDecipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer(UTIL.hexToBytes('79f1527c5737f774f85c1a9399755d895ae7')));
+      cipher.finish();
+      ASSERT.equal(cipher.output.getBytes(), 'riverrun, past Eve');
+    });
+
     // play.golang.org/p/WsSx6BXJniU
     it('should des-ctr encrypt: 69742773206e6f742073696c6c7920656e6f756768', function() {
       var key = new UTIL.createBuffer(
@@ -101,6 +129,20 @@ var UTIL = require('../../lib/util');
       cipher.update(UTIL.createBuffer(UTIL.hexToBytes('69742773206e6f742073696c6c7920656e6f756768')));
       cipher.finish();
       ASSERT.equal(cipher.output.toHex(), '358cb268a72dd2f2eb87615060bd3a490e85136873');
+    });
+
+    // play.golang.org/p/y01inAlMCEM
+    it('should des-ctr decrypt: 0a80bd81a4dc1303a62f', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('beefdeadbeefdead'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('deadbeefdeadbeef'));
+
+      var cipher = CIPHER.createDecipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer(UTIL.hexToBytes('0a80bd81a4dc1303a62f')));
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex(), '01189998819991197253');
     });
 
     // OpenSSL equivalent:
