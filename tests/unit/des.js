@@ -61,6 +61,48 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(decipher.output.getBytes(), 'foobar');
     });
 
+    // play.golang.org/p/LX_dP0cFuEt
+    it('should des-ctr encrypt: foobar', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('a1c06b381adf3651'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('818bcf76efc59662'));
+
+      var cipher = CIPHER.createCipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer('foobar'));
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex(), '3a97fa79e631');
+    });
+
+    // play.golang.org/p/i892aR7YsGK
+    it('should des-ctr encrypt: dead parrot', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('a1c06b381adf3651'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('818bcf76efc59662'));
+
+      var cipher = CIPHER.createCipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer('dead parrot'));
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex(), '389df47fa733dcf4b99b7c');
+    });
+
+    // play.golang.org/p/WsSx6BXJniU
+    it('should des-ctr encrypt: 69742773206e6f742073696c6c7920656e6f756768', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('a1c06b381adf3651'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('818bcf76efc59662'));
+
+      var cipher = CIPHER.createCipher('DES-CTR', key);
+      cipher.start({iv: iv});
+      cipher.update(UTIL.createBuffer(UTIL.hexToBytes('69742773206e6f742073696c6c7920656e6f756768')));
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex(), '358cb268a72dd2f2eb87615060bd3a490e85136873');
+    });
+
     // OpenSSL equivalent:
     // openssl enc -des-ede3 -K a1c06b381adf36517e84575552777779da5e3d9f994b05b5 -nosalt
     it('should 3des-ecb encrypt: foobar', function() {
