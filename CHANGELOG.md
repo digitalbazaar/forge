@@ -1,6 +1,9 @@
 Forge ChangeLog
 ===============
 
+### Fixed
+- Ensure DES-CBC given IV is long enough for block size.
+
 ## 0.9.0 - 2019-09-04
 
 ### Added
