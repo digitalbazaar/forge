@@ -31,6 +31,22 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(decipher.output.getBytes(), 'foobar');
     });
 
+    it('should check des-cbc short IV', function() {
+      var key = new UTIL.createBuffer(
+        UTIL.hexToBytes('a1c06b381adf3651'));
+      var iv = new UTIL.createBuffer(
+        UTIL.hexToBytes('818bcf76efc596'));
+
+      var error = null;
+      try {
+        var cipher = CIPHER.createCipher('DES-CBC', key);
+        cipher.start({iv: iv});
+      } catch(e) {
+        error = e;
+      }
+      ASSERT.ok(error, 'blocksize check should have failed');
+    });
+
     // OpenSSL equivalent:
     // openssl enc -des -K a1c06b381adf3651 -iv 818bcf76efc59662 -nosalt
     it('should des-cbc encrypt: foobar', function() {
