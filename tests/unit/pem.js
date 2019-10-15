@@ -70,6 +70,66 @@ var PEM = require('../../lib/pem');
     '0vhM5TEmmNWz0anPVabqDj9TA0z5MsDJQcn5NmO9xnw=\r\n' +
     '-----END RSA PRIVATE KEY-----\r\n';
 
+  var _csrWithNew = '-----BEGIN NEW CERTIFICATE REQUEST-----\r\n' +
+    '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\r\n' +
+    'x6n+naGYblpSHXiboXRsuGWUtTjvqNVdOxA=\r\n' +
+    '-----END NEW CERTIFICATE REQUEST-----\r\n';
+
+  var _csrWithoutNew = '-----BEGIN CERTIFICATE REQUEST-----\r\n' +
+    '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\r\n' +
+    'x6n+naGYblpSHXiboXRsuGWUtTjvqNVdOxA=\r\n' +
+    '-----END CERTIFICATE REQUEST-----\r\n';
+
   describe('pem', function() {
     it('should decode and re-encode PEM messages', function() {
       var msgs = PEM.decode(_input);
@@ -80,6 +140,20 @@ var PEM = require('../../lib/pem');
       }
 
       ASSERT.equal(output, _input);
+    });
+
+    it('should decode a CSR from PEM with NEW in the labels', function() {
+      var csrs = PEM.decode(_csrWithNew);
+      for(var i = 0; i < csrs.length; ++i) {
+        ASSERT.equal(csrs[i].type, 'CERTIFICATE REQUEST');
+      }
+    });
+
+    it('should decode a CSR from PEM without NEW in the labels', function() {
+      var csrs = PEM.decode(_csrWithoutNew);
+      for(var i = 0; i < csrs.length; ++i) {
+        ASSERT.equal(csrs[i].type, 'CERTIFICATE REQUEST');
+      }
     });
   });
 })();
