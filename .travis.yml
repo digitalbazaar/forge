@@ -4,6 +4,7 @@ node_js:
   - "6"
   - "8"
   - "10"
+  - "12"
   - "node"
 sudo: false
 install: npm install
@@ -13,9 +14,9 @@ script:
 # only run karma tests for one node version
 matrix:
   include:
-  - node_js: "10"
+  - node_js: "12"
     env: BUNDLER=webpack
-  - node_js: "10"
+  - node_js: "12"
     env: BUNDLER=browserify
 notifications:
   email:
