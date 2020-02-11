@@ -7,16 +7,19 @@ node_js:
   - "12"
   - "node"
 sudo: false
-install: npm install
+install:
+  - npm install
 script:
   - if [ "x$BUNDLER" = "x" ]; then npm test; fi
   - if [ "x$BUNDLER" != "x" ]; then npm run test-karma; fi
 # only run karma tests for one node version
 matrix:
   include:
-  - node_js: "12"
+  - name: "Browser Unit Tests (webpack)"
+    node_js: "12"
     env: BUNDLER=webpack
-  - node_js: "12"
+  - name: "Browser Unit Tests (browserify)"
+    node_js: "12"
     env: BUNDLER=browserify
 notifications:
   email:
