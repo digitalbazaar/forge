@@ -1,10 +1,13 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     commonjs: true,
     node: true
   },
-  extends: ['eslint-config-digitalbazaar'],
+  extends: [
+    'digitalbazaar'
+  ],
   parserOptions: {
     ecmaVersion: 5
   },
