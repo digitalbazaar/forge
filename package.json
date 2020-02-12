@@ -39,7 +39,8 @@
     "nodejs-websocket": "^1.7.1",
     "nyc": "^15.0.0",
     "opts": "^1.2.7",
-    "webpack": "^3.11.0",
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11",
     "worker-loader": "^2.0.0"
   },
   "repository": {
