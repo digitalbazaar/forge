@@ -1,6 +1,11 @@
 Forge ChangeLog
 ===============
 
+- **BREAKING**: Node.js 4 no longer supported. The code *may* still work, and
+  non-invasive patches to keep it working will be considered. However, more
+  modern tools no longer support very old Node.js versions making testing
+  difficult.
+
 ## 0.9.2 - 2019-09-01
 
 ### Changed
