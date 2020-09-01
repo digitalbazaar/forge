@@ -591,5 +591,17 @@ var UTIL = require('../../lib/util');
       var result = UTIL.text.utf16.decode(bytes);
       ASSERT.equal(result, '\ud83c\udc00');
     });
+    it('should fill object keys with specific value', function() {
+
+      var object = {};
+      UTIL.setPath(object, ['foo', 'bar'], true);
+      ASSERT.deepEqual(object, {foo: {bar: true}});
+    });
+    it('should not indirectly merge `Object` properties', function() {
+
+      var object = {};
+      UTIL.setPath(object, ['__proto__', 'polluted'], true);
+      ASSERT.deepEqual(object, {});
+    });
   });
 })();
