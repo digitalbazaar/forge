@@ -5,6 +5,7 @@ node_js:
   - "8"
   - "10"
   - "12"
+  - "14"
   - "node"
 sudo: false
 install:
@@ -16,10 +17,10 @@ script:
 matrix:
   include:
   - name: "Browser Unit Tests (webpack)"
-    node_js: "12"
+    node_js: "14"
     env: BUNDLER=webpack
   - name: "Browser Unit Tests (browserify)"
-    node_js: "12"
+    node_js: "14"
     env: BUNDLER=browserify
 notifications:
   email:
