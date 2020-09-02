@@ -1,10 +1,21 @@
 Forge ChangeLog
 ===============
 
+### Changed
 - **BREAKING**: Node.js 4 no longer supported. The code *may* still work, and
   non-invasive patches to keep it working will be considered. However, more
-  modern tools no longer support very old Node.js versions making testing
-  difficult.
+  modern tools no longer support old Node.js versions making testing difficult.
+
+### Removed
+- **BREAKING**: Remove `util.getPath`, `util.setPath`, and `util.deletePath`.
+  `util.setPath` had a potential prototype pollution security issue when used
+  with unsafe inputs. These functions are not used by `forge` itself. They date
+  from an early time when `forge` was targeted at providing general helper
+  functions. The library direction changed to be more focused on cryptography.
+  Many other excellent libraries are more suitable for general utilities. If
+  you need a replacement for these functions, consier `get`, `set`, and `unset`
+  from [lodash](https://lodash.com/). But also consider the potential similar
+  security issues with those APIs.
 
 ## 0.9.2 - 2019-09-01
 
