@@ -2035,6 +2035,8 @@ When using this code please keep the following in mind:
 - Certain features in this library are less susceptible to attacks depending on
   usage. This primarily includes features that deal with data format
   manipulation or those that are not involved in communication.
+- Do not pass unsafe inputs to `util.setPath`. Doing so could expose a
+  prototype pollution security issue.
 
 Library Background
 ------------------

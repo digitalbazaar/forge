@@ -1,6 +1,26 @@
 Forge ChangeLog
 ===============
 
+### Changed
+- Added `util.setPath` security note to function docs and to README.
+
+### Notes
+- **SECURITY**: The `util.setPath` function has the potential to cause
+  prototype pollution if used with unsafe input.
+  - This function is **not** used internally by `forge`.
+  - The rest of the library is unaffected by this issue.
+  - **Do not** use unsafe input with this function.
+  - Usage with known input should function as expected. (Including input
+    intentionally using potentially problematic keys.)
+  - No code changes will be made to address this issue in 0.9.x. The current
+    behavior *could* be considered a feature rather than a security issue.
+    0.10.0 will be released that removes `util.getPath` and `util.setPath`.
+    Consider `get` and `set` from [lodash](https://lodash.com/) if you need
+    replacements. But also consider the potential similar security issues with
+    those APIs.
+  - https://snyk.io/vuln/SNYK-JS-NODEFORGE-598677
+  - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-7720
+
 ## 0.9.1 - 2019-09-26
 
 ### Fixed
