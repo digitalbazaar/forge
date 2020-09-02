@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 0.10.0 - 2019-09-01
+## 0.10.0 - 2020-09-01
 
 ### Changed
 - **BREAKING**: Node.js 4 no longer supported. The code *may* still work, and
@@ -19,7 +19,7 @@ Forge ChangeLog
   from [lodash](https://lodash.com/). But also consider the potential similar
   security issues with those APIs.
 
-## 0.9.2 - 2019-09-01
+## 0.9.2 - 2020-09-01
 
 ### Changed
 - Added `util.setPath` security note to function docs and to README.
