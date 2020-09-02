@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 0.9.2 - 2019-09-01
+
 ### Changed
 - Added `util.setPath` security note to function docs and to README.
 
