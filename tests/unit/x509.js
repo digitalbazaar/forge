@@ -359,6 +359,46 @@ var UTIL = require('../../lib/util');
       });
     });
 
+    it('should correctly deal with utf8strings', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var nameWithSpecialChars = 'Name with special chars: á, é, í, ó, ú';
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        valueTagClass: ASN1.Type.UTF8,
+        value: nameWithSpecialChars
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      ASSERT.strictEqual(cert.subject.attributes[4].value, nameWithSpecialChars);
+    });
+
     it('should generate a certificate with cRLDistributionPoints extension', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
