@@ -1206,6 +1206,24 @@ var UTIL = require('../../lib/util');
       ASSERT.ok(issuer.verify(cert));
     });
 
+    it('should verify certificate with sha1WithRSASignature signature', function() {
+      var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIBwjCCAS+gAwIBAgIQj2d4hVEz0L1DYFVhA9CxCzAJBgUrDgMCHQUAMA8xDTAL\r\n' +
+        'BgNVBAMTBFZQUzEwHhcNMDcwODE4MDkyODUzWhcNMDgwODE3MDkyODUzWjAPMQ0w\r\n' +
+        'CwYDVQQDEwRWUFMxMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDaqKn40uaU\r\n' +
+        'DbFL1NXXZ8/b4ZqDJ6eSI5lysMZHfZDs60G3ocbNKofBvURIutabrFuBCB2S5f/z\r\n' +
+        'ICan0LR4uFpGuZ2I/PuVaU8X5fT8gBh7L636cWzHPPScYts00OyywEq381UB7XwX\r\n' +
+        'YuWpM5kUW5rkbq1JV3ystTR/4YnLl48YtQIDAQABoycwJTATBgNVHSUEDDAKBggr\r\n' +
+        'BgEFBQcDATAOBgNVHQ8EBwMFALAAAAAwCQYFKw4DAh0FAAOBgQBuUrU+J2Z5WKcO\r\n' +
+        'VNjJHFUKo8qpbn8jKQZDl2nvVaXCTXQZblz/qxOm4FaGGzJ/m3GybVZNVfdyHg+U\r\n' +
+        'lmDpFpOITkvcyNc3xjJCf2GVBo/VvdtVt7Myq0IQtAi/CXRK22BRNhSt9uu2EcRu\r\n' +
+        'HIXdFWHEzi6eD4PpNw/0X3ID6Gxk4A==\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var cert = PKI.certificateFromPem(certPem, true);
+      ASSERT.equal(cert.signatureOid, PKI.oids['sha1WithRSASignature']);
+      ASSERT.equal(cert.md.algorithm, 'sha1');
+    });
+
     it('should verify certificate with sha256WithRSAEncryption signature', function() {
       var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
         'MIIDuzCCAqOgAwIBAgIEO5vZjDANBgkqhkiG9w0BAQsFADBGMQswCQYDVQQGEwJE\r\n' +
