@@ -93,9 +93,14 @@ jQuery(function($)
                   type: 6, // URI
                   value: uri
                }]
+            }, {
+              name: 'subjectKeyIdentifier'
+            }, {
+              name: 'authorityKeyIdentifier',
+              keyIdentifier: true,
+              authorityCertIssuer: true,
+              serialNumber: true
             }]);
-            // FIXME: add subjectKeyIdentifier extension
-            // FIXME: add authorityKeyIdentifier extension
             cert.publicKey = keys.publicKey;
 
             // self-sign certificate
