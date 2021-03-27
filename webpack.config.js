@@ -80,6 +80,7 @@ outputs.forEach(info => {
   const bundle = Object.assign({}, common, {
     mode: 'development',
     output: {
+      globalObject: 'this',
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
       library: info.library || '[name]',
@@ -97,6 +98,7 @@ outputs.forEach(info => {
   const minify = Object.assign({}, common, {
     mode: 'production',
     output: {
+      globalObject: 'this',
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
       library: info.library || '[name]',
