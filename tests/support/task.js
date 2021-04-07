@@ -7,13 +7,10 @@
  *
  * Copyright (c) 2009-2013 Digital Bazaar, Inc.
  */
-var forge = require('./forge');
-require('./debug');
-require('./log');
-require('./util');
+// 'forge' should be a global
 
 // logging category
-var cat = 'forge.task';
+var cat = 'forge.tests.task';
 
 // verbose level
 // 0: off, 1: a little, 2: a whole lot
@@ -277,7 +274,7 @@ Task.prototype.parallel = function(name, subrun) {
     // closure and changes as the loop changes -- causing i
     // to always be set to its highest value
     var startParallelTask = function(pname, pi) {
-      forge.task.start({
+      forge_task.start({
         type: pname,
         run: function(task) {
            subrun[pi](task);
@@ -345,7 +342,7 @@ Task.prototype.block = function(n) {
  * running once enough permits have been released via unblock() calls.
  *
  * If multiple processes need to synchronize with a single task then
- * use a condition variable (see forge.task.createCondition). It is
+ * use a condition variable (see task.createCondition). It is
  * an error to unblock a task more times than it has been blocked.
  *
  * @param n number of permits to release (default: 1).
@@ -381,7 +378,7 @@ Task.prototype.sleep = function(n) {
 /**
  * Waits on a condition variable until notified. The next task will
  * not be scheduled until notification. A condition variable can be
- * created with forge.task.createCondition().
+ * created with task.createCondition().
  *
  * Once cond.notify() is called, the task will continue.
  *
@@ -618,7 +615,7 @@ var finish = function(task, suppressCallbacks) {
 };
 
 /* Tasks API */
-module.exports = forge.task = forge.task || {};
+window.forge_task = {};
 
 /**
  * Starts a new task that will run the passed function asynchronously.
@@ -642,7 +639,7 @@ module.exports = forge.task = forge.task || {};
  *
  * @param options the object as described above.
  */
-forge.task.start = function(options) {
+forge_task.start = function(options) {
   // create a new task
   var task = new Task({
     run: options.run,
@@ -673,7 +670,7 @@ forge.task.start = function(options) {
  *
  * @param type the type of task to cancel.
  */
-forge.task.cancel = function(type) {
+forge_task.cancel = function(type) {
   // find the task queue
   if(type in sTaskQueues) {
     // empty all but the current task from the queue
@@ -688,7 +685,7 @@ forge.task.cancel = function(type) {
  *
  * @return the condition variable.
  */
-forge.task.createCondition = function() {
+forge_task.createCondition = function() {
   var cond = {
     // all tasks that are blocked
     tasks: {}

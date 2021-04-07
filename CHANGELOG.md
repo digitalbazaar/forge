@@ -1,6 +1,15 @@
 Forge ChangeLog
 ===============
 
+## 0.11.0 - 2021-xx-xx
+
+### Removed
+- **BREAKING**: Remove `forge.task` API. This API was never used, documented,
+  or advertised by the maintainers. If anyone was using this API and wishes to
+  continue development it in other project, please let the maintainers know.
+  Due to use in the test suite, a modified version is located in
+  `tests/support/`.
+
 ## 0.10.0 - 2020-09-01
 
 ### Changed
