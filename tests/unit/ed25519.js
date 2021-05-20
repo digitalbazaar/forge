@@ -45,7 +45,7 @@ var UTIL = require('../../lib/util');
       ASSERT.ok(kp.publicKey);
     });
 
-    it('should sign a SHA-256 digestst of an UTF-8 message of an UTF-8 message', function() {
+    it('should sign a SHA-256 digest of an UTF-8 message', function() {
       var pwd = 'password';
       var md = SHA256.create();
       md.update(pwd, 'utf8');
