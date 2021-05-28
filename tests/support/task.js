@@ -24,13 +24,9 @@ var sVL = 0;
 // track tasks for debugging
 var sTasks = {};
 var sNextTaskId = 0;
-// debug access
-forge.debug.set(cat, 'tasks', sTasks);
 
 // a map of task type to task queue
 var sTaskQueues = {};
-// debug access
-forge.debug.set(cat, 'queues', sTaskQueues);
 
 // name for unnamed tasks
 var sNoTaskName = '?';

@@ -4,6 +4,11 @@ Forge ChangeLog
 ## 0.11.0 - 2021-xx-xx
 
 ### Removed
+- **SECURITY**, **BREAKING**: Remove `forge.debug` API. The API has the
+  potential for prototype pollution. This API was only briefly used by the
+  maintainers for internal project debug purposes and was never inteneded to be
+  used with untrusted user intputs. This API was not documented or advertised
+  and is being removed rather than fixed.
 - **BREAKING**: Remove `forge.task` API. This API was never used, documented,
   or advertised by the maintainers. If anyone was using this API and wishes to
   continue development it in other project, please let the maintainers know.
