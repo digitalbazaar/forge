@@ -1451,7 +1451,7 @@ __Examples__
 
 ```js
 // generate a key pair
-var keys = forge.pki.rsa.generateKeyPair(1024);
+var keys = forge.pki.rsa.generateKeyPair(2048);
 
 // create a certification request (CSR)
 var csr = forge.pki.createCertificationRequest();
