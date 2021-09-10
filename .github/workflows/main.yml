@@ -36,21 +36,21 @@ jobs:
       run: npm run test-karma
       env:
         BUNDLER: ${{ matrix.bundler }}
-  lint:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        node-version: [14.x]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: npm install
-    - name: Run eslint
-      run: npm run lint
+#  lint:
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 10
+#    strategy:
+#      matrix:
+#        node-version: [14.x]
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Use Node.js ${{ matrix.node-version }}
+#      uses: actions/setup-node@v1
+#      with:
+#        node-version: ${{ matrix.node-version }}
+#    - run: npm install
+#    - name: Run eslint
+#      run: npm run lint
   coverage:
     runs-on: ubuntu-latest
     timeout-minutes: 10
