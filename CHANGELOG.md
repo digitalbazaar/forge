@@ -6,8 +6,8 @@ Forge ChangeLog
 ### Removed
 - **SECURITY**, **BREAKING**: Remove `forge.debug` API. The API has the
   potential for prototype pollution. This API was only briefly used by the
-  maintainers for internal project debug purposes and was never inteneded to be
-  used with untrusted user intputs. This API was not documented or advertised
+  maintainers for internal project debug purposes and was never intended to be
+  used with untrusted user inputs. This API was not documented or advertised
   and is being removed rather than fixed.
 - **BREAKING**: Remove `forge.task` API. This API was never used, documented,
   or advertised by the maintainers. If anyone was using this API and wishes to
@@ -32,7 +32,7 @@ Forge ChangeLog
   from an early time when `forge` was targeted at providing general helper
   functions. The library direction changed to be more focused on cryptography.
   Many other excellent libraries are more suitable for general utilities. If
-  you need a replacement for these functions, consier `get`, `set`, and `unset`
+  you need a replacement for these functions, consider `get`, `set`, and `unset`
   from [lodash](https://lodash.com/). But also consider the potential similar
   security issues with those APIs.
 
