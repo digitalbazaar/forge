@@ -15,6 +15,9 @@ Forge ChangeLog
   Due to use in the test suite, a modified version is located in
   `tests/support/`.
 
+### Added
+- OIDs for `surname`, `title`, and `givenName`.
+
 ## 0.10.0 - 2020-09-01
 
 ### Changed
