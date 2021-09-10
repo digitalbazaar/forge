@@ -102,6 +102,7 @@
     "test-server-ws": "node tests/websockets/server-ws.js",
     "test-server-webid": "node tests/websockets/server-webid.js",
     "coverage": "rm -rf coverage && nyc --reporter=lcov --reporter=text-summary npm test",
+    "coverage-ci": "rm -rf coverage && nyc --reporter=lcovonly npm test",
     "coverage-report": "nyc report",
     "lint": "eslint *.js lib/*.js tests/*.js tests/**/*.js examples/*.js flash/*.js"
   },
