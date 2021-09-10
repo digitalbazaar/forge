@@ -18,6 +18,11 @@ Forge ChangeLog
 ### Added
 - OIDs for `surname`, `title`, and `givenName`.
 
+### Fixed
+- **BREAKING**: OID 2.5.4.5 name fixed from `serialName` to `serialNumber`.
+  Depending on how applications used this id to name association it could cause
+  compatibility issues.
+
 ## 0.10.0 - 2020-09-01
 
 ### Changed
