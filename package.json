@@ -1,8 +1,8 @@
 {
-  "name": "node-forge",
+  "name": "@tossteam/forge",
   "version": "0.10.1-dev",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
-  "homepage": "https://github.com/digitalbazaar/forge",
+  "homepage": "https://github.com/toss/forge",
   "author": {
     "name": "Digital Bazaar, Inc.",
     "email": "support@digitalbazaar.com",
@@ -39,6 +39,7 @@
     "nodejs-websocket": "^1.7.1",
     "nyc": "^15.1.0",
     "opts": "^1.2.7",
+    "typescript": "^4.4.3",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
     "worker-loader": "^2.0.0"
@@ -53,6 +54,7 @@
   },
   "license": "(BSD-3-Clause OR GPL-2.0)",
   "main": "lib/index.js",
+  "types": "index.d.ts",
   "files": [
     "lib/*.js",
     "flash/swf/*.swf",
