@@ -54,9 +54,8 @@
   },
   "license": "(BSD-3-Clause OR GPL-2.0)",
   "main": "lib/index.js",
-  "types": "index.d.ts",
+  "types": "lib/index.d.ts",
   "files": [
-    "index.d.ts",
     "lib/*.js",
     "flash/swf/*.swf",
     "dist/*.min.js",
