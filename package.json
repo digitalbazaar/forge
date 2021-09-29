@@ -56,6 +56,7 @@
   "main": "lib/index.js",
   "types": "index.d.ts",
   "files": [
+    "index.d.ts",
     "lib/*.js",
     "flash/swf/*.swf",
     "dist/*.min.js",
