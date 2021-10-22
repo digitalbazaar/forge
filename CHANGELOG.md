@@ -9,11 +9,21 @@ Forge ChangeLog
   maintainers for internal project debug purposes and was never intended to be
   used with untrusted user inputs. This API was not documented or advertised
   and is being removed rather than fixed.
+- **SECURITY**, **BREAKING**: Remove `forge.util.parseUrl()` (and
+  `forge.http.parseUrl` alias) and use the [WHATWG URL
+  Standard](https://url.spec.whatwg.org/). `URL` is supported by modern browers
+  and modern Node.js. This change is needed to address URL parsing security
+  issues. If `forge.util.parseUrl()` is used directly or through `forge.xhr` or
+  `forge.http` APIs, and support is needed for environments without `URL`
+  support, then a polyfill must be used.
 - **BREAKING**: Remove `forge.task` API. This API was never used, documented,
   or advertised by the maintainers. If anyone was using this API and wishes to
   continue development it in other project, please let the maintainers know.
   Due to use in the test suite, a modified version is located in
   `tests/support/`.
+
+### Changed
+- **BREAKING**: Increase supported Node.js version to 6.13.0 for URL support.
 
 ### Added
 - OIDs for `surname`, `title`, and `givenName`.
@@ -22,6 +32,12 @@ Forge ChangeLog
 - **BREAKING**: OID 2.5.4.5 name fixed from `serialName` to `serialNumber`.
   Depending on how applications used this id to name association it could cause
   compatibility issues.
+
+### Notes
+- The URL related changes may expose bugs in some of the networking related
+  code (unrelated to the much wider used cryptography code). The automated and
+  manual test coverage for this code is weak at best. Issues or patches to
+  update the code or tests would be appriciated.
 
 ## 0.10.0 - 2020-09-01
 
