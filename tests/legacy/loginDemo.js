@@ -29,11 +29,11 @@ var init = function($)
    try
    {
       // get query variables
-      var query = forge.util.getQueryVariables();
-      var domain = query.domain || '';
-      var auth = query.auth || '';
-      var redirect = query.redirect || '';
-      var pport = query.pport || 843;
+      var query = new URL(window.location.href).searchParams;
+      var domain = query.get('domain') || '';
+      var auth = query.get('auth') || '';
+      var redirect = query.get('redirect') || '';
+      var pport = parseInt(query.get('pport')) || 843;
       redirect = 'https://' + domain + '/' + redirect;
       if(domain)
       {
