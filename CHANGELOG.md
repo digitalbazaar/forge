@@ -21,6 +21,9 @@ Forge ChangeLog
   continue development it in other project, please let the maintainers know.
   Due to use in the test suite, a modified version is located in
   `tests/support/`.
+- **BREAKING**: Remove `forge.util.makeLink`, `forge.util.makeRequest`,
+  `forge.util.parseFragment`, `forge.util.getQueryVariables`. Replace with
+  `URL`, `URLSearchParams`, and custom code as needed.
 
 ### Changed
 - **BREAKING**: Increase supported Node.js version to 6.13.0 for URL support.
