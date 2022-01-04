@@ -40,7 +40,7 @@ Forge ChangeLog
 - The URL related changes may expose bugs in some of the networking related
   code (unrelated to the much wider used cryptography code). The automated and
   manual test coverage for this code is weak at best. Issues or patches to
-  update the code or tests would be appriciated.
+  update the code or tests would be appreciated.
 
 ## 0.10.0 - 2020-09-01
 
