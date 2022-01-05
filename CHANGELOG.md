@@ -39,8 +39,8 @@ Forge ChangeLog
 - **BREAKING**: Release process updated to use tooling that prefixes versions
   with `v`. Other tools, scripts, or scanners may need to adapt.
 - **BREAKING**: Remove docs related to Bower and
-  [forge-dist](https://github.com/digitalbazaar/forge-dist). Use [NPM][] or
-  another CDN. (Also be sure to read "Security Considerations" in the README.)
+  [forge-dist](https://github.com/digitalbazaar/forge-dist). Install using
+  [another method](./README.md#installation).
 
 ### Added
 - OIDs for `surname`, `title`, and `givenName`.
