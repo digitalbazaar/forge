@@ -1,7 +1,6 @@
 *.py[co]
 *.sw[nop]
 *~
-.bower.json
 .cdtproject
 .classpath
 .cproject

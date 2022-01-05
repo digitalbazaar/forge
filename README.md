@@ -105,7 +105,7 @@ not be regularly updated.
 
 If you want to use forge with [Node.js][], it is available through `npm`:
 
-https://npmjs.org/package/node-forge
+https://www.npmjs.com/package/node-forge
 
 Installation:
 
@@ -120,24 +120,12 @@ var forge = require('node-forge');
 The npm package includes pre-built `forge.min.js`, `forge.all.min.js`, and
 `prime.worker.min.js` using the [UMD][] format.
 
-### Bundle / Bower
-
-Each release is published in a separate repository as pre-built and minimized
-basic forge bundles using the [UMD][] format.
-
-https://github.com/digitalbazaar/forge-dist
-
-This bundle can be used in many environments. In particular it can be installed
-with [Bower][]:
-
-    bower install forge
-
 ### jsDelivr CDN
 
 To use it via [jsDelivr](https://www.jsdelivr.com/package/npm/node-forge) include this in your html:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/node-forge@0.7.0/dist/forge.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/node-forge@1.0.0/dist/forge.min.js"></script>
 ```
 
 ### unpkg CDN
@@ -145,7 +133,7 @@ To use it via [jsDelivr](https://www.jsdelivr.com/package/npm/node-forge) includ
 To use it via [unpkg](https://unpkg.com/#/) include this in your html:
 
 ```html
-<script src="https://unpkg.com/node-forge@0.7.0/dist/forge.min.js"></script>
+<script src="https://unpkg.com/node-forge@1.0.0/dist/forge.min.js"></script>
 ```
 
 ### Development Requirements
@@ -2003,8 +1991,8 @@ When using this code please keep the following in mind:
   runtime characteristics, runtime optimization, code optimization, code
   minimization, code obfuscation, bundling tools, possible bugs, the Forge code
   itself, and so on.
-- If using pre-built bundles from [Bower][] or similar be aware someone else
-  ran the tools to create those files.
+- If using pre-built bundles from [NPM][], another CDN, or similar, be aware
+  someone else ran the tools to create those files.
 - Use a secure transport channel such as [TLS][] to load scripts and consider
   using additional security mechanisms such as [Subresource Integrity][] script
   attributes.
@@ -2030,7 +2018,8 @@ Contact
 * Code: https://github.com/digitalbazaar/forge
 * Bugs: https://github.com/digitalbazaar/forge/issues
 * Email: support@digitalbazaar.com
-* IRC: [#forgejs][] on [freenode][]
+* IRC: [#forgejs][] on [Libera.Chat][] (people may also be on [freenode][] for
+  historical reasons).
 
 Donations
 ---------
@@ -2045,7 +2034,6 @@ Financial support is welcome and helps contribute to futher development:
 [3DES]: https://en.wikipedia.org/wiki/Triple_DES
 [AES]: https://en.wikipedia.org/wiki/Advanced_Encryption_Standard
 [ASN.1]: https://en.wikipedia.org/wiki/ASN.1
-[Bower]: https://bower.io/
 [Browserify]: http://browserify.org/
 [CBC]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [CFB]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
@@ -2058,7 +2046,9 @@ Financial support is welcome and helps contribute to futher development:
 [HMAC]: https://en.wikipedia.org/wiki/HMAC
 [JavaScript]: https://en.wikipedia.org/wiki/JavaScript
 [Karma]: https://karma-runner.github.io/
+[Libera.Chat]: https://libera.chat/
 [MD5]: https://en.wikipedia.org/wiki/MD5
+[NPM]: https://www.npmjs.com/
 [Node.js]: https://nodejs.org/
 [OFB]: https://en.wikipedia.org/wiki/Block_cipher_mode_of_operation
 [PKCS#10]: https://en.wikipedia.org/wiki/Certificate_signing_request
