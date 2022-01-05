@@ -1,7 +1,15 @@
 Forge ChangeLog
 ===============
 
-## 0.11.0 - 2021-xx-xx
+## 1.0.0 - 2022-xx-xx
+
+### Notes
+- **1.0.0**!
+- This project is over a decade old! Time for a 1.0.0 release.
+- The URL related changes may expose bugs in some of the networking related
+  code (unrelated to the much wider used cryptography code). The automated and
+  manual test coverage for this code is weak at best. Issues or patches to
+  update the code or tests would be appreciated.
 
 ### Removed
 - **SECURITY**, **BREAKING**: Remove `forge.debug` API. The API has the
@@ -27,6 +35,12 @@ Forge ChangeLog
 
 ### Changed
 - **BREAKING**: Increase supported Node.js version to 6.13.0 for URL support.
+- **BREAKING**: Renamed `master` branch to `main`.
+- **BREAKING**: Release process updated to use tooling that prefixes versions
+  with `v`. Other tools, scripts, or scanners may need to adapt.
+- **BREAKING**: Remove docs related to Bower and
+  [forge-dist](https://github.com/digitalbazaar/forge-dist). Use [NPM][] or
+  another CDN. (Also be sure to read "Security Considerations" in the README.)
 
 ### Added
 - OIDs for `surname`, `title`, and `givenName`.
@@ -35,12 +49,6 @@ Forge ChangeLog
 - **BREAKING**: OID 2.5.4.5 name fixed from `serialName` to `serialNumber`.
   Depending on how applications used this id to name association it could cause
   compatibility issues.
-
-### Notes
-- The URL related changes may expose bugs in some of the networking related
-  code (unrelated to the much wider used cryptography code). The automated and
-  manual test coverage for this code is weak at best. Issues or patches to
-  update the code or tests would be appreciated.
 
 ## 0.10.0 - 2020-09-01
 
