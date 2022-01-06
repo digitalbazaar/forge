@@ -4,6 +4,8 @@ Forge ChangeLog
 ### Fixed
 - [x509]: Correctly compute certificate issuer and subject hashes to match
   behavior of openssl.
+- [pem]: Accept certificate requests with "NEW" in the label. "BEGIN NEW
+  CERTIFICATE REQUEST" handled as "BEGIN CERTIFICATE REQUEST".
 
 ## 1.0.0 - 2022-01-04
 
