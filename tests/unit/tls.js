@@ -1,7 +1,7 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import forge from '../../lib/forge.js';
-require('../../lib/tls');
-require('../../lib/aesCipherSuites');
+import '../../lib/tls.js';
+import '../../lib/aesCipherSuites.js';
 import {
   createBuffer as forge_util_createBuffer
 } from '../../lib/util.js';

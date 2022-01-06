@@ -1,9 +1,9 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import {BigInteger} from '../../lib/jsbn.js';
 import MD from '../../lib/md.all.js';
-var PKCS1 = require('../../lib/pkcs1');
+import PKCS1 from '../../lib/pkcs1.js';
 import PKI from '../../lib/pki.js';
-var UTIL = require('../../lib/util');
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   // RSA's test vectors for Forge's RSA-OAEP implementation:

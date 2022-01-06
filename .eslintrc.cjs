@@ -10,7 +10,7 @@ module.exports = {
   ],
   parserOptions: {
     ecmaVersion: 2015,
-    sourceType: 'script'
+    sourceType: 'module'
   },
   rules: {
     // overrides to support ES5, remove when updated to ES20xx

@@ -1,6 +1,6 @@
-var ASSERT = require('assert');
-var RC2 = require('../../lib/rc2');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import RC2 from '../../lib/rc2.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('rc2', function() {

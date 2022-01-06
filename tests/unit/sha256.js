@@ -1,6 +1,6 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import SHA256 from '../../lib/sha256.js';
-var UTIL = require('../../lib/util');
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('sha256', function() {

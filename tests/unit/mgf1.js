@@ -1,7 +1,7 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import MD from '../../lib/md.all.js';
 import MGF from '../../lib/mgf.js';
-var UTIL = require('../../lib/util');
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('mgf1', function() {

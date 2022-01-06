@@ -1,4 +1,4 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import PKI from '../../lib/pki.js';
 
 (function() {

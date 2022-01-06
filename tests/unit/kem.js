@@ -1,8 +1,8 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import KEM from '../../lib/kem.js';
 import MD from '../../lib/md.all.js';
 import RSA from '../../lib/rsa.js';
-var UTIL = require('../../lib/util');
+import * as UTIL from '../../lib/util.js';
 import {BigInteger} from '../../lib/jsbn.js';
 
 (function() {

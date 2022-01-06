@@ -1,8 +1,8 @@
-var ASSERT = require('assert');
+import ASSERT from 'assert';
 import FORGE from '../../lib/forge.js';
 import MD from '../../lib/md.all.js';
-var PBKDF2 = require('../../lib/pbkdf2');
-var UTIL = require('../../lib/util');
+import PBKDF2 from '../../lib/pbkdf2.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('pbkdf2', function() {
