@@ -12,8 +12,9 @@ Forge ChangeLog
   links](https://github.com/digitalbazaar/forge/issues/825).
 
 ### Changed
-- [x509]: Reduce duplicate code with a helper function to create a signature
-  digest given an signature algorithm OID.
+- [x509]: Reduce duplicate code. Add helper function to create a signature
+  digest given an signature algorithm OID. Add helper function to verify
+  signatures.
 
 ## 1.1.0 - 2022-01-06
 
