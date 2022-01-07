@@ -5,6 +5,16 @@ Forge ChangeLog
 - [x509] 'Expected' and 'Actual' issuers were backwards in verification failure
   message.
 
+### Added
+- [oid,x509]: Added OID `1.3.14.3.2.29 / sha1WithRSASignature` for sha1 with
+  RSA. Considered a deprecated equivalent to `1.2.840.113549.1.1.5 /
+  sha1WithRSAEncryption`. See [discussion and
+  links](https://github.com/digitalbazaar/forge/issues/825).
+
+### Changed
+- [x509]: Reduce duplicate code with a helper function to create a signature
+  digest given an signature algorithm OID.
+
 ## 1.1.0 - 2022-01-06
 
 ### Fixed
