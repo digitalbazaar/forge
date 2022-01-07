@@ -25,8 +25,8 @@ var UTIL = require('../../lib/util');
       md.update(pwd, 'utf8');
       var seed = md.digest().getBytes();
       var kp = ED25519.generateKeyPair({seed: seed});
-      var privateKey = eb64(kp.privateKey);
-      var publicKey = eb64(kp.publicKey);
+      var privateKey = eb64(kp.privateKey.privateKeyBytes);
+      var publicKey = eb64(kp.publicKey.publicKeyBytes);
       ASSERT.equal(privateKey, b64PrivateKey);
       ASSERT.equal(publicKey, b64PublicKey);
     });
@@ -64,11 +64,13 @@ var UTIL = require('../../lib/util');
       var pwd = 'password';
       var md = SHA256.create();
       md.update(pwd, 'utf8');
+      
       var seed = md.digest().getBytes();
       var kp = ED25519.generateKeyPair({seed: seed});
       md = SHA256.create();
+      
       md.update('test', 'utf8');
-      var privateKey = kp.privateKey.slice(0, 32);
+      var privateKey = kp.privateKey.privateKeyBytes.slice(0, 32);
       var signature = ED25519.sign({
         md: md,
         privateKey: privateKey
