@@ -9,8 +9,8 @@ module.exports = {
     'digitalbazaar'
   ],
   parserOptions: {
-    ecmaVersion: 5,
-    sourceType: 'script'
+    ecmaVersion: 2015,
+    sourceType: 'module'
   },
   rules: {
     // overrides to support ES5, remove when updated to ES20xx

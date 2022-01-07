@@ -1,7 +1,7 @@
-var ASSERT = require('assert');
-var ED25519 = require('../../lib/ed25519');
-var SHA256 = require('../../lib/sha256');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import ED25519 from '../../lib/ed25519.js';
+import SHA256 from '../../lib/sha256.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   var b64PrivateKey =

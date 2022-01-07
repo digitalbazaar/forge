@@ -252,7 +252,7 @@ Task.prototype.next = function(name, subrun) {
  */
 Task.prototype.parallel = function(name, subrun) {
   // juggle parameters if it looks like no name is given
-  if(forge.util.isArray(name)) {
+  if(isArray(name)) {
     subrun = name;
 
     // inherit parent's name
@@ -273,13 +273,13 @@ Task.prototype.parallel = function(name, subrun) {
       forge_task.start({
         type: pname,
         run: function(task) {
-           subrun[pi](task);
+          subrun[pi](task);
         },
         success: function(task) {
-           ptask.unblock();
+          ptask.unblock();
         },
         failure: function(task) {
-           ptask.unblock();
+          ptask.unblock();
         }
       });
     };
@@ -468,7 +468,7 @@ Task.prototype.fail = function(next) {
  *
  * @param task the task to start.
  */
-var start = function(task) {
+var _start = function(task) {
   task.error = false;
   task.state = sStateTable[task.state][START];
   setTimeout(function() {
@@ -486,7 +486,7 @@ var start = function(task) {
  * @param task the task to process.
  * @param recurse the recursion count.
  */
-var runNext = function(task, recurse) {
+function runNext(task, recurse) {
   // get time since last context swap (ms), if enough time has passed set
   // swap to true to indicate that doNext was performed asynchronously
   // also, if recurse is too high do asynchronously
@@ -510,7 +510,7 @@ var runNext = function(task, recurse) {
         subtask.userData = task.userData;
         subtask.run(subtask);
         if(!subtask.error) {
-           runNext(subtask, recurse);
+          runNext(subtask, recurse);
         }
       } else {
         finish(task);
@@ -538,7 +538,7 @@ var runNext = function(task, recurse) {
     // not swapping, so run synchronously
     doNext(recurse);
   }
-};
+}
 
 /**
  * Finishes a task and looks for the next task in the queue to start.
@@ -546,7 +546,7 @@ var runNext = function(task, recurse) {
  * @param task the task to finish.
  * @param suppressCallbacks true to suppress callbacks.
  */
-var finish = function(task, suppressCallbacks) {
+function finish(task, suppressCallbacks) {
   // subtask is now done
   task.state = DONE;
 
@@ -653,13 +653,13 @@ forge_task.start = function(options) {
     }
     // create the queue with the new task
     sTaskQueues[task.type] = [task];
-    start(task);
+    _start(task);
   } else {
     // push the task onto the queue, it will be run after a task
     // with the same type completes
     sTaskQueues[options.type].push(task);
   }
-};
+}
 
 /**
  * Cancels all tasks of the given type that haven't started yet.
@@ -672,7 +672,7 @@ forge_task.cancel = function(type) {
     // empty all but the current task from the queue
     sTaskQueues[type] = [sTaskQueues[type][0]];
   }
-};
+}
 
 /**
  * Creates a condition variable to synchronize tasks. To make a task wait
@@ -696,8 +696,8 @@ forge_task.createCondition = function() {
   cond.wait = function(task) {
     // only block once
     if(!(task.id in cond.tasks)) {
-       task.block();
-       cond.tasks[task.id] = task;
+      task.block();
+      cond.tasks[task.id] = task;
     }
   };
 
@@ -715,4 +715,4 @@ forge_task.createCondition = function() {
   };
 
   return cond;
-};
+}

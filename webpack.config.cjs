@@ -15,12 +15,12 @@ module.exports = [];
 const outputs = [
   // core forge library crypto and utils
   {
-    entry: ['./lib/index.js'],
+    entry: ['./lib/main.js'],
     filenameBase: 'forge'
   },
   // core forge library + extra utils and networking support
   {
-    entry: ['./lib/index.all.js'],
+    entry: ['./lib/main.all.js'],
     filenameBase: 'forge.all'
   },
   // prime webworker
@@ -102,21 +102,7 @@ outputs.forEach(info => {
       library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
     },
-    devtool: 'cheap-module-source-map',
-    plugins: [
-      /*
-      new webpack.optimize.UglifyJsPlugin({
-        sourceMap: true,
-        compress: {
-          warnings: true
-        },
-        output: {
-          comments: false
-        }
-        //beautify: true
-      })
-      */
-    ]
+    devtool: 'cheap-module-source-map'
   });
   if(info.library === null) {
     delete minify.output.library;

@@ -1,9 +1,9 @@
-var ASSERT = require('assert');
-var KEM = require('../../lib/kem');
-var MD = require('../../lib/md.all');
-var RSA = require('../../lib/rsa');
-var UTIL = require('../../lib/util');
-var JSBN = require('../../lib/jsbn');
+import ASSERT from 'assert';
+import KEM from '../../lib/kem.js';
+import MD from '../../lib/md.all.js';
+import RSA from '../../lib/rsa.js';
+import * as UTIL from '../../lib/util.js';
+import {BigInteger} from '../../lib/jsbn.js';
 
 (function() {
   function FixedSecureRandom(str) {
@@ -50,9 +50,9 @@ var JSBN = require('../../lib/jsbn');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
-        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+        new BigInteger(n), new BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+        new BigInteger(n), null, new BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
@@ -75,9 +75,9 @@ var JSBN = require('../../lib/jsbn');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
-        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+        new BigInteger(n), new BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+        new BigInteger(n), null, new BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
@@ -100,9 +100,9 @@ var JSBN = require('../../lib/jsbn');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
-        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+        new BigInteger(n), new BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+        new BigInteger(n), null, new BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
@@ -125,9 +125,9 @@ var JSBN = require('../../lib/jsbn');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
-        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+        new BigInteger(n), new BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+        new BigInteger(n), null, new BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);
@@ -152,9 +152,9 @@ var JSBN = require('../../lib/jsbn');
       var kem = KEM.rsa.create(kdf, {prng: rnd});
 
       var rsaPublicKey = RSA.setPublicKey(
-        new JSBN.BigInteger(n), new JSBN.BigInteger(e));
+        new BigInteger(n), new BigInteger(e));
       var rsaPrivateKey = RSA.setPrivateKey(
-        new JSBN.BigInteger(n), null, new JSBN.BigInteger(d));
+        new BigInteger(n), null, new BigInteger(d));
 
       var result = kem.encrypt(rsaPublicKey, 128);
       ASSERT.equal(UTIL.bytesToHex(result.encapsulation), C0);

@@ -1,13 +1,11 @@
-var ASSERT = require('assert');
-var JSBN = require('../../lib/jsbn');
-var MD = require('../../lib/md.all');
-var PKCS1 = require('../../lib/pkcs1');
-var PKI = require('../../lib/pki');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import {BigInteger} from '../../lib/jsbn.js';
+import MD from '../../lib/md.all.js';
+import PKCS1 from '../../lib/pkcs1.js';
+import PKI from '../../lib/pki.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
-  var BigInteger = JSBN.BigInteger;
-
   // RSA's test vectors for Forge's RSA-OAEP implementation:
   // http://www.rsa.com/rsalabs/node.asp?id=2125
   describe('pkcs1', function() {

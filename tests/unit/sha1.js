@@ -1,6 +1,6 @@
-var ASSERT = require('assert');
-var SHA1 = require('../../lib/sha1');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import SHA1 from '../../lib/sha1.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('sha1', function() {

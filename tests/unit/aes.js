@@ -1,7 +1,7 @@
-var ASSERT = require('assert');
-var CIPHER = require('../../lib/cipher');
-var AES = require('../../lib/aes');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import CIPHER from '../../lib/cipher.js';
+import AES from '../../lib/aes.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('aes', function() {

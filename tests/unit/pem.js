@@ -1,5 +1,5 @@
-var ASSERT = require('assert');
-var PEM = require('../../lib/pem');
+import ASSERT from 'assert';
+import PEM from '../../lib/pem.js';
 
 (function() {
   var _input = '-----BEGIN PRIVACY-ENHANCED MESSAGE-----\r\n' +

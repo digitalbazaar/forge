@@ -1,8 +1,8 @@
-var ASSERT = require('assert');
-var ASN1 = require('../../lib/asn1');
-var MD = require('../../lib/md.all');
-var PKI = require('../../lib/pki');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import ASN1 from '../../lib/asn1.js';
+import MD from '../../lib/md.all.js';
+import PKI from '../../lib/pki.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   var _pem = {

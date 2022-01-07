@@ -1,12 +1,13 @@
-var ASSERT = require('assert');
-var FORGE = require('../../lib/forge');
-var MD = require('../../lib/md.all');
-var MGF = require('../../lib/mgf');
-var PKI = require('../../lib/pki');
-var PSS = require('../../lib/pss');
-var RANDOM = require('../../lib/random');
-var RSA = require('../../lib/rsa');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import FORGE from '../../lib/forge.js';
+import MD from '../../lib/md.all.js';
+import MGF from '../../lib/mgf.js';
+import PKI from '../../lib/pki.js';
+import PSS from '../../lib/pss.js';
+import RANDOM from '../../lib/random.js';
+import RSA from '../../lib/rsa.js';
+import * as UTIL from '../../lib/util.js';
+import {default as _nodeCrypto} from 'crypto';
 
 (function() {
   var _pem = {
@@ -138,11 +139,11 @@ var UTIL = require('../../lib/util');
         // Node versions >= 10.12.0 support native keyPair generation,
         // which is non-deterministic
         if(isAsync && !isPurejs &&
-          typeof require('crypto').generateKeyPair === 'function') {
+          typeof _nodeCrypto.generateKeyPair === 'function') {
           return false;
         }
         if(!isAsync && !isPurejs &&
-          typeof require('crypto').generateKeyPairSync === 'function') {
+          typeof _nodeCrypto.generateKeyPairSync === 'function') {
           return false;
         }
       } else {

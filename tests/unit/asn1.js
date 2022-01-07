@@ -1,6 +1,6 @@
-var ASSERT = require('assert');
-var ASN1 = require('../../lib/asn1');
-var UTIL = require('../../lib/util');
+import ASSERT from 'assert';
+import ASN1 from '../../lib/asn1.js';
+import * as UTIL from '../../lib/util.js';
 
 (function() {
   describe('asn1', function() {
