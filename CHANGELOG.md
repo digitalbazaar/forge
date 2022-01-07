@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 1.1.0 - 2022-01-06
+
 ### Fixed
 - [x509]: Correctly compute certificate issuer and subject hashes to match
   behavior of openssl.
