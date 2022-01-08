@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 1.2.0 - 2022-01-07
+
 ### Fixed
 - [x509] 'Expected' and 'Actual' issuers were backwards in verification failure
   message.
