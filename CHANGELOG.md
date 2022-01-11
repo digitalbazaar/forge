@@ -2,8 +2,9 @@ Forge ChangeLog
 ===============
 
 ### Fixed
-- [tests] Load entire module to improve top-level testing and coverage
+- [tests]: Load entire module to improve top-level testing and coverage
   reporting.
+- [log]: Refactor logging setup to avoid use of `URLSearchParams`.
 
 ## 1.2.0 - 2022-01-07
 
