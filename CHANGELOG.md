@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 1.2.1 - 2022-01-11
+
 ### Fixed
 - [tests]: Load entire module to improve top-level testing and coverage
   reporting.
