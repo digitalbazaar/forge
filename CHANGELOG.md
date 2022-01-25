@@ -1,6 +1,13 @@
 Forge ChangeLog
 ===============
 
+## 2.0.0 - 2022-xx-xx
+
+### Changed
+- Update to `webpack@5` and `webpack-cli@4`.
+- **BREAKING**: Update node engine to `>= 10.13.0`. Old Node.js *may* still
+  work, but due to tooling upgrades, they can no longer be tested.
+
 ## 1.2.1 - 2022-01-11
 
 ### Fixed

@@ -39,8 +39,8 @@
     "nodejs-websocket": "^1.7.1",
     "nyc": "^15.1.0",
     "opts": "^1.2.7",
-    "webpack": "^4.44.1",
-    "webpack-cli": "^3.3.12",
+    "webpack": "^5.67.0",
+    "webpack-cli": "^4.9.2",
     "worker-loader": "^2.0.0"
   },
   "repository": {
@@ -60,7 +60,7 @@
     "dist/*.min.js.map"
   ],
   "engines": {
-    "node": ">= 6.13.0"
+    "node": ">= 10.13.0"
   },
   "keywords": [
     "aes",
