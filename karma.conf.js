@@ -56,7 +56,17 @@ module.exports = function(config) {
 
     webpack: {
       mode: 'development',
-      devtool: 'inline-source-map'
+      devtool: 'inline-source-map',
+      module: {
+        rules: [
+          {
+            test: /web-worker-rsa\.js$/,
+            use: {
+              loader: 'worker-loader'
+            }
+          }
+        ]
+      }
     },
 
     browserify: {

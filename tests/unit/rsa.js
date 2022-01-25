@@ -175,7 +175,7 @@ var UTIL = require('../../lib/util');
       });
     });
 
-    it('should generate 512 bit key pair (async+purejs)', function(done) {
+    it.skip('should generate 512 bit key pair (async+purejs)', function(done) {
       // save
       var purejs = FORGE.options.usePureJavaScript;
       // test pure mode
@@ -187,7 +187,7 @@ var UTIL = require('../../lib/util');
       });
     });
 
-    it('should generate 512 bit key pair (async+workers)', function(done) {
+    it.skip('should generate 512 bit key pair (async+workers)', function(done) {
       _genAsync({
         workers: -1
       }, function() {
