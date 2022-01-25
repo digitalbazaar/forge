@@ -66,13 +66,6 @@ outputs.forEach(info => {
     // each output uses the "forge" name but with different contents
     entry: {
       forge: info.entry
-    },
-    // disable various node shims as forge handles this manually
-    node: {
-      Buffer: false,
-      process: false,
-      crypto: false,
-      setImmediate: false
     }
   };
 
@@ -80,7 +73,6 @@ outputs.forEach(info => {
   const bundle = Object.assign({}, common, {
     mode: 'development',
     output: {
-      path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
       library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
@@ -97,26 +89,11 @@ outputs.forEach(info => {
   const minify = Object.assign({}, common, {
     mode: 'production',
     output: {
-      path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
       library: info.library || '[name]',
       libraryTarget: info.libraryTarget || 'umd'
     },
-    devtool: 'cheap-module-source-map',
-    plugins: [
-      /*
-      new webpack.optimize.UglifyJsPlugin({
-        sourceMap: true,
-        compress: {
-          warnings: true
-        },
-        output: {
-          comments: false
-        }
-        //beautify: true
-      })
-      */
-    ]
+    devtool: 'cheap-module-source-map'
   });
   if(info.library === null) {
     delete minify.output.library;
