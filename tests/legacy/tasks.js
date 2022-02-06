@@ -33,7 +33,7 @@ jQuery(function($)
    {
       $('#start').attr('disabled', 'disabled');
       // meta! use tasks to run the task tests
-      forge.task.start({
+      forge_task.start({
          type: 'test',
          run: function(task) {
             task.next('starting', function(task) {
@@ -365,7 +365,7 @@ jQuery(function($)
 
          for(var i = 0; i < count; ++i)
          {
-            forge.task.start(tasks[i]);
+            forge_task.start(tasks[i]);
          }
       });
 

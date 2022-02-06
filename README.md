@@ -2,7 +2,7 @@
 
 [![npm package](https://nodei.co/npm/node-forge.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/node-forge/)
 
-[![Build status](https://img.shields.io/travis/digitalbazaar/forge.svg?branch=master)](https://travis-ci.org/digitalbazaar/forge)
+[![Build Status](https://github.com/digitalbazaar/forge/workflows/Main%20Checks/badge.svg)](https://github.com/digitalbazaar/forge/actions?query=workflow%3A%22Main+Checks%22)
 
 A native implementation of [TLS][] (and various other cryptographic tools) in
 [JavaScript][].
@@ -80,7 +80,6 @@ Documentation
 * [Tasks](#task)
 * [Utilities](#util)
 * [Logging](#log)
-* [Debugging](#debug)
 * [Flash Networking Support](#flash)
 
 ### Other
@@ -1981,19 +1980,6 @@ var parsed = forge.util.parseUrl('http://example.com/foo?bar=baz');
 
 Provides logging to a javascript console using various categories and
 levels of verbosity.
-
-__Examples__
-
-```js
-// TODO
-```
-
-<a name="debug" />
-
-### Debugging
-
-Provides storage of debugging information normally inaccessible in
-closures for viewing/investigation.
 
 __Examples__
 
