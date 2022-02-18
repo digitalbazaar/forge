@@ -1206,6 +1206,70 @@ var UTIL = require('../../lib/util');
       ASSERT.ok(issuer.verify(cert));
     });
 
+    it('should calculate a certificate subject and issuer hash', function() {
+      var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIDZDCCAs2gAwIBAgIKQ8fjjgAAAABh3jANBgkqhkiG9w0BAQUFADBGMQswCQYD\r\n' +
+        'VQQGEwJVUzETMBEGA1UEChMKR29vZ2xlIEluYzEiMCAGA1UEAxMZR29vZ2xlIElu\r\n' +
+        'dGVybmV0IEF1dGhvcml0eTAeFw0xMjA2MjcxMzU5MTZaFw0xMzA2MDcxOTQzMjda\r\n' +
+        'MGcxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMRYwFAYDVQQHEw1N\r\n' +
+        'b3VudGFpbiBWaWV3MRMwEQYDVQQKEwpHb29nbGUgSW5jMRYwFAYDVQQDEw13d3cu\r\n' +
+        'Z29vZ2xlLmRlMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCw2Hw3vNy5QMSd\r\n' +
+        '0/iMCS8lwZk9lnEk2NmrJt6vGJfRGlBprtHp5lpMFMoi+x8m8EwGVxXHGp7hLyN/\r\n' +
+        'gXuUjL7/DY9fxxx9l77D+sDZz7jfUfWmhS03Ra1FbT6myF8miVZFChJ8XgWzioJY\r\n' +
+        'gyNdRUC9149yrXdPWrSmSVaT0+tUCwIDAQABo4IBNjCCATIwHQYDVR0lBBYwFAYI\r\n' +
+        'KwYBBQUHAwEGCCsGAQUFBwMCMB0GA1UdDgQWBBTiQGhrO3785rMPIKZ/zQEl5RyS\r\n' +
+        '0TAfBgNVHSMEGDAWgBS/wDDr9UMRPme6npH7/Gra42sSJDBbBgNVHR8EVDBSMFCg\r\n' +
+        'TqBMhkpodHRwOi8vd3d3LmdzdGF0aWMuY29tL0dvb2dsZUludGVybmV0QXV0aG9y\r\n' +
+        'aXR5L0dvb2dsZUludGVybmV0QXV0aG9yaXR5LmNybDBmBggrBgEFBQcBAQRaMFgw\r\n' +
+        'VgYIKwYBBQUHMAKGSmh0dHA6Ly93d3cuZ3N0YXRpYy5jb20vR29vZ2xlSW50ZXJu\r\n' +
+        'ZXRBdXRob3JpdHkvR29vZ2xlSW50ZXJuZXRBdXRob3JpdHkuY3J0MAwGA1UdEwEB\r\n' +
+        '/wQCMAAwDQYJKoZIhvcNAQEFBQADgYEAVJ0qt/MBvHEPuWHeH51756qy+lBNygLA\r\n' +
+        'Xp5Gq+xHUTOzRty61BR05zv142hYAGWvpvnEOJ/DI7V3QlXK8a6dQ+du97obQJJx\r\n' +
+        '7ekqtfxVzmlSb23halYSoXmWgP8Tq0VUDsgsSLE7fS8JuO1soXUVKj1/6w189HL6\r\n' +
+        'LsngXwZSuL0=\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var issuerPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIICsDCCAhmgAwIBAgIDC2dxMA0GCSqGSIb3DQEBBQUAME4xCzAJBgNVBAYTAlVT\r\n' +
+        'MRAwDgYDVQQKEwdFcXVpZmF4MS0wKwYDVQQLEyRFcXVpZmF4IFNlY3VyZSBDZXJ0\r\n' +
+        'aWZpY2F0ZSBBdXRob3JpdHkwHhcNMDkwNjA4MjA0MzI3WhcNMTMwNjA3MTk0MzI3\r\n' +
+        'WjBGMQswCQYDVQQGEwJVUzETMBEGA1UEChMKR29vZ2xlIEluYzEiMCAGA1UEAxMZ\r\n' +
+        'R29vZ2xlIEludGVybmV0IEF1dGhvcml0eTCBnzANBgkqhkiG9w0BAQEFAAOBjQAw\r\n' +
+        'gYkCgYEAye23pIucV+eEPkB9hPSP0XFjU5nneXQUr0SZMyCSjXvlKAy6rWxJfoNf\r\n' +
+        'NFlOCnowzdDXxFdF7dWq1nMmzq0yE7jXDx07393cCDaob1FEm8rWIFJztyaHNWrb\r\n' +
+        'qeXUWaUr/GcZOfqTGBhs3t0lig4zFEfC7wFQeeT9adGnwKziV28CAwEAAaOBozCB\r\n' +
+        'oDAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFL/AMOv1QxE+Z7qekfv8atrjaxIk\r\n' +
+        'MB8GA1UdIwQYMBaAFEjmaPkr0rKV10fYIyAQTzOYkJ/UMBIGA1UdEwEB/wQIMAYB\r\n' +
+        'Af8CAQAwOgYDVR0fBDMwMTAvoC2gK4YpaHR0cDovL2NybC5nZW90cnVzdC5jb20v\r\n' +
+        'Y3Jscy9zZWN1cmVjYS5jcmwwDQYJKoZIhvcNAQEFBQADgYEAuIojxkiWsRF8YHde\r\n' +
+        'BZqrocb6ghwYB8TrgbCoZutJqOkM0ymt9e8kTP3kS8p/XmOrmSfLnzYhLLkQYGfN\r\n' +
+        '0rTw8Ktx5YtaiScRhKqOv5nwnQkhClIZmloJ0pC3+gz4fniisIWvXEyZ2VxVKfml\r\n' +
+        'UUIuOss4jHg7y/j7lYe8vJD5UDI=\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var cert = PKI.certificateFromPem(certPem, true);
+      var issuer = PKI.certificateFromPem(issuerPem);
+      ASSERT.strictEqual(issuer.subject.hash, 'd43b6713ab1a8679f0b70e169e9df889ed387a4b');
+      ASSERT.strictEqual(cert.subject.hash, 'fd90a93e35c96cd6959f45ec60ca76faa4ce8926');
+      ASSERT.strictEqual(cert.issuer.hash, 'd43b6713ab1a8679f0b70e169e9df889ed387a4b');
+    });
+
+    it('should verify certificate with sha1WithRSASignature signature', function() {
+      var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIBwjCCAS+gAwIBAgIQj2d4hVEz0L1DYFVhA9CxCzAJBgUrDgMCHQUAMA8xDTAL\r\n' +
+        'BgNVBAMTBFZQUzEwHhcNMDcwODE4MDkyODUzWhcNMDgwODE3MDkyODUzWjAPMQ0w\r\n' +
+        'CwYDVQQDEwRWUFMxMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDaqKn40uaU\r\n' +
+        'DbFL1NXXZ8/b4ZqDJ6eSI5lysMZHfZDs60G3ocbNKofBvURIutabrFuBCB2S5f/z\r\n' +
+        'ICan0LR4uFpGuZ2I/PuVaU8X5fT8gBh7L636cWzHPPScYts00OyywEq381UB7XwX\r\n' +
+        'YuWpM5kUW5rkbq1JV3ystTR/4YnLl48YtQIDAQABoycwJTATBgNVHSUEDDAKBggr\r\n' +
+        'BgEFBQcDATAOBgNVHQ8EBwMFALAAAAAwCQYFKw4DAh0FAAOBgQBuUrU+J2Z5WKcO\r\n' +
+        'VNjJHFUKo8qpbn8jKQZDl2nvVaXCTXQZblz/qxOm4FaGGzJ/m3GybVZNVfdyHg+U\r\n' +
+        'lmDpFpOITkvcyNc3xjJCf2GVBo/VvdtVt7Myq0IQtAi/CXRK22BRNhSt9uu2EcRu\r\n' +
+        'HIXdFWHEzi6eD4PpNw/0X3ID6Gxk4A==\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var cert = PKI.certificateFromPem(certPem, true);
+      ASSERT.equal(cert.signatureOid, PKI.oids['sha1WithRSASignature']);
+      ASSERT.equal(cert.md.algorithm, 'sha1');
+    });
+
     it('should verify certificate with sha256WithRSAEncryption signature', function() {
       var certPem = '-----BEGIN CERTIFICATE-----\r\n' +
         'MIIDuzCCAqOgAwIBAgIEO5vZjDANBgkqhkiG9w0BAQsFADBGMQswCQYDVQQGEwJE\r\n' +

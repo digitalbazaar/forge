@@ -52,7 +52,7 @@ jQuery(function($) {
     $('#start').attr('disabled', 'true');
     $('#stop').attr('disabled', '');
     // meta! use tasks to run the task tests
-    forge.task.start({
+    forge_task.start({
       type: 'test',
       run: function(task) {
         task.next('starting', function(task) {

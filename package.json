@@ -1,6 +1,6 @@
 {
   "name": "node-forge",
-  "version": "0.10.1-dev",
+  "version": "1.2.2-0",
   "description": "JavaScript implementations of network transports, cryptography, ciphers, PKI, message digests, and various utilities.",
   "homepage": "https://github.com/digitalbazaar/forge",
   "author": {
@@ -18,8 +18,8 @@
     "browserify": "^16.5.2",
     "commander": "^2.20.0",
     "cross-env": "^5.2.1",
-    "eslint": "^7.8.1",
-    "eslint-config-digitalbazaar": "^2.5.0",
+    "eslint": "^7.27.0",
+    "eslint-config-digitalbazaar": "^2.8.0",
     "express": "^4.16.2",
     "karma": "^4.4.1",
     "karma-browserify": "^7.0.0",
@@ -60,7 +60,7 @@
     "dist/*.min.js.map"
   ],
   "engines": {
-    "node": ">= 6.0.0"
+    "node": ">= 6.13.0"
   },
   "keywords": [
     "aes",
@@ -95,13 +95,15 @@
     "prepublish": "npm run build",
     "build": "webpack",
     "test-build": "webpack --config webpack-tests.config.js",
-    "test": "cross-env NODE_ENV=test mocha -t 30000 -R ${REPORTER:-spec} tests/unit/index.js",
+    "test": "npm run test-node",
+    "test-node": "cross-env NODE_ENV=test mocha -t 30000 -R ${REPORTER:-spec} tests/unit/index.js",
     "test-karma": "karma start",
     "test-karma-sauce": "karma start karma-sauce.conf",
     "test-server": "node tests/server.js",
     "test-server-ws": "node tests/websockets/server-ws.js",
     "test-server-webid": "node tests/websockets/server-webid.js",
     "coverage": "rm -rf coverage && nyc --reporter=lcov --reporter=text-summary npm test",
+    "coverage-ci": "rm -rf coverage && nyc --reporter=lcovonly npm test",
     "coverage-report": "nyc report",
     "lint": "eslint *.js lib/*.js tests/*.js tests/**/*.js examples/*.js flash/*.js"
   },

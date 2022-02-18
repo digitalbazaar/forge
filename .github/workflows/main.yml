@@ -1,0 +1,73 @@
+name: Main Checks
+
+on: [push]
+
+jobs:
+  test-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [6.x, 8.x, 10.x, 12.x, 14.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - name: Run test with Node.js ${{ matrix.node-version }}
+      run: npm run test-node
+  test-karma:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [14.x]
+        bundler: [webpack, browserify]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - name: Run karma tests
+      run: npm run test-karma
+      env:
+        BUNDLER: ${{ matrix.bundler }}
+#  lint:
+#    runs-on: ubuntu-latest
+#    timeout-minutes: 10
+#    strategy:
+#      matrix:
+#        node-version: [14.x]
+#    steps:
+#    - uses: actions/checkout@v2
+#    - name: Use Node.js ${{ matrix.node-version }}
+#      uses: actions/setup-node@v1
+#      with:
+#        node-version: ${{ matrix.node-version }}
+#    - run: npm install
+#    - name: Run eslint
+#      run: npm run lint
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - name: Generate coverage report
+      run: npm run coverage-ci
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        file: ./coverage/lcov.info
+        fail_ci_if_error: true

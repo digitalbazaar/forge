@@ -174,9 +174,10 @@ var fetchUrl = function(url, callback, redirects) {
   console.log('Fetching URL: \"' + url + '\"');
 
   // parse URL
-  url = forge.util.parseUrl(url);
-  var client = http.createClient(
-    url.port, url.fullHost, url.scheme === 'https');
+  url = new URL(url);
+  var client = http.createClient({
+    url: url
+  });
   var request = client.request('GET', url.path, {
     Host: url.host,
     Accept: 'application/rdf+xml'
