@@ -1,6 +1,11 @@
 Forge ChangeLog
 ===============
 
+## 1.3.0 - 2022-XXX
+
+### Fixed
+- [asn1] Add fallback to pretty print invalid UTF8 data.
+
 ## 1.2.1 - 2022-01-11
 
 ### Fixed
