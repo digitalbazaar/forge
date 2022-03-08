@@ -38,11 +38,17 @@ Forge ChangeLog
     DER parsing may need to adapt to this new behavior and optional flag.
 - [rsa] Add and use a validator to check for proper structure of parsed ASN.1
   `RSASSA-PKCS-v1_5` `DigestInfo` data. Additionally check that the hash
-  algorithm identifier is a known value. An invalid `DigestInfo` or algorithm
-  identifier will now cause an error to be thrown.
+  algorithm identifier is a known value from RFC 8017
+  `PKCS1-v1-5DigestAlgorithms`. An invalid `DigestInfo` or algorithm identifier
+  will now cause an error to be thrown.
 
 ### Added
-- [oid] Added `1.2.840.113549.2.2` / `md2` for hash algorithm checking.
+- [oid] Added missing RFC 8017 PKCS1-v1-5DigestAlgorithms algorithm
+  identifiers:
+  - `1.2.840.113549.2.2` / `md2`
+  - `2.16.840.1.101.3.4.2.4` / `sha224`
+  - `2.16.840.1.101.3.4.2.5` / `sha512-224`
+  - `2.16.840.1.101.3.4.2.6` / `sha512-256`
 
 ## 1.2.1 - 2022-01-11
 
