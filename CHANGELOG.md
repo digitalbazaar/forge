@@ -3,8 +3,46 @@ Forge ChangeLog
 
 ## 1.3.0 - 2022-XXX
 
+### Security
+- **SECURITY**: Three RSA PKCS#1 v1.5 signature verification issues were
+  reported by Moosa Yahyazadeh (moosa-yahyazadeh@uiowa.edu).
+  - Leniency in checking `digestAlgorithm` structure can lead to signature
+    forgery.
+    - The code is lenient in checking the digest algorithm structure. This can
+      allow a crafted structure that steals padding bytes and uses unchecked
+      portion of the PKCS#1 encoded message to forge a signature when a low
+      public exponent is being used. For more information, please see
+      ["Bleichenbacher's RSA signature forgery based on implementation
+      error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+      by Hal Finney.
+  - Failing to check tailing garbage bytes can lead to signature forgery.
+    - The code does not check for tailing garbage bytes after decoding a
+      `DigestInfo` ASN.1 structure. This can allow padding bytes to be removed
+      and garbage data added to forge a signature when a low public exponent is
+      being used.  For more information, please see ["Bleichenbacher's RSA
+      signature forgery based on implementation
+      error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+      by Hal Finney.
+  - Leniency in checking type octet.
+    - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
+      lead to successful verification with signatures that contain invalid
+      structures but a valid digest.
+
 ### Fixed
 - [asn1] Add fallback to pretty print invalid UTF8 data.
+- [asn1] `fromDer` is now more strict and will default to ensuring all input
+  bytes are parsed or throw an error. A new option `parseAllBytes` can disable
+  this behavior.
+  - **NOTE**: The previous behavior is being changed since it can lead to
+    security issues with crafted inputs. It is possible that code doing custom
+    DER parsing may need to adapt to this new behavior and optional flag.
+- [rsa] Add and use a validator to check for proper structure of parsed ASN.1
+  `RSASSA-PKCS-v1_5` `DigestInfo` data. Additionally check that the hash
+  algorithm identifier is a known value. An invalid `DigestInfo` or algorithm
+  identifier will now cause an error to be thrown.
+
+### Added
+- [oid] Added `1.2.840.113549.2.2` / `md2` for hash algorithm checking.
 
 ## 1.2.1 - 2022-01-11
 
