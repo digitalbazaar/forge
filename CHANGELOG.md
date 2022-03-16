@@ -4,29 +4,30 @@ Forge ChangeLog
 ## 1.3.0 - 2022-XXX
 
 ### Security
-- **SECURITY**: Three RSA PKCS#1 v1.5 signature verification issues were
-  reported by Moosa Yahyazadeh (moosa-yahyazadeh@uiowa.edu).
-  - Leniency in checking `digestAlgorithm` structure can lead to signature
-    forgery.
-    - The code is lenient in checking the digest algorithm structure. This can
-      allow a crafted structure that steals padding bytes and uses unchecked
-      portion of the PKCS#1 encoded message to forge a signature when a low
-      public exponent is being used. For more information, please see
-      ["Bleichenbacher's RSA signature forgery based on implementation
-      error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
-      by Hal Finney.
-  - Failing to check tailing garbage bytes can lead to signature forgery.
-    - The code does not check for tailing garbage bytes after decoding a
-      `DigestInfo` ASN.1 structure. This can allow padding bytes to be removed
-      and garbage data added to forge a signature when a low public exponent is
-      being used.  For more information, please see ["Bleichenbacher's RSA
-      signature forgery based on implementation
-      error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
-      by Hal Finney.
-  - Leniency in checking type octet.
-    - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
-      lead to successful verification with signatures that contain invalid
-      structures but a valid digest.
+- Three RSA PKCS#1 v1.5 signature verification issues were reported by Moosa
+  Yahyazadeh (moosa-yahyazadeh@uiowa.edu).
+- **HIGH**: Leniency in checking `digestAlgorithm` structure can lead to
+  signature forgery.
+  - The code is lenient in checking the digest algorithm structure. This can
+    allow a crafted structure that steals padding bytes and uses unchecked
+    portion of the PKCS#1 encoded message to forge a signature when a low
+    public exponent is being used. For more information, please see
+    ["Bleichenbacher's RSA signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+- **HIGH**: Failing to check tailing garbage bytes can lead to signature
+  forgery.
+  - The code does not check for tailing garbage bytes after decoding a
+    `DigestInfo` ASN.1 structure. This can allow padding bytes to be removed
+    and garbage data added to forge a signature when a low public exponent is
+    being used.  For more information, please see ["Bleichenbacher's RSA
+    signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+- **MEDIUM**: Leniency in checking type octet.
+  - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
+    lead to successful verification with signatures that contain invalid
+    structures but a valid digest.
 
 ### Fixed
 - [asn1] Add fallback to pretty print invalid UTF8 data.
@@ -40,7 +41,10 @@ Forge ChangeLog
   `RSASSA-PKCS-v1_5` `DigestInfo` data. Additionally check that the hash
   algorithm identifier is a known value from RFC 8017
   `PKCS1-v1-5DigestAlgorithms`. An invalid `DigestInfo` or algorithm identifier
-  will now cause an error to be thrown.
+  will now throw an error.
+  - **NOTE**: The previous lenient behavior is being changed to be more strict
+    since it could lead to security issues with crafted inputs. It is possible
+    that code may have to handle the errors from these stricter checks.
 
 ### Added
 - [oid] Added missing RFC 8017 PKCS1-v1-5DigestAlgorithms algorithm
