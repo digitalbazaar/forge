@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.3.0 - 2022-XXX
+## 1.3.0 - 2022-03-17
 
 ### Security
 - Three RSA PKCS#1 v1.5 signature verification issues were reported by Moosa
