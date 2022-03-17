@@ -829,9 +829,8 @@ var UTIL = require('../../lib/util');
 
         ASSERT.throws(function() {
           publicKey.verify(md.digest().getBytes(), S);
-        }, {
-          message: 'Unparsed DER bytes remain after ASN.1 parsing.'
-        });
+        },
+        /^Error: Unparsed DER bytes remain after ASN.1 parsing.$/);
       }
 
       function _checkBadDigestInfo(publicKey, S, skipTailingGarbage) {
@@ -842,9 +841,8 @@ var UTIL = require('../../lib/util');
           publicKey.verify(md.digest().getBytes(), S, undefined, {
             _parseAllDigestBytes: !skipTailingGarbage
           });
-        }, {
-          message: 'ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.'
-        });
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
       }
 
       it('should check DigestInfo structure', function() {
