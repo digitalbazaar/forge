@@ -15,6 +15,8 @@ Forge ChangeLog
     ["Bleichenbacher's RSA signature forgery based on implementation
     error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
     by Hal Finney.
+  - CVE ID: [CVE-2022-24771](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24771)
+  - GHSA ID: [GHSA-cfm4-qjh2-4765](https://github.com/digitalbazaar/forge/security/advisories/GHSA-cfm4-qjh2-4765)
 - **HIGH**: Failing to check tailing garbage bytes can lead to signature
   forgery.
   - The code does not check for tailing garbage bytes after decoding a
@@ -24,10 +26,14 @@ Forge ChangeLog
     signature forgery based on implementation
     error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
     by Hal Finney.
+  - CVE ID: [CVE-2022-24772](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24772)
+  - GHSA ID: [GHSA-x4jg-mjrx-434g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-x4jg-mjrx-434g)
 - **MEDIUM**: Leniency in checking type octet.
   - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
     lead to successful verification with signatures that contain invalid
     structures but a valid digest.
+  - CVE ID: [CVE-2022-24773](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24773)
+  - GHSA ID: [GHSA-2r2c-g63r-vccr](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2r2c-g63r-vccr)
 
 ### Fixed
 - [asn1] Add fallback to pretty print invalid UTF8 data.
