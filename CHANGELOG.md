@@ -1,6 +1,13 @@
 Forge ChangeLog
 ===============
 
+## 1.3.1 - 2022-03-xx
+
+### Fixes
+- RFC 3447 and RFC 8017 allow for optional `DigestAlgorithm` `NULL` parameters
+  for `sha*` algorithms and require `NULL` paramters for `md2` and `md5`
+  algorithms.
+
 ## 1.3.0 - 2022-03-17
 
 ### Security
