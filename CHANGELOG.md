@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.3.1 - 2022-03-xx
+## 1.3.1 - 2022-03-29
 
 ### Fixes
 - RFC 3447 and RFC 8017 allow for optional `DigestAlgorithm` `NULL` parameters
