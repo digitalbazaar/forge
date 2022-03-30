@@ -845,6 +845,15 @@ var UTIL = require('../../lib/util');
         /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
       }
 
+      function _checkGoodDigestInfo(publicKey, S, skipTailingGarbage) {
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.ok(publicKey.verify(md.digest().getBytes(), S, undefined, {
+          _parseAllDigestBytes: !skipTailingGarbage
+        }));
+      }
+
       it('should check DigestInfo structure', function() {
         var publicKey = RSA.setPublicKey(N, e);
         // 0xff bytes stolen from padding
@@ -904,7 +913,7 @@ var UTIL = require('../../lib/util');
           '0bc1dd3f020cb1091af6b476416da3024ea046b09fbbbc4d2355da9a2bc6ddb9');
 
         _checkBadTailingGarbage(publicKey, S);
-        _checkBadDigestInfo(publicKey, S, true);
+        _checkGoodDigestInfo(publicKey, S, true);
       });
 
       it('should check tailing garbage and DigestInfo [2]', function() {
