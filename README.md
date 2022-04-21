@@ -683,7 +683,7 @@ var index = 0;
 var decrypted = '';
 do {
   decrypted += decipher.output.getBytes();
-  var buf = forge.util.createBuffer(encryptedBytes.substr(index, chunkSize));
+  var buf = forge.util.createBuffer(encryptedBytes.slice(index, index + chunkSize));
   decipher.update(buf);
   index += chunkSize;
 } while(index < length);

@@ -45,7 +45,7 @@ function test_forge_chunk(bytes, chunkSize) {
   let plain = '';
   do {
     plain += decipher.output.getBytes();
-    const buf = forge.util.createBuffer(bytes.substr(index, chunkSize));
+    const buf = forge.util.createBuffer(bytes.slice(index, index + chunkSize));
     decipher.update(buf);
     index += chunkSize;
   } while(index < length);
@@ -131,7 +131,7 @@ function data_chunk(megs, chunkSize) {
   let encrypted = '';
   do {
     encrypted += cipher.output.getBytes();
-    const buf = forge.util.createBuffer(plain.substr(index, chunkSize));
+    const buf = forge.util.createBuffer(plain.slice(index, index + chunkSize));
     cipher.update(buf);
     index += chunkSize;
   } while(index < length);
