@@ -24,6 +24,22 @@ var UTIL = require('../../lib/util');
       'gEAm2mfSF5xFPLEqqFkvKTM4w8PfhnF0ehmfQNApvoWQRQanNWLCT+Q9GHx6DCFj\r\n' +
       'TUHl+53x88BrCl1E7FhYPs92\r\n' +
       '-----END PKCS7-----\r\n',
+    p7ZeroPadded:
+      '-----BEGIN PKCS7-----\r\n' +
+      'MIICTgYJKoZIhvcNAQcDoIICPzCCAjsCAQAxggHGMIIBwgIBADCBqTCBmzELMAkG\r\n' +
+      'A1UEBhMCREUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEV\r\n' +
+      'MBMGA1UECgwMU3RlZmFuIFNpZWdsMRIwEAYDVQQLDAlHZWllcmxlaW4xFjAUBgNV\r\n' +
+      'BAMMDUdlaWVybGVpbiBERVYxIzAhBgkqhkiG9w0BCQEWFHN0ZXNpZUBicm9rZW5w\r\n' +
+      'aXBlLmRlAgkA1FQcQNg14vMwDQYJKoZIhvcNAQEBBQAEggEAJhWQz5SniCd1w3A8\r\n' +
+      'uKVZEfc8Tp21I7FMfFqou+UOVsZCq7kcEa9uv2DIj3o7zD8wbLK1fuyFi4SJxTwx\r\n' +
+      'kR0a6V4bbonIpXPPJ1f615dc4LydAi2tv5w14LJ1Js5XCgGVnkAmQHDaW3EHXB7X\r\n' +
+      'T4w9PR3+tcS/5YAnWaM6Es38zCKHd7TnHpuakplIkwSK9rBFAyA1g/IyTPI+ktrE\r\n' +
+      'EHcVuJcz/7eTlF6wJEa2HL8F1TVWuL0p/0GsJP/8y0MYGdCdtr+TIVo//3YGhoBl\r\n' +
+      'N4tnheFT/jRAzfCZtflDdgAukW24CekrJ1sG2M42p5cKQ5rGFQtzNy/n8EjtUutO\r\n' +
+      'HD5YITBsBgkqhkiG9w0BBwEwHQYJYIZIAWUDBAEqBBBmlpfy3WrYj3uWW7+xNEiH\r\n' +
+      'gEAm2mfSF5xFPLEqqFkvKTM4w8PfhnF0ehmfQNApvoWQRQanNWLCT+Q9GHx6DCFj\r\n' +
+      'TUHl+53x88BrCl1E7FhYPs92AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n' +
+      '-----END PKCS7-----\r\n',
     certificate:
       '-----BEGIN CERTIFICATE-----\r\n' +
       'MIIDtDCCApwCCQDUVBxA2DXi8zANBgkqhkiG9w0BAQUFADCBmzELMAkGA1UEBhMC\r\n' +
@@ -410,6 +426,18 @@ var UTIL = require('../../lib/util');
 
       ASSERT.equal(p7.encryptedContent.algorithm, PKI.oids['aes256-CBC']);
       ASSERT.equal(p7.encryptedContent.parameter.data.length, 16); // IV
+    });
+
+    it('should import padded message from PEM', function() {
+      ASSERT.doesNotThrow(function() {
+        var p7 = PKCS7.messageFromPem(_pem.p7);
+        var p7ZeroPadded = PKCS7.messageFromPem(_pem.p7ZeroPadded);
+        ASSERT.deepEqual(p7.type, p7ZeroPadded.type);
+        ASSERT.deepEqual(p7.version, p7ZeroPadded.version);
+        ASSERT.deepEqual(p7.recipients, p7ZeroPadded.recipients);
+        ASSERT.deepEqual(p7.encryptedContent, p7ZeroPadded.encryptedContent);
+        ASSERT.deepEqual(p7.rawCapture, p7ZeroPadded.rawCapture);
+      });
     });
 
     it('should import indefinite length message from PEM', function() {

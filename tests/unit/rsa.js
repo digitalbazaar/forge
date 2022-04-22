@@ -830,7 +830,7 @@ var UTIL = require('../../lib/util');
         ASSERT.throws(function() {
           publicKey.verify(md.digest().getBytes(), S);
         },
-        /^Error: Unparsed DER bytes remain after ASN.1 parsing.$/);
+        /^Error: Unparsed bytes remain after ASN.1 parsing.$/);
       }
 
       function _checkBadDigestInfo(publicKey, S, skipTailingGarbage) {
