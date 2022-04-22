@@ -1,6 +1,36 @@
 Forge ChangeLog
 ===============
 
+## 1.4.0 - 2022-xx-xx
+
+### Added
+- [asn1] Add `fromPemBer()` call that is more permissive than `fromDer()` and
+  allows trailing data.
+  - [RFC 7468](https://www.rfc-editor.org/rfc/rfc7468) PEM data is BER encoded.
+    The RFC recommends to prefer DER over BER encoding throughout and is
+    described in Appendix B.
+  - PKCS#7 PEM data with trailing zeros appears in the wild. This may be
+    intentional, but unneeded, padding. In any case, it should be accepted.
+  - Recent `node-forge` releases made `fromDer` more strict to by default throw
+    an error when not all data is decoded. `fromDer` is used in many places
+    even for BER data, but in this case an alternate is needed to allow for at
+    least this trailing data.
+  - The API is named `fromPemBer` rather than `fromBer` since it is currently
+    intended to handle only the subset of PEM BER that is DER data followed by
+    possible unparsed bytes.
+  - **NOTE**: This API may not handle all PEM BER data. If other data in wild
+    is found that needs better support please file an issue with an example.
+
+### Fixes
+- Calls to `asn1.fromDer` that occurred on data from `pem.decode()`, or
+  similar, now use `asn1.fromPemBer` to be more permissive in allowing possible
+  trailing or padding bytes.
+
+### Changed
+- [asn1] `fromDer` error message changed to reflect also using the API with BER
+  data. Changed from `'Unparsed DER bytes remain after ASN.1 parsing.'` to
+  `'Unparsed bytes remain after ASN.1 parsing.'`.
+
 ## 1.3.1 - 2022-03-29
 
 ### Fixes
