@@ -1,0 +1,35 @@
+var PKI = require('../../lib/pki');
+
+function test() {
+  var _input = `-----BEGIN CERTIFICATE-----
+  MIID1TCCAr0CFBYvDgt6nmxPW8MkWzkF9xdoNxwUMA0GCSqGSIb3DQEBCwUAMIGl
+  MQswCQYDVQQGEwJDTjEPMA0GA1UECAwG6ZmV6KW/MQ8wDQYDVQQHDAbopb/lrokx
+  ITAfBgNVBAoMGOWNjuS4uuaKgOacr+aciemZkOWFrOWPuDEVMBMGA1UECwwM56e7
+  5Yqo6YCa5L+hMRcwFQYDVQQDDA7liJjlh68gMTE1MjE5NTEhMB8GCSqGSIb3DQEJ
+  ARYSZXhhbXBsZUBodWF3ZWkuY29tMCAXDTIwMDYwOTA1MzYyMloYDzIwNjkwOTIw
+  MDUzNjIyWjCBpTELMAkGA1UEBhMCQ04xDzANBgNVBAgMBumZleilvzEPMA0GA1UE
+  BwwG6KW/5a6JMSEwHwYDVQQKDBjljY7kuLrmioDmnK/mnInpmZDlhazlj7gxFTAT
+  BgNVBAsMDOenu+WKqOmAmuS/oTEXMBUGA1UEAwwO5YiY5YevIDExNTIxOTUxITAf
+  BgkqhkiG9w0BCQEWEmV4YW1wbGVAaHVhd2VpLmNvbTCCASIwDQYJKoZIhvcNAQEB
+  BQADggEPADCCAQoCggEBAJi6XLHZrfXqQI3DT40+Wm5JSEaphSe6dAQowVi3bbkS
+  7BqyZMumkGJ9O9nAVshcv79wbuHK/5N8IqWYMSzJUxwZAmeG6ZBK+H/7oGVXmPN1
+  jdiJPw7riymZbS1iSHuR8b/s0xGuaVV9OVa4zQPT3BeprpdnZ0PICqy/P+KMzhus
+  +MoHUyvP7WMRROYqVIv0ZGgDyvEoleuIjFgs27E5eVz2bnokVXXVfu57v++Cnhto
+  zPKN7ZOgmG8sx0T7Cm/KaVyZSFFS0dDT5YAA4L9P/p+4BM4vVC6oovvQ3qS4sa6M
+  driYJdam0tjLXAZC5vi18x9zJ/o+/yn94OXKPYZgEyECAwEAATANBgkqhkiG9w0B
+  AQsFAAOCAQEAElgDEuz8FWDVFwg+bt0kRUc6h2FKxn08VUOGNLs7dY7DP8LiVve/
+  CpUsVOpY7ePYArwg6PX+mCtKP1hxKs0R6ILrGGXUjUa3rwyv9ZSGdp6TGjzciifj
+  mQwcjLJ9/34J+0sfQbaNnKTEeo7zeVc1xLYlYvFT4M0AzM9sM6g2y0FCyS575VLK
+  17fSGMlQHWW5kO6rtvU1gxzd2LwYn6ztqNJwj/k8YWaltH3Kz+EDm7JJOfVsV35X
+  cAGlTCyA2nwff498cuSX34TKkN5FXyG1NB4cooDgTScECf7EhWmWuisdTj0a5Exz
+  Qp1PU3DlW3XU6ScsHFalaKT1ERpCKUB3Dg==
+  -----END CERTIFICATE-----`;
+
+  const msg = PKI.certificateFromPem(_input)
+  const subject = msg.subject.attributes
+    .map(attr => [attr.shortName, attr.value].join('='))
+    .join(', ')
+  console.log(subject)
+}
+
+test()
