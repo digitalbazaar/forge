@@ -1053,6 +1053,25 @@ var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
   }
 });
 
+// encrypt data with a public key using RSAES-OAEP/SHA-256/MGF1-SHA-256
+// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding (with
+// the "BC" provider)
+var encrypted = publicKey.encrypt(bytes, 'RSA-OAEP', {
+  md: forge.md.sha256.create(),
+  mgf1: {
+    md: forge.md.sha256.create()
+  }
+});
+
+// decrypt data with a private key using RSAES-OAEP/SHA-256/MGF1-SHA-256
+// compatible with Java's RSA/ECB/OAEPWithSHA-256AndMGF1Padding (with
+// the "BC" provider)
+var decrypted = privateKey.decrypt(encrypted, 'RSA-OAEP', {
+  md: forge.md.sha256.create(),
+  mgf1: {
+    md: forge.md.sha256.create()
+  }
+});
 ```
 
 <a name="rsakem" />
