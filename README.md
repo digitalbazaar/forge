@@ -1358,6 +1358,10 @@ p7.addSigner({
     type: forge.pki.oids.signingTime,
     // value can also be auto-populated at signing time
     value: new Date()
+  // }, {
+  //   // attributes other than contentType/messageDigest/signingTime need an ASN.1 value
+  //   type: '1.2.840.113549.1.9.25.3',
+  //   ans1Value: forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, forge.random.getBytesSync(32))
   }]
 });
 p7.sign();
