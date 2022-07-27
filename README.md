@@ -914,7 +914,7 @@ var verified = ED25519.verify({
 });
 // `verified` is true/false
 
-// sign a message passed as a buffer
+// verify a message passed as a buffer
 var verified = ED25519.verify({
   // also accepts a forge ByteBuffer or Uint8Array
   message: Buffer.from('test', 'utf8'),
