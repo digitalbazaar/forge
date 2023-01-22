@@ -6,7 +6,6 @@
  * Copyright 2011-2016 Digital Bazaar, Inc.
  */
 const path = require('path');
-const webpack = require('webpack');
 
 // build multiple outputs
 module.exports = [];
@@ -79,6 +78,7 @@ outputs.forEach(info => {
 
   // plain unoptimized unminified bundle
   const bundle = Object.assign({}, common, {
+    mode: 'development',
     output: {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
@@ -95,6 +95,7 @@ outputs.forEach(info => {
 
   // optimized and minified bundle
   const minify = Object.assign({}, common, {
+    mode: 'production',
     output: {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
@@ -103,6 +104,7 @@ outputs.forEach(info => {
     },
     devtool: 'cheap-module-source-map',
     plugins: [
+      /*
       new webpack.optimize.UglifyJsPlugin({
         sourceMap: true,
         compress: {
@@ -113,6 +115,7 @@ outputs.forEach(info => {
         }
         //beautify: true
       })
+      */
     ]
   });
   if(info.library === null) {

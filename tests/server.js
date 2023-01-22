@@ -30,6 +30,8 @@ function contentServer(callback) {
 
   // forge
   app.use('/forge', express.static(path.join(__dirname, '..', 'dist')));
+  app.use('/support', express.static(path.join(__dirname, 'support')));
+  app.use('/issues', express.static(path.join(__dirname, 'issues')));
 
   // unit tests support
   app.use('/mocha',

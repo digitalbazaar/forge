@@ -1,6 +1,222 @@
 Forge ChangeLog
 ===============
 
+## 1.3.1 - 2022-03-29
+
+### Fixes
+- RFC 3447 and RFC 8017 allow for optional `DigestAlgorithm` `NULL` parameters
+  for `sha*` algorithms and require `NULL` paramters for `md2` and `md5`
+  algorithms.
+
+## 1.3.0 - 2022-03-17
+
+### Security
+- Three RSA PKCS#1 v1.5 signature verification issues were reported by Moosa
+  Yahyazadeh (moosa-yahyazadeh@uiowa.edu).
+- **HIGH**: Leniency in checking `digestAlgorithm` structure can lead to
+  signature forgery.
+  - The code is lenient in checking the digest algorithm structure. This can
+    allow a crafted structure that steals padding bytes and uses unchecked
+    portion of the PKCS#1 encoded message to forge a signature when a low
+    public exponent is being used. For more information, please see
+    ["Bleichenbacher's RSA signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+  - CVE ID: [CVE-2022-24771](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24771)
+  - GHSA ID: [GHSA-cfm4-qjh2-4765](https://github.com/digitalbazaar/forge/security/advisories/GHSA-cfm4-qjh2-4765)
+- **HIGH**: Failing to check tailing garbage bytes can lead to signature
+  forgery.
+  - The code does not check for tailing garbage bytes after decoding a
+    `DigestInfo` ASN.1 structure. This can allow padding bytes to be removed
+    and garbage data added to forge a signature when a low public exponent is
+    being used.  For more information, please see ["Bleichenbacher's RSA
+    signature forgery based on implementation
+    error"](https://mailarchive.ietf.org/arch/msg/openpgp/5rnE9ZRN1AokBVj3VqblGlP63QE/)
+    by Hal Finney.
+  - CVE ID: [CVE-2022-24772](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24772)
+  - GHSA ID: [GHSA-x4jg-mjrx-434g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-x4jg-mjrx-434g)
+- **MEDIUM**: Leniency in checking type octet.
+  - `DigestInfo` is not properly checked for proper ASN.1 structure. This can
+    lead to successful verification with signatures that contain invalid
+    structures but a valid digest.
+  - CVE ID: [CVE-2022-24773](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-24773)
+  - GHSA ID: [GHSA-2r2c-g63r-vccr](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2r2c-g63r-vccr)
+
+### Fixed
+- [asn1] Add fallback to pretty print invalid UTF8 data.
+- [asn1] `fromDer` is now more strict and will default to ensuring all input
+  bytes are parsed or throw an error. A new option `parseAllBytes` can disable
+  this behavior.
+  - **NOTE**: The previous behavior is being changed since it can lead to
+    security issues with crafted inputs. It is possible that code doing custom
+    DER parsing may need to adapt to this new behavior and optional flag.
+- [rsa] Add and use a validator to check for proper structure of parsed ASN.1
+  `RSASSA-PKCS-v1_5` `DigestInfo` data. Additionally check that the hash
+  algorithm identifier is a known value from RFC 8017
+  `PKCS1-v1-5DigestAlgorithms`. An invalid `DigestInfo` or algorithm identifier
+  will now throw an error.
+  - **NOTE**: The previous lenient behavior is being changed to be more strict
+    since it could lead to security issues with crafted inputs. It is possible
+    that code may have to handle the errors from these stricter checks.
+
+### Added
+- [oid] Added missing RFC 8017 PKCS1-v1-5DigestAlgorithms algorithm
+  identifiers:
+  - `1.2.840.113549.2.2` / `md2`
+  - `2.16.840.1.101.3.4.2.4` / `sha224`
+  - `2.16.840.1.101.3.4.2.5` / `sha512-224`
+  - `2.16.840.1.101.3.4.2.6` / `sha512-256`
+
+## 1.2.1 - 2022-01-11
+
+### Fixed
+- [tests]: Load entire module to improve top-level testing and coverage
+  reporting.
+- [log]: Refactor logging setup to avoid use of `URLSearchParams`.
+
+## 1.2.0 - 2022-01-07
+
+### Fixed
+- [x509] 'Expected' and 'Actual' issuers were backwards in verification failure
+  message.
+
+### Added
+- [oid,x509]: Added OID `1.3.14.3.2.29 / sha1WithRSASignature` for sha1 with
+  RSA. Considered a deprecated equivalent to `1.2.840.113549.1.1.5 /
+  sha1WithRSAEncryption`. See [discussion and
+  links](https://github.com/digitalbazaar/forge/issues/825).
+
+### Changed
+- [x509]: Reduce duplicate code. Add helper function to create a signature
+  digest given an signature algorithm OID. Add helper function to verify
+  signatures.
+
+## 1.1.0 - 2022-01-06
+
+### Fixed
+- [x509]: Correctly compute certificate issuer and subject hashes to match
+  behavior of openssl.
+- [pem]: Accept certificate requests with "NEW" in the label. "BEGIN NEW
+  CERTIFICATE REQUEST" handled as "BEGIN CERTIFICATE REQUEST".
+
+## 1.0.0 - 2022-01-04
+
+### Notes
+- **1.0.0**!
+- This project is over a decade old! Time for a 1.0.0 release.
+- The URL related changes may expose bugs in some of the networking related
+  code (unrelated to the much wider used cryptography code). The automated and
+  manual test coverage for this code is weak at best. Issues or patches to
+  update the code or tests would be appreciated.
+
+### Removed
+- **SECURITY**, **BREAKING**: Remove `forge.debug` API. The API has the
+  potential for prototype pollution. This API was only briefly used by the
+  maintainers for internal project debug purposes and was never intended to be
+  used with untrusted user inputs. This API was not documented or advertised
+  and is being removed rather than fixed.
+- **SECURITY**, **BREAKING**: Remove `forge.util.parseUrl()` (and
+  `forge.http.parseUrl` alias) and use the [WHATWG URL
+  Standard](https://url.spec.whatwg.org/). `URL` is supported by modern browers
+  and modern Node.js. This change is needed to address URL parsing security
+  issues. If `forge.util.parseUrl()` is used directly or through `forge.xhr` or
+  `forge.http` APIs, and support is needed for environments without `URL`
+  support, then a polyfill must be used.
+- **BREAKING**: Remove `forge.task` API. This API was never used, documented,
+  or advertised by the maintainers. If anyone was using this API and wishes to
+  continue development it in other project, please let the maintainers know.
+  Due to use in the test suite, a modified version is located in
+  `tests/support/`.
+- **BREAKING**: Remove `forge.util.makeLink`, `forge.util.makeRequest`,
+  `forge.util.parseFragment`, `forge.util.getQueryVariables`. Replace with
+  `URL`, `URLSearchParams`, and custom code as needed.
+
+### Changed
+- **BREAKING**: Increase supported Node.js version to 6.13.0 for URL support.
+- **BREAKING**: Renamed `master` branch to `main`.
+- **BREAKING**: Release process updated to use tooling that prefixes versions
+  with `v`. Other tools, scripts, or scanners may need to adapt.
+- **BREAKING**: Remove docs related to Bower and
+  [forge-dist](https://github.com/digitalbazaar/forge-dist). Install using
+  [another method](./README.md#installation).
+
+### Added
+- OIDs for `surname`, `title`, and `givenName`.
+
+### Fixed
+- **BREAKING**: OID 2.5.4.5 name fixed from `serialName` to `serialNumber`.
+  Depending on how applications used this id to name association it could cause
+  compatibility issues.
+
+## 0.10.0 - 2020-09-01
+
+### Changed
+- **BREAKING**: Node.js 4 no longer supported. The code *may* still work, and
+  non-invasive patches to keep it working will be considered. However, more
+  modern tools no longer support old Node.js versions making testing difficult.
+
+### Removed
+- **BREAKING**: Remove `util.getPath`, `util.setPath`, and `util.deletePath`.
+  `util.setPath` had a potential prototype pollution security issue when used
+  with unsafe inputs. These functions are not used by `forge` itself. They date
+  from an early time when `forge` was targeted at providing general helper
+  functions. The library direction changed to be more focused on cryptography.
+  Many other excellent libraries are more suitable for general utilities. If
+  you need a replacement for these functions, consider `get`, `set`, and `unset`
+  from [lodash](https://lodash.com/). But also consider the potential similar
+  security issues with those APIs.
+
+## 0.9.2 - 2020-09-01
+
+### Changed
+- Added `util.setPath` security note to function docs and to README.
+
+### Notes
+- **SECURITY**: The `util.setPath` function has the potential to cause
+  prototype pollution if used with unsafe input.
+  - This function is **not** used internally by `forge`.
+  - The rest of the library is unaffected by this issue.
+  - **Do not** use unsafe input with this function.
+  - Usage with known input should function as expected. (Including input
+    intentionally using potentially problematic keys.)
+  - No code changes will be made to address this issue in 0.9.x. The current
+    behavior *could* be considered a feature rather than a security issue.
+    0.10.0 will be released that removes `util.getPath` and `util.setPath`.
+    Consider `get` and `set` from [lodash](https://lodash.com/) if you need
+    replacements. But also consider the potential similar security issues with
+    those APIs.
+  - https://snyk.io/vuln/SNYK-JS-NODEFORGE-598677
+  - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-7720
+
+## 0.9.1 - 2019-09-26
+
+### Fixed
+- Ensure DES-CBC given IV is long enough for block size.
+
+## 0.9.0 - 2019-09-04
+
+### Added
+- Add ed25519.publicKeyFromAsn1 and ed25519.privateKeyFromAsn1 APIs.
+- A few OIDs used in EV certs.
+
+### Fixed
+- Improve ed25519 NativeBuffer check.
+
+## 0.8.5 - 2019-06-18
+
+### Fixed
+- Remove use of `const`.
+
+## 0.8.4 - 2019-05-22
+
+### Changed
+- Replace all instances of Node.js `new Buffer` with `Buffer.from` and `Buffer.alloc`.
+
+## 0.8.3 - 2019-05-15
+
+### Fixed
+- Use basic character set for code.
+
 ## 0.8.2 - 2019-03-18
 
 ### Fixed

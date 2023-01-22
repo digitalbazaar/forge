@@ -42,8 +42,8 @@ function createSigner(name) {
   console.log('Creating signer "' + name + '"...');
 
   // generate a keypair
-  console.log('Generating 1024-bit key-pair...');
-  var keys = forge.pki.rsa.generateKeyPair(1024);
+  console.log('Generating 2048-bit key-pair...');
+  var keys = forge.pki.rsa.generateKeyPair(2048);
   console.log('Key-pair created:');
   console.log(forge.pki.privateKeyToPem(keys.privateKey));
   console.log(forge.pki.publicKeyToPem(keys.publicKey));

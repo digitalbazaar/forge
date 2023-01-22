@@ -1,13 +1,13 @@
 *.py[co]
 *.sw[nop]
 *~
-.bower.json
 .cdtproject
 .classpath
 .cproject
 .nyc_output
 .project
 .settings
+.vscode
 TAGS
 coverage
 dist
