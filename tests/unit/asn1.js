@@ -6,6 +6,14 @@ var UTIL = require('../../lib/util');
   describe('asn1', function() {
     // TODO: add more ASN.1 coverage
 
+    it('should order sets', function() {
+      var unordered = UTIL.decode64('MYGxMEYGCyqGSIb3DQEJEAIvMTcwNTAzMDEwDQYJYIZIAWUDBAIBBQAEICmugD2wGgKQUwFmgyXGPWmlEaw54MofaS0GpmlWLvxaMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTIzMDExOTEzMzkyOVowLwYJKoZIhvcNAQkEMSIEILgi9bLPGnvbPSJFCPxgWPsijOHwUHxySiVv8Q86LekA');
+      var decoded = ASN1.fromDer(UTIL.createBuffer(unordered));
+      var encoded = ASN1.toDer(decoded).toHex();
+      var expected = '3181b1301806092a864886f70d010903310b06092a864886f70d010701301c06092a864886f70d010905310f170d3233303131393133333932395a302f06092a864886f70d01090431220420b822f5b2cf1a7bdb3d224508fc6058fb228ce1f0507c724a256ff10f3a2de9003046060b2a864886f70d010910022f3137303530333031300d06096086480165030402010500042029ae803db01a02905301668325c63d69a511ac39e0ca1f692d06a669562efc5a';
+      ASSERT.equal(encoded, expected);
+    });
+
     it('should convert an OID to DER', function() {
       ASSERT.equal(ASN1.oidToDer('1.2.840.113549').toHex(), '2a864886f70d');
     });
