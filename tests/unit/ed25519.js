@@ -30,7 +30,21 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(privateKey, b64PrivateKey);
       ASSERT.equal(publicKey, b64PublicKey);
     });
+    it('should generate a unique key pair for each seed', function() {
+        let _pwd = 'password';
+        let md = SHA256.create();
+        md.update(_pwd, 'utf8');
+        let seed = md.digest().getBytes();
+        let kp = ED25519.generateKeyPair({seed: seed});
 
+        md = SHA256.create();
+        md.update(_pwd + '!', 'utf8');  // << different password
+        let seed2 = md.digest().getBytes();
+        let kp2 = ED25519.generateKeyPair({ seed: seed2 });
+        ASSERT.notEqual(seed, seed2);
+        ASSERT.notEqual(kp.privateKey, kp2.privateKey);
+        ASSERT.notEqual(kp.publicKey, kp2.publicKey);
+    });
     it('should get a public key from a private key', function() {
       var privateKey = db64(b64PrivateKey);
       var publicKey = ED25519.publicKeyFromPrivateKey({
