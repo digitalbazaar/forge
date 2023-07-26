@@ -616,6 +616,52 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(attribute.value, 'Test Avenue');
     });
 
+     it('should generate a certificate with pseudonym attribute', function() {
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
+      var attrs = [{
+        name: 'commonName',
+        value: 'example.org'
+      }, {
+        name: 'countryName',
+        value: 'US'
+      }, {
+        shortName: 'ST',
+        value: 'Virginia'
+      }, {
+        name: 'localityName',
+        value: 'Blacksburg'
+      }, {
+        name: 'organizationName',
+        value: 'Test'
+      }, {
+        shortName: 'OU',
+        value: 'Test'
+      }, {
+        name: 'pseudonym',
+        value: 'Satoshi Nakamato'
+      }];
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '01',
+        subject: attrs,
+        issuer: attrs,
+        isCA: true
+      });
+
+      var pem = PKI.certificateToPem(cert);
+      cert = PKI.certificateFromPem(pem);
+      var index = findIndex(cert.subject.attributes, {type: '2.5.4.65'});
+      ASSERT.ok(index !== -1);
+      var attribute = cert.subject.attributes[index];
+      ASSERT.equal(attribute.name, 'pseudonym');
+      ASSERT.equal(attribute.value, 'Satoshi Nakamato');
+    });
+
+
     it('should generate a certificate with jurisdictionOfIncorporationStateOrProvinceName attribute', function() {
       var keys = {
         privateKey: PKI.privateKeyFromPem(_pem.privateKey),
