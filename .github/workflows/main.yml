@@ -10,12 +10,18 @@ jobs:
       matrix:
         node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+    # FIXME: Install/build with 16.x until webpack is updated
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 16.x
+    - run: npm install
+    # FIXME: Run tests with target version until webpack is updated
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install
     - name: Run test with Node.js ${{ matrix.node-version }}
       run: npm run test-node
   test-karma:
@@ -23,12 +29,12 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
         bundler: [webpack, browserify]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
@@ -41,11 +47,11 @@ jobs:
 #    timeout-minutes: 10
 #    strategy:
 #      matrix:
-#        node-version: [14.x]
+#        node-version: [16.x]
 #    steps:
-#    - uses: actions/checkout@v2
+#    - uses: actions/checkout@v4
 #    - name: Use Node.js ${{ matrix.node-version }}
-#      uses: actions/setup-node@v1
+#      uses: actions/setup-node@v4
 #      with:
 #        node-version: ${{ matrix.node-version }}
 #    - run: npm install
@@ -56,18 +62,19 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [14.x]
+        node-version: [16.x]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - name: Generate coverage report
       run: npm run coverage-ci
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage/lcov.info
         fail_ci_if_error: true
+        token: ${{ secrets.CODECOV_TOKEN }}
