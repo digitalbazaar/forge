@@ -1,6 +1,33 @@
 Forge ChangeLog
 ===============
 
+## 1.3.2 - 2024-06-04
+
+### Enhancement and interoperability
+- **At [pkcs12.js] and [pbe.js].**
+  - Added (options.encryptCert) flag to allow encrypt [PKCS#7 ContentInfo], used in [PKCS#12 toPkcs12Asn1].
+  - This ensures interoperability with [System.Security.Cryptography.X509Certificates.X509Certificate2(cert, password)].
+  - Added suport for .NET interoperability for X509Certificate2(cert, password = "") 
+	for do this set toPkcs12Asn1 with password = undefined.
+### Completing OIDs
+- **At [oids.js] and [x509.js].**
+    - Was added this: **'ocsp','caIssuers'** OIDs.
+    - Added setExtensions for this OIDs: 'ocsp','caIssuers'.
+    ```js
+    //Example of use: 
+    {
+      name: 'authorityInfoAccess', //OCSP is Implemented in Fork https://github.com/SevanMelemedjian/forge.git
+      accessDescriptions: [
+        {
+            accessMethod: 'ocsp',
+            accessLocation: 'http://yoursite.com/static/ocsp'
+        },{
+              accessMethod: 'caIssuers',
+              accessLocation: 'http://yoursite.com/static/root.crt'
+      }]
+    }
+    ```
+
 ## 1.3.1 - 2022-03-29
 
 ### Fixes
