@@ -1,6 +1,11 @@
 Forge ChangeLog
 ===============
 
+## 1.3.3 - 2024-06-05
+### Enhancement and interoperability
+- **At [pkcs12.js] and [pbe.js].**
+  - Fix in password mechanism.
+
 ## 1.3.2 - 2024-06-04
 
 ### Enhancement and interoperability

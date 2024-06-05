@@ -1,6 +1,6 @@
 {
   "name": "@sebastian-dieguez/node-forge",
-  "version": "1.3.2-0",
+  "version": "1.3.3-0",
   "description": "Added suport for NET interoperability for X509Certificate2",
   "homepage": "https://github.com/digitalbazaar/forge",
   "author": {
