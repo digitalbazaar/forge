@@ -195,7 +195,7 @@ var PKI = require('../../lib/pki');
       var crl = PKI.certificateRevocationListFromPem(_pem.crl);
       
       ASSERT.equal(crl.isDelta(), false);
-      //TODO: Add delta CRL
+      //TODO: Add tests for delta CRL
     })
 
     it('should be able to read a CRL\'s extensions', function() {
@@ -204,7 +204,9 @@ var PKI = require('../../lib/pki');
 
       ASSERT.equal(crl.getExtension({id: PKI.oids.cRLNumber}).number, 1);
       ASSERT.equal(crl.getExtension({id: PKI.oids.authorityKeyIdentifier}).authorityKeyIdentifier, '8420c0120667a1ebd96e5155c3e45d486b0260ae');
-      //TODO: Test more extensions when added
+      //TODO: Add test for issuerAltName
+      //TODO: Add test for authorityInfoAccess
+      //TODO: Test more extensions when implemented
     });
 
     it('should be able to verify the CRL\'s signer', function() {
@@ -234,7 +236,7 @@ var PKI = require('../../lib/pki');
 
       ASSERT.equal(revocationEntry.getExtension({id: PKI.oids.invalidityDate}).invalidSince.toUTCString(), 'Tue, 30 Jul 2024 08:30:00 GMT');
       ASSERT.equal(revocationEntry.getExtension({id: PKI.oids.cRLReason}).reason, 5);
-      //TODO: Add certificateIssuer when added
+      //TODO: Add certificateIssuer when implemented
     });
   });
 
