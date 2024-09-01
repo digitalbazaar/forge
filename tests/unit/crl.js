@@ -236,7 +236,7 @@ var PKI = require('../../lib/pki');
 
       ASSERT.equal(revocationEntry.getExtension({id: PKI.oids.invalidityDate}).invalidSince.toUTCString(), 'Tue, 30 Jul 2024 08:30:00 GMT');
       ASSERT.equal(revocationEntry.getExtension({id: PKI.oids.cRLReason}).reason, 5);
-      //TODO: Add certificateIssuer when implemented
+      //TODO: Add test for certificateIssuer
     });
   });
 
