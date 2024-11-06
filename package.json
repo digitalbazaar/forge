@@ -57,8 +57,10 @@
     "lib/*.js",
     "flash/swf/*.swf",
     "dist/*.min.js",
-    "dist/*.min.js.map"
+    "dist/*.min.js.map",
+    "types/*"
   ],
+  "types": "types/index.d.ts",
   "engines": {
     "node": ">= 6.13.0"
   },
