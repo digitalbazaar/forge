@@ -1,0 +1,17 @@
+###############################################################################
+Steps used to clone type definiteion for node forge from 
+https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node-forge
+###############################################################################
+git clone https://github.com/nareshkakubal/node-forge-types
+cd node-forge-types
+git remote add def-types https://github.com/DefinitelyTyped/DefinitelyTyped.git
+git sparse-checkout init --cone
+git sparse-checkout set types/node-forge
+git fetch def-types master
+git checkout def-types/master -- types/node-forge
+mv types/node-forge/* .
+rm -rf types
+git add .
+git commit -m "Add node-forge types from DefinitelyTyped https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node-forge"
+git push origin main
+

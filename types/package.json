@@ -1,0 +1,14 @@
+{
+    "private": true,
+    "name": "node-forge-types",
+    "version": "1.3.9999",
+    "projects": [
+        "https://github.com/banyansecurity/forge"
+    ],
+    "dependencies": {
+        "@types/node": "*"
+    },
+    "devDependencies": {
+        "node-forge-types": "workspace:."
+    }
+}
