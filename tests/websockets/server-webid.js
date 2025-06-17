@@ -80,7 +80,7 @@ var getPublicKey = function(data, uri, callback) {
   var hex = CERT + 'hex';
   var decimal = CERT + 'decimal';
 
-  // gets a resource identifer from a node
+  // gets a resource identifier from a node
   var getResource = function(node, key) {
     var rval = null;
 

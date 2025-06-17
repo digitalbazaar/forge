@@ -42,7 +42,7 @@ package
       private var mEventDispatcher:EventDispatcher;
 
       /**
-       * Creates a new, unitialized SocketPool.
+       * Creates a new, uninitialized SocketPool.
        *
        * @throws Error - if no external interface is available to provide
        *                 javascript access.

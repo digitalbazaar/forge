@@ -2024,7 +2024,7 @@ Contact
 Donations
 ---------
 
-Financial support is welcome and helps contribute to futher development:
+Financial support is welcome and helps contribute to further development:
 
 * For [PayPal][] please send to paypal@digitalbazaar.com.
 * Something else? Please contact support@digitalbazaar.com.
