@@ -66,7 +66,7 @@ var ERROR = 'error';
  * SLEEP: sleep for a period of time
  * WAKEUP: wakeup early from SLEEPING state
  * CANCEL: cancel further tasks
- * FAIL: a failure occured
+ * FAIL: a failure occurred
  */
 var STOP = 'stop';
 var START = 'start';

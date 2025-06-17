@@ -581,7 +581,7 @@ var UTIL = require('../../lib/util');
           /* Second step, use private key decryption to verify successful
             encryption. The encrypted message differs every time, since it is
             padded with random data. Therefore just rely on the decryption
-            routine to work, which is tested seperately against an externally
+            routine to work, which is tested separately against an externally
             provided encrypted message. */
           key = PKI.privateKeyFromPem(params.privateKeyPem);
           ASSERT.equal(key.decrypt(data), message);
