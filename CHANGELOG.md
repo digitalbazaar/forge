@@ -1,6 +1,12 @@
 Forge ChangeLog
 ===============
 
+## 1.3.3 2025-11-06
+
+### Fixes
+- Fix for vulnerability identified by CVE-2025-12816 PKCS#12 MAC verification bypass
+  due to missing macData enforcement and improper asn1.validate routine reported by Hunter Wodzenski.
+
 ## 1.3.2 - 2025-11-xx
 
 ### Security
