@@ -8,7 +8,7 @@ jobs:
     timeout-minutes: 10
     strategy:
       matrix:
-        node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x]
+        node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
     steps:
     - uses: actions/checkout@v4
     # FIXME: Install/build with 16.x until webpack is updated
