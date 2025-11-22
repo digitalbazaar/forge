@@ -31,7 +31,7 @@ describe('GHSA-554w-wpv2-vw27 Security Patch', () => {
 
   it('should throw a manageable error when optional recursion depth is exceeded', () => {
     // create a payload just above the optional defined limit (128)
-    const DANGEROUS_DEPTH = 257; 
+    const DANGEROUS_DEPTH = 129; 
     const der = createNestedDer(DANGEROUS_DEPTH);
     const buf = util.createBuffer(der);
 
