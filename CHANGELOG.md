@@ -3,14 +3,16 @@ Forge ChangeLog
 
 ## 1.3.2 - 2025-11-xx
 
-### Fixed
-- Fix for vulnerability identified by CVE-2025-12816 PKCS#12 MAC verification
-  bypass due to missing macData enforcement and improper asn1.validate routine
-  reported by Hunter Wodzenski.
-
-## 1.3.2 - 2025-11-xx
-
 ### Security
+- **HIGH**: ASN.1 Validator Desynchronization
+  - An Interpretation Conflict (CWE-436) vulnerability in node-forge versions
+    1.3.1 and below enables remote, unauthenticated attackers to craft ASN.1
+    structures to desynchronize schema validations, yielding a semantic
+    divergence that may bypass downstream cryptographic verifications and
+    security decisions.
+  - Reported by Hunter Wodzenski.
+  - CVE ID: [CVE-2025-12816](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-12816)
+  - GHSA ID: [GHSA-5gfm-wpxj-wjgq](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5gfm-wpxj-wjgq)
 - **HIGH**: ASN.1 Unbounded Recursion
   - An Uncontrolled Recursion (CWE-674) vulnerability in node-forge versions
     1.3.1 and below enables remote, unauthenticated attackers to craft deep
@@ -29,6 +31,9 @@ Forge ChangeLog
   - GHSA ID: [GHSA-65ch-62r8-g69g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-65ch-62r8-g69g)
 
 ### Fixed
+- [asn1] Fix for vulnerability identified by CVE-2025-12816 PKCS#12 MAC
+  verification bypass due to missing macData enforcement and improper
+  asn1.validate routine.
 - [asn1] Add `fromDer()` max recursion depth check.
   - Add a `asn1.maxDepth` global configurable maximum depth of 256.
   - Add a `asn1.fromDer()` per-call `maxDepth` option.
