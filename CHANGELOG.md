@@ -50,9 +50,9 @@ Forge ChangeLog
 
 ## 1.3.1 - 2022-03-29
 
-### Fixes
+### Fixed
 - RFC 3447 and RFC 8017 allow for optional `DigestAlgorithm` `NULL` parameters
-  for `sha*` algorithms and require `NULL` paramters for `md2` and `md5`
+  for `sha*` algorithms and require `NULL` parameters for `md2` and `md5`
   algorithms.
 
 ## 1.3.0 - 2022-03-17
@@ -164,11 +164,11 @@ Forge ChangeLog
   and is being removed rather than fixed.
 - **SECURITY**, **BREAKING**: Remove `forge.util.parseUrl()` (and
   `forge.http.parseUrl` alias) and use the [WHATWG URL
-  Standard](https://url.spec.whatwg.org/). `URL` is supported by modern browers
-  and modern Node.js. This change is needed to address URL parsing security
-  issues. If `forge.util.parseUrl()` is used directly or through `forge.xhr` or
-  `forge.http` APIs, and support is needed for environments without `URL`
-  support, then a polyfill must be used.
+  Standard](https://url.spec.whatwg.org/). `URL` is supported by modern
+  browsers and modern Node.js. This change is needed to address URL parsing
+  security issues. If `forge.util.parseUrl()` is used directly or through
+  `forge.xhr` or `forge.http` APIs, and support is needed for environments
+  without `URL` support, then a polyfill must be used.
 - **BREAKING**: Remove `forge.task` API. This API was never used, documented,
   or advertised by the maintainers. If anyone was using this API and wishes to
   continue development it in other project, please let the maintainers know.
