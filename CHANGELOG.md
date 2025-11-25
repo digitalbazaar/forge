@@ -4,6 +4,14 @@ Forge ChangeLog
 ## 1.3.2 - 2025-11-xx
 
 ### Security
+- **HIGH**: ASN.1 Unbounded Recursion
+  - An Uncontrolled Recursion (CWE-674) vulnerability in node-forge versions
+    1.3.1 and below enables remote, unauthenticated attackers to craft deep
+    ASN.1 structures that trigger unbounded recursive parsing. This leads to a
+    Denial-of-Service (DoS) via stack exhaustion when parsing untrusted DER
+    inputs.
+  - Reported by Hunter Wodzenski.
+  - GHSA ID: [GHSA-554w-wpv2-vw27](https://github.com/digitalbazaar/forge/security/advisories/GHSA-554w-wpv2-vw27)
 - **MODERATE**: ASN.1 OID Integer Truncation
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.3.1
     and below enables remote, unauthenticated attackers to craft ASN.1
@@ -14,6 +22,16 @@ Forge ChangeLog
   - GHSA ID: [GHSA-65ch-62r8-g69g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-65ch-62r8-g69g)
 
 ### Fixed
+- [asn1] Add `fromDer()` max recursion depth check.
+  - Add a `asn1.maxDepth` global configurable maximum depth of 256.
+  - Add a `asn1.fromDer()` per-call `maxDepth` option.
+  - **NOTE**: The default maximum is assumed to be higher than needed for valid
+    data. If this assumption is false then this could be a breaking change.
+    Please file an issue if there are use cases that need a higher maximum.
+  - **NOTE**: The per-call `maxDepth` parameter has not been exposed up through
+    all of the API stack due to the complexities involved. Please file an issue
+    if there are use cases that require this instead of changing the default
+    maximum.
 - [asn1] Improve OID handling.
   - Error on parsed OID values larger than `2**32 - 1`.
   - Error on DER OID values larger than `2**53 - 1 `.
