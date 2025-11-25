@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.3.2 - 2025-11-xx
+## 1.3.2 - 2025-11-25
 
 ### Security
 - **HIGH**: ASN.1 Validator Desynchronization
