@@ -1,6 +1,23 @@
 Forge ChangeLog
 ===============
 
+## 1.3.2 - 2025-11-xx
+
+### Security
+- **MODERATE**: ASN.1 OID Integer Truncation
+  - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.3.1
+    and below enables remote, unauthenticated attackers to craft ASN.1
+    structures containing OIDs with oversized arcs. These arcs may be decoded
+    as smaller, trusted OIDs due to 32-bit bitwise truncation, enabling the
+    bypass of downstream OID-based security decisions.
+  - Reported by Hunter Wodzenski.
+  - GHSA ID: [GHSA-65ch-62r8-g69g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-65ch-62r8-g69g)
+
+### Fixed
+- [asn1] Improve OID handling.
+  - Error on parsed OID values larger than `2**32 - 1`.
+  - Error on DER OID values larger than `2**53 - 1 `.
+
 ## 1.3.1 - 2022-03-29
 
 ### Fixes

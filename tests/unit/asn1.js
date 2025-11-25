@@ -10,9 +10,48 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(ASN1.oidToDer('1.2.840.113549').toHex(), '2a864886f70d');
     });
 
+    it('should convert a 32b OID to DER', function() {
+      ASSERT.equal(ASN1.oidToDer('1.2.4294967295').toHex(), '2a8fffffff7f');
+    });
+
+    it('should not convert a >32b OID to DER', function() {
+      ASSERT.throws(
+        function() {
+          ASN1.oidToDer('1.2.4294967296');
+        },
+        /OID value too large; max is 32-bits./
+      );
+    });
+
     it('should convert an OID from DER', function() {
       var der = UTIL.hexToBytes('2a864886f70d');
       ASSERT.equal(ASN1.derToOid(der), '1.2.840.113549');
+    });
+
+    it('should convert a 32b OID from DER', function() {
+      var der = UTIL.hexToBytes('2a8fffffff7f');
+      ASSERT.equal(ASN1.derToOid(der), '1.2.4294967295');
+    });
+
+    it('should convert a >32b OID from DER', function() {
+      var der = UTIL.hexToBytes('2a9080808001');
+      ASSERT.equal(ASN1.derToOid(der), '1.2.4294967297');
+    });
+
+    it('should convert a max safe int OID from DER', function() {
+      var der = UTIL.hexToBytes('2a8fffffffffffff7f');
+      ASSERT.equal(ASN1.derToOid(der), '1.2.9007199254740991');
+    });
+
+    it('should not convert a >max safe int OID from DER', function() {
+      ASSERT.throws(
+        function() {
+          // '1.2.9007199254740992'
+          var der = UTIL.hexToBytes('2a9080808080808000');
+          console.log(ASN1.derToOid(der));
+        },
+        /OID value too large; max is 53-bits./
+      );
     });
 
     it('should convert INTEGER 0 to DER', function() {
