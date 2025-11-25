@@ -17,6 +17,11 @@ describe('GHSA-554w-wpv2-vw27 Security Patch', function() {
     return asn1.toDer(obj).getBytes();
   }
 
+  beforeEach(function() {
+    // check max depth is the default
+    assert.equal(asn1.maxDepth, 256);
+  });
+
   it('should throw a manageable error when default recursion depth is exceeded', function() {
     // create a payload just above the default limit (256)
     var DANGEROUS_DEPTH = 257;
@@ -39,6 +44,21 @@ describe('GHSA-554w-wpv2-vw27 Security Patch', function() {
     assert.throws(function() {
       asn1.fromDer(buf, {strict: true, maxDepth: 128});
     }, /ASN.1 parsing error: Max depth exceeded./);
+  });
+
+  it('should still parse valid nested structures with new default limits', function() {
+    var oldMaxDepth = asn1.maxDepth;
+    asn1.maxDepth = 258;
+
+    // create a payload just above the default limit (256)
+    var DANGEROUS_DEPTH = 257;
+    var der = createNestedDer(DANGEROUS_DEPTH);
+    var buf = util.createBuffer(der);
+
+    // verify with new default depth
+    asn1.fromDer(buf, {strict: true});
+
+    asn1.maxDepth = oldMaxDepth;
   });
 
   it('should still parse valid nested structures within default limits', function() {
