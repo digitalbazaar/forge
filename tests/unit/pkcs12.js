@@ -9,6 +9,65 @@ var UTIL = require('../../lib/util');
 (function() {
   var _data;
   describe('pkcs12', function() {
+    it('should allow macAlgorithm option', function() {
+      var algoOptions = {
+        sha1: PKI.oids.sha1,
+        sha256: PKI.oids.sha256,
+        sha384: PKI.oids.sha384,
+        sha512: PKI.oids.sha512,
+        md5: PKI.oids.md5,
+      };
+      var privateKey = PKI.privateKeyFromPem(_data.privateKey);
+
+      for(var algoName in algoOptions) {
+        var algoOid = algoOptions[algoName];
+
+        var algorithm = forge.md.algorithms[algoName] || null;
+        ASSERT.notEqual(algorithm, null);
+
+        var md = algorithm.create();
+
+        // generate pkcs12
+        var options = {
+          macAlgorithm: md.algorithm,
+          saltSize: 20,
+          count: 10000,
+        };
+
+        var p12Asn = PKCS12.toPkcs12Asn1(privateKey, _data.certificate, _data.nopass, options);
+
+        // validate and capture different parts of pkcs12
+        var capture = PKCS12.validatePfx(p12Asn);
+        ASSERT.equal(capture.version.charCodeAt(0), 3);
+        ASSERT.equal(ASN1.derToOid(capture.contentType), PKI.oids.data);
+
+        // verify mac algorithm related parameters
+        var macAlgorithmOid = ASN1.derToOid(capture.macAlgorithm);
+        var macSalt = new forge.util.ByteBuffer(capture.macSalt);
+        var macIterations = (('macIterations' in capture) ?
+          parseInt(forge.util.bytesToHex(capture.macIterations), 16) : 1);
+        ASSERT.equal(macAlgorithmOid, algoOid);
+        ASSERT.equal(macSalt.length(), options.saltSize);
+        ASSERT.equal(macIterations, options.count);
+
+        // verify mac digest
+        var data = capture.content.value[0];
+        ASSERT.equal(data.tagClass, ASN1.Class.UNIVERSAL);
+        ASSERT.equal(data.type, ASN1.Type.OCTETSTRING);
+        var macKey = PKCS12.generateKey(_data.nopass, macSalt, 3, macIterations, md.digestLength, md);
+        var mac = forge.hmac.create();
+        mac.start(md, macKey);
+        mac.update(data.value);
+        var macValue = mac.getMac();
+        ASSERT.equal(macValue.getBytes(), capture.macDigest);
+
+        // finally verify that PFX file can be parsed successfully
+        var p12 = PKCS12.pkcs12FromAsn1(p12Asn, true, _data.nopass);
+        ASSERT.equal(p12.version, 3);
+        ASSERT.equal(p12.safeContents.length, 2);
+      }
+    });
+
     it('should create certificate-only p12', function() {
       var p12Asn = PKCS12.toPkcs12Asn1(null, _data.certificate, null, {
         useMac: false,
@@ -290,6 +349,7 @@ var UTIL = require('../../lib/util');
   });
 
   _data = {
+    nopass: 'nopass',
     certificate: '-----BEGIN CERTIFICATE-----\r\n' +
       'MIIDtDCCApwCCQDUVBxA2DXi8zANBgkqhkiG9w0BAQUFADCBmzELMAkGA1UEBhMC\r\n' +
       'REUxEjAQBgNVBAgMCUZyYW5jb25pYTEQMA4GA1UEBwwHQW5zYmFjaDEVMBMGA1UE\r\n' +
