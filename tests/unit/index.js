@@ -16,6 +16,7 @@ require('./kem');
 require('./pkcs1');
 require('./x509');
 require('./csr');
+require('./crl')
 require('./aes');
 require('./rc2');
 require('./des');
