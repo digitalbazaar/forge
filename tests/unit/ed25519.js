@@ -17,6 +17,14 @@ var UTIL = require('../../lib/util');
   var b64Sha256Signature =
     'sJwlB2ODjzFPe5mlyJHPkryCJDE6r5oVDGGtyPY/eomBKhAogWow/AYuZ9fZ' +
     '/gGg4Jd2ub3SzLnzhkaUPUxQDA==';
+  var nodePublicKeyHex = '302a300506032b6570032100b9d0a75aaa22a1ed' +
+    '97683e4538f5f41f595d6e0915dd0d9bfbc17ef80c91a3c7';
+  var nodePublicValueHex = 'b9d0a75aaa22a1ed97683e4538f5f41f595d6' +
+    'e0915dd0d9bfbc17ef80c91a3c7';
+  var nodePrivateKeyHex = '302e020100300506032b657004220420d86b476' +
+    'ba6ccdf13c896e1e40301bd044c34110f97902088417edd41194dd7dd';
+  var nodePrivateValueHex = 'd86b476ba6ccdf13c896e1e40301bd044c' +
+    '34110f97902088417edd41194dd7dd';
 
   describe('ed25519', function() {
     it('should generate a key pair from a seed', function() {
@@ -345,6 +353,35 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(hex(signature), expectedSignature);
       ASSERT.equal(verified, true);
     });
+
+    it('should extract the key value from a DER public key', function() {
+      const keyBuffer = UTIL.binary.hex.decode(nodePublicKeyHex);
+      const keyValue = ED25519.publicKeyFromDer(keyBuffer);
+      const expectedValue = UTIL.binary.hex.decode(nodePublicValueHex);
+      ASSERT.deepEqual(keyValue, expectedValue);
+    });
+
+    it('should extract the key value from a DER private key', function() {
+      const keyBuffer = UTIL.binary.hex.decode(nodePrivateKeyHex);
+      const keyValue = ED25519.privateKeyFromDer(keyBuffer);
+      const expectedValue = UTIL.binary.hex.decode(nodePrivateValueHex);
+      ASSERT.deepEqual(keyValue, expectedValue);
+    });
+
+    it('should sign and verify using DER ed25519 keys', function() {
+      const privateBuffer = UTIL.binary.hex.decode(nodePrivateValueHex);
+      const publicKey = UTIL.binary.hex.decode(nodePublicValueHex);
+      const privateKey = new Uint8Array(64);
+      privateKey.set(privateBuffer);
+      privateKey.set(publicKey, privateBuffer.length);
+      const message = 'test';
+      const encoding = 'utf8';
+      const signature = ED25519.sign({encoding, message, privateKey});
+      const verified = ED25519.verify(
+        {encoding, message, publicKey, signature});
+      ASSERT.equal(verified, true);
+    });
+
   });
 
   function eb64(buffer) {
