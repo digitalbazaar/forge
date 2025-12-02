@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.3.3 - 2025-12-02
+## 1.3.3 - 2025-12-xx
 
 ### Fixed
 - [pkcs12] Make digestAlgorithm parameters optional to fix PKCS#12/PFX issues
