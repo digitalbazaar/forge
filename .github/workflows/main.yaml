@@ -8,6 +8,8 @@ on:
     branches:
       - '**'
 
+permissions: {}
+
 jobs:
   test-node:
     runs-on: ubuntu-latest
@@ -17,6 +19,8 @@ jobs:
         node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     # FIXME: Install/build with 16.x until webpack is updated
     - name: Use Node.js 16.x
       uses: actions/setup-node@v4
@@ -39,6 +43,8 @@ jobs:
         bundler: [webpack, browserify]
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
@@ -56,6 +62,8 @@ jobs:
 #        node-version: [16.x]
 #    steps:
 #    - uses: actions/checkout@v4
+#      with:
+#        persist-credentials: false
 #    - name: Use Node.js ${{ matrix.node-version }}
 #      uses: actions/setup-node@v4
 #      with:
@@ -71,6 +79,8 @@ jobs:
         node-version: [16.x]
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
