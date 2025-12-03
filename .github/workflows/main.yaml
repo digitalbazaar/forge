@@ -18,18 +18,18 @@ jobs:
       matrix:
         node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x, 24.x]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         persist-credentials: false
     # FIXME: Install/build with 16.x until webpack is updated
     - name: Use Node.js 16.x
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: 16.x
     - run: npm install
     # FIXME: Run tests with target version until webpack is updated
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
     - name: Run test with Node.js ${{ matrix.node-version }}
@@ -42,11 +42,11 @@ jobs:
         node-version: [16.x]
         bundler: [webpack, browserify]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
@@ -61,11 +61,11 @@ jobs:
 #      matrix:
 #        node-version: [16.x]
 #    steps:
-#    - uses: actions/checkout@v4
+#    - uses: actions/checkout@v5
 #      with:
 #        persist-credentials: false
 #    - name: Use Node.js ${{ matrix.node-version }}
-#      uses: actions/setup-node@v4
+#      uses: actions/setup-node@v6
 #      with:
 #        node-version: ${{ matrix.node-version }}
 #    - run: npm install
@@ -78,19 +78,19 @@ jobs:
       matrix:
         node-version: [16.x]
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - name: Generate coverage report
       run: npm run coverage-ci
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage/lcov.info
+        files: ./coverage/lcov.info
         fail_ci_if_error: true
         token: ${{ secrets.CODECOV_TOKEN }}
