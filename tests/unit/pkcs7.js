@@ -200,14 +200,14 @@ var UTIL = require('../../lib/util');
       'BAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1H\r\n' +
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
       'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGswGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
-      'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHgYJKoZIhvcNAQkFMREYDzE5NDkxMjMxMjM1OTU5WjANBgkqhkiG\r\n' +
-      '9w0BAQEFAASCAQCNB13woMM5xYY5B0k/2dDF1flyAs5JaahqXSIH04ea+qgyFkgZ\r\n' +
-      'uRoialeVzXXXpSPmpgEubQimFMYFslle9Ozpu6ECrXtw53wWm1GAlj8T6w50lKyd\r\n' +
-      '6Ip/wclO/lPIB9qk7Ki3kN+ISBWXSgUMTTo94IdyZH3lbBqW3xsak1FM6STrGiUS\r\n' +
-      'CoinmPKajIbIQBUORZ9eF9qN5erdpKwYNMB43yLle5jNGIeq6ztbL9en9boFp04q\r\n' +
-      'PU+/ZeNY2QJhnoGQVYfHkK+8X6/ZKX1fRnca2L+DUUb9g7Tc0oeW5zwB3wzIEpTN\r\n' +
-      'JxV3HaZ/Jvfnx9uH9wpFYg5yFX6PBLxlHarf\r\n' +
+      'SIb3DQEHATAeBgkqhkiG9w0BCQUxERgPMTk0OTEyMzEyMzU5NTlaMC8GCSqGSIb3\r\n' +
+      'DQEJBDEiBCAv9MMFD7UuaQiTi7RNpxtCPoa9e1U3lKssW9Nr5KvzYzANBgkqhkiG\r\n' +
+      '9w0BAQEFAASCAQB4uY6pHBk49ZotqTDme/oj33L8f5hH4GNtvXzhNWGSt7gCXTrI\r\n' +
+      'dOxgi/6+mR9J5Z5CmPaAMPitnm9PQApEQD2ecDi2MoN1XQfxqT2XS81cBZwafL9w\r\n' +
+      'Wp4Wz63TqD/2ahCnDBP3PUHBt2MKCKIhUCbuzvW0Xq+9JkMfoNbEHczma+8GL4Uh\r\n' +
+      'NDpvo3MVvcaG2WWI47ik/+t4TfBG1MFB4Qs08WoeCKuz9GL5YN0FnqG8ia3YXKpS\r\n' +
+      'udOw9HDwsIMsaeJInVgf5hPrgNh4H9pzMw1x5bixOrUJ5AtmEBVLcflYg4NUFO1r\r\n' +
+      'Gfmh+VqOs1mT0o0fz0hxcvJTyKQ11yw2S5xo\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataWithAttrs1950UTCTime:
       '-----BEGIN PKCS7-----\r\n' +
@@ -237,14 +237,14 @@ var UTIL = require('../../lib/util');
       'BAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1H\r\n' +
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
       'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
-      'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHAYJKoZIhvcNAQkFMQ8XDTUwMDEwMTAwMDAwMFowDQYJKoZIhvcN\r\n' +
-      'AQEBBQAEggEAAXj+K+xWholoBHW+ur8MZ+L35IzBPpl+TwuyxuHQ0ex9euSjyhD7\r\n' +
-      'TWCuiQmq8NtWB1k6l5a3h1RmBZqpCdkLqRXlhtk3EwNI4/bqy/KJD1QA3SrxXug7\r\n' +
-      '0AcMSPZqz9mj1IgU2OB/p3hnjK4KC0YO0dVWooyv28vrW/3JOy2Lgb3/yyuHChNL\r\n' +
-      'ff8E2MPiJx8901oYFJ+A/5nqb/3Q4ZS6zXWV65GWmCzWFHVNT9Jx88gAB96Y+KCT\r\n' +
-      'XyGjH28wwB1GzskEZ0oMNCtzqZ9RXvllYQoVkzvLluBfQiuiU97G4ys6B4nOTNi2\r\n' +
-      'gwbBcDl+50dPc2TncPe0uPfHgo5/Pr2ckA==\r\n' +
+      'SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNNTAwMTAxMDAwMDAwWjAvBgkqhkiG9w0B\r\n' +
+      'CQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5SrLFvTa+Sr82MwDQYJKoZIhvcN\r\n' +
+      'AQEBBQAEggEANPSy+zPvWv9Bv7AeOZ3cBNkyOYGuqjkRQ3i8FHZjtaJRPhPZVdwH\r\n' +
+      'LLNqoxKdCfEhDoU2gcyCTKU21CGENTceoS6FkX4aH0vfTxJKZYRZqw9m/V0PpxDt\r\n' +
+      'gjNpYZW+qM2pJ45oLpTp96yu96Nr//IZC5vfsvN2dR4r0Z2bu8vGGuL2rkotLZLy\r\n' +
+      'gjUHIwQpVaPEOkuKxTAK2XjPoD1zwtb2oDG8ud17y2QC6UsRr/W2JQ19MNgwJd71\r\n' +
+      'ejPlrMXEI+KNbdFwq3Q309rn/54woJ2XWv03o7QNgrxfci2HsEJXVx6jalZmcRbk\r\n' +
+      'ekI/OKxR6l76hVhFlKHtWVSgkLHs3LfPzg==\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataWithAttrs2049UTCTime:
       '-----BEGIN PKCS7-----\r\n' +
@@ -274,14 +274,14 @@ var UTIL = require('../../lib/util');
       'BAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1H\r\n' +
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
       'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGkwGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
-      'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHAYJKoZIhvcNAQkFMQ8XDTQ5MTIzMTIzNTk1OVowDQYJKoZIhvcN\r\n' +
-      'AQEBBQAEggEAaia2iz9VIHbHbOpzDZwRIW3//qPs4eENkXmPYNkERBFx/OH6JRRg\r\n' +
-      '/ZvPbP+QIMJVIQsg2o/G3wWv9xJT9RGZatDrTJiIaYyFaBaxBjKXkhwJ+wOOe9+p\r\n' +
-      '1mg6sKFlItvwPjVXGUOLb3R1eIBEAMpSiDz7Z3OOT+P4X32Vo1ZyWNA6MHDzxMLi\r\n' +
-      'FaRytBJNfJJrjGBu0bqht8NFZxc3gqh7Jf19+FKRe8vOZ2cr+0iFRotc/CYvJ71E\r\n' +
-      'R0JQEccTTc3t+UZXLy0rfJP4UAEWofcqrYhVB1ZR/xfx5LbGd89FvuxOYwnh0Ikh\r\n' +
-      'KkKsXLPyzevGPB1i5PCtiI/Tbuwa7fBrgQ==\r\n' +
+      'SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNNDkxMjMxMjM1OTU5WjAvBgkqhkiG9w0B\r\n' +
+      'CQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5SrLFvTa+Sr82MwDQYJKoZIhvcN\r\n' +
+      'AQEBBQAEggEAC4UJ1BaXkkH/7hFoLcaoHgiUHIvyOMg+vipvPQHfg4FLXpo72xXk\r\n' +
+      '5mrIW41OcwiFV0g4nMzuXuncUg8dX1LrFW93R9vZyMn6of7U1Agh57aQ4aV1I9Pt\r\n' +
+      'i/18Qav2EW4HYPAlPyM0DBK9iajT+nLYI/lAwPtaSX6k75jkJJnw9R83tuFfj1XD\r\n' +
+      'ZtPYwbePBeAUyeOBCugC3fwMJonv9zkYTGv2/q9wko8Idaja2uCm+wBwo5nbOUVe\r\n' +
+      'Q39zJC11CSaWzPTGOq3pTvF9cEDYOD6uwCU6skJypsn8nAIc8GPRNYhuCMmzoWKu\r\n' +
+      'sPRrbiZv+56euqLhj3UZmDpwSY18ilUVTw==\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataWithAttrs2050GeneralizedTime:
       '-----BEGIN PKCS7-----\r\n' +
@@ -311,14 +311,14 @@ var UTIL = require('../../lib/util');
       'BAoMDFN0ZWZhbiBTaWVnbDESMBAGA1UECwwJR2VpZXJsZWluMRYwFAYDVQQDDA1H\r\n' +
       'ZWllcmxlaW4gREVWMSMwIQYJKoZIhvcNAQkBFhRzdGVzaWVAYnJva2VucGlwZS5k\r\n' +
       'ZQIJANRUHEDYNeLzMA0GCWCGSAFlAwQCAQUAoGswGAYJKoZIhvcNAQkDMQsGCSqG\r\n' +
-      'SIb3DQEHATAvBgkqhkiG9w0BCQQxIgQgL/TDBQ+1LmkIk4u0TacbQj6GvXtVN5Sr\r\n' +
-      'LFvTa+Sr82MwHgYJKoZIhvcNAQkFMREYDzIwNTAwMTAxMDAwMDAwWjANBgkqhkiG\r\n' +
-      '9w0BAQEFAASCAQB3OuKksiL1NjHq0qxkr6Cv/YmqSLbGebTDdHu0yIaN/E2OGXJh\r\n' +
-      'ccJ/9xbTutsGQjpqsmb2ZoWlO095vKkmw1qK5V1mi9qtfV/Y7wsho41iCq1c4t4r\r\n' +
-      'F5Jn+uOZS7sN61u/sR5rTD/JWCvQtfgMSuqzI0jo0D1wWzsTKl2MtK/K0hUB8Ehf\r\n' +
-      'acWHh2FyjHm7XLmEGgX0eqq2ZQTn5+oUzQYBzf6JXP6S+8X7AIszRu5d+dYHHC2y\r\n' +
-      'BNYbqBj3IQlM6XzmlHL39TuETQznWwN1VMfmW2rUniKmpwnOQynlOaFTd06Fxll3\r\n' +
-      'f0ah+JXCk6Rr7eVY0VptmG7S7CyZIjc5MkMw\r\n' +
+      'SIb3DQEHATAeBgkqhkiG9w0BCQUxERgPMjA1MDAxMDEwMDAwMDBaMC8GCSqGSIb3\r\n' +
+      'DQEJBDEiBCAv9MMFD7UuaQiTi7RNpxtCPoa9e1U3lKssW9Nr5KvzYzANBgkqhkiG\r\n' +
+      '9w0BAQEFAASCAQC8eKerRHa1+JnifJUqVsBRFyonkjoDkdd9qvCLnGOzFg2TscvO\r\n' +
+      'FJ6ypRy5C52eDLafGQVsfDMS78a08UAac00OgskbekY6k/PEdvdnFoT0F01yp67R\r\n' +
+      'AYUQCjw6co+Qw8FGH5MOs5fdo66NyhN97RkfqgI+QESRaYuuUQzwB0VQtn2czzxd\r\n' +
+      '1JiwvhqXohQjzGvKki8ert+UsrR9EyyOZbFpNVP/lK2uv9oIKdP06uD03N6IkBoa\r\n' +
+      'IMBU+8UlpdbrwW482tHT8jBqIZzBN/3VMA8w70tQkYT6azrzZZRCIpr8jiYCkeOJ\r\n' +
+      'Z/REvsIeU7sq2g3P7oUv6OZ3g6m66HgST5bA\r\n' +
       '-----END PKCS7-----\r\n',
     signedDataWithNoCertificate:
       '-----BEGIN PKCS7-----\r\n' +
@@ -365,15 +365,15 @@ var UTIL = require('../../lib/util');
       'bmNvbmlhMRAwDgYDVQQHDAdBbnNiYWNoMRUwEwYDVQQKDAxTdGVmYW4gU2llZ2wx\r\n' +
       'EjAQBgNVBAsMCUdlaWVybGVpbjEWMBQGA1UEAwwNR2VpZXJsZWluIERFVjEjMCEG\r\n' +
       'CSqGSIb3DQEJARYUc3Rlc2llQGJyb2tlbnBpcGUuZGUCCQDUVBxA2DXi8zANBglg\r\n' +
-      'hkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcN\r\n' +
-      'AQkEMSIEIC/0wwUPtS5pCJOLtE2nG0I+hr17VTeUqyxb02vkq/NjMBwGCSqGSIb3\r\n' +
-      'DQEJBTEPFw01MDAxMDEwMDAwMDBaMA0GCSqGSIb3DQEBAQUABIIBAAF4/ivsVoaJ\r\n' +
-      'aAR1vrq/DGfi9+SMwT6Zfk8Lssbh0NHsfXrko8oQ+01grokJqvDbVgdZOpeWt4dU\r\n' +
-      'ZgWaqQnZC6kV5YbZNxMDSOP26svyiQ9UAN0q8V7oO9AHDEj2as/Zo9SIFNjgf6d4\r\n' +
-      'Z4yuCgtGDtHVVqKMr9vL61v9yTsti4G9/8srhwoTS33/BNjD4icfPdNaGBSfgP+Z\r\n' +
-      '6m/90OGUus11leuRlpgs1hR1TU/ScfPIAAfemPigk18hox9vMMAdRs7JBGdKDDQr\r\n' +
-      'c6mfUV75ZWEKFZM7y5bgX0IrolPexuMrOgeJzkzYtoMGwXA5fudHT3Nk53D3tLj3\r\n' +
-      'x4KOfz69nJA=\r\n' +
+      'hkgBZQMEAgEFAKBpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcN\r\n' +
+      'AQkFMQ8XDTUwMDEwMTAwMDAwMFowLwYJKoZIhvcNAQkEMSIEIC/0wwUPtS5pCJOL\r\n' +
+      'tE2nG0I+hr17VTeUqyxb02vkq/NjMA0GCSqGSIb3DQEBAQUABIIBADT0svsz71r/\r\n' +
+      'Qb+wHjmd3ATZMjmBrqo5EUN4vBR2Y7WiUT4T2VXcByyzaqMSnQnxIQ6FNoHMgkyl\r\n' +
+      'NtQhhDU3HqEuhZF+Gh9L308SSmWEWasPZv1dD6cQ7YIzaWGVvqjNqSeOaC6U6fes\r\n' +
+      'rveja//yGQub37LzdnUeK9Gdm7vLxhri9q5KLS2S8oI1ByMEKVWjxDpLisUwCtl4\r\n' +
+      'z6A9c8LW9qAxvLnde8tkAulLEa/1tiUNfTDYMCXe9Xoz5azFxCPijW3RcKt0N9Pa\r\n' +
+      '5/+eMKCdl1r9N6O0DYK8X3Ith7BCV1ceo2pWZnEW5HpCPzisUepe+oVYRZSh7VlU\r\n' +
+      'oJCx7Ny3z84=\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
