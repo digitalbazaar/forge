@@ -134,6 +134,7 @@ Forge ChangeLog
 ### Fixed
 - [x509] 'Expected' and 'Actual' issuers were backwards in verification failure
   message.
+- [prime,prime.worker] Add type to messages and ignore unexpected messages.
 
 ### Added
 - [oid,x509]: Added OID `1.3.14.3.2.29 / sha1WithRSASignature` for sha1 with
