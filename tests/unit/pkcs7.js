@@ -374,6 +374,44 @@ var UTIL = require('../../lib/util');
       '6m/90OGUus11leuRlpgs1hR1TU/ScfPIAAfemPigk18hox9vMMAdRs7JBGdKDDQr\r\n' +
       'c6mfUV75ZWEKFZM7y5bgX0IrolPexuMrOgeJzkzYtoMGwXA5fudHT3Nk53D3tLj3\r\n' +
       'x4KOfz69nJA=\r\n' +
+      '-----END PKCS7-----\r\n',
+    signedDataWithCustomAuthenticatedAttribute:
+      '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'ry8=\r\n' +
       '-----END PKCS7-----\r\n'
   };
 
@@ -787,6 +825,42 @@ var UTIL = require('../../lib/util');
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataWithAttrs1949GeneralizedTime);
     });
+
+    it('should create PKCS#7 SignedData with custom authenticatedAttribute', function() {
+    // verify with:
+    // openssl smime -verify -in p7.pem -signer certificate.pem \
+    //   -out signedtext.txt -inform PEM -CAfile certificate.pem
+    var p7 = PKCS7.createSignedData();
+    p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+    p7.addCertificate(_pem.certificate);
+    p7.addSigner({
+      key: PKI.privateKeyFromPem(_pem.privateKey),
+      certificate: _pem.certificate,
+      digestAlgorithm: PKI.oids.sha256,
+      authenticatedAttributes: [{
+        type: forge.pki.oids.contentType,
+        value: forge.pki.oids.data
+      }, {
+        type: forge.pki.oids.messageDigest
+        // value will be auto-populated at signing time
+      }, {
+        type: forge.pki.oids.signingTime,
+        // will be encoded as UTC time because it's >= 2050
+        value: new Date('2050-01-01T00:00:00Z')
+      }, {
+        //Add randomNonce attribute
+        type: '1.2.840.113549.1.9.25.3',
+        asn1Value: forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, forge.random.getBytesSync(32))
+      }
+    ]
+    });
+    p7.sign();
+    var pem = PKCS7.messageToPem(p7);
+    var fs = require('fs');
+    fs.writeFileSync('/home/dettoni/p7.pem', pem);
+    fs.writeFileSync('/home/dettoni/certificate.pem', _pem.certificate);
+    ASSERT.equal(pem, _pem.signedDataWithCustomAuthenticatedAttribute);
+  });
 
   });
 })();
