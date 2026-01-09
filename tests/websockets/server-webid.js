@@ -36,7 +36,7 @@ var normalizeNs = function(input, ns) {
       // update namespace map
       for(var key in input['@']) {
         if(key.indexOf('xmlns:') === 0) {
-          ns[key.substr(6)] = input['@'][key];
+          ns[key.slice(6)] = input['@'][key];
         }
       }
     }
@@ -47,9 +47,9 @@ var normalizeNs = function(input, ns) {
         var value = input[key];
         var colon = key.indexOf(':');
         if(colon !== -1) {
-          var prefix = key.substr(0, colon);
+          var prefix = key.slice(0, colon);
           if(prefix in ns) {
-            key = ns[prefix] + key.substr(colon + 1);
+            key = ns[prefix] + key.slice(colon + 1);
           }
         }
         rval[key] = normalizeNs(value, ns);
