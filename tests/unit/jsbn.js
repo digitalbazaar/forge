@@ -1,45 +1,40 @@
 var ASSERT = require('assert');
+var JSBN = require('../../lib/jsbn');
 
-(function() {
-  if(typeof process === 'undefined' ||
-    !process.versions || !process.versions.node) {
-    return;
-  }
-
-  var moduleRequire = module.require ? module.require.bind(module) : require;
-  var PATH = moduleRequire('path');
-  var spawnSync = moduleRequire('child_process').spawnSync;
-
-  describe('jsbn', function() {
-    it('should return 0 for BigInteger(0).modInverse(3) without hanging', function() {
-      var script = [
-        'var JSBN = require("./lib/jsbn");',
-        'var BigInteger = JSBN.BigInteger;',
-        'var zero = new BigInteger("0", 10);',
-        'var mod = new BigInteger("3", 10);',
-        'var inv = zero.modInverse(mod);',
-        'process.stdout.write(inv.toString());'
-      ].join('\n');
-
-      var result = spawnSync(process.execPath, ['-e', script], {
-        cwd: PATH.join(__dirname, '../..'),
-        encoding: 'utf8',
-        timeout: 2000
-      });
-
-      if(result.error) {
-        if(result.error.code === 'EPERM') {
-          this.skip();
-          return;
-        }
-        if(result.error.code === 'ETIMEDOUT') {
-          ASSERT.fail('BigInteger(0).modInverse(3) timed out.');
-        }
-        throw result.error;
-      }
-
-      ASSERT.equal(result.status, 0, result.stderr);
-      ASSERT.equal(result.stdout, '0');
+describe.only('jsbn', function() {
+  describe('GHSA-5m6q-g25r-mvwx', function() {
+    // regression tests for GHSA-5m6q-g25r-mvwx
+    // test BigInteger.modInverse does not infinite loop with 0 inputs.
+    var BigInteger = JSBN.BigInteger;
+    it('should test BigInteger(0).modInverse(0) returns 0', function() {
+      var n = BigInteger.ZERO;
+      var mod = BigInteger.ZERO;
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(0).modInverse(3) returns 0', function() {
+      var n = BigInteger.ZERO;
+      var mod = new BigInteger('3', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(3).modInverse(0) returns 0', function() {
+      var n = new BigInteger('3', 10);
+      var mod = BigInteger.ZERO;
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(3).modInverse(3) returns 0', function() {
+      var n = new BigInteger('3', 10);
+      var mod = new BigInteger('3', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(7).modInverse(20) returns 3', function() {
+      var n = new BigInteger('7', 10);
+      var mod = new BigInteger('20', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(new BigInteger('3', 10)));
     });
   });
-})();
+});

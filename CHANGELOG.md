@@ -3,9 +3,27 @@ Forge ChangeLog
 
 ## 1.4.0 - 2026-xx-xx
 
+### Security
+- **HIGH**: Denial of Service in `BigInteger.modInverse()`
+  - A Denial of Service (DoS) vulnerability exists due to an infinite loop in
+    the `BigInteger.modInverse()` function (inherited from the bundled jsbn
+    library). When `modInverse()` is called with a zero value as input, the
+    internal Extended Euclidean Algorithm enters an unreachable exit condition,
+    causing the process to hang indefinitely and consume 100% CPU.
+  - Reported by Kr0emer.
+  - CVE ID: [CVE-2026-33891](https://www.cve.org/CVERecord?id=CVE-2026-33891)
+  - GHSA ID: [GHSA-5gfm-wpxj-wjgq](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5m6q-g25r-mvwx)
+
 ### Changed
 - [jsbn] Update to `jsbn` 1.4. Sync partly back to original style for easier
   updates every decade or so.
+
+### Fixed
+- [jsbn] Fix `BigInteger.modInverse` to avoid an infinite loop and exit early
+  with zero when the target object value is <= 0. Zero may not be strictly
+  mathematically correct but aligns with current `jsbn` behavior returning zero
+  in other situations. The alternate of a `RangeError` would diverge from the
+  rest of the API.
 
 ## 1.3.3 - 2025-12-02
 
