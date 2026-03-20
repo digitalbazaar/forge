@@ -345,6 +345,40 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(hex(signature), expectedSignature);
       ASSERT.equal(verified, true);
     });
+
+    describe('GHSA-q67f-28xg-22rw S < L check', function() {
+      var message = UTIL.hexToBytes(
+        '6464657270796d2069732074686520636f6f6c657374206d616e20616c69766521');
+      var signature = UTIL.hexToBytes(
+        'eb14f31c1cd92e7ef8a11f314a3836f0668b488e2bc2f179bf69d607d0648ce4' +
+        '4510c797bb7ee0bf2c3b29a105f238113d40bf5cbc9a06d2d63be61bae486707');
+      // tweaked signature with S+L
+      var splusl = UTIL.hexToBytes(
+        'eb14f31c1cd92e7ef8a11f314a3836f0668b488e2bc2f179bf69d607d0648ce4' +
+        '32e4bcf4d5e1f21703d82044e4eb17263d40bf5cbc9a06d2d63be61bae486717');
+      var publicKey = UTIL.hexToBytes(
+        'ba2a71c1cb8ddaf184d215e0d52c7c82fd37ac52c571fc459ab8f6d034f4e3c7');
+
+      it('should verify good signature', function() {
+        var verified = ED25519.verify({
+          message: message,
+          encoding: 'utf8',
+          signature: signature,
+          publicKey: publicKey
+        });
+        ASSERT.equal(verified, true);
+      });
+
+      it('should not verify S+L signature', function() {
+        var verified = ED25519.verify({
+          message: message,
+          encoding: 'utf8',
+          signature: splusl,
+          publicKey: publicKey
+        });
+        ASSERT.equal(verified, false);
+      });
+    });
   });
 
   function eb64(buffer) {

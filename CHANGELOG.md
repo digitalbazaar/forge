@@ -27,6 +27,20 @@ Forge ChangeLog
     - Austin Chu, Sohee Kim, and Corban Villa.
   - CVE ID: [CVE-2026-33894](https://www.cve.org/CVERecord?id=CVE-2026-33894)
   - GHSA ID: [GHSA-ppp5-5v6c-4jwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-ppp5-5v6c-4jwp)
+- **HIGH**: Signature forgery in Ed25519 due to missing S < L check.
+  - Ed25519 signature verification accepts forged non-canonical signatures
+    where the scalar S is not reduced modulo the group order (S >= L). A valid
+    signature and its S + L variant both verify in forge, while Node.js
+    crypto.verify (OpenSSL-backed) rejects the S + L variant, as defined by the
+    specification. This class of signature malleability has been exploited in
+    practice to bypass authentication and authorization logic (see
+    CVE-2026-25793, CVE-2022-35961). Applications relying on signature
+    uniqueness (i.e., dedup by signature bytes, replay tracking, signed-object
+    canonicalization checks) may be bypassed.
+  - Reported as part of a U.C. Berkeley security research project by:
+    - Austin Chu, Sohee Kim, and Corban Villa.
+  - CVE ID: [CVE-2026-33895](https://www.cve.org/CVERecord?id=CVE-2026-33895)
+  - GHSA ID: [GHSA-q67f-28xg-22rw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-q67f-28xg-22rw)
 
 ### Changed
 - [jsbn] Update to `jsbn` 1.4. Sync partly back to original style for easier
@@ -41,6 +55,7 @@ Forge ChangeLog
 - [rsa] Fix padding length check according to RFC 2313 8.1 note 6. Padding is
   required to be eight octets for block types 1 and 2.
 - [rsa] Fix RFC 8017 DigestInfo parsing to require a sequence length of two.
+- [ed25519] Add canonical signature scaler check for S < L.
 
 ## 1.3.3 - 2025-12-02
 
