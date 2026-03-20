@@ -13,6 +13,20 @@ Forge ChangeLog
   - Reported by Kr0emer.
   - CVE ID: [CVE-2026-33891](https://www.cve.org/CVERecord?id=CVE-2026-33891)
   - GHSA ID: [GHSA-5gfm-wpxj-wjgq](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5m6q-g25r-mvwx)
+- **HIGH**: Signature forgery in RSA-PKCS due to ASN.1 extra field.
+  - RSASSA PKCS#1 v1.5 signature verification accepts forged signatures for low
+    public exponent keys (e=3). Attackers can forge signatures by stuffing
+    "garbage" bytes within the ASN.1 structure in order to construct a
+    signature that passes verification, enabling Bleichenbacher style forgery.
+    This issue is similar to CVE-2022-24771, but adds bytes in an addition
+    field within the ASN.1 structure, rather than outside of it.
+  - Additionally, forge does not validate that signatures include a minimum of
+    8 bytes of padding as defined by the specification, providing attackers
+    additional space to construct Bleichenbacher forgeries.
+  - Reported as part of a U.C. Berkeley security research project by:
+    - Austin Chu, Sohee Kim, and Corban Villa.
+  - CVE ID: [CVE-2026-33894](https://www.cve.org/CVERecord?id=CVE-2026-33894)
+  - GHSA ID: [GHSA-ppp5-5v6c-4jwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-ppp5-5v6c-4jwp)
 
 ### Changed
 - [jsbn] Update to `jsbn` 1.4. Sync partly back to original style for easier
@@ -24,6 +38,9 @@ Forge ChangeLog
   mathematically correct but aligns with current `jsbn` behavior returning zero
   in other situations. The alternate of a `RangeError` would diverge from the
   rest of the API.
+- [rsa] Fix padding length check according to RFC 2313 8.1 note 6. Padding is
+  required to be eight octets for block types 1 and 2.
+- [rsa] Fix RFC 8017 DigestInfo parsing to require a sequence length of two.
 
 ## 1.3.3 - 2025-12-02
 

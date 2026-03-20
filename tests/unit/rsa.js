@@ -781,6 +781,11 @@ var UTIL = require('../../lib/util');
       // from a detailed vulnerability report provided by Moosa Yahyazadeh
       // (moosa-yahyazadeh@uiowa.edu).
 
+      // NOTE: Future updates made the issues here more difficult to trigger
+      // with the this code flow. A special testing flag was added to avoid
+      // other checks so these tests can continue to exercise other parts of
+      // the code that may be trigger in other code paths.
+
       // params for tests
 
       // public modulus / 256 bytes
@@ -828,7 +833,9 @@ var UTIL = require('../../lib/util');
         md.update(m);
 
         ASSERT.throws(function() {
-          publicKey.verify(md.digest().getBytes(), S);
+          publicKey.verify(md.digest().getBytes(), S, undefined, {
+            _skipPaddingChecks: true
+          });
         },
         /^Error: Unparsed DER bytes remain after ASN.1 parsing.$/);
       }
@@ -839,7 +846,8 @@ var UTIL = require('../../lib/util');
 
         ASSERT.throws(function() {
           publicKey.verify(md.digest().getBytes(), S, undefined, {
-            _parseAllDigestBytes: !skipTailingGarbage
+            _parseAllDigestBytes: !skipTailingGarbage,
+            _skipPaddingChecks: true
           });
         },
         /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
@@ -850,7 +858,8 @@ var UTIL = require('../../lib/util');
         md.update(m);
 
         ASSERT.ok(publicKey.verify(md.digest().getBytes(), S, undefined, {
-          _parseAllDigestBytes: !skipTailingGarbage
+          _parseAllDigestBytes: !skipTailingGarbage,
+          _skipPaddingChecks: true
         }));
       }
 
@@ -1149,6 +1158,89 @@ var UTIL = require('../../lib/util');
           '5f8a44bc03a2595a706f06f0cb39b8e3f4afe06675fe7439b057f1200a06f4fd');
 
         _checkBadDigestInfo(publicKey, S);
+      });
+    });
+
+    describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {
+      // https://github.com/digitalbazaar/forge/security/advisories/GHSA-ppp5-5v6c-4jwp
+      // test vectors generated from /tests/pocs/ghsa-ppp5-5v6c-4jwp.js
+      var publicKeyPem = '-----BEGIN RSA PUBLIC KEY-----\n' +
+        'MIICCAKCAgEAw+dqbST8SB6v+is5lOMhrfOWd44qfLsSavTVzA9xRKHNTsXe6PLl\n' +
+        'di6PLVaYHsnc1OTrJhS8g+NdvTsnR2+oYVFb8DEwp0aS3b9J14Cthm5lXjQH9Nov\n' +
+        '5/57RUbV/eg67hqEPYkUC0X+gMogij8O2D7P4vujk1YHReBSKhKbFKY/GCCvdITp\n' +
+        '1hBDhhgNrRvUCh/4fCJV5Dj5qquYevWAF5HaSogqnBPXdt6mX1S+OluQkq6K5vPC\n' +
+        'YAImWz8VtazwiTQU8dAuH98uNpbORLQN8Un4Cw1aIHy60LFq7N1fnVrjpKxQRW+d\n' +
+        'NKlfQM21y/4zL25hv7P1E3tBjzajlCfgbLUrP5janSNNrTOwapMu9XPdWktdNgJ7\n' +
+        'HAEt3QzXXuWmdPIEPKzu1FrbDoUqhBOcNkD8K+BNnufh9bGKKA9bKJnd7Ubl2QQ7\n' +
+        'zLHQgXYSZID/nLAFtOqoOmjAXPHrzzyU7y/Z0TBn+rhnFHniRUFXb9T0RPSu7RVH\n' +
+        'qw01dHm/gHKb3LZeLzf91nur9jD4c0bKNr9kTSI/M5BgdsmfaAZoNZcTuhLCb65t\n' +
+        'b8iWGvwLoKVNZGYa6s77r8dJc1ZPB2DolB9LEOo1nfwsMk1i8fPb+CvGaihyvaPR\n' +
+        'GdbiIE6fkCjD8ZW/v5lrOYgpP0x+iwwD3z9ckaXgBpJy1BieHkuLKsUCAQM=\n' +
+        '-----END RSA PUBLIC KEY-----\n';
+      var controlMsg = UTIL.hexToBytes(
+        '636f6e74726f6c2d6d657373616765');
+      var controlSig = UTIL.hexToBytes(
+        '4901e07c1efa0cb738795ece5c25a804a11a2d217cafa2c71ae18bdf0faa9fd5' +
+        '2151c82648108fdad18af6e532417a0c532c667bf325e21730115ab01662f219' +
+        '6cfe39b8b43e14859f69c722d71b19f1ae3ece2147b2ccf302a4150afd6484f1' +
+        '28ba4bf0bc7e5a0b8cd038e65a2b6e19cfda05f014a96335b858121437f4c9e8' +
+        '9ed553a123911bff994c492c6cdc34b2778d85b0c1ac782dec4a1adcb84607ec' +
+        '3628724e1a7f5f4b8eb18ab2a6c26c17964bbcadee0c2cae7056585d7ac6c5ec' +
+        '1a0480600e67acc897ad00154f0dbadd194e22060bf4e967d5cb4a4ecebf8f2a' +
+        '237ca0f4558650c20e3f2dac615594680990f57e4f61aed878dd080336be9825' +
+        'd11346ff01d4d3b06f776cd0446e2960e78fbd33f18ca0055bf289c3cd5f753d' +
+        'adff1cf380d58762bbc86910b55afae7fe82da41c07a9c7718d0e75d18a624f1' +
+        '025f001893d4abed98313b3c21689ff4bef182a828400c5b0ba1cdd82ded205e' +
+        '9964f85042692653381eaecb89d5add0b2bebd963ee47bc11e011fde3b744c49' +
+        '62b7025a4449053c2d2505170050cd3bc4b1e1335b6bfedf46d2d997521ca838' +
+        'dfa3ede4ec99c4eef4a740019c2e122e7f70e7e870b877f7753a08df36a58be5' +
+        '74e4b8a4eec734efacb95e0ee7662c241bc570f6c84a2e65950b6e0d46e882d4' +
+        '76762a8942b34aec9cfad18cd9ee45a4abddaa8c2cbf7d9bbc1523969e4bb3ae');
+      var forgedMsg = UTIL.hexToBytes(
+        '666f726765642d6d6573736167652d30');
+      var forgedSig = UTIL.hexToBytes(
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000000000000000000000000' +
+        '0000000000000000000000000000000000000000000100102a50a7272393aae1' +
+        'a1e2496345ec18cce14ae8bc043810aa6951a629873961ca91eb1dbd9e8c211d' +
+        '2a54b77c28ba840ae3c65ba87ce3ec59eb8e81e8559b044559dd2836d8b13b5f' +
+        'd0674de9c5e5754d3a5a9e77f5f0dcfb1dd6561f5ac15310f0febc7f358988f3' +
+        'bde09a122ff98c915c0b6171ce938227abc2cdf67b99c21612c161f7905c2066' +
+        'bb2af4438487d2f1cd4b462c7cf172b31d9f2615a54c6e908e1837b3b7fc09e0');
+
+      it('should check control data', function() {
+        var publicKey = PKI.publicKeyFromPem(publicKeyPem);
+        var md = MD.sha256.create();
+        md.update(controlMsg);
+        ASSERT.ok(publicKey.verify(md.digest().getBytes(), controlSig));
+      });
+      it('should check forged data (normal via padding check)', function() {
+        var publicKey = PKI.publicKeyFromPem(publicKeyPem);
+        var md = MD.sha256.create();
+        md.update(forgedMsg);
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), forgedSig);
+        },
+        /^Error: Encryption block is invalid.$/);
+      });
+      it('should check forged data (via digestinfo length)', function() {
+        var publicKey = PKI.publicKeyFromPem(publicKeyPem);
+        var md = MD.sha256.create();
+        md.update(forgedMsg);
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), forgedSig, undefined, {
+            _skipPaddingChecks: true
+          });
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
       });
     });
   });
