@@ -41,6 +41,15 @@ Forge ChangeLog
     - Austin Chu, Sohee Kim, and Corban Villa.
   - CVE ID: [CVE-2026-33895](https://www.cve.org/CVERecord?id=CVE-2026-33895)
   - GHSA ID: [GHSA-q67f-28xg-22rw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-q67f-28xg-22rw)
+- **HIGH**: `basicConstraints` bypass in certificate chain verification.
+  - `pki.verifyCertificateChain()` does not enforce RFC 5280 `basicConstraints`
+    requirements when an intermediate certificate lacks both the
+    `basicConstraints` and `keyUsage` extensions. This allows any leaf
+    certificate (without these extensions) to act as a CA and sign other
+    certificates, which node-forge will accept as valid.
+  - Reported by Doruk Tan Ozturk (@peaktwilight) - doruk.ch
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-2328-f5f3-gj25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2328-f5f3-gj25)
 
 ### Changed
 - [jsbn] Update to `jsbn` 1.4. Sync partly back to original style for easier
@@ -56,6 +65,8 @@ Forge ChangeLog
   required to be eight octets for block types 1 and 2.
 - [rsa] Fix RFC 8017 DigestInfo parsing to require a sequence length of two.
 - [ed25519] Add canonical signature scaler check for S < L.
+- [x590] Add chain verification check for absent `basicConstraints` on non-leaf
+  certificates.
 
 ## 1.3.3 - 2025-12-02
 

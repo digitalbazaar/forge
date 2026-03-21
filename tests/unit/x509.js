@@ -1485,6 +1485,88 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(certPem, outPem);
     });
 
+    it('should require basicConstraints on non-leaf certificates', function() {
+      // see GHSA-2328-f5f3-gj25 and PoC in /tests/pocs/
+      function generateKeyPair() {
+        return PKI.rsa.generateKeyPair({bits: 2048, e: 0x10001});
+      }
+
+      // 1. Create a legitimate Root CA (self-signed, with basicConstraints
+      // cA=true)
+      var rootKeys = generateKeyPair();
+      var rootCert = PKI.createCertificate();
+      rootCert.publicKey = rootKeys.publicKey;
+      rootCert.serialNumber = '01';
+      rootCert.validity.notBefore = new Date();
+      rootCert.validity.notAfter = new Date();
+      rootCert.validity.notAfter.setFullYear(rootCert.validity.notBefore.getFullYear() + 10);
+
+      var rootAttrs = [
+        {name: 'commonName', value: 'Legitimate Root CA'},
+        {name: 'organizationName', value: 'PoC Security Test'}
+      ];
+      rootCert.setSubject(rootAttrs);
+      rootCert.setIssuer(rootAttrs);
+      rootCert.setExtensions([
+        {name: 'basicConstraints', cA: true, critical: true},
+        {name: 'keyUsage', keyCertSign: true, cRLSign: true, critical: true}
+      ]);
+      rootCert.sign(rootKeys.privateKey, MD.sha256.create());
+
+      // 2. Create a "leaf" certificate signed by root — NO basicConstraints,
+      // NO keyUsage This certificate should NOT be allowed to sign other
+      // certificates
+      var leafKeys = generateKeyPair();
+      var leafCert = PKI.createCertificate();
+      leafCert.publicKey = leafKeys.publicKey;
+      leafCert.serialNumber = '02';
+      leafCert.validity.notBefore = new Date();
+      leafCert.validity.notAfter = new Date();
+      leafCert.validity.notAfter.setFullYear(leafCert.validity.notBefore.getFullYear() + 5);
+
+      var leafAttrs = [
+        {name: 'commonName', value: 'Non-CA Leaf Certificate'},
+        {name: 'organizationName', value: 'PoC Security Test'}
+      ];
+      leafCert.setSubject(leafAttrs);
+      leafCert.setIssuer(rootAttrs);
+      // NO basicConstraints extension — NO keyUsage extension
+      leafCert.sign(rootKeys.privateKey, MD.sha256.create());
+
+      // 3. Create a "victim" certificate signed by the leaf
+      // This simulates an attacker using a non-CA cert to forge certificates
+      var victimKeys = generateKeyPair();
+      var victimCert = PKI.createCertificate();
+      victimCert.publicKey = victimKeys.publicKey;
+      victimCert.serialNumber = '03';
+      victimCert.validity.notBefore = new Date();
+      victimCert.validity.notAfter = new Date();
+      victimCert.validity.notAfter.setFullYear(victimCert.validity.notBefore.getFullYear() + 1);
+
+      var victimAttrs = [
+        {name: 'commonName', value: 'victim.example.com'},
+        {name: 'organizationName', value: 'Victim Corp'}
+      ];
+      victimCert.setSubject(victimAttrs);
+      victimCert.setIssuer(leafAttrs);
+      victimCert.sign(leafKeys.privateKey, MD.sha256.create());
+
+      // 4. Verify the chain: root -> leaf -> victim
+      var caStore = PKI.createCaStore([rootCert]);
+
+      ASSERT.throws(
+        function() {
+          PKI.verifyCertificateChain(caStore, [victimCert, leafCert]);
+        },
+        function(err) {
+          var exMsg =
+            'Certificate is missing basicConstraints extension and cannot ' +
+            'be used as a CA.';
+          var exErr = 'forge.pki.BadCertificate';
+          return err.message === exMsg && err.error === exErr;
+        }
+      );
+    });
   });
 
   // TODO: add sha-512 and sha-256 fingerprint tests
