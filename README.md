@@ -5,7 +5,7 @@
 [![Main Checks](https://github.com/digitalbazaar/forge/actions/workflows/main.yaml/badge.svg)](https://github.com/digitalbazaar/forge/actions/workflows/main.yaml)
 
 A native implementation of [TLS][] (and various other cryptographic tools) in
-[JavaScript][].
+[JavaScript][], with the addition of cms remote-signing capability (client-side signature, server-side cms generation).
 
 Introduction
 ------------
@@ -1367,6 +1367,39 @@ var pem = forge.pkcs7.messageToPem(p7);
 // Includes the signature and certificate without the signed data.
 p7.sign({detached: true});
 
+// create PKCS#7 signed data structure with authenticatedAttributes
+// attributes include: PKCS#9 content-type, message-digest, and signing-time
+var p7 = forge.pkcs7.createSignedData();
+p7.content = forge.util.createBuffer('Some content to be signed.', 'utf8');
+p7.addCertificate(certOrCertPem);
+p7.addSignerTemplate({
+  certificate: certOrCertPem,
+  digestAlgorithm: forge.pki.oids.sha256,
+  authenticatedAttributes: [{
+    type: forge.pki.oids.contentType,
+    value: forge.pki.oids.data
+  }, {
+    type: forge.pki.oids.messageDigest
+    // value will be auto-populated at signing time
+  }, {
+    type: forge.pki.oids.signingTime,
+    // value can also be auto-populated at signing time
+    value: new Date()
+  }]
+});
+
+p7.prepare();
+
+// DER-serialized of ASN.1's digestInfo as forge's ByteBuffer object
+const dtbs = p7.getDigestToBeSigned({ signerSerialNumber: cert.serialNumber })
+
+// Simulate client-side signature (RSASSA-PKCS1-V1_5) using crypto library
+const signature = crypto.privateEncrypt(privateKeyAssociatedWithCert, Buffer.from(d.toHex(), 'hex'))
+
+// Add available signature into cms structure
+p7.addSignature({ signerSerialNumber: cert.serialNumber, signature.toString('binary') })
+
+var pem = forge.pkcs7.messageToPem(p7);
 ```
 
 <a name="pkcs8" />
