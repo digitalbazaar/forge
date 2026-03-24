@@ -48,7 +48,7 @@ Forge ChangeLog
     certificate (without these extensions) to act as a CA and sign other
     certificates, which node-forge will accept as valid.
   - Reported by Doruk Tan Ozturk (@peaktwilight) - doruk.ch
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-33896](https://www.cve.org/CVERecord?id=CVE-2026-33896)
   - GHSA ID: [GHSA-2328-f5f3-gj25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2328-f5f3-gj25)
 
 ### Changed
