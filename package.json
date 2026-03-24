@@ -41,7 +41,8 @@
     "opts": "^1.2.7",
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
-    "worker-loader": "^2.0.0"
+    "worker-loader": "^2.0.0",
+    "nanoid": "^4.0.0"
   },
   "repository": {
     "type": "git",
