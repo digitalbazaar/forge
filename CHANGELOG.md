@@ -51,6 +51,10 @@ Forge ChangeLog
   - CVE ID: [CVE-2026-33896](https://www.cve.org/CVERecord?id=CVE-2026-33896)
   - GHSA ID: [GHSA-2328-f5f3-gj25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2328-f5f3-gj25)
 
+### Added
+- [oid] Added requested OID:
+  - `2.5.4.65` / `pseudonym`
+
 ### Changed
 - [jsbn] Update to `jsbn` 1.4. Sync partly back to original style for easier
   updates every decade or so.
