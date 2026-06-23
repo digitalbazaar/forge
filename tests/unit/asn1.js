@@ -54,6 +54,18 @@ var UTIL = require('../../lib/util');
       );
     });
 
+    it('should convert an OID with a multi-byte first subidentifier to DER', function() {
+      // X.690 8.19: the first subidentifier (40 * arc1 + arc2) can exceed one
+      // byte when arc1 is 2, so it must be encoded in base 128
+      ASSERT.equal(ASN1.oidToDer('2.999.3').toHex(), '883703');
+      ASSERT.equal(ASN1.oidToDer('2.100').toHex(), '8134');
+    });
+
+    it('should convert an OID with a multi-byte first subidentifier from DER', function() {
+      ASSERT.equal(ASN1.derToOid(UTIL.hexToBytes('883703')), '2.999.3');
+      ASSERT.equal(ASN1.derToOid(UTIL.hexToBytes('8134')), '2.100');
+    });
+
     it('should convert INTEGER 0 to DER', function() {
       ASSERT.equal(ASN1.integerToDer(0).toHex(), '00');
     });
