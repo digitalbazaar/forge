@@ -84,5 +84,41 @@ var UTIL = require('../../lib/util');
       cipher.finish();
       ASSERT.equal(cipher.output, 'revolution');
     });
+
+    // RFC 2268 section 5 test vectors. Only the first output block is
+    // compared, since forge appends a PKCS#7 padding block.
+    function rc2Vector(keyHex, effKeyBits, plainHex, expectedHex) {
+      var cipher = RC2.createEncryptionCipher(
+        UTIL.hexToBytes(keyHex), effKeyBits);
+      cipher.start(null);
+      cipher.update(new UTIL.createBuffer(UTIL.hexToBytes(plainHex)));
+      cipher.finish();
+      ASSERT.equal(cipher.output.toHex().substr(0, 16), expectedHex);
+    }
+
+    it('should match RFC 2268 vector w/8 byte key, 63 effective bits', function() {
+      rc2Vector('0000000000000000', 63, '0000000000000000',
+        'ebb773f993278eff');
+    });
+
+    it('should match RFC 2268 vector w/8 byte key, 64 effective bits', function() {
+      rc2Vector('ffffffffffffffff', 64, 'ffffffffffffffff',
+        '278b27e42e2f0d49');
+    });
+
+    it('should match RFC 2268 vector w/1 byte key, 64 effective bits', function() {
+      rc2Vector('88', 64, '0000000000000000', '61a8a244adacccf0');
+    });
+
+    it('should match RFC 2268 vector w/16 byte key, 128 effective bits', function() {
+      rc2Vector('88bca90e90875a7f0f79c384627bafb2', 128,
+        '0000000000000000', '2269552ab0f85ca6');
+    });
+
+    it('should match RFC 2268 vector w/33 byte key, 129 effective bits', function() {
+      rc2Vector(
+        '88bca90e90875a7f0f79c384627bafb216f80a6f85920584c42fceb0be255daf1e',
+        129, '0000000000000000', '5b78d3a43dfff1f1');
+    });
   });
 })();

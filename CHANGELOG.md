@@ -1,6 +1,14 @@
 Forge ChangeLog
 ===============
 
+## 1.4.1 - 2026-xx-xx
+
+### Fixed
+- [rc2] Compute the effective-key-length mask as RFC 2268 defines it. The mask
+  was shifting out `T1 MOD 8` bits instead of `8*T8 - T1`, so key expansion was
+  wrong whenever the effective key size was not a multiple of 8 bits. Two of
+  the eight RFC 2268 section 5 test vectors failed; both now pass.
+
 ## 1.4.0 - 2026-03-24
 
 ### Security
