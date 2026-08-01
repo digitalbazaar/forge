@@ -1,7 +1,7 @@
 var ASSERT = require('assert');
 var JSBN = require('../../lib/jsbn');
 
-describe.only('jsbn', function() {
+describe('jsbn', function() {
   describe('GHSA-5m6q-g25r-mvwx', function() {
     // regression tests for GHSA-5m6q-g25r-mvwx
     // test BigInteger.modInverse does not infinite loop with 0 inputs.
