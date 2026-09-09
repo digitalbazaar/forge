@@ -1159,6 +1159,37 @@ var UTIL = require('../../lib/util');
 
         _checkBadDigestInfo(publicKey, S);
       });
+
+      it('should check nested DigestAlgorithm element count', function() {
+        var publicKey = RSA.setPublicKey(N, e);
+        // garbage OCTET STRING injected as an extra, unconsumed child of the
+        // nested DigestInfo.DigestAlgorithm SEQUENCE (after the OID and
+        // NULL). The GHSA-ppp5-5v6c-4jwp / CVE-2026-33894 fix only checks the
+        // element count of the outer DigestInfo SEQUENCE, so this nested
+        // garbage previously passed validation and could be used to forge
+        // signatures for low public exponent keys (e.g. e=3). See #1149 /
+        // CVE-2026-85393.
+        var I = UTIL.binary.hex.decode(
+          '0001ffffffffffffffff003081f23081cd060960864801650304020105000481bd88' +
+          '88888888888888888888888888888888888888888888888888888888888888888888' +
+          '88888888888888888888888888888888888888888888888888888888888888888888' +
+          '88888888888888888888888888888888888888888888888888888888888888888888' +
+          '88888888888888888888888888888888888888888888888888888888888888888888' +
+          '88888888888888888888888888888888888888888888888888888888888888888888' +
+          '88888888888888888888888888888888888804207509e5bda0c762d2bac7f90d758b' +
+          '5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var S = UTIL.binary.hex.decode(
+          'a4ae63dd5e7712b78f4870d0f51e294df5503d4f16c5d27ae33370981fb57f0de49f' +
+          '50f3d6a04666774cd984cd13972db9bf8e12bd294ef0ddc916c7c86cbae63efd7b6b' +
+          '97885e69760c208a40f1aecc76a90d7af5145177efce1bb55807a8d05c20b1596753' +
+          'ba710642fc9acdde6c160232654662c77cc4466c8257a38edb49f894e8845d0fd987' +
+          'b857ced88f4b62505a080bd87ef700d35d392a6e8f6fde34250c50b86fae606cb551' +
+          '215e8f4813239b77651d5565ad453698c071d48c31e8e526fb4a37610f64b3e1fb8e' +
+          '5be5898e408ad08197a0947794a530b54f84485377ce4a7488ed485ce4e5e105dd89' +
+          '698a472f390c3b1b76bc16b73276c4d1c81d');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
     });
 
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {
