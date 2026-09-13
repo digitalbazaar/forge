@@ -1,5 +1,6 @@
 require('./forge');
 require('./jsbn');
+require('./log');
 require('./util');
 require('./md5');
 require('./sha1');
