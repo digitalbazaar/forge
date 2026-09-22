@@ -2016,6 +2016,7 @@ Contact
 -------
 
 * Code: https://github.com/digitalbazaar/forge
+* Security: [Security Policy](SECURITY.md)
 * Bugs: https://github.com/digitalbazaar/forge/issues
 * Email: support@digitalbazaar.com
 * IRC: [#forgejs][] on [Libera.Chat][] (people may also be on [freenode][] for
