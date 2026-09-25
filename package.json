@@ -14,6 +14,7 @@
     "Stefan Siegl <stesie@brokenpipe.de>",
     "Christoph Dorn <christoph@christophdorn.com>"
   ],
+  "funding": "https://www.paypal.com/donate/?hosted_button_id=ZZW8M5GYS3Z8A",
   "devDependencies": {
     "browserify": "^16.5.2",
     "commander": "^2.20.0",
