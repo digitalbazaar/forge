@@ -1,6 +1,23 @@
 Forge ChangeLog
 ===============
 
+## 1.4.1 - 2026-xx-xx
+
+### Security
+- **HIGH**: Signature forgery in RSA-PKCS due to incomplete `DigestInfo` fix.
+  - The fix for CVE-2026-33894 in 1.4.0 only checked the element count of the
+    outer `DigestInfo` SEQUENCE. The nested `DigestAlgorithm` SEQUENCE was not
+    checked for extra, unconsumed elements, allowing the same class of low
+    public exponent (e.g. `e=3`) signature forgery via garbage bytes placed
+    inside that nested structure instead of the outer `DigestInfo` structure.
+  - Reported by geo-chen.
+  - CVE ID: [CVE-2026-85393](https://www.cve.org/CVERecord?id=CVE-2026-85393)
+
+### Fixed
+- [rsa] Fix RFC 8017 DigestInfo parsing to also require the nested
+  DigestAlgorithm sequence to contain only the OID and an optional NULL,
+  rejecting any extra, unconsumed elements. See #1149.
+
 ## 1.4.0 - 2026-03-24
 
 ### Security
