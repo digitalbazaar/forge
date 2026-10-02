@@ -83,7 +83,8 @@ outputs.forEach(info => {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.js',
       library: info.library || '[name]',
-      libraryTarget: info.libraryTarget || 'umd'
+      libraryTarget: info.libraryTarget || 'umd',
+	  globalObject: 'this'
     }
   });
   if(info.library === null) {
@@ -100,7 +101,8 @@ outputs.forEach(info => {
       path: path.join(__dirname, 'dist'),
       filename: info.filenameBase + '.min.js',
       library: info.library || '[name]',
-      libraryTarget: info.libraryTarget || 'umd'
+      libraryTarget: info.libraryTarget || 'umd',
+	  globalObject: 'this'
     },
     devtool: 'cheap-module-source-map',
     plugins: [
