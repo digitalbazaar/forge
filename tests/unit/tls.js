@@ -171,5 +171,50 @@ require('../../lib/util');
         };
       }
     });
+
+    it('should test TLS 1.2 PRF (SHA256)', function() {
+      // This test vector is originally from:
+      // http://www.ietf.org/mail-archive/web/tls/current/msg03416.html
+      var secret = forge.util.createBuffer().putBytes(forge.util.hexToBytes("9bbe436ba940f017b17652849a71db35")).getBytes();
+      var seed = forge.util.createBuffer().putBytes(forge.util.hexToBytes("a0ba9f936cda311827a6f796ffd5198c")).getBytes();
+      var label = forge.util.createBuffer().putBytes(forge.util.hexToBytes("74657374206c6162656c")).getBytes();
+
+      var bytes = forge.tls.prf_tls12(secret, label,  seed, 100, "SHA256");
+      var expect =
+        'e3f229ba727be17b8d122620557cd453' +
+        'c2aab21d07c3d495329b52d4e61edb5a' +
+        '6b301791e90d35c9c9a46b4e14baf9af' +
+        '0fa022f7077def17abfd3797c0564bab' +
+        '4fbc91666e9def9b97fce34f796789ba' +
+        'a48082d122ee42c5a72e5a5110fff701' +
+        '87347b66';
+      ASSERT.equal(bytes.toHex(), expect);
+    });
+
+    it('should test TLS 1.2 PRF (SHA512)', function() {
+      // This test vector is originally from:
+      // http://www.ietf.org/mail-archive/web/tls/current/msg03416.html
+      var secret = forge.util.createBuffer().putBytes(forge.util.hexToBytes("b0323523c1853599584d88568bbb05eb")).getBytes();
+      var seed = forge.util.createBuffer().putBytes(forge.util.hexToBytes("d4640e12e4bcdbfb437f03e6ae418ee5")).getBytes();
+      var label = forge.util.createBuffer().putBytes(forge.util.hexToBytes("74657374206c6162656c")).getBytes();
+
+      var bytes = forge.tls.prf_tls12(secret, label,  seed, 196, "SHA512");
+      var expect =
+        '1261f588c798c5c201ff036e7a9cb5ed' +
+        'cd7fe3f94c669a122a4638d7d508b283' +
+        '042df6789875c7147e906d868bc75c45' +
+        'e20eb40c1cf4a1713b27371f68432592' +
+        'f7dc8ea8ef223e12ea8507841311bf68' +
+        '653d0cfc4056d811f025c45ddfa6e6fe' +
+        'c702f054b409d6f28dd0a3233e498da4' +
+        '1a3e75c5630eedbe22fe254e33a1b0e9' +
+        'f6b9826675bec7d01a845658dc9c3975' +
+        '45401d40b9f46c7a400ee1b8f81ca0a6' +
+        '0d1a397a1028bff5d2ef5066126842fb' +
+        '8da4197632bdb54ff6633f86bbc836e6' +
+        '40d4d898';
+      ASSERT.equal(bytes.toHex(), expect);
+    });
+
   });
 })();
