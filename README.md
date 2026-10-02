@@ -1243,7 +1243,21 @@ cert.setExtensions([{
   }]
 }, {
   name: 'subjectKeyIdentifier'
-}]);
+},
+  {
+    name: 'authorityInfoAccess',
+    accessDescriptions: [
+      {
+        accessMethod: 'ocsp',
+        accessLocation: 'http://ocsp.example.com'
+      },
+      {
+        accessMethod: 'caIssuers',
+        accessLocation: 'http://authority.example.com/servicesca.der'
+      }
+    ]
+  }
+]);
 /* alternatively set extensions from a csr
 var extensions = csr.getAttribute({name: 'extensionRequest'}).extensions;
 // optionally add more extensions
