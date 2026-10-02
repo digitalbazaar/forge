@@ -1367,6 +1367,17 @@ var pem = forge.pkcs7.messageToPem(p7);
 // Includes the signature and certificate without the signed data.
 p7.sign({detached: true});
 
+// Verify a PKCS#7 signature
+var caStore = forge.pki.createCaStore();
+caStore.addCertificate(caPem);
+var p7 = forge.pkcs7.messageFromPem(pem);
+// if the signature was detached, reattach it
+p7.content = forge.util.createBuffer('Some content to be signed.', 'utf8');
+// return is true IFF all signatures are valid and chain up to a provided CA
+if(!p7.verify(caStore)) {
+  throw new Error('invalid signature!');
+}
+
 ```
 
 <a name="pkcs8" />
