@@ -1159,6 +1159,150 @@ var UTIL = require('../../lib/util');
 
         _checkBadDigestInfo(publicKey, S);
       });
+
+      it('should reject garbage bytes inside the inner DigestAlgorithm SEQUENCE (CVE-2026-85393)', function() {
+        // CVE-2026-85393: the 1.4.0 fix for CVE-2026-33894 only validated the
+        // element count of the outer DigestInfo SEQUENCE (obj.value.length !== 2).
+        // It did not reject garbage embedded inside the inner DigestAlgorithm
+        // SEQUENCE. An attacker can use that slack space for a Bleichenbacher-
+        // style cube-root forgery with low public exponents (e.g. e=3).
+        //
+        // Crafted DigestInfo structure:
+        //   30 38  DigestInfo SEQUENCE (outer, length=56)
+        //     30 14  DigestAlgorithm SEQUENCE (inner, length=20) ← 3 elements
+        //       06 09 608648016503040201  OID SHA-256
+        //       05 00                     NULL parameters
+        //       02 05 8888888888          INTEGER (5 garbage bytes) ← attack element
+        //     04 20 <sha256("hello world!")>  Digest OCTET STRING
+        //
+        // The outer SEQUENCE has exactly 2 children (passes the 1.4.0 outer
+        // element-count check). The inner SEQUENCE carries an extra element,
+        // so the decoded bytes differ from the canonical re-encoding of the
+        // DigestInfo and verification is rejected.
+        //
+        // I and S were computed using the test key pair defined at the top of
+        // this describe block (2048-bit key, private exponent d, public exponent e=3).
+        var publicKey = RSA.setPublicKey(N, e);
+
+        // I: PKCS#1 type-1 padded message containing the crafted DigestInfo
+        var I = UTIL.binary.hex.decode(
+          '0001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff' +
+          'ffffffffffffffffffffff0030383014060960864801650304020105000205' +
+          '888888888804207509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5' +
+          'e3df163be08e6ca9');
+
+        // S: I^d mod N — the forged signature value
+        var S = UTIL.binary.hex.decode(
+          '3408bdfaeca12b29c6ac284f95aca731a14f9c06125cca16d54ae0cc3f6fe6ff' +
+          '0005425b3dcd8122ef4c94781556a3d174f72e1cd5df0c79aed2d0b617fdd52' +
+          'ec430eae767873065d9a770c57b8c451775afe3bdc0bb86ff4d9319d2008548' +
+          'ae653308ba32be9b456710e7e04cc39232db5794b06afa95eed00697d32efd3' +
+          '46155fd483ec1709c281aeb4253c967494fe4f30be67bacb0b41f343d1c767e' +
+          '808b6370039d16b7c13a7921965c37062ddca94cc519c4569e5a8abf5245886' +
+          'e3b6deb8224994db79f7189da3090bf50d3bdd4257f472aeafae7240db7ed40' +
+          'e5583588305d94d61e24e7749b2225b8e3c0c793f94a0a6cd4907e6f35cd20e' +
+          'ad3be37');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
+
+      it('should reject a two-element inner SEQUENCE with a non-NULL garbage element (CVE-2026-85393)', function() {
+        // A count-only check on the inner DigestAlgorithm SEQUENCE is not
+        // enough: an attacker keeps the inner SEQUENCE at exactly two elements
+        // but replaces the NULL parameters with an arbitrary garbage element,
+        // which still provides slack for a forgery.
+        //
+        // Crafted DigestInfo (inner length-21 SEQUENCE, 2 elements):
+        //   30 15  DigestAlgorithm SEQUENCE
+        //     06 09 608648016503040201  OID SHA-256
+        //     02 08 8888888888888888    INTEGER (8 garbage bytes) ← attack element
+        // The canonical re-encoding has no such element, so the bytes differ
+        // and verification is rejected.
+        var publicKey = RSA.setPublicKey(N, e);
+        var S = UTIL.binary.hex.decode(
+          '949824e00859dfb3b773511c7154655f0ec8d00ac794a90149a675d03f507418' +
+          'd695d41e7f05a164a6da6f06a7f4ecf9ef32be436ecb55856dd6fad5b30ac958' +
+          '3b165843a0d7b6e9fd64446370683c89c0bb3329a766b6caf77379e4ff9b62cd' +
+          '0e11f7cdd9598678a86bbcb84e4323ed2dac268df54861d9b6d2d92699ce85a6' +
+          'f2c5170d293ea218ee3d386cfb9980191903428618150b9136b266c664635979' +
+          '968f7dfaf3ecd18dfb894c9681794099b86cfe76d7110b258284744d21b1822b' +
+          '0d97793e6e7f4335807b18366037c7a70d42a6f8519194168db0d7dca805084b' +
+          '7808df9cc831ba2036708e77ca7a0b9753a2043925d897a5b0dbf4db6b46a74a');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
+
+      it('should reject a NULL parameters field that carries content bytes (CVE-2026-85393)', function() {
+        // forge's parser does not require a NULL to be empty. An attacker can
+        // smuggle content inside the NULL parameters field:
+        //   30 0f  DigestAlgorithm SEQUENCE
+        //     06 09 608648016503040201  OID SHA-256
+        //     05 02 abcd                NULL with 2 content bytes ← attack bytes
+        // The canonical re-encoding emits an empty NULL, so the bytes differ
+        // and verification is rejected.
+        var publicKey = RSA.setPublicKey(N, e);
+        var S = UTIL.binary.hex.decode(
+          '6cbe22adc4ee40e1d0feb9610bb0dbff668920486cb702f97c5facbbca980bf9' +
+          'b7130378f9c26f48dcaa6f6aee893880a2bba807ceae692f1db84510e0b1bdf9' +
+          '1516ae082e9fdce6cc894b9a71da05da94eb67b2e66b7ac624737a9062619860' +
+          'cda4325bab5618749e865f6b234f480b4f34c6eedf980109d5706090da9a6ab9' +
+          '8e51da2657908cfdf624526eccf531918f3af0f8c277b1bc22285048c39e1628' +
+          'b4c4f9345ac388bfa622577dc2e1c00ea53cbcdecaf06ea647ad690801d2ba40' +
+          '665ec4a03ec89364a04456e66b49d99c2b7256cf55e0273d1875efef5214bf35' +
+          'c5d833d0e542dac41abf0292852e5078f5af0018318687afed57b953ca49674f');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
+
+      it('should reject non-minimal (long form) length octets (CVE-2026-85393)', function() {
+        // DER requires minimal length encoding. forge's parser accepts long
+        // form lengths, which an attacker can use as additional slack:
+        //   30 81 32  DigestInfo SEQUENCE (outer, long form length)
+        //     30 81 0d  DigestAlgorithm SEQUENCE (inner, long form length)
+        //       06 09 608648016503040201  OID SHA-256
+        //       05 00                     NULL parameters
+        //     04 20 <digest>
+        // The canonical re-encoding uses short form lengths, so the bytes
+        // differ and verification is rejected.
+        var publicKey = RSA.setPublicKey(N, e);
+        var S = UTIL.binary.hex.decode(
+          '4f818f8bcdd0933f8016b285fad842a79e7a6580b0186703e5aa2fea9b438034' +
+          '258698f1a0964f59647ebcfd3a151abeed5c6632a416e5439a4cdfb1e01f43e1' +
+          '6f6e310369a15006d9838efaade707e81b812d4968d0585e9536ccd5d9511301' +
+          '644fbcd307f2abc6e8aefdd642d076f3afd7a9669e3e7b84c17fe2cf46ae7e26' +
+          '1742f8e626d5323eaa3eb5d613e568024a671d6b740d523ab7f856dec0b3151a' +
+          'b9e7115daff812a966f56d745941aa1fc15a320df759f690998d4afbe2649876' +
+          'f3f68fb9104dbfc26b7d9af4248bc15a2aa2fd7aaa47eb72ae01b231915b652a' +
+          '68ab0bca1646e48933be3b260a0227906c4812e0dd2f165014c27abacea9c7ac');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
+
+      it('should still verify a valid DigestInfo that omits the NULL parameters', function() {
+        // The parameter-less DigestAlgorithm form is valid and produced by
+        // some signers, so the canonical-encoding check must accept it:
+        //   30 2f  DigestInfo SEQUENCE
+        //     30 0b  DigestAlgorithm SEQUENCE
+        //       06 09 608648016503040201  OID SHA-256 (no NULL parameters)
+        //     04 20 <digest>
+        var publicKey = RSA.setPublicKey(N, e);
+        var S = UTIL.binary.hex.decode(
+          'a0073057133ff3758e7e111b4d7441f1d8cbe4b2dd5ee4316a14264290dee5ed' +
+          '7f175716639bd9bb43a14e4f9fcb9e84dedd35e2205caac04828b2c053f68176' +
+          'd971ea88534dd2eeec903043c3469fc69c206b2a8694fd262488441ed8852280' +
+          'c3d4994e9d42bd1d575c7024095f1a20665925c2175e089c0d731471f6cc1454' +
+          '04edf5559fd2276e45e448086f71c78d0cc6628fad394a34e51e8c10bc39bfe0' +
+          '9ed2f5f742cc68bee899d0a41e4c75b7b80afd1c321d89ccd9fe8197c44624d9' +
+          '1cc935dfa48de3c201099b5b417be748aef29248527e8bbb173cab76b48478d4' +
+          '177b338fe1f1244e64d7d23f07add560d5ad50b68d6649a49d7bc3db686daaa7');
+
+        _checkGoodDigestInfo(publicKey, S);
+      });
     });
 
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {

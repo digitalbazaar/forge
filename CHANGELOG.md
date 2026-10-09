@@ -1,6 +1,26 @@
 Forge ChangeLog
 ===============
 
+## 1.4.1 - Unreleased
+
+### Security
+- **HIGH**: Signature forgery in RSA-PKCS#1 v1.5 due to non-canonical DigestInfo.
+  - RSASSA-PKCS#1 v1.5 signature verification accepted DigestInfo structures
+    that were not canonically DER-encoded. An attacker could hide
+    attacker-controlled "slack" bytes inside an otherwise valid DigestInfo —
+    for example as an extra element in the inner DigestAlgorithm SEQUENCE, as a
+    non-NULL element in place of the NULL parameters, as content inside the
+    NULL parameters field, or via non-minimal (long form) length octets — in
+    order to construct a Bleichenbacher style forgery for low public exponent
+    keys (e.g. e=3).
+  - This extends the 1.4.0 fix for CVE-2026-33894, which rejected extra
+    elements only in the outer DigestInfo SEQUENCE and so did not cover these
+    additional locations. Verification now re-encodes the expected DigestInfo
+    from the parsed algorithm OID and digest and requires the decoded bytes to
+    match, accepting both the with-parameters (NULL) and parameter-less forms.
+  - CVE ID: [CVE-2026-85393](https://www.cve.org/CVERecord?id=CVE-2026-85393)
+  - GHSA ID: _to be assigned_
+
 ## 1.4.0 - 2026-03-24
 
 ### Security
