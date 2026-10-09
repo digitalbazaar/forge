@@ -51,7 +51,7 @@
     "url": "https://github.com/digitalbazaar/forge/issues",
     "email": "support@digitalbazaar.com"
   },
-  "license": "(BSD-3-Clause OR GPL-2.0)",
+  "license": "(BSD-3-Clause OR GPL-2.0-or-later)",
   "main": "lib/index.js",
   "files": [
     "lib/*.js",
