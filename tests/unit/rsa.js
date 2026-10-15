@@ -1159,6 +1159,78 @@ var UTIL = require('../../lib/util');
 
         _checkBadDigestInfo(publicKey, S);
       });
+
+      it('should check nested DigestAlgorithm element count', function() {
+        var publicKey = RSA.setPublicKey(N, e);
+        // garbage bytes injected as an extra, unconsumed OCTET STRING child
+        // of the nested DigestInfo.DigestAlgorithm SEQUENCE (after the OID
+        // and NULL parameters). The GHSA-ppp5-5v6c-4jwp / CVE-2026-33894
+        // fix only checked the element count of the outer DigestInfo
+        // SEQUENCE, so this nested garbage previously passed validation and
+        // could be used to forge signatures for low public exponent keys
+        // (e=3) without the private key. See CVE-2026-85393, #1149, and
+        // /tests/pocs/cve-2026-85393.js.
+        // block (I) resulting from "decrypting" the forged signature:
+        // 0001ffffffffffffffff003081f23081cd060960864801650304020105000481bd
+        // <189 garbage bytes> 0420 <sha256(m)>
+        var I = UTIL.binary.hex.decode(
+          '0001ffffffffffffffff003081f23081cd0609608648016503040201050004' +
+          '81bd000000000000000000000000000000000000001a83955633faa4f6d0fd' +
+          '7ae6d44e0471d94df2e8c1ff608e8d33b9a054f3a85546067df27c711b6a20' +
+          'a5fcdb59d4aca4b82bd03447456bf70344527483332e572c446281a85f2ecf' +
+          'd1ec866f4a712749bea82140a89d25afabac019527e74484593d17f38762f6' +
+          '23b3ada88c5aa101572c8258a81ce689d72bad687c1d33bb65da91c52d87a6' +
+          'c26d10cf1288806fa988d94c5d0cefced955cc0194c3e14ba24308a095a06b' +
+          'fdf0c4248304207509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5' +
+          'e3df163be08e6ca9');
+        var S = UTIL.binary.hex.decode(
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '0000000000000000000000000000000032cbfd4a7adc7905583d7920d7165d' +
+          '77cf8d6f4b19a4c14026dc9bf5576b2de2aab4a0dc9d8303ba8e365764f52a' +
+          '49da7a2dfc5bed616f52d37d860cb283543d93fe1b73ca6379278422fd8821' +
+          'eeeddc3a1bee99f9');
+
+        _checkBadDigestInfo(publicKey, S);
+      });
+
+      it('should verify canonical DigestInfo (with NULL parameters)',
+        function() {
+        // use e=1 so "decrypting" the signature is a no-op and a hand-built
+        // block can be used as its own signature to check that well-formed
+        // DigestInfo values still pass the nested element count check
+        var publicKey = RSA.setPublicKey(
+          new JSBN.BigInteger(new Array(257).join('f'), 16),
+          new JSBN.BigInteger('1', 10));
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(74 + 1).join('ff') + '00' +
+          '3031300d060960864801650304020105000420' +
+          '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.ok(publicKey.verify(md.digest().getBytes(), S));
+      });
+
+      it('should verify canonical DigestInfo (without NULL parameters)',
+        function() {
+        // same as above, but the DigestAlgorithm SEQUENCE contains only the
+        // algorithm OID and no NULL parameters, which must also be accepted
+        var publicKey = RSA.setPublicKey(
+          new JSBN.BigInteger(new Array(257).join('f'), 16),
+          new JSBN.BigInteger('1', 10));
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(76 + 1).join('ff') + '00' +
+          '302f300b06096086480165030402010420' +
+          '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.ok(publicKey.verify(md.digest().getBytes(), S));
+      });
     });
 
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {
