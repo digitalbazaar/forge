@@ -1231,6 +1231,90 @@ var UTIL = require('../../lib/util');
 
         ASSERT.ok(publicKey.verify(md.digest().getBytes(), S));
       });
+
+      it('should reject NULL parameters that carry content bytes ' +
+        '(CVE-2026-85393)', function() {
+        // forge's parser does not require a NULL to be empty, so an
+        // attacker-chosen payload can hide inside the NULL parameters field
+        // while every element count stays valid. Only the canonical
+        // re-encoding comparison rejects this; its canonical form is an
+        // empty NULL (05 00), not (05 02 beef):
+        //   30 33
+        //     30 0f
+        //       06 09 608648016503040201  OID SHA-256
+        //       05 02 beef                NULL with 2 content bytes
+        //     04 20 <sha256("hello world!")>
+        var publicKey = RSA.setPublicKey(
+          new JSBN.BigInteger(new Array(257).join('f'), 16),
+          new JSBN.BigInteger('1', 10));
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(72 + 1).join('ff') + '00' +
+          '3033300f06096086480165030402010502beef0420' +
+          '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), S);
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+      });
+
+      it('should reject non-minimal long-form length octets ' +
+        '(CVE-2026-85393)', function() {
+        // DER requires minimal length octets, but forge's parser accepts
+        // long-form lengths even when the short form would do, which adds
+        // non-canonical bytes to the block without changing any element
+        // count. The canonical re-encoding uses short-form lengths, so the
+        // byte comparison rejects this:
+        //   30 81 32  long-form length (50 fits in one octet)
+        //     30 81 0d  long-form length (13 fits in one octet)
+        //       06 09 608648016503040201  OID SHA-256
+        //       05 00                     NULL parameters
+        //     04 20 <sha256("hello world!")>
+        var publicKey = RSA.setPublicKey(
+          new JSBN.BigInteger(new Array(257).join('f'), 16),
+          new JSBN.BigInteger('1', 10));
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(72 + 1).join('ff') + '00' +
+          '30813230810d060960864801650304020105000420' +
+          '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), S);
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+      });
+
+      it('should reject a non-NULL garbage element in place of the ' +
+        'NULL parameters (CVE-2026-85393)', function() {
+        // asn1.validate() ignores elements it was not told to check, so an
+        // arbitrary element can sit in the parameters slot; the inner
+        // SEQUENCE still has two elements. The canonical re-encoding has
+        // either an empty NULL or no second element at all, so the byte
+        // comparison rejects this:
+        //   30 33
+        //     30 0f
+        //       06 09 608648016503040201  OID SHA-256
+        //       02 02 beef                INTEGER in the parameters slot
+        //     04 20 <sha256("hello world!")>
+        var publicKey = RSA.setPublicKey(
+          new JSBN.BigInteger(new Array(257).join('f'), 16),
+          new JSBN.BigInteger('1', 10));
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(72 + 1).join('ff') + '00' +
+          '3033300f06096086480165030402010202beef0420' +
+          '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), S);
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+      });
     });
 
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {

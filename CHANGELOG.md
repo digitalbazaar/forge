@@ -10,14 +10,18 @@ Forge ChangeLog
     checked for extra, unconsumed elements, allowing the same class of low
     public exponent (e.g. `e=3`) signature forgery via garbage bytes placed
     inside that nested structure instead of the outer `DigestInfo` structure.
-  - Reported by geo-chen.
+  - Reported by geo-chen. Fix review by Matthew Conroy (@matthewscottconroy)
+    identified that element-count checks alone are insufficient; see #1159.
   - CVE ID: [CVE-2026-85393](https://www.cve.org/CVERecord?id=CVE-2026-85393)
   - GHSA ID: [GHSA-86w9-cpqp-85rv](https://github.com/digitalbazaar/forge/security/advisories/GHSA-86w9-cpqp-85rv)
 
 ### Fixed
-- [rsa] Fix RFC 8017 DigestInfo parsing to also require the nested
-  DigestAlgorithm sequence to contain only the OID and an optional NULL,
-  rejecting any extra, unconsumed elements. See #1149.
+- [rsa] Fix RFC 8017 `DigestInfo` verification to require a canonical DER
+  encoding: the expected `DigestInfo` is re-encoded from the parsed OID and
+  digest and compared byte-for-byte. This rejects all encoding slack an
+  attacker could exploit in one check: extra elements in either SEQUENCE, a
+  NULL parameters field carrying content bytes, and non-minimal long-form
+  length octets. See #1149.
 
 ## 1.4.0 - 2026-03-24
 
