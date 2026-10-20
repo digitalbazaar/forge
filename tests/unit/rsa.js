@@ -1,4 +1,5 @@
 var ASSERT = require('assert');
+var ASN1 = require('../../lib/asn1');
 var FORGE = require('../../lib/forge');
 var JSBN = require('../../lib/jsbn');
 var MD = require('../../lib/md.all');
@@ -1158,6 +1159,97 @@ var UTIL = require('../../lib/util');
           '5f8a44bc03a2595a706f06f0cb39b8e3f4afe06675fe7439b057f1200a06f4fd');
 
         _checkBadDigestInfo(publicKey, S);
+      });
+    });
+
+    describe('CVE-2026-85393 nested DigestAlgorithm validation', function() {
+      var privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+      var publicKey = RSA.setPublicKey(privateKey.n, privateKey.e);
+
+      // Sign deliberately malformed DigestInfo with the fixture key and normal
+      // PKCS#1 v1.5 padding. No padding or trailing-byte checks are bypassed.
+      function verifyAlgorithm(algorithm, parameters) {
+        var md = MD[algorithm].create();
+        md.update('nested DigestAlgorithm regression');
+        var digest = md.digest().getBytes();
+        var algorithmIdentifier = [ASN1.create(
+          ASN1.Class.UNIVERSAL, ASN1.Type.OID, false,
+          ASN1.oidToDer(PKI.oids[algorithm]).getBytes())].concat(parameters);
+        var digestInfo = ASN1.create(
+          ASN1.Class.UNIVERSAL, ASN1.Type.SEQUENCE, true, [
+            ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.SEQUENCE, true,
+              algorithmIdentifier),
+            ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.OCTETSTRING,
+              false, digest)
+          ]);
+        var encoded = ASN1.toDer(digestInfo).getBytes();
+        var signature = privateKey.sign(encoded, 'NONE');
+        return publicKey.verify(digest, signature);
+      }
+
+      function nullParameter(value) {
+        return ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.NULL,
+          false, value || '');
+      }
+
+      function assertInvalid(parameters) {
+        ASSERT.throws(function() {
+          verifyAlgorithm('sha256', parameters);
+        }, /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value\.$/);
+      }
+
+      it('rejects an extra child after OID and NULL', function() {
+        assertInvalid([nullParameter(), ASN1.create(ASN1.Class.UNIVERSAL,
+          ASN1.Type.OCTETSTRING, false, 'unconsumed garbage')]);
+      });
+
+      it('rejects garbage instead of optional NULL parameters', function() {
+        assertInvalid([ASN1.create(ASN1.Class.UNIVERSAL,
+          ASN1.Type.OCTETSTRING, false, 'unconsumed garbage')]);
+      });
+
+      it('rejects repeated NULL parameters', function() {
+        assertInvalid([nullParameter(), nullParameter()]);
+      });
+
+      it('rejects garbage encoded inside NULL parameters', function() {
+        assertInvalid([nullParameter('unconsumed garbage')]);
+      });
+
+      it('rejects constructed NULL parameters', function() {
+        assertInvalid([ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.NULL,
+          true, [ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.OCTETSTRING,
+            false, 'unconsumed garbage')])]);
+      });
+
+      ['sha1', 'sha256', 'sha512'].forEach(function(algorithm) {
+        it('accepts ' + algorithm + ' with absent parameters', function() {
+          ASSERT.strictEqual(verifyAlgorithm(algorithm, []), true);
+        });
+
+        it('accepts ' + algorithm + ' with empty NULL parameters', function() {
+          ASSERT.strictEqual(verifyAlgorithm(algorithm, [nullParameter()]), true);
+        });
+      });
+
+      it('accepts MD5 with its required empty NULL parameters', function() {
+        ASSERT.strictEqual(verifyAlgorithm('md5', [nullParameter()]), true);
+      });
+
+      it('keeps rejecting MD5 without its required NULL parameters', function() {
+        ASSERT.throws(function() {
+          verifyAlgorithm('md5', []);
+        }, /Missing algorithm identifier NULL parameters/);
+      });
+
+      it('does not accept a signature for a different digest', function() {
+        var md = MD.sha256.create();
+        md.update('original message');
+        var signature = privateKey.sign(md);
+        var other = MD.sha256.create();
+        other.update('different message');
+        ASSERT.strictEqual(publicKey.verify(other.digest().getBytes(),
+          signature), false);
       });
     });
 
