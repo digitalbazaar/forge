@@ -1533,13 +1533,23 @@ var UTIL = require('../../lib/util');
 
     it('should require basicConstraints on non-leaf certificates', function() {
       // see GHSA-2328-f5f3-gj25 and PoC in /tests/pocs/
-      function generateKeyPair() {
-        return PKI.rsa.generateKeyPair({bits: 2048, e: 0x10001});
-      }
+      // NOTE: use pre-generated keys; generating 2048-bit key pairs at
+      // runtime is too slow for CI environments without native crypto
+      var rootKeys = {
+        privateKey: PKI.privateKeyFromPem(_pem_sha256.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem_sha256.publicKey)
+      };
+      var leafKeys = {
+        privateKey: PKI.privateKeyFromPem(_pem_sha512.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem_sha512.publicKey)
+      };
+      var victimKeys = {
+        privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+      };
 
       // 1. Create a legitimate Root CA (self-signed, with basicConstraints
       // cA=true)
-      var rootKeys = generateKeyPair();
       var rootCert = PKI.createCertificate();
       rootCert.publicKey = rootKeys.publicKey;
       rootCert.serialNumber = '01';
@@ -1562,7 +1572,6 @@ var UTIL = require('../../lib/util');
       // 2. Create a "leaf" certificate signed by root — NO basicConstraints,
       // NO keyUsage This certificate should NOT be allowed to sign other
       // certificates
-      var leafKeys = generateKeyPair();
       var leafCert = PKI.createCertificate();
       leafCert.publicKey = leafKeys.publicKey;
       leafCert.serialNumber = '02';
@@ -1581,7 +1590,6 @@ var UTIL = require('../../lib/util');
 
       // 3. Create a "victim" certificate signed by the leaf
       // This simulates an attacker using a non-CA cert to forge certificates
-      var victimKeys = generateKeyPair();
       var victimCert = PKI.createCertificate();
       victimCert.publicKey = victimKeys.publicKey;
       victimCert.serialNumber = '03';
