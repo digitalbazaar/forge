@@ -491,5 +491,120 @@ require('../../lib/util');
         });
       });
     });
+
+    describe('heartbeat', function() {
+      // heartbeat_request with payload 'abc'
+      var REQUEST = forge.util.hexToBytes('1803010006010003616263');
+
+      function createConnection(server, log) {
+        return forge.tls.createConnection({
+          server: server,
+          verify: function() {
+            return true;
+          },
+          tlsDataReady: function(c) {
+            log.sent += c.tlsData.getBytes();
+          },
+          dataReady: function(c) {
+            c.data.getBytes();
+          },
+          closed: function() {},
+          error: function(c, error) {
+            log.errors.push(error.message);
+          }
+        });
+      }
+
+      it('should ignore heartbeat requests before a handshake', function() {
+        // server before ClientHello, client before handshake()
+        [true, false].forEach(function(server) {
+          var log = {sent: '', errors: []};
+          var c = createConnection(server, log);
+          ASSERT.equal(c.process(REQUEST + REQUEST), 0);
+          ASSERT.equal(log.sent, '');
+          ASSERT.deepEqual(log.errors, []);
+        });
+      });
+
+      it('should ignore heartbeat requests during a handshake', function() {
+        var log = {sent: '', errors: []};
+        var c = createConnection(false, log);
+        c.handshake();
+        log.sent = '';
+        ASSERT.equal(c.process(REQUEST), 0);
+        ASSERT.equal(log.sent, '');
+        ASSERT.deepEqual(log.errors, []);
+      });
+
+      it('should exchange heartbeats after a handshake', function(done) {
+        var keys = forge.pki.rsa.generateKeyPair(512);
+        var cert = forge.pki.createCertificate();
+        cert.publicKey = keys.publicKey;
+        cert.serialNumber = '01';
+        cert.validity.notBefore = new Date();
+        cert.validity.notAfter = new Date();
+        cert.validity.notAfter.setFullYear(
+          cert.validity.notBefore.getFullYear() + 1);
+        var attrs = [{name: 'commonName', value: 'server'}];
+        cert.setSubject(attrs);
+        cert.setIssuer(attrs);
+        cert.sign(keys.privateKey);
+        var pem = forge.pki.certificateToPem(cert);
+
+        var end = {};
+        var received = {};
+        end.client = forge.tls.createConnection({
+          server: false,
+          caStore: [pem],
+          verify: function(c, verified) {
+            return verified;
+          },
+          connected: function(c) {
+            c.prepareHeartbeatRequest('from client');
+          },
+          tlsDataReady: function(c) {
+            end.server.process(c.tlsData.getBytes());
+          },
+          dataReady: function(c) {
+            c.data.getBytes();
+          },
+          heartbeatReceived: function(c, payload) {
+            received.client = payload.getBytes();
+            end.server.prepareHeartbeatRequest('from server');
+          },
+          closed: function() {},
+          error: function(c, error) {
+            ASSERT.equal(error.message, undefined);
+          }
+        });
+        end.server = forge.tls.createConnection({
+          server: true,
+          getCertificate: function() {
+            return pem;
+          },
+          getPrivateKey: function() {
+            return forge.pki.privateKeyToPem(keys.privateKey);
+          },
+          connected: function() {},
+          tlsDataReady: function(c) {
+            end.client.process(c.tlsData.getBytes());
+          },
+          dataReady: function(c) {
+            c.data.getBytes();
+          },
+          heartbeatReceived: function(c, payload) {
+            received.server = payload.getBytes();
+            ASSERT.equal(received.client, 'from client');
+            ASSERT.equal(received.server, 'from server');
+            done();
+          },
+          closed: function() {},
+          error: function(c, error) {
+            ASSERT.equal(error.message, undefined);
+          }
+        });
+        end.client.handshake();
+      });
+    });
   });
 })();
