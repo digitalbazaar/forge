@@ -89,6 +89,21 @@ Forge ChangeLog
     handler, the exception is uncaught and terminates the process.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-8hrf-8g6f-7xwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-8hrf-8g6f-7xwp)
+- **HIGH**: PKCS#12 MAC forgery due to missing iteration count check.
+  - `pkcs12.pkcs12FromAsn1()` accepts a PKCS#12 MAC iteration count of zero
+    from the input. With fewer than one iteration, the PKCS#12 key derivation
+    function (RFC 7292 Appendix B.2) does no hashing and returns a constant key
+    that does not depend on the password or salt. An attacker who does not know
+    the password can modify the contents of a PKCS#12/PFX file, such as
+    replacing certificates or keys, and compute a MAC that verifies with any
+    password. The PKCS#12 password-based encryption schemes
+    (`pbeWithSHAAnd3-KeyTripleDES-CBC`, `pbewithSHAAnd40BitRC2-CBC`) are
+    affected the same way: with zero iterations they use a constant key and
+    IV, so a substituted encrypted private key decrypts with any password.
+  - Reported by Thai (Calif.io), in collaboration with Claude and Anthropic
+    Research.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-jc66-7q78-782g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-jc66-7q78-782g)
 - **MODERATE**: Denial of service in the TLS client when the server sends no
   certificate.
   - A NULL Pointer Dereference (CWE-476) vulnerability in node-forge versions
@@ -142,6 +157,10 @@ Forge ChangeLog
 - [tls] Fail the TLS client handshake with an `insufficient_security` alert
   when the server sends no certificate, even if the `verify` callback
   accepts it, since the RSA key exchange needs the server certificate.
+- [pkcs12] Reject PKCS#12 MAC iteration counts less than one.
+- [pbe] Reject iteration counts less than one in the PKCS#12 key derivation
+  function `pbe.generatePkcs12Key()` (also `pkcs12.generateKey()`), used for
+  PKCS#12 MACs and PKCS#12 password-based encryption.
 
 ## 1.4.0 - 2026-03-24
 
