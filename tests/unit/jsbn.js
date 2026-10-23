@@ -37,4 +37,47 @@ describe('jsbn', function() {
       ASSERT(inv.equals(new BigInteger('3', 10)));
     });
   });
+
+  describe('GHSA-h6cr-wjv9-3cpp', function() {
+    // regression tests for GHSA-h6cr-wjv9-3cpp
+    // (incomplete fix of GHSA-5m6q-g25r-mvwx)
+    // test BigInteger.modInverse does not infinite loop with negative inputs.
+    var BigInteger = JSBN.BigInteger;
+    it('should test BigInteger(-1).modInverse(7) returns 0', function() {
+      var n = new BigInteger('-1', 10);
+      var mod = new BigInteger('7', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(-65537).modInverse(phi) returns 0', function() {
+      var n = new BigInteger('-65537', 10);
+      var mod = new BigInteger('123456789012345678901234567890', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(3).modInverse(-7) returns 0', function() {
+      var n = new BigInteger('3', 10);
+      var mod = new BigInteger('-7', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(-3).modInverse(-7) returns 0', function() {
+      var n = new BigInteger('-3', 10);
+      var mod = new BigInteger('-7', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(BigInteger.ZERO));
+    });
+    it('should test BigInteger(3).modInverse(7) returns 5', function() {
+      var n = new BigInteger('3', 10);
+      var mod = new BigInteger('7', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(new BigInteger('5', 10)));
+    });
+    it('should test BigInteger(10).modInverse(7) returns 5', function() {
+      var n = new BigInteger('10', 10);
+      var mod = new BigInteger('7', 10);
+      var inv = n.modInverse(mod);
+      ASSERT(inv.equals(new BigInteger('5', 10)));
+    });
+  });
 });
