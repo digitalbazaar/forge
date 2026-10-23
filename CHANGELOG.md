@@ -104,6 +104,19 @@ Forge ChangeLog
     Research.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-jc66-7q78-782g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-jc66-7q78-782g)
+- **HIGH**: `basicConstraints` bypass via deprecated extension OIDs in
+  certificate chain verification.
+  - node-forge parses extensions with the deprecated OIDs `2.5.29.10` and
+    `2.5.29.13` as `basicConstraints`, and `pki.verifyCertificateChain()`
+    used the first extension with that name. A certificate with a forged
+    deprecated-OID extension (`cA` TRUE) before its genuine `basicConstraints`
+    extension (`cA` FALSE) is accepted as a CA, and the same technique can
+    hide a `pathLenConstraint`. An attacker who obtains such a certificate
+    from a trusted CA that copies extensions from certificate requests can
+    issue certificates for any name that node-forge accepts as valid.
+  - Reported by @nickcollisson-workos (WorkOS Security Team).
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-5x38-2vff-x55p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5x38-2vff-x55p)
 - **MODERATE**: Denial of service in the TLS client when the server sends no
   certificate.
   - A NULL Pointer Dereference (CWE-476) vulnerability in node-forge versions
@@ -161,6 +174,9 @@ Forge ChangeLog
 - [pbe] Reject iteration counts less than one in the PKCS#12 key derivation
   function `pbe.generatePkcs12Key()` (also `pkcs12.generateKey()`), used for
   PKCS#12 MACs and PKCS#12 password-based encryption.
+- [x509] Use only the RFC 5280 `basicConstraints` OID (`2.5.29.19`) in
+  certificate chain verification, not the deprecated OIDs that are also
+  parsed as `basicConstraints`.
 
 ## 1.4.0 - 2026-03-24
 

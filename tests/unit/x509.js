@@ -1613,6 +1613,73 @@ var UTIL = require('../../lib/util');
         }
       );
     });
+
+    it('should ignore deprecated basicConstraints OIDs in chain verification', function() {
+      // see GHSA-5x38-2vff-x55p and PoC in /tests/pocs/
+      function checkError(regex) {
+        return function(err) {
+          return regex.test(err.message) &&
+            err.error === 'forge.pki.BadCertificate';
+        };
+      }
+
+      // root <- non-CA with forged 2.5.29.10 {cA TRUE} before the genuine
+      // 2.5.29.19 {cA FALSE} <- leaf
+      ASSERT.throws(function() {
+        verifyBasicConstraintsChain([[
+          {id: '2.5.29.10', cA: true},
+          {id: '2.5.29.19', cA: false}
+        ]]);
+      }, checkError(/basicConstraints indicates the certificate is not a CA/));
+
+      // same with the deprecated OID 2.5.29.13
+      ASSERT.throws(function() {
+        verifyBasicConstraintsChain([[
+          {id: '2.5.29.13', cA: true},
+          {id: '2.5.29.19', cA: false}
+        ]]);
+      }, checkError(/basicConstraints indicates the certificate is not a CA/));
+
+      // root <- non-CA with only a forged 2.5.29.10 {cA TRUE} <- leaf
+      ASSERT.throws(function() {
+        verifyBasicConstraintsChain([[{id: '2.5.29.10', cA: true}]]);
+      }, checkError(/missing basicConstraints extension/));
+
+      // root <- CA with forged 2.5.29.10 {cA TRUE} before the genuine
+      // 2.5.29.19 {cA TRUE, pathLenConstraint 0} <- CA <- leaf
+      ASSERT.throws(function() {
+        verifyBasicConstraintsChain([[
+          {id: '2.5.29.10', cA: true},
+          {id: '2.5.29.19', cA: true, pathLenConstraint: 0},
+          {name: 'keyUsage', keyCertSign: true}
+        ], [
+          {id: '2.5.29.19', cA: true},
+          {name: 'keyUsage', keyCertSign: true}
+        ]]);
+      }, checkError(/pathLenConstraint violated/));
+    });
+
+    it('should verify chains using basicConstraints 2.5.29.19', function() {
+      // root <- CA <- leaf
+      ASSERT.equal(verifyBasicConstraintsChain([[
+        {name: 'basicConstraints', cA: true},
+        {name: 'keyUsage', keyCertSign: true}
+      ]]), true);
+
+      // root <- CA (pathLenConstraint 0) <- leaf
+      ASSERT.equal(verifyBasicConstraintsChain([[
+        {id: '2.5.29.19', cA: true, pathLenConstraint: 0},
+        {name: 'keyUsage', keyCertSign: true}
+      ]]), true);
+
+      // root <- CA with a deprecated 2.5.29.10 {cA FALSE} before the genuine
+      // 2.5.29.19 {cA TRUE} <- leaf
+      ASSERT.equal(verifyBasicConstraintsChain([[
+        {id: '2.5.29.10', cA: false},
+        {id: '2.5.29.19', cA: true},
+        {name: 'keyUsage', keyCertSign: true}
+      ]]), true);
+    });
   });
 
   // TODO: add sha-512 and sha-256 fingerprint tests
@@ -1982,5 +2049,45 @@ var UTIL = require('../../lib/util');
     cert.sign(signingKey);
 
     return cert;
+  }
+
+  // creates a root CA, one certificate per given extensions list (each
+  // issued by the previous one, the first by the root) and a leaf issued by
+  // the last one, then verifies the chain
+  function verifyBasicConstraintsChain(extensionsList) {
+    var keys = {
+      privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+      publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+    };
+    function issue(subject, issuer, serialNumber, extensions) {
+      var cert = PKI.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '0' + serialNumber;
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notBefore.getFullYear() + 1);
+      cert.setSubject([{name: 'commonName', value: subject}]);
+      cert.setIssuer([{name: 'commonName', value: issuer}]);
+      cert.setExtensions(extensions);
+      cert.sign(keys.privateKey, MD.sha256.create());
+      // round-trip so that the parsed extensions are verified
+      return PKI.certificateFromPem(PKI.certificateToPem(cert));
+    }
+
+    var rootCert = issue('root', 'root', 1, [
+      {name: 'basicConstraints', cA: true},
+      {name: 'keyUsage', keyCertSign: true}
+    ]);
+    var chain = [];
+    var issuer = 'root';
+    for(var i = 0; i < extensionsList.length; ++i) {
+      var subject = 'cert' + i;
+      chain.unshift(issue(subject, issuer, i + 2, extensionsList[i]));
+      issuer = subject;
+    }
+    chain.unshift(issue('leaf', issuer, extensionsList.length + 2, []));
+
+    return PKI.verifyCertificateChain(PKI.createCaStore([rootCert]), chain);
   }
 })();
