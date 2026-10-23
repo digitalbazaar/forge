@@ -2129,6 +2129,53 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(result, null);
       ASSERT.equal(caStore.listAllCertificates().length, 0);
     });
+
+    it('should keep same-subject certificates in a store after failed verification', function() {
+      // see GHSA-4487-j8r4-4g2f and issue #1003
+      var test = createSameSubjectCaStore();
+      var caStore = test.caStore;
+
+      // certificate that names the shared subject as its issuer but is
+      // signed by a different key
+      var keys = {
+        privateKey: PKI.privateKeyFromPem(_pem_sha512.privateKey),
+        publicKey: PKI.publicKeyFromPem(_pem_sha512.publicKey)
+      };
+      var cert = createCertificate({
+        publicKey: keys.publicKey,
+        signingKey: keys.privateKey,
+        serialNumber: '05',
+        subject: [{name: 'commonName', value: 'other'}],
+        issuer: test.subject,
+        isCA: false
+      });
+
+      ASSERT.throws(function() {
+        PKI.verifyCertificateChain(caStore, [cert]);
+      }, function(err) {
+        return /^Certificate signature is invalid\.$/.test(err.message) &&
+          err.error === 'forge.pki.BadCertificate';
+      });
+      ASSERT.ok(caStore.hasCertificate(test.caA));
+      ASSERT.ok(caStore.hasCertificate(test.caB));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+
+      // certificates issued by either CA still verify
+      ASSERT.equal(PKI.verifyCertificateChain(caStore, [test.leafA]), true);
+      ASSERT.equal(PKI.verifyCertificateChain(caStore, [test.leafB]), true);
+    });
+
+    it('should repeatedly verify chains with same-subject certificates in a store', function() {
+      var test = createSameSubjectCaStore();
+      var caStore = test.caStore;
+      var leaves = [test.leafA, test.leafB, test.leafA, test.leafB, test.leafB];
+      for(var i = 0; i < leaves.length; ++i) {
+        ASSERT.equal(PKI.verifyCertificateChain(caStore, [leaves[i]]), true);
+      }
+      ASSERT.ok(caStore.hasCertificate(test.caA));
+      ASSERT.ok(caStore.hasCertificate(test.caB));
+      ASSERT.equal(caStore.listAllCertificates().length, 2);
+    });
   });
 
   function findIndex(array, predicateObj) {
@@ -2192,6 +2239,55 @@ var UTIL = require('../../lib/util');
     chain.unshift(issue('leaf', issuer, []));
 
     return PKI.verifyCertificateChain(PKI.createCaStore([rootCert]), chain);
+  }
+
+  // creates a CA store with two CA certificates that have the same subject
+  // but different keys, and a leaf certificate issued by each of them
+  function createSameSubjectCaStore() {
+    var keysA = {
+      privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+      publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+    };
+    var keysB = {
+      privateKey: PKI.privateKeyFromPem(_pem_sha256.privateKey),
+      publicKey: PKI.publicKeyFromPem(_pem_sha256.publicKey)
+    };
+    var subject = [{name: 'commonName', value: 'root'}];
+    var rval = {subject: subject};
+    rval.caA = createCertificate({
+      publicKey: keysA.publicKey,
+      signingKey: keysA.privateKey,
+      serialNumber: '01',
+      subject: subject,
+      issuer: subject,
+      isCA: true
+    });
+    rval.caB = createCertificate({
+      publicKey: keysB.publicKey,
+      signingKey: keysB.privateKey,
+      serialNumber: '02',
+      subject: subject,
+      issuer: subject,
+      isCA: true
+    });
+    rval.leafA = createCertificate({
+      publicKey: keysA.publicKey,
+      signingKey: keysA.privateKey,
+      serialNumber: '03',
+      subject: [{name: 'commonName', value: 'leaf A'}],
+      issuer: subject,
+      isCA: false
+    });
+    rval.leafB = createCertificate({
+      publicKey: keysB.publicKey,
+      signingKey: keysB.privateKey,
+      serialNumber: '04',
+      subject: [{name: 'commonName', value: 'leaf B'}],
+      issuer: subject,
+      isCA: false
+    });
+    rval.caStore = PKI.createCaStore([rval.caA, rval.caB]);
+    return rval;
   }
 
   function createCertificate(options) {
