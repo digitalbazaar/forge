@@ -1680,6 +1680,47 @@ var UTIL = require('../../lib/util');
         {name: 'keyUsage', keyCertSign: true}
       ]]), true);
     });
+
+    it('should enforce pathLenConstraint on CA certificates without keyUsage', function() {
+      // see GHSA-h46v-rmh6-fq4f and PoC in /tests/pocs/
+      function isPathLenError(err) {
+        return /pathLenConstraint violated/.test(err.message) &&
+          err.error === 'forge.pki.BadCertificate';
+      }
+
+      // root <- CA (pathLenConstraint 0, no keyUsage) <- CA <- leaf
+      ASSERT.throws(function() {
+        verifyPathLenChain([{pathLenConstraint: 0}, {}]);
+      }, isPathLenError);
+
+      // root <- CA (pathLenConstraint 1, no keyUsage) <- CA <- CA <- leaf
+      ASSERT.throws(function() {
+        verifyPathLenChain([{pathLenConstraint: 1}, {}, {}]);
+      }, isPathLenError);
+
+      // same as the first chain but with keyUsage
+      ASSERT.throws(function() {
+        verifyPathLenChain([{pathLenConstraint: 0, keyUsage: true}, {}]);
+      }, isPathLenError);
+    });
+
+    it('should verify chains within pathLenConstraint on CA certificates without keyUsage', function() {
+      // root <- CA (pathLenConstraint 0, no keyUsage) <- leaf
+      ASSERT.equal(verifyPathLenChain([{pathLenConstraint: 0}]), true);
+
+      // root <- CA (pathLenConstraint 1, no keyUsage) <- CA <- leaf
+      ASSERT.equal(verifyPathLenChain([{pathLenConstraint: 1}, {}]), true);
+
+      // every CA at its pathLenConstraint limit
+      ASSERT.equal(verifyPathLenChain([
+        {pathLenConstraint: 2},
+        {pathLenConstraint: 1},
+        {pathLenConstraint: 0}
+      ]), true);
+
+      // no pathLenConstraint and no keyUsage on any CA
+      ASSERT.equal(verifyPathLenChain([{}, {}, {}]), true);
+    });
   });
 
   // TODO: add sha-512 and sha-256 fingerprint tests
@@ -1979,6 +2020,56 @@ var UTIL = require('../../lib/util');
       }
     });
     return result;
+  }
+
+  // creates a root CA, the given CAs (each issued by the previous one, the
+  // first by the root) and a leaf issued by the last CA, then verifies the
+  // chain; each CA option is {pathLenConstraint: <number>, keyUsage: <bool>}
+  // with both properties optional
+  function verifyPathLenChain(cas) {
+    var keys = {
+      privateKey: PKI.privateKeyFromPem(_pem.privateKey),
+      publicKey: PKI.publicKeyFromPem(_pem.publicKey)
+    };
+    var serialNumber = 0;
+    function issue(subject, issuer, extensions) {
+      var cert = PKI.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '0' + (++serialNumber);
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notBefore.getFullYear() + 1);
+      cert.setSubject([{name: 'commonName', value: subject}]);
+      cert.setIssuer([{name: 'commonName', value: issuer}]);
+      cert.setExtensions(extensions);
+      cert.sign(keys.privateKey, MD.sha256.create());
+      // round-trip so that the parsed extensions are verified
+      return PKI.certificateFromPem(PKI.certificateToPem(cert));
+    }
+
+    var rootCert = issue('root', 'root', [
+      {name: 'basicConstraints', cA: true},
+      {name: 'keyUsage', keyCertSign: true, cRLSign: true}
+    ]);
+    var chain = [];
+    var issuer = 'root';
+    for(var i = 0; i < cas.length; ++i) {
+      var subject = 'ca' + i;
+      var bcExt = {name: 'basicConstraints', cA: true};
+      if('pathLenConstraint' in cas[i]) {
+        bcExt.pathLenConstraint = cas[i].pathLenConstraint;
+      }
+      var extensions = [bcExt];
+      if(cas[i].keyUsage) {
+        extensions.push({name: 'keyUsage', keyCertSign: true, cRLSign: true});
+      }
+      chain.unshift(issue(subject, issuer, extensions));
+      issuer = subject;
+    }
+    chain.unshift(issue('leaf', issuer, []));
+
+    return PKI.verifyCertificateChain(PKI.createCaStore([rootCert]), chain);
   }
 
   function createCertificate(options) {

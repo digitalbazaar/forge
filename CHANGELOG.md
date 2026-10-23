@@ -129,6 +129,17 @@ Forge ChangeLog
   - Reported by @arpitjain099.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-525v-9gp9-w22h](https://github.com/digitalbazaar/forge/security/advisories/GHSA-525v-9gp9-w22h)
+- **MODERATE**: `pathLenConstraint` bypass in certificate chain verification.
+  - `pki.verifyCertificateChain()` only enforces the `basicConstraints`
+    `pathLenConstraint` of a CA certificate when that certificate also has a
+    `keyUsage` extension. When a CA certificate with a `pathLenConstraint`
+    lacks `keyUsage`, chains with more intermediate CA certificates below it
+    than the constraint allows are accepted. The holder of such a constrained
+    CA's key, or anyone it issues a CA certificate to, can create subordinate
+    CAs whose certificates node-forge accepts as valid.
+  - Reported by @offset, @eddieran, Zion Boggan, and SongWriterOP GT.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-h46v-rmh6-fq4f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h46v-rmh6-fq4f)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -177,6 +188,8 @@ Forge ChangeLog
 - [x509] Use only the RFC 5280 `basicConstraints` OID (`2.5.29.19`) in
   certificate chain verification, not the deprecated OIDs that are also
   parsed as `basicConstraints`.
+- [x509] Enforce `basicConstraints` `pathLenConstraint` in chain verification
+  for CA certificates without a `keyUsage` extension.
 
 ## 1.4.0 - 2026-03-24
 
