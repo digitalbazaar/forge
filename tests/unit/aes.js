@@ -1239,6 +1239,199 @@ var UTIL = require('../../lib/util');
       }
     })();
 
+    // AES-128-GCM tag lengths
+    // see GHSA-5cwg-6vw7-rj6p
+    (function() {
+      // GCM spec test case 4; a t-bit tag is the leading t bits of the
+      // 128-bit tag (NIST SP-800-38D 7.1)
+      var key = UTIL.hexToBytes('feffe9928665731c6d6a8f9467308308');
+      var iv = UTIL.hexToBytes('cafebabefacedbaddecaf888');
+      var adata = UTIL.hexToBytes(
+        'feedfacedeadbeeffeedfacedeadbeef' +
+        'abaddad2');
+      var input =
+        'd9313225f88406e5a55909c5aff5269a' +
+        '86a7a9531534f7da2e4c303d8a318a72' +
+        '1c3c0c95956809532fcf0e2449a6b525' +
+        'b16aedf5aa0de657ba637b39';
+      var output =
+        '42831ec2217774244b7221b784d0d49c' +
+        'e3aa212f2c02a4e035c17e2329aca12e' +
+        '21d514b25466931c7d8f6a5aac84aa05' +
+        '1ba30b396a0aac973d58e091';
+      var tags = {
+        128: '5bc94fbc3221a5db94fae95ae7121a47',
+        120: '5bc94fbc3221a5db94fae95ae7121a',
+        112: '5bc94fbc3221a5db94fae95ae712',
+        104: '5bc94fbc3221a5db94fae95ae7',
+        96: '5bc94fbc3221a5db94fae95a'
+      };
+      var tagLengths = [128, 120, 112, 104, 96];
+
+      function encrypt(tagLength) {
+        var cipher = CIPHER.createCipher('AES-GCM', key);
+        cipher.start({iv: iv, additionalData: adata, tagLength: tagLength});
+        cipher.update(UTIL.createBuffer(UTIL.hexToBytes(input)));
+        cipher.finish();
+        return cipher;
+      }
+
+      function decrypt(tagLength, tag, ciphertext) {
+        var cipher = CIPHER.createDecipher('AES-GCM', key);
+        cipher.start({
+          iv: iv,
+          additionalData: adata,
+          tagLength: tagLength,
+          tag: tag
+        });
+        cipher.update(UTIL.createBuffer(ciphertext));
+        var pass = cipher.finish();
+        return {pass: pass, output: cipher.output.toHex()};
+      }
+
+      for(var i = 0; i < tagLengths.length; ++i) {
+        (function(tagLength) {
+          var tag = UTIL.hexToBytes(tags[tagLength]);
+
+          it('should aes-128-gcm encrypt with tag length ' + tagLength,
+            function() {
+              var cipher = encrypt(tagLength);
+              ASSERT.equal(cipher.output.toHex(), output);
+              ASSERT.equal(cipher.mode.tag.toHex(), tags[tagLength]);
+            });
+
+          it('should aes-128-gcm decrypt with tag length ' + tagLength,
+            function() {
+              var result = decrypt(tagLength, tag, UTIL.hexToBytes(output));
+              ASSERT.equal(result.pass, true);
+              ASSERT.equal(result.output, input);
+            });
+
+          it('should aes-128-gcm fail to decrypt with a modified tag of ' +
+            'length ' + tagLength, function() {
+            var badTag = tag.substr(0, tag.length - 1) +
+              String.fromCharCode(tag.charCodeAt(tag.length - 1) ^ 0x01);
+            var result = decrypt(tagLength, badTag, UTIL.hexToBytes(output));
+            ASSERT.equal(result.pass, false);
+          });
+        })(tagLengths[i]);
+      }
+
+      it('should use the default aes-gcm tag length for undefined and null',
+        function() {
+          var values = [undefined, null];
+          for(var i = 0; i < values.length; ++i) {
+            var cipher = encrypt(values[i]);
+            ASSERT.equal(cipher.output.toHex(), output,
+              'tagLength: ' + String(values[i]));
+            ASSERT.equal(cipher.mode.tag.toHex(), tags[128],
+              'tagLength: ' + String(values[i]));
+
+            var result = decrypt(
+              values[i], UTIL.hexToBytes(tags[128]), UTIL.hexToBytes(output));
+            ASSERT.equal(result.pass, true, 'tagLength: ' + String(values[i]));
+            ASSERT.equal(result.output, input);
+          }
+        });
+
+      it('should accept numeric string aes-gcm tag lengths', function() {
+        var cipher = encrypt('128');
+        ASSERT.equal(cipher.mode.tag.toHex(), tags[128]);
+        cipher = encrypt('96');
+        ASSERT.equal(cipher.mode.tag.toHex(), tags[96]);
+
+        var result = decrypt(
+          '96', UTIL.hexToBytes(tags[96]), UTIL.hexToBytes(output));
+        ASSERT.equal(result.pass, true);
+        ASSERT.equal(result.output, input);
+      });
+
+      it('should decrypt with the default tag length after encrypting with ' +
+        'tag length 64 or 32', function() {
+        var values = [64, 32];
+        for(var i = 0; i < values.length; ++i) {
+          var cipher = encrypt(values[i]);
+          ASSERT.equal(cipher.output.toHex(), output);
+
+          // no tagLength option
+          var decipher = CIPHER.createDecipher('AES-GCM', key);
+          decipher.start({
+            iv: iv,
+            additionalData: adata,
+            tag: cipher.mode.tag.bytes()
+          });
+          decipher.update(UTIL.createBuffer(UTIL.hexToBytes(output)));
+          ASSERT.equal(decipher.finish(), true, 'tagLength: ' + values[i]);
+          ASSERT.equal(decipher.output.toHex(), input);
+        }
+      });
+
+      it('should not authenticate any ciphertext with an empty tag',
+        function() {
+          var values = [0, '0', false, ''];
+          for(var i = 0; i < values.length; ++i) {
+            ASSERT.throws(function() {
+              decrypt(values[i], '', 'not a ciphertext');
+            }, /Invalid tag length/, 'tagLength: ' + JSON.stringify(values[i]));
+          }
+
+          // default tag length (128)
+          values = [undefined, null];
+          for(var i = 0; i < values.length; ++i) {
+            ASSERT.throws(function() {
+              decrypt(values[i], '', 'not a ciphertext');
+            }, /Authentication tag does not match tag length/,
+            'tagLength: ' + String(values[i]));
+          }
+          var decipher = CIPHER.createDecipher('AES-GCM', key);
+          ASSERT.throws(function() {
+            decipher.start({iv: iv, tag: ''});
+          }, /Authentication tag does not match tag length/);
+        });
+
+      it('should reject invalid aes-gcm tag lengths', function() {
+        var values = [
+          0, '0', false, '', true, -128, 8, 16, 24, 40, 48, 56, 72, 80, 88,
+          127, 136, 256, NaN, 'abc', '96 bits'
+        ];
+        for(var i = 0; i < values.length; ++i) {
+          var cipher = CIPHER.createCipher('AES-GCM', key);
+          ASSERT.throws(function() {
+            cipher.start({iv: iv, tagLength: values[i]});
+          }, /Invalid tag length/, 'tagLength: ' + JSON.stringify(values[i]));
+
+          var decipher = CIPHER.createDecipher('AES-GCM', key);
+          ASSERT.throws(function() {
+            decipher.start({
+              iv: iv,
+              tagLength: values[i],
+              tag: UTIL.hexToBytes(tags[128])
+            });
+          }, /Invalid tag length/, 'tagLength: ' + JSON.stringify(values[i]));
+        }
+      });
+
+      it('should require the aes-gcm tag to match the tag length', function() {
+        var cipher = CIPHER.createDecipher('AES-GCM', key);
+        ASSERT.throws(function() {
+          cipher.start({
+            iv: iv,
+            tagLength: 96,
+            tag: UTIL.hexToBytes(tags[128])
+          });
+        }, /Authentication tag does not match tag length/);
+
+        cipher = CIPHER.createDecipher('AES-GCM', key);
+        ASSERT.throws(function() {
+          cipher.start({
+            iv: iv,
+            tagLength: 128,
+            tag: UTIL.hexToBytes(tags[96])
+          });
+        }, /Authentication tag does not match tag length/);
+      });
+    })();
+
     // AES-192-GCM
     (function() {
       var keys = [
