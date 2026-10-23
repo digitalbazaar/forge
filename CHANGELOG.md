@@ -140,6 +140,17 @@ Forge ChangeLog
   - Reported by @offset, @eddieran, Zion Boggan, and SongWriterOP GT.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-h46v-rmh6-fq4f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h46v-rmh6-fq4f)
+- **MODERATE**: AES-GCM authentication bypass with an invalid tag length.
+  - GCM mode does not validate the `tagLength` option. With a `tagLength` of
+    `0` (or `null`, `false`, `''`, or `'0'`), the computed authentication tag is
+    empty, and decryption with an empty or missing `tag` succeeds:
+    `decipher.finish()` returns `true` for any ciphertext and additional data.
+    An attacker can then forge or modify messages that the application accepts
+    as authentic. This requires the application to pass such a `tagLength`,
+    for example one derived from the length of a received tag. The default
+    tag length of 128 bits is not affected.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-5cwg-6vw7-rj6p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5cwg-6vw7-rj6p)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -206,6 +217,16 @@ Forge ChangeLog
   parameters of its own signature algorithm, using the issuer's public key.
   PKCS#1 v1.5 certificates issued by an RSASSA-PSS certificate, and the
   reverse, failed verification before.
+- [cipher] Validate the GCM `tagLength` option. Only the tag lengths defined by
+  NIST SP 800-38D (128, 120, 112, 104, 96, 64, and 32 bits) are allowed;
+  numeric strings such as `'128'` are still accepted. A `null` or `undefined`
+  `tagLength` uses the default of 128 bits.
+  - **NOTE**: Zero and other invalid tag lengths (such as `0`, `false`, `''`,
+    `8`, or `256`), which produced empty or non-conformant tags, now throw an
+    error. A `null` or `undefined` `tagLength`, which produced an empty tag
+    when encrypting, now means the default of 128 bits. Data previously
+    encrypted with an empty tag can no longer be decrypted, since accepting
+    an empty tag is the authentication bypass.
 
 ## 1.4.0 - 2026-03-24
 
