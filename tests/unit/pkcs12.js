@@ -268,6 +268,87 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(key.toHex(), expected);
     });
 
+    describe('GHSA-jc66-7q78-782g iteration count checks', function() {
+      // https://github.com/digitalbazaar/forge/security/advisories/GHSA-jc66-7q78-782g
+      // With fewer than 1 iteration the PKCS#12 KDF (RFC 7292 B.2) output is
+      // the ID byte repeated, independent of the password and salt.
+      var password = 'victim-password';
+
+      function _createPfx() {
+        var privateKey = PKI.privateKeyFromPem(_data.privateKey);
+        return PKCS12.toPkcs12Asn1(
+          privateKey, _data.certificate, password, {algorithm: '3des'});
+      }
+
+      // replace the MAC with one computed without the password, using the
+      // constant MAC key a 0-iteration KDF yields (0x03 repeated 20 times)
+      function _forgeMac(pfx, iterations) {
+        var authSafe = pfx.value[1].value[1].value[0].value;
+        var mac = forge.hmac.create();
+        mac.start('sha1', UTIL.fillString(String.fromCharCode(3), 20));
+        mac.update(authSafe);
+        var macData = pfx.value[2];
+        macData.value[0].value[1].value = mac.digest().getBytes();
+        macData.value[2].value = iterations;
+        return ASN1.fromDer(ASN1.toDer(pfx));
+      }
+
+      it('should import a p12 with a valid MAC', function() {
+        var pfx = ASN1.fromDer(ASN1.toDer(_createPfx()));
+        var p12 = PKCS12.pkcs12FromAsn1(pfx, password);
+        var bags = p12.getBags({bagType: PKI.oids.pkcs8ShroudedKeyBag});
+        var expected = PKI.privateKeyFromPem(_data.privateKey);
+        ASSERT.deepEqual(
+          bags[PKI.oids.pkcs8ShroudedKeyBag][0].key.n, expected.n);
+      });
+
+      it('should reject a forged MAC with 0 iterations', function() {
+        // tamper: replace contents with an unencrypted certificate-only safe
+        var certOnly = PKCS12.toPkcs12Asn1(null, _data.certificate, null, {
+          useMac: false,
+          generateLocalKeyId: false
+        });
+        // 0 as DER INTEGER and an empty INTEGER (parsed as NaN)
+        [String.fromCharCode(0), ''].forEach(function(iterations) {
+          var pfx = _createPfx();
+          pfx.value[1] = certOnly.value[1];
+          pfx = _forgeMac(pfx, iterations);
+          ASSERT.throws(function() {
+            PKCS12.pkcs12FromAsn1(pfx, password);
+          }, /PKCS#12 MAC iteration count must be >= 1/);
+        });
+      });
+
+      it('should reject PKCS#12 PBE with 0 iterations', function() {
+        // shrouded key encrypted with the constant 3DES key and IV that a
+        // 0-iteration KDF yields, so it would decrypt with any password
+        var privateKeyInfo = PKI.wrapRsaPrivateKey(PKI.privateKeyToAsn1(
+          PKI.privateKeyFromPem(_data.privateKey)));
+        var encrypted = PKI.encryptPrivateKeyInfo(
+          privateKeyInfo, password, {algorithm: '3des', count: 1});
+        // pkcs-12PbeParams iterations INTEGER
+        encrypted.value[0].value[1].value[1].value = String.fromCharCode(0);
+        var cipher = forge.des.createEncryptionCipher(
+          UTIL.fillString(String.fromCharCode(1), 24));
+        cipher.start(UTIL.fillString(String.fromCharCode(2), 8));
+        cipher.update(ASN1.toDer(privateKeyInfo));
+        cipher.finish();
+        encrypted.value[1].value = cipher.output.getBytes();
+        ASSERT.throws(function() {
+          PKI.decryptPrivateKeyInfo(encrypted, 'any password');
+        }, /PKCS#12 key derivation iteration count must be >= 1/);
+      });
+
+      it('should not generate a PKCS#12 key with < 1 iteration', function() {
+        var salt = UTIL.createBuffer('salt');
+        [0, -1, NaN, undefined].forEach(function(iterations) {
+          ASSERT.throws(function() {
+            PKCS12.generateKey('123456', salt, 3, iterations, 20);
+          }, /PKCS#12 key derivation iteration count must be >= 1/);
+        });
+      });
+    });
+
     it('should load a PKCS#12 with an ECDSA key in a certificate (unsupported key format)', function() {
       var p12Der = UTIL.decode64(_data.p12ecdsa);
       var p12Asn1 = ASN1.fromDer(p12Der);
