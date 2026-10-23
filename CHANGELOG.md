@@ -198,6 +198,19 @@ Forge ChangeLog
     Tech SSLab, Team Atlanta).
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-2vgq-wchc-25w7](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2vgq-wchc-25w7)
+- **LOW**: Certificate chain verification removes trusted certificates from
+  the CA store.
+  - When a CA store created with `pki.createCaStore()` holds two or more
+    certificates with the same subject name, `pki.verifyCertificateChain()`
+    permanently removes certificates with that subject from the store while
+    looking for the issuer of a certificate. A peer that sends a certificate
+    naming that subject as its issuer, even one with an invalid signature,
+    makes all later verifications of chains issued by those CA certificates
+    fail, for as long as the store is in use. Verifying valid chains has the
+    same effect. Verification never incorrectly succeeds because of this.
+  - Reported by @pravichandran15.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-4487-j8r4-4g2f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4487-j8r4-4g2f)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -261,6 +274,9 @@ Forge ChangeLog
     before `finish()` and remove the padding in your code.
 - [http] Only use own properties of the cookie store, and ignore cookies
   named `__proto__` or with the path `__proto__`.
+- [x509] Do not modify the CA store's list of certificates with the same
+  subject when trying each of them as the issuer in
+  `pki.verifyCertificateChain()`.
 
 ## 1.4.0 - 2026-03-24
 
