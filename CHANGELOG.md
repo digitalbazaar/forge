@@ -1,6 +1,38 @@
 Forge ChangeLog
 ===============
 
+## 1.4.1 - 2026-xx-xx
+
+### Security
+- **HIGH**: Signature forgery in RSA-PKCS due to ASN.1 extra field in
+  DigestAlgorithm.
+  - RSASSA PKCS#1 v1.5 signature verification accepts forged signatures for low
+    public exponent keys (e=3). The fix for CVE-2026-33894 only checked the
+    element count of the outer DigestInfo. Attackers can add "garbage" elements
+    inside the nested DigestAlgorithm SEQUENCE in order to construct a
+    signature that passes verification, enabling Bleichenbacher style forgery.
+  - Reported by Geo (@geo-chen).
+  - CVE ID: [CVE-2026-85393](https://www.cve.org/CVERecord?id=CVE-2026-85393)
+  - GHSA ID: [GHSA-2g46-22mc-6gwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2g46-22mc-6gwp)
+- **HIGH**: Signature forgery in RSA-PKCS due to non-canonical DigestInfo
+  encoding.
+  - RSASSA PKCS#1 v1.5 signature verification accepts non-canonical DigestInfo
+    encodings, such as NULL parameters with content, non-minimal length
+    encodings, and non-canonical OIDs. These provide attackers space to
+    construct forged signatures for low public exponent keys (e=3), similar to
+    CVE-2026-33894 and CVE-2026-85393.
+  - Reported by Oren Yomtov (Fireblocks), Bronson Yen (Calif.io, in
+    collaboration with Claude and Anthropic Research), Kamil Hałajda,
+    @pzartech, @antonlissone, and @Brechard.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-6qrw-m8cv-hcxf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6qrw-m8cv-hcxf)
+
+### Fixed
+- [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
+  verification by re-encoding the expected DigestInfo and comparing bytes, as
+  in RFC 8017 8.2.2. Based on work in PRs by @matthewscottconroy (#1159),
+  @shaswata56 (#1160), @nitrog7 (#1161), and @RoastFried-RF (#1162).
+
 ## 1.4.0 - 2026-03-24
 
 ### Security
