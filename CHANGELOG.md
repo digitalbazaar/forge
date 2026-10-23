@@ -293,6 +293,10 @@ Forge ChangeLog
 - [jsbn] Fix `BigInteger.modInverse` to also exit early with zero when the
   target object value or the modulus is negative, completing the 1.4.0 fix
   that only checked for zero.
+- [tls] Ignore heartbeat requests received before the first handshake is
+  complete, instead of answering them. Previously, unauthenticated peers
+  could make a connection create and send a heartbeat response for every
+  request before the handshake, at a significant CPU cost per request.
 
 ## 1.4.0 - 2026-03-24
 
