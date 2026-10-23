@@ -1159,6 +1159,35 @@ var UTIL = require('../../lib/util');
 
         _checkBadDigestInfo(publicKey, S);
       });
+
+      it('should reject forged nested DigestAlgorithm signature', function() {
+        // see GHSA-2g46-22mc-6gwp (CVE-2026-85393) and PoC in /tests/pocs/
+        // forged without the private key for e=3 with 189 garbage bytes as
+        // an extra element in the nested DigestAlgorithm SEQUENCE.
+        // vector from PR #1160 (shaswata56)
+        // I:
+        // 0001ffffffffffffffff003081f23081cd060960864801650304020105000481bd
+        // <189 garbage bytes> 0420 <sha256(m)>
+        var publicKey = RSA.setPublicKey(N, e);
+        var S = UTIL.binary.hex.decode(
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '00000000000000000000000000000000000000000000000000000000000000' +
+          '0000000000000000000000000000000032cbfd4a7adc7905583d7920d7165d' +
+          '77cf8d6f4b19a4c14026dc9bf5576b2de2aab4a0dc9d8303ba8e365764f52a' +
+          '49da7a2dfc5bed616f52d37d860cb283543d93fe1b73ca6379278422fd8821' +
+          'eeeddc3a1bee99f9');
+        var md = MD.sha256.create();
+        md.update(m);
+
+        // default options, real padding checks
+        ASSERT.throws(function() {
+          publicKey.verify(md.digest().getBytes(), S);
+        },
+        /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+      });
     });
 
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {
@@ -1241,6 +1270,133 @@ var UTIL = require('../../lib/util');
           });
         },
         /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+      });
+    });
+
+    describe('canonical DigestInfo checks', function() {
+      // see GHSA-2g46-22mc-6gwp (CVE-2026-85393) and GHSA-6qrw-m8cv-hcxf
+      // Non-canonical DigestInfo encodings leave room for low exponent
+      // signature forgery. A public key with e=1 makes the signature equal
+      // to the encoded message so DigestInfo values can be built directly.
+      // (approach from PR #1160)
+      var publicKey = RSA.setPublicKey(
+        new JSBN.BigInteger(new Array(257).join('f'), 16),
+        new JSBN.BigInteger('1', 10));
+      // sha256('hello world!')
+      var H = '7509e5bda0c762d2bac7f90d758b5b2263fa01ccbc542ab5e3df163be08e6ca9';
+      var OID = '0609608648016503040201';
+      var DIGEST = '0420' + H;
+
+      function _verifyDigest(digestInfoHex, digest) {
+        // EMSA-PKCS1-v1_5 block for a 128 byte modulus
+        var padLength = 128 - 3 - digestInfoHex.length / 2;
+        var S = UTIL.hexToBytes(
+          '0001' + new Array(padLength + 1).join('ff') + '00' + digestInfoHex);
+        return publicKey.verify(digest, S);
+      }
+
+      function _verify(digestInfoHex) {
+        var md = MD.sha256.create();
+        md.update('hello world!');
+        return _verifyDigest(digestInfoHex, md.digest().getBytes());
+      }
+
+      // DER TLV as hex, short form lengths only
+      function _tlv(tagHex, valueHex) {
+        var length = valueHex.length / 2;
+        return tagHex + (length < 16 ? '0' : '') + length.toString(16) +
+          valueHex;
+      }
+
+      var good = {
+        'with NULL parameters': '3031300d' + OID + '0500' + DIGEST,
+        'without NULL parameters': '302f300b' + OID + DIGEST
+      };
+      var bad = {
+        'extra DigestAlgorithm element':
+          '3033300f' + OID + '0500' + '0400' + DIGEST,
+        'NULL parameters with content':
+          '3033300f' + OID + '0502beef' + DIGEST,
+        'non-NULL parameters':
+          '3033300f' + OID + '0202beef' + DIGEST,
+        'constructed NULL parameters':
+          '3031300d' + OID + '2500' + DIGEST,
+        'non-minimal DigestInfo length':
+          '308131300d' + OID + '0500' + DIGEST,
+        'non-minimal DigestAlgorithm length':
+          '303230810d' + OID + '0500' + DIGEST,
+        'non-minimal OID length':
+          '3032300e' + '068109608648016503040201' + '0500' + DIGEST,
+        'non-minimal NULL length':
+          '3032300e' + OID + '058100' + DIGEST,
+        'non-minimal digest length':
+          '3032300d' + OID + '0500' + '048120' + H,
+        'padded OID subidentifier':
+          '3032300e' + '060a60864801806503040201' + '0500' + DIGEST,
+        'OID trailing continuation byte':
+          '3032300e' + '060a60864801650304020180' + '0500' + DIGEST,
+        'indefinite length DigestInfo':
+          '3080300d' + OID + '0500' + DIGEST + '0000'
+      };
+
+      Object.keys(good).forEach(function(name) {
+        it('should verify canonical DigestInfo ' + name, function() {
+          ASSERT.ok(_verify(good[name]));
+        });
+      });
+
+      Object.keys(bad).forEach(function(name) {
+        it('should reject DigestInfo with ' + name, function() {
+          ASSERT.throws(function() {
+            _verify(bad[name]);
+          },
+          /^Error: ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value.$/);
+        });
+      });
+
+      // every supported digest algorithm, with and without NULL parameters;
+      // md2 and md5 still require NULL parameters
+      // (from PRs #1161 and #1162)
+      [
+        ['md2', '2a864886f70d0202', 16],
+        ['md5', '2a864886f70d0205', 16],
+        ['sha1', '2b0e03021a', 20],
+        ['sha224', '608648016503040204', 28],
+        ['sha256', '608648016503040201', 32],
+        ['sha384', '608648016503040202', 48],
+        ['sha512', '608648016503040203', 64],
+        ['sha512-224', '608648016503040205', 28],
+        ['sha512-256', '608648016503040206', 32]
+      ].forEach(function(alg) {
+        var digest = UTIL.fillString('\x5a', alg[2]);
+        var otherDigest = UTIL.fillString('\xa5', alg[2]);
+        var digestHex = _tlv('04', UTIL.bytesToHex(digest));
+        var oidHex = _tlv('06', alg[1]);
+        var withNull = _tlv('30', _tlv('30', oidHex + '0500') + digestHex);
+        var withoutNull = _tlv('30', _tlv('30', oidHex) + digestHex);
+
+        it('should verify ' + alg[0] + ' DigestInfo with NULL parameters',
+          function() {
+            ASSERT.strictEqual(_verifyDigest(withNull, digest), true);
+            ASSERT.strictEqual(_verifyDigest(withNull, otherDigest), false);
+          });
+
+        if(alg[0] === 'md2' || alg[0] === 'md5') {
+          it('should reject ' + alg[0] + ' DigestInfo without NULL parameters',
+            function() {
+              ASSERT.throws(function() {
+                _verifyDigest(withoutNull, digest);
+              },
+              /Missing algorithm identifier NULL parameters/);
+            });
+        } else {
+          it('should verify ' + alg[0] + ' DigestInfo without NULL parameters',
+            function() {
+              ASSERT.strictEqual(_verifyDigest(withoutNull, digest), true);
+              ASSERT.strictEqual(
+                _verifyDigest(withoutNull, otherDigest), false);
+            });
+        }
       });
     });
   });
