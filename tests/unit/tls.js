@@ -308,5 +308,92 @@ require('../../lib/util');
         ASSERT.deepEqual(log.errors, ['Handshake failure.']);
       });
     });
+
+    // see GHSA-8hrf-8g6f-7xwp
+    describe('fragmented handshake messages', function() {
+      // TLS 1.0 record
+      function record(type, fragment) {
+        var b = forge.util.createBuffer();
+        b.putByte(type);
+        b.putByte(3);
+        b.putByte(1);
+        b.putInt16(fragment.length);
+        b.putBytes(fragment);
+        return b.getBytes();
+      }
+
+      function createConnection(server, log) {
+        var c = forge.tls.createConnection({
+          server: server,
+          verify: function() {
+            return true;
+          },
+          tlsDataReady: function(c) {
+            log.sent += c.tlsData.getBytes();
+          },
+          dataReady: function(c) {
+            c.data.getBytes();
+          },
+          closed: function() {},
+          error: function(c, error) {
+            log.errors.push(error.message);
+          }
+        });
+        if(!server) {
+          c.handshake();
+          // drop the ClientHello
+          log.sent = '';
+        }
+        return c;
+      }
+
+      // start of a handshake message (ClientHello or ServerHello) announcing
+      // more bytes than the record holds
+      function firstFragment(server) {
+        return record(22, forge.util.hexToBytes(
+          (server ? '01' : '02') + '000010' + '0301'));
+      }
+
+      var interleaved = {
+        change_cipher_spec: record(20, '\x01'),
+        alert: record(21, forge.util.hexToBytes('0228')),
+        application_data: record(23, 'data'),
+        heartbeat: record(24, forge.util.hexToBytes('010000'))
+      };
+
+      [true, false].forEach(function(server) {
+        var mode = server ? 'server' : 'client';
+        Object.keys(interleaved).forEach(function(name) {
+          it('should fail on ' + name + ' in a fragmented message (' + mode +
+            ')', function() {
+            var log = {sent: '', errors: []};
+            var c = createConnection(server, log);
+            ASSERT.doesNotThrow(function() {
+              c.process(firstFragment(server) + interleaved[name]);
+            });
+            ASSERT.deepEqual(log.errors, ['Invalid fragmented record.']);
+            ASSERT.equal(c.fail, true);
+            // fatal unexpected_message alert
+            var alert = forge.util.createBuffer(log.sent);
+            ASSERT.equal(alert.getByte(), 21);
+            alert.getBytes(4);
+            ASSERT.equal(alert.bytes(), forge.util.hexToBytes('020a'));
+            // further input is ignored
+            ASSERT.equal(c.process(interleaved[name]), 0);
+            ASSERT.deepEqual(log.errors, ['Invalid fragmented record.']);
+          });
+        });
+
+        it('should accept continuation records (' + mode + ')', function() {
+          var log = {sent: '', errors: []};
+          var c = createConnection(server, log);
+          var rval = c.process(firstFragment(server) + record(22, '\x00'));
+          ASSERT.equal(rval, 0);
+          ASSERT.deepEqual(log.errors, []);
+          ASSERT.equal(c.fail, false);
+          ASSERT.equal(log.sent, '');
+        });
+      });
+    });
   });
 })();

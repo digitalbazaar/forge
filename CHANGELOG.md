@@ -77,6 +77,18 @@ Forge ChangeLog
     - Ziyue Wang, Chenchen, Strick Sheng, Liyi Zhou, and Maurice Ng.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-hqq3-7jhf-c5jx](https://github.com/digitalbazaar/forge/security/advisories/GHSA-hqq3-7jhf-c5jx)
+- **HIGH**: Denial of service in TLS record processing via an interleaved
+  record during a fragmented handshake message.
+  - When a `tls.createConnection()` connection receives a record of another
+    type (alert, change_cipher_spec, application data or heartbeat) while a
+    handshake message is split across records, it reports the error and
+    closes the connection, and then `process()` throws `TypeError: Cannot
+    set properties of null`. A peer can trigger this with two small records
+    before the handshake, without authentication, as a server or a client.
+    In Node.js applications that call `process()` from a socket `data`
+    handler, the exception is uncaught and terminates the process.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-8hrf-8g6f-7xwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-8hrf-8g6f-7xwp)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -112,6 +124,9 @@ Forge ChangeLog
   `2.999`) in base 128. From PR #1148 by @spokodev.
 - [tls] Process received TLS records in a loop instead of recursively, so the
   number of records in one `process()` call no longer affects stack depth.
+- [tls] Stop processing a record that interrupts a fragmented handshake
+  message after failing the connection with an `unexpected_message` alert,
+  instead of throwing a `TypeError`.
 
 ## 1.4.0 - 2026-03-24
 
