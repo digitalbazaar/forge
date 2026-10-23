@@ -26,16 +26,18 @@ Forge ChangeLog
     @pzartech, @antonlissone, and @Brechard.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-6qrw-m8cv-hcxf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6qrw-m8cv-hcxf)
-- **HIGH**: ASN.1 recursion depth limit bypass via BIT STRING decoding.
-  - An Uncontrolled Recursion (CWE-674) vulnerability in node-forge versions
-    1.3.2 through 1.4.0 enables remote, unauthenticated attackers to bypass
-    the ASN.1 `maxDepth` limit. `asn1.fromDer()` attempts by default to decode
-    BIT STRING contents as ASN.1, but did not apply the global
-    `asn1.maxDepth` or the per-call `maxDepth` option to that decode. Small
-    crafted DER or PEM inputs with nested BIT STRINGs (certificates, keys,
-    and other structures parsed with `fromDer()`) cause excessive CPU time and
-    memory use, which can terminate the process from heap exhaustion. This is
-    an incomplete fix of CVE-2025-66031.
+- **HIGH**: ASN.1 resource exhaustion via BIT STRING decoding.
+  - An Uncontrolled Recursion (CWE-674) and Uncontrolled Resource Consumption
+    (CWE-400) vulnerability in node-forge versions 1.4.0 and below enables
+    remote, unauthenticated attackers to exhaust CPU and memory with small
+    crafted DER or PEM inputs (certificates, keys, and other structures parsed
+    with `asn1.fromDer()`). By default `fromDer()` attempts to decode BIT
+    STRING contents as ASN.1. That decode ignored the global `asn1.maxDepth`
+    and the per-call `maxDepth` option, and BIT STRINGs nested in decoded BIT
+    STRINGs were decoded too, with each level keeping a full copy of its
+    decoded contents. Memory use grew quadratically with the nesting depth
+    and can terminate the process from heap exhaustion. The `maxDepth` bypass
+    is an incomplete fix of CVE-2025-66031.
   - Reported by:
     - Ethan Kim (cremit.io).
     - Youngjoon Kim (Georgia Tech SSLab).
@@ -52,6 +54,13 @@ Forge ChangeLog
 - [asn1] Apply the `fromDer()` `maxDepth` recursion limit when decoding ASN.1
   from BIT STRING contents. Contents that would exceed the limit are kept as
   an undecoded BIT STRING value.
+- [asn1] Only decode one level of BIT STRING contents in `fromDer()`. BIT
+  STRINGs inside decoded BIT STRING contents are kept as undecoded BIT STRING
+  values. Their bytes are unchanged by `toDer()`.
+  - **NOTE**: Code that relied on nested BIT STRING decoding needs to decode
+    the inner BIT STRING value (after its leading unused bits octet) with
+    `asn1.fromDer()`. Common structures such as SubjectPublicKeyInfo only use
+    one level.
 
 ## 1.4.0 - 2026-03-24
 
