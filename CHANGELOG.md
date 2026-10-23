@@ -62,6 +62,21 @@ Forge ChangeLog
     - @Mucahic.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-7wch-p9px-956x](https://github.com/digitalbazaar/forge/security/advisories/GHSA-7wch-p9px-956x)
+- **HIGH**: Denial of service in TLS record processing via call stack
+  exhaustion.
+  - `tls.createConnection()` connections handle received records recursively:
+    each record handler calls `process()` again for the next buffered record.
+    A peer can send one chunk of many small records, such as heartbeat
+    records, which are accepted in every state including before the
+    handshake, and `process()` throws `RangeError: Maximum call stack size
+    exceeded`. In Node.js applications that call `process()` from a socket
+    `data` handler, the exception is uncaught and terminates the process.
+    Server and client connections are affected, and no authentication is
+    required.
+  - Reported by:
+    - Ziyue Wang, Chenchen, Strick Sheng, Liyi Zhou, and Maurice Ng.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-hqq3-7jhf-c5jx](https://github.com/digitalbazaar/forge/security/advisories/GHSA-hqq3-7jhf-c5jx)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -95,6 +110,8 @@ Forge ChangeLog
   over 39 under 0 or 1, in `asn1.oidToDer()`.
 - [asn1] Encode and decode a multi-byte first OID subidentifier (e.g.
   `2.999`) in base 128. From PR #1148 by @spokodev.
+- [tls] Process received TLS records in a loop instead of recursively, so the
+  number of records in one `process()` call no longer affects stack depth.
 
 ## 1.4.0 - 2026-03-24
 
