@@ -1185,6 +1185,67 @@ var UTIL = require('../../lib/util');
         });
       });
 
+      // see GHSA-rhr8-3pm8-cq29
+      // maxDepth must also apply to ASN.1 decoded from BIT STRING contents
+      function _nestedBitStrings(depth) {
+        var obj = ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.NULL, false, '');
+        for(var i = 0; i < depth; ++i) {
+          obj = ASN1.create(
+            ASN1.Class.UNIVERSAL, ASN1.Type.BITSTRING, false, [obj]);
+        }
+        return ASN1.toDer(obj).getBytes();
+      }
+      // depth and deepest object along the last child path
+      function _deepest(obj) {
+        var depth = 0;
+        while(UTIL.isArray(obj.value) && obj.value.length > 0) {
+          obj = obj.value[obj.value.length - 1];
+          ++depth;
+        }
+        return {depth: depth, obj: obj};
+      }
+
+      it('should limit depth of decoded BIT STRINGs (default)', function() {
+        var der = _nestedBitStrings(300);
+        var asn1 = ASN1.fromDer(der);
+        var deepest = _deepest(asn1);
+        // over-deep contents are kept as an undecoded BIT STRING
+        ASSERT.equal(deepest.depth, ASN1.maxDepth - 1);
+        ASSERT.equal(deepest.obj.type, ASN1.Type.BITSTRING);
+        ASSERT.equal(typeof deepest.obj.value, 'string');
+        ASSERT.equal(ASN1.toDer(asn1).getBytes(), der);
+      });
+
+      it('should limit depth of decoded BIT STRINGs (maxDepth)', function() {
+        var der = _nestedBitStrings(20);
+        var asn1 = ASN1.fromDer(der, {maxDepth: 10});
+        var deepest = _deepest(asn1);
+        ASSERT.equal(deepest.depth, 9);
+        ASSERT.equal(deepest.obj.type, ASN1.Type.BITSTRING);
+        ASSERT.equal(typeof deepest.obj.value, 'string');
+        ASSERT.equal(ASN1.toDer(asn1).getBytes(), der);
+      });
+
+      it('should decode BIT STRINGs within maxDepth', function() {
+        var der = _nestedBitStrings(20);
+        var asn1 = ASN1.fromDer(der, {maxDepth: 21});
+        var deepest = _deepest(asn1);
+        ASSERT.equal(deepest.depth, 20);
+        ASSERT.equal(deepest.obj.type, ASN1.Type.NULL);
+        asn1 = ASN1.fromDer(der);
+        ASSERT.equal(_deepest(asn1).depth, 20);
+
+        // BIT STRING with encapsulated SEQUENCE of INTEGERs (like a key)
+        der = _h2b('03 0A 00 30 07 02 02 01 00 02 01 03');
+        asn1 = ASN1.fromDer(der, {maxDepth: 3});
+        ASSERT.equal(asn1.value[0].type, ASN1.Type.SEQUENCE);
+        ASSERT.equal(asn1.value[0].value[1].value, '\x03');
+        // limit reached inside the contents: kept undecoded, no error
+        asn1 = ASN1.fromDer(der, {maxDepth: 2});
+        ASSERT.equal(typeof asn1.value, 'string');
+        ASSERT.equal(asn1.value, der.substr(2));
+      });
+
       it('should convert indefinite length seq from BER', function() {
         _asn1Test({
           init: function(b) {

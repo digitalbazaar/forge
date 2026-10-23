@@ -26,12 +26,32 @@ Forge ChangeLog
     @pzartech, @antonlissone, and @Brechard.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-6qrw-m8cv-hcxf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6qrw-m8cv-hcxf)
+- **HIGH**: ASN.1 recursion depth limit bypass via BIT STRING decoding.
+  - An Uncontrolled Recursion (CWE-674) vulnerability in node-forge versions
+    1.3.2 through 1.4.0 enables remote, unauthenticated attackers to bypass
+    the ASN.1 `maxDepth` limit. `asn1.fromDer()` attempts by default to decode
+    BIT STRING contents as ASN.1, but did not apply the global
+    `asn1.maxDepth` or the per-call `maxDepth` option to that decode. Small
+    crafted DER or PEM inputs with nested BIT STRINGs (certificates, keys,
+    and other structures parsed with `fromDer()`) cause excessive CPU time and
+    memory use, which can terminate the process from heap exhaustion. This is
+    an incomplete fix of CVE-2025-66031.
+  - Reported by:
+    - Ethan Kim (cremit.io).
+    - Youngjoon Kim (Georgia Tech SSLab).
+    - @arpitjain099.
+    - Mike Read.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-rhr8-3pm8-cq29](https://github.com/digitalbazaar/forge/security/advisories/GHSA-rhr8-3pm8-cq29)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
   verification by re-encoding the expected DigestInfo and comparing bytes, as
   in RFC 8017 8.2.2. Based on work in PRs by @matthewscottconroy (#1159),
   @shaswata56 (#1160), @nitrog7 (#1161), and @RoastFried-RF (#1162).
+- [asn1] Apply the `fromDer()` `maxDepth` recursion limit when decoding ASN.1
+  from BIT STRING contents. Contents that would exceed the limit are kept as
+  an undecoded BIT STRING value.
 
 ## 1.4.0 - 2026-03-24
 
