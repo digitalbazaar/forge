@@ -211,6 +211,19 @@ Forge ChangeLog
   - Reported by @pravichandran15.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-4487-j8r4-4g2f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4487-j8r4-4g2f)
+- **LOW**: Denial of Service in `BigInteger.modInverse()` with negative inputs.
+  - The 1.4.0 fix for CVE-2026-33891 only handled a zero input.
+    `BigInteger.modInverse()` still enters an infinite loop when the value or
+    the modulus is negative, causing the process to hang indefinitely and
+    consume 100% CPU. In forge this is reachable when a negative public
+    exponent `e` is passed to `pki.rsa.generateKeyPair()` or
+    `pki.rsa.createKeyPairGenerationState()`. Keys parsed from DER, PEM or JWK
+    cannot produce negative values. Applications are affected only if they
+    pass untrusted values as the RSA key generation exponent or call
+    `modInverse()` with negative values.
+  - Reported by wzc.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-h6cr-wjv9-3cpp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h6cr-wjv9-3cpp)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -277,6 +290,9 @@ Forge ChangeLog
 - [x509] Do not modify the CA store's list of certificates with the same
   subject when trying each of them as the issuer in
   `pki.verifyCertificateChain()`.
+- [jsbn] Fix `BigInteger.modInverse` to also exit early with zero when the
+  target object value or the modulus is negative, completing the 1.4.0 fix
+  that only checked for zero.
 
 ## 1.4.0 - 2026-03-24
 
