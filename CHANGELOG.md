@@ -1,6 +1,17 @@
 Forge ChangeLog
 ===============
 
+## 1.4.1 - Unreleased
+
+### Security
+- **HIGH**: Reject non-canonical RSASSA-PKCS1-v1_5 DigestInfo encodings by
+  reusing the signing encoder during verification. This rejects extra nested
+  elements, non-empty NULL parameters and non-minimal length or OID encodings
+  while preserving optional SHA algorithm parameters.
+  - CVE ID: [CVE-2026-85393](https://www.cve.org/CVERecord?id=CVE-2026-85393)
+  - GHSA ID: [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv)
+  - Reported in [#1149](https://github.com/digitalbazaar/forge/issues/1149).
+
 ## 1.4.0 - 2026-03-24
 
 ### Security

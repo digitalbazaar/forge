@@ -1161,6 +1161,154 @@ var UTIL = require('../../lib/util');
       });
     });
 
+    describe('CVE-2026-85393 canonical DigestInfo checks', function() {
+      var privateKey;
+      var publicKey;
+      var digest;
+      // SHA-256 AlgorithmIdentifier, encoded independently of the signer.
+      var oid = UTIL.hexToBytes('0609608648016503040201');
+
+      before(function() {
+        privateKey = PKI.privateKeyFromPem(_pem.privateKey);
+        publicKey = PKI.publicKeyFromPem(_pem.publicKey);
+        var md = MD.sha256.create();
+        md.update('DigestInfo regression');
+        digest = md.digest().getBytes();
+      });
+
+      function tlv(tag, value, longLength) {
+        ASSERT.ok(value.length < 128);
+        return String.fromCharCode(tag) + (longLength ? '\x81' : '') +
+          String.fromCharCode(value.length) + value;
+      }
+
+      function digestInfo(algorithm, longOuterLength) {
+        return tlv(0x30, algorithm + tlv(0x04, digest), longOuterLength);
+      }
+
+      function verify(encoded, expectedDigest) {
+        // Sign a deliberately chosen DigestInfo with normal PKCS#1 padding.
+        // This tests verification's parser, not a private-key-free forgery.
+        var signature = privateKey.sign(encoded, 'NONE');
+        return publicKey.verify(expectedDigest || digest, signature);
+      }
+
+      [false, true].forEach(function(withParameters) {
+        it('accepts canonical SHA-256 with parameters=' + withParameters,
+          function() {
+            var encoded = digestInfo(tlv(0x30,
+              oid + (withParameters ? '\x05\x00' : '')));
+            ASSERT.strictEqual(verify(encoded), true);
+            ASSERT.strictEqual(verify(encoded, UTIL.fillString('\x00', 32)),
+              false);
+          });
+      });
+
+      [1, 2, 8, 32].forEach(function(size) {
+        [0x00, 0x80, 0xff].forEach(function(byte) {
+          var garbage = UTIL.fillString(String.fromCharCode(byte), size);
+          [false, true].forEach(function(withParameters) {
+            it('rejects extra nested bytes: ' + size + '/' + byte + '/' +
+              withParameters, function() {
+              var encoded = digestInfo(tlv(0x30, oid +
+                (withParameters ? '\x05\x00' : '') + tlv(0x04, garbage)));
+              ASSERT.throws(function() {
+                verify(encoded);
+              },
+              /valid RSASSA-PKCS1-v1_5 DigestInfo/);
+            });
+          });
+          it('rejects NULL content: ' + size + '/' + byte, function() {
+            var encoded = digestInfo(tlv(0x30, oid + tlv(0x05, garbage)));
+            ASSERT.throws(function() {
+              verify(encoded);
+            },
+            /valid RSASSA-PKCS1-v1_5 DigestInfo/);
+          });
+        });
+      });
+
+      var encodings = {
+        'outer long-form length': function() {
+          return digestInfo(tlv(0x30, oid + '\x05\x00'), true);
+        },
+        'inner long-form length': function() {
+          return digestInfo(tlv(0x30, oid + '\x05\x00', true));
+        },
+        'digest long-form length': function() {
+          return tlv(0x30, tlv(0x30, oid + '\x05\x00') +
+            tlv(0x04, digest, true));
+        },
+        'NULL long-form length': function() {
+          return digestInfo(tlv(0x30, oid + tlv(0x05, '', true)));
+        },
+        'OID long-form length': function() {
+          return digestInfo(tlv(0x30,
+            tlv(0x06, oid.slice(2), true) + '\x05\x00'));
+        },
+        'non-minimal OID arc': function() {
+          return digestInfo(tlv(0x30,
+            tlv(0x06, oid.slice(2, -1) + '\x80\x01') + '\x05\x00'));
+        },
+        'unfinished OID arc': function() {
+          return digestInfo(tlv(0x30,
+            tlv(0x06, oid.slice(2) + '\x80') + '\x05\x00'));
+        }
+      };
+      Object.keys(encodings).forEach(function(name) {
+        it('rejects ' + name, function() {
+          ASSERT.throws(function() {
+            verify(encodings[name]());
+          },
+          /valid RSASSA-PKCS1-v1_5 DigestInfo/);
+        });
+      });
+
+      [
+        ['md2', '2a864886f70d0202', 16],
+        ['md5', '2a864886f70d0205', 16],
+        ['sha1', '2b0e03021a', 20],
+        ['sha224', '608648016503040204', 28],
+        ['sha256', '608648016503040201', 32],
+        ['sha384', '608648016503040202', 48],
+        ['sha512', '608648016503040203', 64],
+        ['sha512-224', '608648016503040205', 28],
+        ['sha512-256', '608648016503040206', 32]
+      ].forEach(function(algorithm) {
+        [false, true].forEach(function(withParameters) {
+          it('preserves ' + algorithm[0] + ' parameters=' + withParameters,
+            function() {
+              var bytes = UTIL.fillString('\x5a', algorithm[2]);
+              var encoded = tlv(0x30, tlv(0x30,
+                tlv(0x06, UTIL.hexToBytes(algorithm[1])) +
+                (withParameters ? '\x05\x00' : '')) + tlv(0x04, bytes));
+              if(!withParameters &&
+                (algorithm[0] === 'md2' || algorithm[0] === 'md5')) {
+                ASSERT.throws(function() {
+                  verify(encoded, bytes);
+                }, /Missing algorithm identifier NULL parameters/);
+              } else {
+                ASSERT.strictEqual(verify(encoded, bytes), true);
+                ASSERT.strictEqual(verify(encoded,
+                  UTIL.fillString('\xa5', algorithm[2])), false);
+              }
+            });
+        });
+      });
+
+      it('rejects nested garbage with a low-exponent key', function() {
+        var pair = RSA.generateKeyPair({bits: 1024, e: 3});
+        [oid + '\x05\x00\x04\x08garbage!',
+          oid + '\x05\x08garbage!'].forEach(function(algorithm) {
+          var signature = pair.privateKey.sign(
+            digestInfo(tlv(0x30, algorithm)), 'NONE');
+          ASSERT.throws(function() {
+            pair.publicKey.verify(digest, signature);
+          }, /valid RSASSA-PKCS1-v1_5 DigestInfo/);
+        });
+      });
+    });
+
     describe('GHSA-ppp5-5v6c-4jwp DigestInfo/padding checks', function() {
       // https://github.com/digitalbazaar/forge/security/advisories/GHSA-ppp5-5v6c-4jwp
       // test vectors generated from /tests/pocs/ghsa-ppp5-5v6c-4jwp.js
