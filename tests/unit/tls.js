@@ -395,5 +395,101 @@ require('../../lib/util');
         });
       });
     });
+
+    describe('missing server certificate', function() {
+      // see GHSA-525v-9gp9-w22h
+      // drop handshake messages of a type from plaintext TLS records
+      function _dropMessages(bytes, type) {
+        var b = forge.util.createBuffer(bytes);
+        var out = '';
+        while(b.length() > 0) {
+          var contentType = b.getByte();
+          var version = b.getBytes(2);
+          var fragment = b.getBytes(b.getInt16());
+          if(contentType === forge.tls.ContentType.handshake) {
+            var h = forge.util.createBuffer(fragment);
+            fragment = '';
+            while(h.length() > 0) {
+              var msgType = h.getByte();
+              var length = h.getInt24();
+              var body = h.getBytes(length);
+              if(msgType !== type) {
+                fragment += String.fromCharCode(msgType) +
+                  forge.util.int32ToBytes(length).substr(1) + body;
+              }
+            }
+          }
+          out += String.fromCharCode(contentType) + version +
+            forge.util.int32ToBytes(fragment.length).substr(2) + fragment;
+        }
+        return out;
+      }
+
+      var keys = forge.pki.rsa.generateKeyPair(512);
+      var cert = forge.pki.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '01';
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notBefore.getFullYear() + 1);
+      cert.setSubject([{name: 'commonName', value: 'server'}]);
+      cert.setIssuer([{name: 'commonName', value: 'server'}]);
+      cert.sign(keys.privateKey);
+      var serverCert = forge.pki.certificateToPem(cert);
+      var serverKey = forge.pki.privateKeyToPem(keys.privateKey);
+
+      [false, true].forEach(function(accept) {
+        it('should fail when the server sends no certificate (verify ' +
+          (accept ? 'accepts' : 'rejects') + ')', function() {
+          var end = {};
+          var verified = [];
+          var errors = [];
+          end.client = forge.tls.createConnection({
+            server: false,
+            caStore: [serverCert],
+            verify: function(c, status, depth, certs) {
+              verified.push([status, depth, certs.length]);
+              return accept ? true : status;
+            },
+            connected: function() {},
+            tlsDataReady: function(c) {
+              end.server.process(c.tlsData.getBytes());
+            },
+            dataReady: function() {},
+            closed: function() {},
+            error: function(c, error) {
+              errors.push(error.message);
+            }
+          });
+          end.server = forge.tls.createConnection({
+            server: true,
+            getCertificate: function() {
+              return serverCert;
+            },
+            getPrivateKey: function() {
+              return serverKey;
+            },
+            connected: function() {},
+            tlsDataReady: function(c) {
+              // remove the Certificate message
+              end.client.process(_dropMessages(c.tlsData.getBytes(),
+                forge.tls.HandshakeType.certificate));
+            },
+            dataReady: function() {},
+            closed: function() {},
+            error: function() {}
+          });
+
+          end.client.handshake();
+          ASSERT.deepEqual(verified, [[
+            forge.tls.Alert.Description.insufficient_security, 0, 0]]);
+          ASSERT.deepEqual(errors,
+            ['No server certificate provided. Not enough security.']);
+          ASSERT.equal(end.client.fail, true);
+          ASSERT.equal(end.client.isConnected, false);
+        });
+      });
+    });
   });
 })();

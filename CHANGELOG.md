@@ -89,6 +89,18 @@ Forge ChangeLog
     handler, the exception is uncaught and terminates the process.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-8hrf-8g6f-7xwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-8hrf-8g6f-7xwp)
+- **MODERATE**: Denial of service in the TLS client when the server sends no
+  certificate.
+  - A NULL Pointer Dereference (CWE-476) vulnerability in node-forge versions
+    1.4.0 and below lets a malicious TLS server, or an on-path attacker who
+    removes the server's Certificate message, crash applications that use the
+    forge TLS client. The client's check for a missing server certificate
+    read the wrong property and never ran, so the handshake continued and
+    `connection.process()` threw a `TypeError` instead of failing the
+    connection.
+  - Reported by @arpitjain099.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-525v-9gp9-w22h](https://github.com/digitalbazaar/forge/security/advisories/GHSA-525v-9gp9-w22h)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -127,6 +139,9 @@ Forge ChangeLog
 - [tls] Stop processing a record that interrupts a fragmented handshake
   message after failing the connection with an `unexpected_message` alert,
   instead of throwing a `TypeError`.
+- [tls] Fail the TLS client handshake with an `insufficient_security` alert
+  when the server sends no certificate, even if the `verify` callback
+  accepts it, since the RSA key exchange needs the server certificate.
 
 ## 1.4.0 - 2026-03-24
 
