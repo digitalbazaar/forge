@@ -173,6 +173,19 @@ Forge ChangeLog
   - Reported by Brian Lee (Georgia Tech SSLab, Team Atlanta).
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-9wg5-mj3p-v49q](https://github.com/digitalbazaar/forge/security/advisories/GHSA-9wg5-mj3p-v49q)
+- **LOW**: Incomplete PKCS#7 padding validation in CBC and ECB decryption.
+  - An Improper Validation of Integrity Check Value (CWE-354) vulnerability in
+    node-forge versions 1.4.0 and below makes `decipher.finish()` accept
+    malformed padding in CBC and ECB mode. Only the last byte was checked,
+    against a limit of four blocks, so mismatched padding bytes, a zero count
+    and counts larger than a block were accepted, and up to four blocks of
+    plaintext could be removed. CBC and ECB without a MAC never provide
+    integrity, and this fix doesn't change that; use AES-GCM or authenticate
+    the ciphertext.
+  - Reported by Oren Yomtov (Fireblocks), @zebbern, and Brian Lee (Georgia
+    Tech SSLab, Team Atlanta).
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-2vgq-wchc-25w7](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2vgq-wchc-25w7)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -227,6 +240,13 @@ Forge ChangeLog
     when encrypting, now means the default of 128 bits. Data previously
     encrypted with an empty tag can no longer be decrypted, since accepting
     an empty tag is the authentication bypass.
+- [cipher] Require valid PKCS#7 padding when decrypting in CBC and ECB mode:
+  a count from 1 to the block size, and every padding byte equal to the
+  count.
+  - **NOTE**: Data with other padding, such as ANSI X.923, ISO 10126 or
+    XML Encryption padding, used to decrypt because only the last byte was
+    checked, and now fails. To decrypt it, set `decipher.mode.unpad = false`
+    before `finish()` and remove the padding in your code.
 
 ## 1.4.0 - 2026-03-24
 
