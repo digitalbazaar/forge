@@ -62,6 +62,16 @@ Forge ChangeLog
     - @Mucahic.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-7wch-p9px-956x](https://github.com/digitalbazaar/forge/security/advisories/GHSA-7wch-p9px-956x)
+- **LOW**: ASN.1 OID first arc truncation.
+  - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
+    and below lets `asn1.oidToDer()` encode an OID string with out of range
+    first arcs as a different OID, e.g. `0.42.840.113549.1.1.1` or
+    `4294977127.18.840.113549.1.1.1` as rsaEncryption
+    (`1.2.840.113549.1.1.1`), which can bypass OID-based decisions made on
+    the string. The fix for CVE-2025-66030 only checked the later arcs.
+  - Reported by wzc.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-4642-5mcj-2rqw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4642-5mcj-2rqw)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -81,6 +91,10 @@ Forge ChangeLog
 - [pem] Find PEM messages and parse encapsulated headers in linear time.
   Messages are matched as before, except that a BEGIN line's label is the
   shortest one followed by `-----` (RFC 7468 labels can't contain `--`).
+- [asn1] Reject OIDs whose first arc isn't 0, 1 or 2, or whose second arc is
+  over 39 under 0 or 1, in `asn1.oidToDer()`.
+- [asn1] Encode and decode a multi-byte first OID subidentifier (e.g.
+  `2.999`) in base 128. From PR #1148 by @spokodev.
 
 ## 1.4.0 - 2026-03-24
 
