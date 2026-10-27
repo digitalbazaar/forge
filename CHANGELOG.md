@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.4.2 - 2026-xx-xx
+## 1.4.2 - 2026-10-27
 
 ### Fixed
 - [pem] Convert non-string input to a string in `pem.decode()` as before
