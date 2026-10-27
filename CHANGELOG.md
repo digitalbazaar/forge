@@ -150,6 +150,18 @@ Forge ChangeLog
   - Reported by wzc.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-4642-5mcj-2rqw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4642-5mcj-2rqw)
+- **LOW**: Certificate signature verified with the issuer's signature scheme.
+  - An Improper Verification of Cryptographic Signature (CWE-347)
+    vulnerability in node-forge versions 1.4.0 and below lets a certificate
+    labeled as signed with RSASSA-PSS pass chain verification with a PKCS#1
+    v1.5 signature. `certificate.verify(child)` and `verifyCertificateChain()`
+    chose the RSA padding scheme and PSS parameters from the issuer
+    certificate instead of the child certificate. The signature must still
+    be made with the issuer's key, so this only misleads applications that
+    rely on a certificate's signature algorithm.
+  - Reported by Brian Lee (Georgia Tech SSLab, Team Atlanta).
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-9wg5-mj3p-v49q](https://github.com/digitalbazaar/forge/security/advisories/GHSA-9wg5-mj3p-v49q)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -190,6 +202,10 @@ Forge ChangeLog
   parsed as `basicConstraints`.
 - [x509] Enforce `basicConstraints` `pathLenConstraint` in chain verification
   for CA certificates without a `keyUsage` extension.
+- [x509] Verify a certificate's signature with the padding scheme and
+  parameters of its own signature algorithm, using the issuer's public key.
+  PKCS#1 v1.5 certificates issued by an RSASSA-PSS certificate, and the
+  reverse, failed verification before.
 
 ## 1.4.0 - 2026-03-24
 

@@ -1494,6 +1494,128 @@ var UTIL = require('../../lib/util');
       ASSERT.ok(issuer.verify(cert));
     });
 
+    describe('signature scheme of the child certificate', function() {
+      // see GHSA-9wg5-mj3p-v49q
+      // the padding scheme (PKCS#1 v1.5 or RSASSA-PSS) must come from the
+      // child's signature algorithm, not the issuer's
+      var rootV15Pem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIBuTCCASKgAwIBAgIBATANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDEwh2MTUg\r\n' +
+        'cm9vdDAeFw0yNjAxMDEwMDAwMDBaFw00NjAxMDEwMDAwMDBaMBMxETAPBgNVBAMT\r\n' +
+        'CHYxNSByb290MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDbsCOZsVF4jIW6\r\n' +
+        'v6o7kQ4Xb0g9Po/lgSw2N/1PZJzMpIofiBPhVFMrmn52gAYORV9toAMX16Ttcm90\r\n' +
+        'hm9QHyfBn11mPYCvwdjKTwGG54JVPYu5ySLSaRAFbfbdQ6lC2QFN4IKHOHPi8ieh\r\n' +
+        'zB26mRciHhDq4cyrha7xJyNNez/3IQIDAQABox0wGzAMBgNVHRMEBTADAQH/MAsG\r\n' +
+        'A1UdDwQEAwICBDANBgkqhkiG9w0BAQsFAAOBgQAw43yJkLqAWHvlLsUbEpUFkHt6\r\n' +
+        'XecbM+G4tVcTNhzFExWQTZfLvmqlCih3cKb+2p7fik3ObAqmhNokEPRvH5oClrrB\r\n' +
+        'zymyMWp6pnRHQzEkwJJ7gSNKcyXwiw3vGFBilisltXNd+OHvYx/Q9ULZPB2ys98j\r\n' +
+        'nLjLlLf7OzWCqDZxEA==\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var rootPssPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIICITCCAVagAwIBAgIBATBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUA\r\n' +
+        'oRwwGgYJKoZIhvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASAwEzERMA8GA1UEAxMI\r\n' +
+        'cHNzIHJvb3QwHhcNMjYwMTAxMDAwMDAwWhcNNDYwMTAxMDAwMDAwWjATMREwDwYD\r\n' +
+        'VQQDEwhwc3Mgcm9vdDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAv3pF8oFf\r\n' +
+        'ODmfD4fGNYv7J+gP6LPFkWzB3QXZqzSgLYuqzWMbf4J6mg/fKj5cFLNzae8BIW6s\r\n' +
+        '15MOve3z9ZmNAwO8y9et4P6qA3OdMsaHnISOa/bbHxiBOMQDZCSfcppbcOB+NC5e\r\n' +
+        'aEq81nzSx3XYvdizElezopi10T1nosbVb58CAwEAAaMdMBswDAYDVR0TBAUwAwEB\r\n' +
+        '/zALBgNVHQ8EBAMCAgQwQQYJKoZIhvcNAQEKMDSgDzANBglghkgBZQMEAgEFAKEc\r\n' +
+        'MBoGCSqGSIb3DQEBCDANBglghkgBZQMEAgEFAKIDAgEgA4GBAAl78GBMWfQH0FZv\r\n' +
+        'zRdMn3cOXBiQmcAgF5c4z7r99UYMp2fum85HULiB9PbeBCQd73maGgk8HuxMp629\r\n' +
+        'tFTG0asrkzsgNRT7DemR2zIIftdOUdZX1dvSFKkY4ivWIWm8Qr7jcsJ2RHXhtCor\r\n' +
+        'wZHZbx2SPIMp6gTgxyH9PvD/+nlp\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var leafPssLabelV15SigPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIICGjCCAU+gAwIBAgIBAjBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUA\r\n' +
+        'oRwwGgYJKoZIhvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASAwEzERMA8GA1UEAxMI\r\n' +
+        'djE1IHJvb3QwHhcNMjYwMTAxMDAwMDAwWhcNNDYwMTAxMDAwMDAwWjAPMQ0wCwYD\r\n' +
+        'VQQDEwRsZWFmMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLLWHmyt5iKOBy\r\n' +
+        '5aSdpudazIjxLUSaTQ1IHGlFqlqvXvjXbh22mY/F/HYXpk55Xt2EkeaiSMBFZep+\r\n' +
+        'NXLLPr3sQQcoxjQfuj1BB4I1aQEk0A9Aus2+BB2N6lYLHxDp9tt0pCK1x2riI6sg\r\n' +
+        '18/eVHDvpp6yT48ilRaa/9KPy8nGCQIDAQABoxowGDAJBgNVHRMEAjAAMAsGA1Ud\r\n' +
+        'DwQEAwIHgDBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUAoRwwGgYJKoZI\r\n' +
+        'hvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASADgYEAFK4WUzJR8QBUdKlVZKV+iNp3\r\n' +
+        'FmT/MFcX32hNTTK6TQmqhVCc8ueHZGBgWUIoQZ54QKDTVVzq+ZYTM+uOklf+0O+N\r\n' +
+        'mZJ9zculWW76SLDaQipuP0LTh0h8qLWMGNJpVSP9vGJjPw3/a3E73Avvvu8kTsdV\r\n' +
+        'aki9ShXtkJ/wIuR7iwU=\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      // leafV15Pem relabeled as RSASSA-PSS in the outer (unsigned)
+      // signatureAlgorithm only, which needs no private key
+      var leafV15RelabeledPssPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIB5jCCARugAwIBAgIBAjANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDEwh2MTUg\r\n' +
+        'cm9vdDAeFw0yNjAxMDEwMDAwMDBaFw00NjAxMDEwMDAwMDBaMA8xDTALBgNVBAMT\r\n' +
+        'BGxlYWYwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMstYebK3mIo4HLlpJ2m\r\n' +
+        '51rMiPEtRJpNDUgcaUWqWq9e+NduHbaZj8X8dhemTnle3YSR5qJIwEVl6n41css+\r\n' +
+        'vexBByjGNB+6PUEHgjVpASTQD0C6zb4EHY3qVgsfEOn223SkIrXHauIjqyDXz95U\r\n' +
+        'cO+mnrJPjyKVFpr/0o/LycYJAgMBAAGjGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQD\r\n' +
+        'AgeAMEEGCSqGSIb3DQEBCjA0oA8wDQYJYIZIAWUDBAIBBQChHDAaBgkqhkiG9w0B\r\n' +
+        'AQgwDQYJYIZIAWUDBAIBBQCiAwIBIAOBgQCalxZWTNjQ3mwrsKhe9ewd+CtVjA0u\r\n' +
+        'qYUgKbB3UJxchBGqT0VHOme+j4Sxlzrlt36LzWrDylg5tOZASBPnqQU8/FpQ7gKy\r\n' +
+        'KM9ksJLU6xs7HBG5dhUbKRC1B5Rub2t8KjxZerrqDUPyVJ8fxCc5N5N/ZAe8bqE8\r\n' +
+        'bXSQcIQhub3RdQ==\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var leafV15UnderPssPem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIIBsjCCARugAwIBAgIBAjANBgkqhkiG9w0BAQsFADATMREwDwYDVQQDEwhwc3Mg\r\n' +
+        'cm9vdDAeFw0yNjAxMDEwMDAwMDBaFw00NjAxMDEwMDAwMDBaMA8xDTALBgNVBAMT\r\n' +
+        'BGxlYWYwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMstYebK3mIo4HLlpJ2m\r\n' +
+        '51rMiPEtRJpNDUgcaUWqWq9e+NduHbaZj8X8dhemTnle3YSR5qJIwEVl6n41css+\r\n' +
+        'vexBByjGNB+6PUEHgjVpASTQD0C6zb4EHY3qVgsfEOn223SkIrXHauIjqyDXz95U\r\n' +
+        'cO+mnrJPjyKVFpr/0o/LycYJAgMBAAGjGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQD\r\n' +
+        'AgeAMA0GCSqGSIb3DQEBCwUAA4GBAFoV6YBep2lOkK9J9T++muoLDQ+I0jmYPyxt\r\n' +
+        'QaWPntVKZrz84JksdWcQpj3Wp5kU/5uD0HODLS3ajs/836M7X5T8DL01+6G4kK7b\r\n' +
+        'NZc2spN5ETnWEp1M8ZejF3yD/Tkkyr8vtcwthYkbzXVMbkAWO7XbIATogFwmHc3H\r\n' +
+        'GOzzFdal\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+      var leafPssUnderV15Pem = '-----BEGIN CERTIFICATE-----\r\n' +
+        'MIICGjCCAU+gAwIBAgIBAjBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUA\r\n' +
+        'oRwwGgYJKoZIhvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASAwEzERMA8GA1UEAxMI\r\n' +
+        'djE1IHJvb3QwHhcNMjYwMTAxMDAwMDAwWhcNNDYwMTAxMDAwMDAwWjAPMQ0wCwYD\r\n' +
+        'VQQDEwRsZWFmMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLLWHmyt5iKOBy\r\n' +
+        '5aSdpudazIjxLUSaTQ1IHGlFqlqvXvjXbh22mY/F/HYXpk55Xt2EkeaiSMBFZep+\r\n' +
+        'NXLLPr3sQQcoxjQfuj1BB4I1aQEk0A9Aus2+BB2N6lYLHxDp9tt0pCK1x2riI6sg\r\n' +
+        '18/eVHDvpp6yT48ilRaa/9KPy8nGCQIDAQABoxowGDAJBgNVHRMEAjAAMAsGA1Ud\r\n' +
+        'DwQEAwIHgDBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUAoRwwGgYJKoZI\r\n' +
+        'hvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASADgYEAPXmnpF+A+uQp8Wrp5YQ9GCtp\r\n' +
+        'evOZ/H2d2abwIsiuJnbyQOtB5yg5b722VotU0usvP/az0Ltmm4iW24LIsy/K+wOd\r\n' +
+        'w8xqNX1HnOEGqcnnk0nmpqek7aVZalJMM3IWdVXI6hhJzdJqLqCJTjv728wA3fs8\r\n' +
+        '4h8OMcGE0i/wJ6zuy8E=\r\n' +
+        '-----END CERTIFICATE-----\r\n';
+
+      function _verify(rootPem, leafPem) {
+        var caStore = PKI.createCaStore([PKI.certificateFromPem(rootPem)]);
+        return PKI.verifyCertificateChain(
+          caStore, [PKI.certificateFromPem(leafPem)]);
+      }
+
+      function _checkInvalid(rootPem, leafPem) {
+        ASSERT.throws(function() {
+          _verify(rootPem, leafPem);
+        }, function(err) {
+          return err.message === 'Certificate signature is invalid.' &&
+            err.error === PKI.certificateError.bad_certificate;
+        });
+      }
+
+      it('should reject an RSASSA-PSS certificate signed with PKCS#1 v1.5',
+        function() {
+          _checkInvalid(rootV15Pem, leafPssLabelV15SigPem);
+        });
+
+      it('should reject a PKCS#1 v1.5 certificate relabeled as RSASSA-PSS',
+        function() {
+          _checkInvalid(rootV15Pem, leafV15RelabeledPssPem);
+        });
+
+      it('should verify a PKCS#1 v1.5 certificate from an RSASSA-PSS issuer',
+        function() {
+          ASSERT.equal(_verify(rootPssPem, leafV15UnderPssPem), true);
+        });
+
+      it('should verify an RSASSA-PSS certificate from a PKCS#1 v1.5 issuer',
+        function() {
+          ASSERT.equal(_verify(rootV15Pem, leafPssUnderV15Pem), true);
+        });
+    });
+
     it('should parse certificate with ASN.1 signature data', function() {
       // signature has bytes that could look like ASN.1 data
       // TODO: add more similar tests with possible ASN.1 data in BIT
