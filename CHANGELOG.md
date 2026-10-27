@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.4.1 - 2026-10.27
+## 1.4.1 - 2026-10-27
 
 ### Notes
 - This release involved coordinating many security reports from many groups,
