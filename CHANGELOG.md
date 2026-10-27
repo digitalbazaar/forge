@@ -3,6 +3,18 @@ Forge ChangeLog
 
 ## 1.4.1 - 2026-xx-xx
 
+### Notes
+- This release involved coordinating many security reports from many groups,
+  people, and robots over too long period of time. Thank you for your reports
+  and patience.
+- Claude Code was used to help organize, track, untangle, merge, test,
+  validate, fix, and improve it all. Further verification of fixes would be
+  welcome.
+- Tracking credits was challenging for some issues due to multiple email and
+  GitHub reports, incomplete contact details, or combining of partial reports
+  and fixes. Please let us know if there are credits changes needed here or in
+  advisory data.
+
 ### Security
 - **HIGH**: Signature forgery in RSA-PKCS due to ASN.1 extra field in
   DigestAlgorithm.
