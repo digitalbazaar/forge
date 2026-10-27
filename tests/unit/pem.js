@@ -252,6 +252,18 @@ var PEM = require('../../lib/pem');
         _checkInvalid(
           '-----BEGIN A-----B-----\nQUJD\n-----END A-----B-----\n');
       });
+
+      it('should decode a Buffer', function() {
+        // node-jose passes a Buffer
+        if(typeof Buffer === 'undefined') {
+          this.skip();
+        }
+        var msgs = PEM.decode(Buffer.from('-----BEGIN A-----\nQUJD\n' +
+          '-----END A-----\n'));
+        ASSERT.equal(msgs.length, 1);
+        ASSERT.equal(msgs[0].type, 'A');
+        ASSERT.equal(msgs[0].body, 'ABC');
+      });
     });
   });
 })();

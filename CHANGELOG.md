@@ -1,6 +1,14 @@
 Forge ChangeLog
 ===============
 
+## 1.4.2 - 2026-xx-xx
+
+### Fixed
+- [pem] Convert non-string input to a string in `pem.decode()` as before
+  1.4.1. The 1.4.1 PEM ReDoS fix (GHSA-7wch-p9px-956x) caused a `TypeError`
+  for `Buffer` input, which is used by `node-jose`.
+  ([#1165](https://github.com/digitalbazaar/forge/issues/1165))
+
 ## 1.4.1 - 2026-10-27
 
 ### Notes
