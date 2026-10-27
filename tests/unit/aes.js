@@ -1687,5 +1687,99 @@ var UTIL = require('../../lib/util');
         })(i);
       }
     })();
+
+    describe('PKCS#7 padding checks', function() {
+      // see GHSA-2vgq-wchc-25w7
+      // Wycheproof aes_cbc_pkcs5_test.json vectors
+      // https://github.com/C2SP/wycheproof
+      var key = 'db4f3e5e3795cc09a073fa6a81e5a6bc';
+      var iv = '23468aa734f5f0f19827316ff168e94f';
+
+      function _decrypt(key, iv, ct) {
+        var decipher = CIPHER.createDecipher('AES-CBC', UTIL.hexToBytes(key));
+        decipher.start({iv: UTIL.hexToBytes(iv)});
+        decipher.update(UTIL.createBuffer(UTIL.hexToBytes(ct)));
+        return decipher.finish() ? decipher.output.toHex() : false;
+      }
+
+      it('should decrypt valid PKCS#7 padding', function() {
+        // tcId 1: empty message, a full block of padding
+        ASSERT.equal(_decrypt(
+          'e34f15c7bd819930fe9d66e0c166e61c',
+          'da9520f7d3520277035173299388bee2',
+          'b10ab60153276941361000414aed0a9d'), '');
+        // tcId 2: message size divisible by block size
+        ASSERT.equal(_decrypt(
+          'e09eaa5a3f5e56d279d5e7a03373f6ea',
+          'c9ee3cd746bf208c65ca9e72a266d54f',
+          'd1fa697f3e2e04d64f1a0da203813ca5' +
+          'bc226a0b1d42287b2a5b994a66eaf14a'),
+        'ef4eab37181f98423e53e947e7050fd0');
+      });
+
+      var invalid = {
+        // tcId 26
+        'zero padding': 'aa62606a287476777b92d8e4c4e53028',
+        // tcId 44
+        'padding longer than 1 block':
+          'd17ccbb26f0aa95f397b20063547349bac24c5429cbea591e96595cccc11451b',
+        // tcId 50
+        'ANSI X.923 padding': 'ca5dd2d09bd56eec9e8acaeca20af68e',
+        // tcId 60
+        'padding longer than the message': 'd17ccbb26f0aa95f397b20063547349b',
+        // tcId 70
+        'mismatched padding bytes':
+          '87ff6a2fc6920ce4769cbf6532f84dde389de7c3b693c5e0ceff182842411005' +
+          'bde40966f0eb8b4f598c61158aebc9d3'
+      };
+      Object.keys(invalid).forEach(function(name) {
+        it('should reject ' + name, function() {
+          ASSERT.strictEqual(_decrypt(key, iv, invalid[name]), false);
+        });
+      });
+
+      ['ecb', 'cbc'].forEach(function(name) {
+        it('should check every padding byte (' + name + ')', function() {
+          var mode = new CIPHER.modes[name]({blockSize: 16});
+          function unpad(bytes) {
+            var buffer = UTIL.createBuffer(bytes);
+            return mode.unpad(buffer, {overflow: 0}) ?
+              buffer.getBytes() : false;
+          }
+          var data = UTIL.fillString('A', 12);
+          ASSERT.equal(unpad(data + '\x04\x04\x04\x04'), data);
+          ASSERT.equal(
+            unpad(data + 'AAAA' + UTIL.fillString('\x10', 16)), data + 'AAAA');
+          ASSERT.strictEqual(unpad(data + '\x03\x02\x01\x04'), false);
+          ASSERT.strictEqual(unpad(data + '\x04\x04\x05\x04'), false);
+          ASSERT.strictEqual(
+            unpad(data + UTIL.fillString('A', 19) + '\x20'), false);
+          ASSERT.strictEqual(unpad(data + '\x00\x00\x00\x00'), false);
+        });
+      });
+
+      it('should decrypt other padding with unpad disabled', function() {
+        // tcId 50 (ANSI X.923 padding): the caller removes the padding
+        var decipher = CIPHER.createDecipher('AES-CBC', UTIL.hexToBytes(key));
+        decipher.mode.unpad = false;
+        decipher.start({iv: UTIL.hexToBytes(iv)});
+        decipher.update(UTIL.createBuffer(
+          UTIL.hexToBytes('ca5dd2d09bd56eec9e8acaeca20af68e')));
+        ASSERT.equal(decipher.finish(), true);
+        ASSERT.equal(decipher.output.toHex(),
+          '00000000000000000000000000000010');
+      });
+
+      it('should finish after all output was read', function() {
+        var decipher = CIPHER.createDecipher(
+          'AES-CBC', UTIL.hexToBytes('e09eaa5a3f5e56d279d5e7a03373f6ea'));
+        decipher.start(
+          {iv: UTIL.hexToBytes('c9ee3cd746bf208c65ca9e72a266d54f')});
+        decipher.update(UTIL.createBuffer(UTIL.hexToBytes(
+          'd1fa697f3e2e04d64f1a0da203813ca5bc226a0b1d42287b2a5b994a66eaf14a')));
+        decipher.output.getBytes();
+        ASSERT.equal(decipher.finish(), true);
+      });
+    });
   });
 })();
