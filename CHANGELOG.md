@@ -45,6 +45,23 @@ Forge ChangeLog
     - Mike Read.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-rhr8-3pm8-cq29](https://github.com/digitalbazaar/forge/security/advisories/GHSA-rhr8-3pm8-cq29)
+- **HIGH**: Regular expression denial of service in PEM decoding.
+  - An Inefficient Regular Expression Complexity (CWE-1333) vulnerability in
+    node-forge versions 1.4.0 and below enables remote, unauthenticated
+    attackers to block the event loop with small crafted inputs to
+    `pem.decode()` and the APIs that parse PEM, such as
+    `pki.certificateFromPem()` and `pki.privateKeyFromPem()`. The regular
+    expression that splits PEM messages takes polynomial time on input
+    without a matching END line; a 30 KB input took over 20 seconds. The
+    regular expressions that parse encapsulated headers took quadratic time
+    on long header lines.
+  - Reported by:
+    - Ahmed Mokhtari (@AhmedMokhtari), @mwlik, and @imenyoo2.
+    - @offset.
+    - @bibu123456.
+    - @Mucahic.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-7wch-p9px-956x](https://github.com/digitalbazaar/forge/security/advisories/GHSA-7wch-p9px-956x)
 
 ### Fixed
 - [rsa] Require a canonical DER DigestInfo in RSASSA PKCS#1 v1.5 signature
@@ -61,6 +78,9 @@ Forge ChangeLog
     the inner BIT STRING value (after its leading unused bits octet) with
     `asn1.fromDer()`. Common structures such as SubjectPublicKeyInfo only use
     one level.
+- [pem] Find PEM messages and parse encapsulated headers in linear time.
+  Messages are matched as before, except that a BEGIN line's label is the
+  shortest one followed by `-----` (RFC 7468 labels can't contain `--`).
 
 ## 1.4.0 - 2026-03-24
 

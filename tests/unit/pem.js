@@ -155,5 +155,103 @@ var PEM = require('../../lib/pem');
         ASSERT.equal(csrs[i].type, 'CERTIFICATE REQUEST');
       }
     });
+
+    it('should decode lenient PEM forms', function() {
+      var tests = [{
+        pem: '-----BEGIN A-----\nQUJD\n-----END A-----\n',
+        type: 'A',
+        body: 'ABC'
+      }, {
+        // no line break after the BEGIN line
+        pem: '-----BEGIN A-----QUJD-----END A-----',
+        type: 'A',
+        body: 'ABC'
+      }, {
+        pem: '-----BEGIN A-----\n-----END A-----',
+        type: 'A',
+        body: ''
+      }, {
+        // mismatched END line, then a complete message
+        pem: 'text\n-----BEGIN A-----\nQUJD\n-----END B-----\n' +
+          '-----BEGIN B-----\r\nREVG\r\n-----END B-----\r\ntext',
+        type: 'B',
+        body: 'DEF'
+      }, {
+        pem: '-----BEGIN A-----\r\n' +
+          'Proc-Type: 4,ENCRYPTED\r\n' +
+          'DEK-Info: DES-CBC,F8143EDE5960C597\r\n' +
+          'X-Header:  a, b   \r\n' +
+          '\r\n' +
+          'QUJD\r\n' +
+          '-----END A-----\r\n',
+        type: 'A',
+        body: 'ABC',
+        procType: {version: '4', type: 'ENCRYPTED'},
+        dekInfo: {algorithm: 'DES-CBC', parameters: 'F8143EDE5960C597'},
+        headers: [{name: 'X-Header', values: ['a', 'b']}]
+      }];
+      tests.forEach(function(test) {
+        var msgs = PEM.decode(test.pem);
+        ASSERT.equal(msgs.length, 1);
+        ASSERT.equal(msgs[0].type, test.type);
+        ASSERT.equal(msgs[0].body, test.body);
+        ASSERT.deepEqual(msgs[0].procType, test.procType || null);
+        ASSERT.deepEqual(msgs[0].dekInfo, test.dekInfo || null);
+        ASSERT.deepEqual(msgs[0].headers, test.headers || []);
+      });
+    });
+
+    describe('GHSA-7wch-p9px-956x ReDoS checks', function() {
+      // see GHSA-7wch-p9px-956x and PoC in /tests/pocs/
+      // the previous regular expressions took minutes on each input below
+      function _repeat(str, count) {
+        return new Array(count + 1).join(str);
+      }
+
+      function _checkInvalid(pem) {
+        ASSERT.throws(function() {
+          PEM.decode(pem);
+        },
+        /^Error: Invalid PEM formatted message.$/);
+      }
+
+      it('should reject repeated unmatched BEGIN lines', function() {
+        _checkInvalid(_repeat(' -----BEGIN I-----G-----END B', 2000) + '\x00');
+      });
+
+      it('should reject a BEGIN line followed by newlines', function() {
+        _checkInvalid('-----BEGIN A-----\n' + _repeat('\n', 256 * 1024));
+      });
+
+      it('should reject a BEGIN line followed by blank lines', function() {
+        _checkInvalid(
+          '-----BEGIN RSA-----\n' + _repeat('\n\n', 128 * 1024) + 'ZZZZ');
+      });
+
+      it('should decode a long header line without a colon', function() {
+        var msgs = PEM.decode('-----BEGIN A-----\n' +
+          _repeat('A', 512 * 1024) + '\n\nQUJD\n-----END A-----\n');
+        ASSERT.equal(msgs.length, 1);
+        ASSERT.equal(msgs[0].body, 'ABC');
+        ASSERT.equal(msgs[0].procType, null);
+      });
+
+      it('should decode a header line with trailing whitespace', function() {
+        var msgs = PEM.decode('-----BEGIN A-----\n' +
+          'Proc-Type: 4,ENCRYPTED\n' +
+          'DEK-Info: DES-CBC,F8143EDE5960C597\n' +
+          'X-Header: ' + _repeat(' ', 512 * 1024) + 'x\n' +
+          '\nQUJD\n-----END A-----\n');
+        ASSERT.equal(msgs.length, 1);
+        ASSERT.equal(msgs[0].body, 'ABC');
+        ASSERT.deepEqual(msgs[0].headers, [{name: 'X-Header', values: ['x']}]);
+      });
+
+      it('should only use the shortest label followed by dashes', function() {
+        // RFC 7468 labels can't contain '--'; previously 'A-----B' was used
+        _checkInvalid(
+          '-----BEGIN A-----B-----\nQUJD\n-----END A-----B-----\n');
+      });
+    });
   });
 })();
