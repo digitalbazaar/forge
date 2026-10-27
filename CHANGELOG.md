@@ -151,6 +151,18 @@ Forge ChangeLog
     tag length of 128 bits is not affected.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-5cwg-6vw7-rj6p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5cwg-6vw7-rj6p)
+- **MODERATE**: Prototype pollution via `Set-Cookie` in `forge.http`.
+  - A Prototype Pollution (CWE-1321) vulnerability in node-forge versions
+    1.4.0 and below lets a malicious server add properties to
+    `Object.prototype` and `Object`, or delete `Object.prototype`
+    properties, in applications that use the `forge.http` client (included
+    in the `forge.all` browser bundle, not loaded by `require('node-forge')`).
+    Cookie names and paths from `Set-Cookie` headers were used as keys of a
+    plain object with `in` checks, so `__proto__` and inherited names
+    reached `Object.prototype`.
+  - Reported by @arunmozhivarman-dtx and @Dremig.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-6wvx-3r32-xmcg](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6wvx-3r32-xmcg)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
     and below lets `asn1.oidToDer()` encode an OID string with out of range
@@ -247,6 +259,8 @@ Forge ChangeLog
     XML Encryption padding, used to decrypt because only the last byte was
     checked, and now fails. To decrypt it, set `decipher.mode.unpad = false`
     before `finish()` and remove the padding in your code.
+- [http] Only use own properties of the cookie store, and ignore cookies
+  named `__proto__` or with the path `__proto__`.
 
 ## 1.4.0 - 2026-03-24
 
