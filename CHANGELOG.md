@@ -44,7 +44,7 @@ Forge ChangeLog
   - Reported by Oren Yomtov (Fireblocks), Bronson Yen (Calif.io, in
     collaboration with Claude and Anthropic Research), Kamil Hałajda,
     @pzartech, @antonlissone, and @Brechard.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119192](https://www.cve.org/CVERecord?id=CVE-2026-119192)
   - GHSA ID: [GHSA-6qrw-m8cv-hcxf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6qrw-m8cv-hcxf)
 - **HIGH**: ASN.1 resource exhaustion via BIT STRING decoding.
   - An Uncontrolled Recursion (CWE-674) and Uncontrolled Resource Consumption
@@ -63,7 +63,7 @@ Forge ChangeLog
     - Youngjoon Kim (Georgia Tech SSLab).
     - @arpitjain099.
     - Mike Read.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119191](https://www.cve.org/CVERecord?id=CVE-2026-119191)
   - GHSA ID: [GHSA-rhr8-3pm8-cq29](https://github.com/digitalbazaar/forge/security/advisories/GHSA-rhr8-3pm8-cq29)
 - **HIGH**: Regular expression denial of service in PEM decoding.
   - An Inefficient Regular Expression Complexity (CWE-1333) vulnerability in
@@ -80,7 +80,7 @@ Forge ChangeLog
     - @offset.
     - @bibu123456.
     - @Mucahic.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118779](https://www.cve.org/CVERecord?id=CVE-2026-118779)
   - GHSA ID: [GHSA-7wch-p9px-956x](https://github.com/digitalbazaar/forge/security/advisories/GHSA-7wch-p9px-956x)
 - **HIGH**: Denial of service in TLS record processing via call stack
   exhaustion.
@@ -95,7 +95,7 @@ Forge ChangeLog
     required.
   - Reported by:
     - Ziyue Wang, Chenchen, Strick Sheng, Liyi Zhou, and Maurice Ng.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119187](https://www.cve.org/CVERecord?id=CVE-2026-119187)
   - GHSA ID: [GHSA-hqq3-7jhf-c5jx](https://github.com/digitalbazaar/forge/security/advisories/GHSA-hqq3-7jhf-c5jx)
 - **HIGH**: Denial of service in TLS record processing via an interleaved
   record during a fragmented handshake message.
@@ -107,7 +107,7 @@ Forge ChangeLog
     before the handshake, without authentication, as a server or a client.
     In Node.js applications that call `process()` from a socket `data`
     handler, the exception is uncaught and terminates the process.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119188](https://www.cve.org/CVERecord?id=CVE-2026-119188)
   - GHSA ID: [GHSA-8hrf-8g6f-7xwp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-8hrf-8g6f-7xwp)
 - **HIGH**: PKCS#12 MAC forgery due to missing iteration count check.
   - `pkcs12.pkcs12FromAsn1()` accepts a PKCS#12 MAC iteration count of zero
@@ -122,7 +122,7 @@ Forge ChangeLog
     IV, so a substituted encrypted private key decrypts with any password.
   - Reported by Thai (Calif.io), in collaboration with Claude and Anthropic
     Research.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118782](https://www.cve.org/CVERecord?id=CVE-2026-118782)
   - GHSA ID: [GHSA-jc66-7q78-782g](https://github.com/digitalbazaar/forge/security/advisories/GHSA-jc66-7q78-782g)
 - **HIGH**: `basicConstraints` bypass via deprecated extension OIDs in
   certificate chain verification.
@@ -135,7 +135,7 @@ Forge ChangeLog
     from a trusted CA that copies extensions from certificate requests can
     issue certificates for any name that node-forge accepts as valid.
   - Reported by @nickcollisson-workos (WorkOS Security Team).
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119190](https://www.cve.org/CVERecord?id=CVE-2026-119190)
   - GHSA ID: [GHSA-5x38-2vff-x55p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5x38-2vff-x55p)
 - **MODERATE**: Denial of service in the TLS client when the server sends no
   certificate.
@@ -147,7 +147,7 @@ Forge ChangeLog
     `connection.process()` threw a `TypeError` instead of failing the
     connection.
   - Reported by @arpitjain099.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118778](https://www.cve.org/CVERecord?id=CVE-2026-118778)
   - GHSA ID: [GHSA-525v-9gp9-w22h](https://github.com/digitalbazaar/forge/security/advisories/GHSA-525v-9gp9-w22h)
 - **MODERATE**: `pathLenConstraint` bypass in certificate chain verification.
   - `pki.verifyCertificateChain()` only enforces the `basicConstraints`
@@ -158,7 +158,7 @@ Forge ChangeLog
     CA's key, or anyone it issues a CA certificate to, can create subordinate
     CAs whose certificates node-forge accepts as valid.
   - Reported by @offset, @eddieran, Zion Boggan, and SongWriterOP GT.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119189](https://www.cve.org/CVERecord?id=CVE-2026-119189)
   - GHSA ID: [GHSA-h46v-rmh6-fq4f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h46v-rmh6-fq4f)
 - **MODERATE**: AES-GCM authentication bypass with an invalid tag length.
   - GCM mode does not validate the `tagLength` option. With a `tagLength` of
@@ -169,7 +169,7 @@ Forge ChangeLog
     as authentic. This requires the application to pass such a `tagLength`,
     for example one derived from the length of a received tag. The default
     tag length of 128 bits is not affected.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-119186](https://www.cve.org/CVERecord?id=CVE-2026-119186)
   - GHSA ID: [GHSA-5cwg-6vw7-rj6p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-5cwg-6vw7-rj6p)
 - **MODERATE**: Prototype pollution via `Set-Cookie` in `forge.http`.
   - A Prototype Pollution (CWE-1321) vulnerability in node-forge versions
@@ -181,7 +181,7 @@ Forge ChangeLog
     plain object with `in` checks, so `__proto__` and inherited names
     reached `Object.prototype`.
   - Reported by @arunmozhivarman-dtx and @Dremig.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118777](https://www.cve.org/CVERecord?id=CVE-2026-118777)
   - GHSA ID: [GHSA-6wvx-3r32-xmcg](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6wvx-3r32-xmcg)
 - **LOW**: ASN.1 OID first arc truncation.
   - An Integer Overflow (CWE-190) vulnerability in node-forge versions 1.4.0
@@ -191,7 +191,7 @@ Forge ChangeLog
     (`1.2.840.113549.1.1.1`), which can bypass OID-based decisions made on
     the string. The fix for CVE-2025-66030 only checked the later arcs.
   - Reported by wzc.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118775](https://www.cve.org/CVERecord?id=CVE-2026-118775)
   - GHSA ID: [GHSA-4642-5mcj-2rqw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4642-5mcj-2rqw)
 - **LOW**: Certificate signature verified with the issuer's signature scheme.
   - An Improper Verification of Cryptographic Signature (CWE-347)
@@ -203,7 +203,7 @@ Forge ChangeLog
     be made with the issuer's key, so this only misleads applications that
     rely on a certificate's signature algorithm.
   - Reported by Brian Lee (Georgia Tech SSLab, Team Atlanta).
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118774](https://www.cve.org/CVERecord?id=CVE-2026-118774)
   - GHSA ID: [GHSA-9wg5-mj3p-v49q](https://github.com/digitalbazaar/forge/security/advisories/GHSA-9wg5-mj3p-v49q)
 - **LOW**: Incomplete PKCS#7 padding validation in CBC and ECB decryption.
   - An Improper Validation of Integrity Check Value (CWE-354) vulnerability in
@@ -216,7 +216,7 @@ Forge ChangeLog
     the ciphertext.
   - Reported by Oren Yomtov (Fireblocks), @zebbern, and Brian Lee (Georgia
     Tech SSLab, Team Atlanta).
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118776](https://www.cve.org/CVERecord?id=CVE-2026-118776)
   - GHSA ID: [GHSA-2vgq-wchc-25w7](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2vgq-wchc-25w7)
 - **LOW**: Certificate chain verification removes trusted certificates from
   the CA store.
@@ -229,7 +229,7 @@ Forge ChangeLog
     fail, for as long as the store is in use. Verifying valid chains has the
     same effect. Verification never incorrectly succeeds because of this.
   - Reported by @pravichandran15.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118780](https://www.cve.org/CVERecord?id=CVE-2026-118780)
   - GHSA ID: [GHSA-4487-j8r4-4g2f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-4487-j8r4-4g2f)
 - **LOW**: Denial of Service in `BigInteger.modInverse()` with negative inputs.
   - The 1.4.0 fix for CVE-2026-33891 only handled a zero input.
@@ -242,7 +242,7 @@ Forge ChangeLog
     pass untrusted values as the RSA key generation exponent or call
     `modInverse()` with negative values.
   - Reported by wzc.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-118781](https://www.cve.org/CVERecord?id=CVE-2026-118781)
   - GHSA ID: [GHSA-h6cr-wjv9-3cpp](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h6cr-wjv9-3cpp)
 
 ### Fixed
