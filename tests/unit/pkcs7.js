@@ -4,6 +4,7 @@ var PKCS7 = require('../../lib/pkcs7');
 var PKI = require('../../lib/pki');
 var AES = require('../../lib/aes');
 var DES = require('../../lib/des');
+var SHA256 = require('../../lib/sha256');
 var UTIL = require('../../lib/util');
 
 (function() {
@@ -786,6 +787,34 @@ var UTIL = require('../../lib/util');
       p7.sign();
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.signedDataWithAttrs1949GeneralizedTime);
+    });
+
+    it('should create PKCS#7 SignedData with custom message-digest',
+      function() {
+      var p7 = PKCS7.createSignedData();
+      var messageDigest = SHA256.create().update('To be signed.', 'utf8').digest();
+      
+      p7.addCertificate(_pem.certificate);
+      p7.addSigner({
+        key: PKI.privateKeyFromPem(_pem.privateKey),
+        certificate: _pem.certificate,
+        digestAlgorithm: PKI.oids.sha256,
+        authenticatedAttributes: [{
+          type: forge.pki.oids.contentType,
+          value: forge.pki.oids.data
+        }, {
+          type: forge.pki.oids.messageDigest,
+          value: messageDigest
+        }, {
+          type: forge.pki.oids.signingTime,
+          // will be encoded as UTC time because it's >= 1950
+          value: new Date('1950-01-01T00:00:00Z')
+        }]
+      });
+      p7.sign({detached: true});
+      
+      var pem = PKCS7.messageToPem(p7);
+      ASSERT.equal(pem, _pem.detachedSignature);
     });
 
   });
