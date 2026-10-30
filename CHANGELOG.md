@@ -4,6 +4,18 @@ Forge ChangeLog
 ## 1.4.3 - 2026-xx-xx
 
 ### Security
+- **HIGH**: X.509 certificate chain verification ignores name constraints.
+  - `pki.verifyCertificateChain()` does not check the nameConstraints
+    extension (RFC 5280 4.2.1.10). A non-critical nameConstraints extension
+    in a CA certificate is ignored, so a name-constrained intermediate CA can
+    issue certificates for names outside its permitted subtrees, or inside
+    its excluded subtrees, and the chain verifies. Exploitation requires the
+    private key of a name-constrained CA that chains to a trusted root. A
+    critical nameConstraints extension is rejected as an unsupported critical
+    extension.
+  - Reported by @bhaswanthc.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-3cc4-3294-vgjf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-3cc4-3294-vgjf)
 - **LOW**: Ed25519 signature verification accepts small-order public keys.
   - `ed25519.verify()` does not reject public keys of small order, such as
     the identity point. Under such a key, a signature with `S = 0` and a
@@ -17,8 +29,33 @@ Forge ChangeLog
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-6889-vf6x-f3g5](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6889-vf6x-f3g5)
 
+### Added
+- [x509] Parse the nameConstraints extension (`2.5.29.30`) into
+  `permittedSubtrees`, `excludedSubtrees` and `unsupportedSubtreeRange`. An
+  invalid value is left unparsed.
+
 ### Fixed
 - [ed25519] Reject small-order public keys in `ed25519.verify()`.
+- [x509] Enforce nameConstraints in `verifyCertificateChain()` for the
+  subject and subjectAltName rfc822Name, dNSName, directoryName,
+  uniformResourceIdentifier and iPAddress names of each certificate, using
+  the constraints of the CA certificates above it and of the trust anchor.
+  Violations fail with `bad_certificate`, and the error has `nameType` and
+  `nameValue`. Critical nameConstraints are no longer rejected as
+  unsupported. As in OpenSSL:
+  - The commonName values of an end-entity certificate without a dNSName
+    subjectAltName are checked as dNSNames when they look like host names.
+  - directoryName values are compared ignoring ASCII case and extra
+    whitespace.
+  - Constraints that can't be evaluated for a name of the same type, names
+    that can't be checked against a constraint of the same type, and more
+    than 2^20 name and subtree comparisons for a chain fail with
+    `unsupported_certificate`.
+  - **NOTE**: Chains with a non-critical nameConstraints extension that the
+    names below it violate now fail verification. Chains with a critical
+    nameConstraints extension now verify when the names are within the
+    constraints, instead of always failing. A `verify` callback can still
+    override any error.
 
 ## 1.4.2 - 2026-10-27
 
