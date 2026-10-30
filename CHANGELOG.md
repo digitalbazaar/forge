@@ -157,7 +157,8 @@ Forge ChangeLog
     than the constraint allows are accepted. The holder of such a constrained
     CA's key, or anyone it issues a CA certificate to, can create subordinate
     CAs whose certificates node-forge accepts as valid.
-  - Reported by @offset, @eddieran, Zion Boggan, and SongWriterOP GT.
+  - Reported by @offset, @eddieran, Zion Boggan (@zionboggan), and
+    SongWriterOP GT.
   - CVE ID: [CVE-2026-119189](https://www.cve.org/CVERecord?id=CVE-2026-119189)
   - GHSA ID: [GHSA-h46v-rmh6-fq4f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h46v-rmh6-fq4f)
 - **MODERATE**: AES-GCM authentication bypass with an invalid tag length.
