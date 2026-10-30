@@ -379,7 +379,70 @@ var UTIL = require('../../lib/util');
         ASSERT.equal(verified, false);
       });
     });
+
+    // see GHSA-6889-vf6x-f3g5 and PoC in /tests/pocs/
+    describe('GHSA-6889-vf6x-f3g5 small-order public key check', function() {
+      var identity = '01' + repeat('00', 31);
+      var zero = repeat('00', 32);
+
+      // signature R || S with S = 0
+      function verifySZero(message, R, publicKey) {
+        return ED25519.verify({
+          message: message,
+          encoding: 'utf8',
+          signature: UTIL.hexToBytes(R + zero),
+          publicKey: UTIL.hexToBytes(publicKey)
+        });
+      }
+
+      it('should verify good signature', function() {
+        // RFC 8032 7.1 TEST 1
+        var verified = ED25519.verify({
+          message: '',
+          encoding: 'binary',
+          signature: UTIL.hexToBytes(
+            'e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155' +
+            '5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b'),
+          publicKey: UTIL.hexToBytes(
+            'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a')
+        });
+        ASSERT.equal(verified, true);
+      });
+
+      it('should not verify any message with the identity key', function() {
+        ['', 'hello', 'admin=true', 'attack at dawn'].forEach(function(m) {
+          ASSERT.equal(verifySZero(m, identity, identity), false);
+        });
+      });
+
+      it('should not verify with a non-canonical identity key', function() {
+        // y = p + 1
+        var publicKey = 'ee' + repeat('ff', 30) + '7f';
+        ASSERT.equal(verifySZero('attack at dawn', identity, publicKey), false);
+      });
+
+      it('should not verify with an order 2 key', function() {
+        var publicKey = 'ec' + repeat('ff', 30) + '7f';
+        ASSERT.equal(verifySZero('attack at dawn', publicKey, publicKey), false);
+      });
+
+      it('should not verify with an order 8 key', function() {
+        var publicKey =
+          '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05';
+        var R =
+          'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a';
+        ASSERT.equal(verifySZero('attack at dawn', R, publicKey), false);
+      });
+    });
   });
+
+  function repeat(str, n) {
+    var rval = '';
+    for(var i = 0; i < n; ++i) {
+      rval += str;
+    }
+    return rval;
+  }
 
   function eb64(buffer) {
     return UTIL.encode64(new UTIL.ByteBuffer(buffer).bytes());

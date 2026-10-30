@@ -1,6 +1,25 @@
 Forge ChangeLog
 ===============
 
+## 1.4.3 - 2026-xx-xx
+
+### Security
+- **LOW**: Ed25519 signature verification accepts small-order public keys.
+  - `ed25519.verify()` does not reject public keys of small order, such as
+    the identity point. Under such a key, a signature with `S = 0` and a
+    small-order `R` verifies for many or, with the identity key, all
+    messages, without any private key. Applications are affected only if
+    they verify signatures against a public key an attacker can choose and
+    rely on the signature being bound to the message. Signatures made with
+    keys from `ed25519.generateKeyPair()` or other honest key generation are
+    not affected.
+  - Reported by @analisaperlengkapan.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-6889-vf6x-f3g5](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6889-vf6x-f3g5)
+
+### Fixed
+- [ed25519] Reject small-order public keys in `ed25519.verify()`.
+
 ## 1.4.2 - 2026-10-27
 
 ### Fixed
