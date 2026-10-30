@@ -1158,7 +1158,9 @@ caStore.addCertificate(certObjectOrPemString);
 // gets the issuer (its certificate) for the given certificate
 var issuerCert = caStore.getIssuer(subjectCert);
 
-// verifies a certificate chain against a CA store
+// verifies a certificate chain against a CA store (checks validity dates,
+// signatures, basicConstraints, keyUsage and nameConstraints, but not
+// revocation, certificate policies, extended key usage or host names)
 pki.verifyCertificateChain(caStore, chain, customVerifyCallback);
 
 // signs a certificate using the given private key

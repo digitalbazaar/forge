@@ -1997,7 +1997,7 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
       ASSERT.equal(err.message,
         'Certificate subject name is not permitted by a name constraint.');
-      ASSERT.equal(err.name, 'evil.com');
+      ASSERT.equal(err.nameValue, 'evil.com');
       ASSERT.equal(err.nameType, 'dNSName');
     });
 
@@ -2013,11 +2013,12 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(getError(function() {
         verifyLeaf([nameConstraints([[2, 'example.com']])],
           dn('leaf'), [san([{type: 2, value: 'badexample.com'}])]);
-      }).name, 'badexample.com');
+      }).nameValue, 'badexample.com');
     });
 
     it('should support a critical nameConstraints extension', function() {
-      ASSERT.equal(verifyLeaf([nameConstraints([[2, '.example.com']], [], true)],
+      ASSERT.equal(verifyLeaf(
+        [nameConstraints([[2, '.example.com']], [], true)],
         dn('www.example.com'), [san([{type: 2, value: 'www.example.com'}])]),
       true);
       // deprecated 2.5.29.11 is still an unsupported critical extension
@@ -2037,7 +2038,7 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
       ASSERT.equal(err.message,
         'Certificate subject name is excluded by a name constraint.');
-      ASSERT.equal(err.name, 'bad.example.com');
+      ASSERT.equal(err.nameValue, 'bad.example.com');
       ASSERT.equal(verifyLeaf([nameConstraints([], [[2, 'bad.example.com']])],
         dn('good.example.com'), [san([{type: 2, value: 'good.example.com'}])]),
       true);
@@ -2050,7 +2051,7 @@ var UTIL = require('../../lib/util');
         verifyLeaf([nameConstraints([[1, 'example.com']])], subject, []);
       });
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
-      ASSERT.equal(err.name, 'user@evil.com');
+      ASSERT.equal(err.nameValue, 'user@evil.com');
       ASSERT.equal(err.nameType, 'rfc822Name');
 
       subject = dn('leaf');
@@ -2061,7 +2062,7 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(getError(function() {
         verifyLeaf([nameConstraints([[1, 'example.com']])], dn('leaf'),
           [san([{type: 1, value: 'user@mail.example.com'}])]);
-      }).name, 'user@mail.example.com');
+      }).nameValue, 'user@mail.example.com');
       ASSERT.equal(verifyLeaf([nameConstraints([[1, '.example.com']])],
         dn('leaf'), [san([{type: 1, value: 'user@mail.example.com'}])]), true);
       // mailbox constraint
@@ -2073,11 +2074,12 @@ var UTIL = require('../../lib/util');
 
     it('should check the host of a uniformResourceIdentifier', function() {
       ASSERT.equal(verifyLeaf([nameConstraints([[6, '.example.com']])],
-        dn('leaf'), [san([{type: 6, value: 'https://u@www.example.com:8443/x'}])]),
+        dn('leaf'),
+        [san([{type: 6, value: 'https://u@www.example.com:8443/x'}])]),
       true);
       ASSERT.equal(getError(function() {
-        verifyLeaf([nameConstraints([[6, '.example.com']])],
-          dn('leaf'), [san([{type: 6, value: 'https://evil.com/.example.com'}])]);
+        verifyLeaf([nameConstraints([[6, '.example.com']])], dn('leaf'),
+          [san([{type: 6, value: 'https://evil.com/.example.com'}])]);
       }).nameType, 'uniformResourceIdentifier');
     });
 
@@ -2089,7 +2091,7 @@ var UTIL = require('../../lib/util');
         verifyLeaf(ext, dn('leaf'), [san([{type: 7, ip: '192.168.1.1'}])]);
       });
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
-      ASSERT.equal(err.name, '192.168.1.1');
+      ASSERT.equal(err.nameValue, '192.168.1.1');
       ASSERT.equal(err.nameType, 'iPAddress');
       // an IPv6 address is not within an IPv4 permitted subtree
       ASSERT.equal(getError(function() {
@@ -2105,20 +2107,29 @@ var UTIL = require('../../lib/util');
         verifyLeaf(ext, dn('leaf', 'Evil'), []);
       });
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
-      ASSERT.equal(err.name, 'O=Evil, CN=leaf');
+      ASSERT.equal(err.nameValue, 'O=Evil, CN=leaf');
       ASSERT.equal(err.nameType, 'directoryName');
     });
 
-    it('should fail closed on unsupported permitted subtrees', function() {
-      var err = getError(function() {
-        verifyLeaf([nameConstraints([[0, 'user@example.com'],
-          [2, '.example.com']])],
-        dn('www.example.com'), [san([{type: 2, value: 'www.example.com'}])]);
+    it('should fail closed on unsupported subtrees of a name type',
+      function() {
+        var ext = [nameConstraints([[0, 'user@example.com'],
+          [2, '.example.com']])];
+        var err = getError(function() {
+          verifyLeaf(ext, dn('leaf'), [san([
+            {type: 0, value: [ASN1.create(ASN1.Class.UNIVERSAL,
+              ASN1.Type.OID, false,
+              ASN1.oidToDer('1.3.6.1.4.1.311.20.2.3').getBytes())]},
+            {type: 2, value: 'www.example.com'}])]);
+        });
+        ASSERT.equal(err.error,
+          PKI.certificateError.unsupported_certificate);
+        ASSERT.equal(err.nameType, 'otherName');
+        ASSERT.ok(err.message.indexOf('otherName') !== -1);
+        // subtrees only apply to names of the same type
+        ASSERT.equal(verifyLeaf(ext, dn('leaf'),
+          [san([{type: 2, value: 'www.example.com'}])]), true);
       });
-      ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
-      ASSERT.equal(err.nameType, 'otherName');
-      ASSERT.ok(err.message.indexOf('otherName') !== -1);
-    });
 
     it('should fail closed on subtrees with a maximum', function() {
       var subtree = ASN1.create(ASN1.Class.UNIVERSAL, ASN1.Type.SEQUENCE, true,
@@ -2133,6 +2144,9 @@ var UTIL = require('../../lib/util');
           [san([{type: 2, value: 'www.example.com'}])]);
       });
       ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
+      // not when there is no dNSName
+      ASSERT.equal(verifyLeaf([ext], dn('leaf'),
+        [san([{type: 7, ip: '10.0.0.1'}])]), true);
     });
 
     it('should skip self-issued intermediates but not others', function() {
@@ -2163,7 +2177,7 @@ var UTIL = require('../../lib/util');
           });
       });
       ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
-      ASSERT.equal(err.name, 'CN=CA2');
+      ASSERT.equal(err.nameValue, 'CN=CA2');
       ASSERT.deepEqual(depths, [1]);
     });
 
@@ -2181,11 +2195,11 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(PKI.verifyCertificateChain(store, [good]), true);
       ASSERT.equal(getError(function() {
         PKI.verifyCertificateChain(store, [bad]);
-      }).name, 'evil.com');
+      }).nameValue, 'evil.com');
       // also when the anchor is included in the chain
       ASSERT.equal(getError(function() {
         PKI.verifyCertificateChain(store, [bad, anchor]);
-      }).name, 'evil.com');
+      }).nameValue, 'evil.com');
     });
 
     it('should enforce in-memory certificate extensions', function() {
@@ -2197,7 +2211,7 @@ var UTIL = require('../../lib/util');
         extensions: [san([{type: 2, value: 'evil.com'}])]});
       ASSERT.equal(getError(function() {
         PKI.verifyCertificateChain(caStore, [leaf, ca]);
-      }).name, 'evil.com');
+      }).nameValue, 'evil.com');
     });
 
     it('should let the verify callback override a violation', function() {
@@ -2206,6 +2220,144 @@ var UTIL = require('../../lib/util');
         {verify: function() {
           return true;
         }}), true);
+    });
+
+    // see GHSA-3cc4-3294-vgjf and PoC in /tests/pocs/
+    it('should check host name common names of an end entity', function() {
+      var ext = [nameConstraints([[2, '.example.com']])];
+      // the PoC: no subjectAltName
+      var err = getError(function() {
+        verifyLeaf(ext, dn('evil.com'), []);
+      });
+      ASSERT.equal(err.error, PKI.certificateError.bad_certificate);
+      ASSERT.equal(err.nameValue, 'evil.com');
+      ASSERT.equal(err.nameType, 'dNSName');
+      // a subjectAltName without a dNSName
+      ASSERT.equal(getError(function() {
+        verifyLeaf(ext, dn('evil.com'), [san([{type: 7, ip: '10.0.0.1'}])]);
+      }).nameValue, 'evil.com');
+      // every commonName
+      ASSERT.equal(getError(function() {
+        verifyLeaf(ext, [{name: 'commonName', value: 'www.example.com'},
+          {name: 'commonName', value: 'a_b.evil.com'}], []);
+      }).nameValue, 'a_b.evil.com');
+      ASSERT.equal(getError(function() {
+        verifyLeaf([nameConstraints([], [[2, 'bad.example.com']])],
+          dn('bad.example.com'), []);
+      }).message, 'Certificate subject name is excluded by a name constraint.');
+      ASSERT.equal(verifyLeaf(ext, dn('www.example.com'), []), true);
+      // not common names that are not host names
+      ASSERT.equal(verifyLeaf(ext, dn('John Smith'), []), true);
+      ASSERT.equal(verifyLeaf(ext, dn('evil'), []), true);
+      ASSERT.equal(verifyLeaf(ext, dn('-evil.com'), []), true);
+      ASSERT.equal(verifyLeaf(ext, dn('evil..com'), []), true);
+      // not when there is a dNSName
+      ASSERT.equal(verifyLeaf(ext, dn('evil.com'),
+        [san([{type: 2, value: 'www.example.com'}])]), true);
+      // not for CAs
+      var anchorDn = dn('Anchor');
+      var anchor = issue({
+        subject: anchorDn, issuer: anchorDn, ca: true, extensions: ext
+      });
+      var ca = issue({subject: dn('evil.com'), issuer: anchorDn, ca: true});
+      var leaf = issue({subject: dn('leaf'), issuer: dn('evil.com'),
+        extensions: [san([{type: 2, value: 'www.example.com'}])]});
+      ASSERT.equal(PKI.verifyCertificateChain(
+        PKI.createCaStore([anchor]), [leaf, ca]), true);
+    });
+
+    it('should compare directoryNames ignoring case and spaces', function() {
+      var ext = [nameConstraints([[4, [
+        {name: 'organizationName', value: 'Good Inc'}]]])];
+      ASSERT.equal(verifyLeaf(ext, dn('leaf', 'good inc'), []), true);
+      ASSERT.equal(verifyLeaf(ext, dn('leaf', ' Good \t INC '), []), true);
+      ASSERT.equal(getError(function() {
+        verifyLeaf(ext, dn('leaf', 'Good Inc.'), []);
+      }).nameType, 'directoryName');
+      ASSERT.equal(getError(function() {
+        verifyLeaf([nameConstraints([], [[4, [
+          {name: 'organizationName', value: 'Evil'}]]])],
+        dn('leaf', 'EVIL'), []);
+      }).message, 'Certificate subject name is excluded by a name constraint.');
+    });
+
+    it('should check rfc822Name subtrees for a host', function() {
+      ASSERT.equal(verifyLeaf([nameConstraints([[1, '@example.com']])],
+        dn('leaf'), [san([{type: 1, value: 'u@example.com'}])]), true);
+      ASSERT.equal(getError(function() {
+        verifyLeaf([nameConstraints([], [[1, '@evil.com']])],
+          dn('leaf'), [san([{type: 1, value: 'u@EVIL.com'}])]);
+      }).nameValue, 'u@EVIL.com');
+    });
+
+    it('should fail closed on names that cannot be checked', function() {
+      var err = getError(function() {
+        verifyLeaf([nameConstraints([], [[1, '.evil.com']])],
+          dn('leaf'), [san([{type: 1, value: 'a.evil.com'}])]);
+      });
+      ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
+      ASSERT.equal(err.nameType, 'rfc822Name');
+      err = getError(function() {
+        verifyLeaf([nameConstraints([], [[6, '.evil.com']])],
+          dn('leaf'), [san([{type: 6, value: 'urn:uuid:1234'}])]);
+      });
+      ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
+      ASSERT.equal(err.nameType, 'uniformResourceIdentifier');
+      // but not when there are no subtrees of the name's type
+      ASSERT.equal(verifyLeaf([nameConstraints([], [[2, '.evil.com']])],
+        dn('leaf'), [san([{type: 6, value: 'urn:uuid:1234'}])]), true);
+    });
+
+    it('should check every subjectAltName extension', function() {
+      var ca = issue({
+        subject: dn('CA'), issuer: rootDn, ca: true, raw: true,
+        extensions: [nameConstraints([[2, '.example.com']])]
+      });
+      var leaf = issue({subject: dn('leaf'), issuer: dn('CA'), raw: true,
+        extensions: [san([{type: 2, value: 'www.example.com'}]),
+          san([{type: 2, value: 'evil.com'}])]});
+      ASSERT.equal(getError(function() {
+        PKI.verifyCertificateChain(caStore, [leaf, ca]);
+      }).nameValue, 'evil.com');
+    });
+
+    it('should parse an invalid nameConstraints extension', function() {
+      var ext = {id: '2.5.29.30', value: ASN1.create(
+        ASN1.Class.UNIVERSAL, ASN1.Type.OCTETSTRING, false, 'junk')};
+      var ca = issue({
+        subject: dn('CA'), issuer: rootDn, ca: true, extensions: [ext]
+      });
+      ASSERT.equal(ca.getExtension('nameConstraints').permittedSubtrees,
+        undefined);
+      var leaf = issue({subject: dn('leaf'), issuer: dn('CA')});
+      var err = getError(function() {
+        PKI.verifyCertificateChain(caStore, [leaf, ca]);
+      });
+      ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
+      ASSERT.equal(err.message,
+        'Certificate name constraint could not be parsed.');
+    });
+
+    it('should limit the work done to check name constraints', function() {
+      // like OpenSSL, at most 2^20 name and subtree comparisons
+      function names(n, type, prefix) {
+        var rval = [];
+        for(var i = 0; i < n; ++i) {
+          rval.push(type === 'san' ?
+            {type: 2, value: prefix + i + '.example.com'} :
+            [2, prefix + i + '.evil.com']);
+        }
+        return rval;
+      }
+      var err = getError(function() {
+        verifyLeaf([nameConstraints([], names(1024, 'nc', 'x'))],
+          dn('leaf'), [san(names(1024, 'san', 'n'))]);
+      });
+      ASSERT.equal(err.error, PKI.certificateError.unsupported_certificate);
+      ASSERT.equal(err.message,
+        'Certificate name constraints require too many checks.');
+      ASSERT.equal(verifyLeaf([nameConstraints([], names(500, 'nc', 'x'))],
+        dn('leaf'), [san(names(500, 'san', 'n'))]), true);
     });
 
     it('should verify chains without nameConstraints as before', function() {
