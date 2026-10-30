@@ -912,7 +912,8 @@ var verified = ED25519.verify({
   // node.js Buffer, Uint8Array, forge ByteBuffer, or binary string
   publicKey: publicKey
 });
-// `verified` is true/false
+// `verified` is true/false (always false for small-order public keys, such
+// as the identity point, which have no private key)
 
 // sign a message passed as a buffer
 var verified = ED25519.verify({
