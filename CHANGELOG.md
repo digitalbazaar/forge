@@ -41,8 +41,8 @@ Forge ChangeLog
     encodings, and non-canonical OIDs. These provide attackers space to
     construct forged signatures for low public exponent keys (e=3), similar to
     CVE-2026-33894 and CVE-2026-85393.
-  - Reported by Oren Yomtov (Fireblocks), Bronson Yen (Calif.io, in
-    collaboration with Claude and Anthropic Research), Kamil Hałajda,
+  - Reported by Oren Yomtov (@orenyomtov, Fireblocks), Bronson Yen (Calif.io,
+    in collaboration with Claude and Anthropic Research), Kamil Hałajda,
     @pzartech, @antonlissone, and @Brechard.
   - CVE ID: [CVE-2026-119192](https://www.cve.org/CVERecord?id=CVE-2026-119192)
   - GHSA ID: [GHSA-6qrw-m8cv-hcxf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6qrw-m8cv-hcxf)
@@ -60,7 +60,8 @@ Forge ChangeLog
     is an incomplete fix of CVE-2025-66031.
   - Reported by:
     - Ethan Kim (cremit.io).
-    - Youngjoon Kim (Georgia Tech SSLab).
+    - Youngjoon Kim (@acorn421) and Brian Lee (@hibrian827), Georgia Tech
+      SSLab.
     - @arpitjain099.
     - Mike Read.
   - CVE ID: [CVE-2026-119191](https://www.cve.org/CVERecord?id=CVE-2026-119191)
@@ -158,7 +159,7 @@ Forge ChangeLog
     CA's key, or anyone it issues a CA certificate to, can create subordinate
     CAs whose certificates node-forge accepts as valid.
   - Reported by @offset, @eddieran, Zion Boggan (@zionboggan), and
-    SongWriterOP GT.
+    @EchoSkorJjj.
   - CVE ID: [CVE-2026-119189](https://www.cve.org/CVERecord?id=CVE-2026-119189)
   - GHSA ID: [GHSA-h46v-rmh6-fq4f](https://github.com/digitalbazaar/forge/security/advisories/GHSA-h46v-rmh6-fq4f)
 - **MODERATE**: AES-GCM authentication bypass with an invalid tag length.
@@ -203,7 +204,7 @@ Forge ChangeLog
     certificate instead of the child certificate. The signature must still
     be made with the issuer's key, so this only misleads applications that
     rely on a certificate's signature algorithm.
-  - Reported by Brian Lee (Georgia Tech SSLab, Team Atlanta).
+  - Reported by Brian Lee (@hibrian827, Georgia Tech SSLab, Team Atlanta).
   - CVE ID: [CVE-2026-118774](https://www.cve.org/CVERecord?id=CVE-2026-118774)
   - GHSA ID: [GHSA-9wg5-mj3p-v49q](https://github.com/digitalbazaar/forge/security/advisories/GHSA-9wg5-mj3p-v49q)
 - **LOW**: Incomplete PKCS#7 padding validation in CBC and ECB decryption.
@@ -215,8 +216,8 @@ Forge ChangeLog
     plaintext could be removed. CBC and ECB without a MAC never provide
     integrity, and this fix doesn't change that; use AES-GCM or authenticate
     the ciphertext.
-  - Reported by Oren Yomtov (Fireblocks), @zebbern, and Brian Lee (Georgia
-    Tech SSLab, Team Atlanta).
+  - Reported by Oren Yomtov (@orenyomtov, Fireblocks), @zebbern, and Brian Lee
+    (@hibrian827, Georgia Tech SSLab, Team Atlanta).
   - CVE ID: [CVE-2026-118776](https://www.cve.org/CVERecord?id=CVE-2026-118776)
   - GHSA ID: [GHSA-2vgq-wchc-25w7](https://github.com/digitalbazaar/forge/security/advisories/GHSA-2vgq-wchc-25w7)
 - **LOW**: Certificate chain verification removes trusted certificates from
@@ -356,7 +357,7 @@ Forge ChangeLog
     uniqueness (i.e., dedup by signature bytes, replay tracking, signed-object
     canonicalization checks) may be bypassed.
   - Reported by:
-    - Oren Yomtov (Fireblocks).
+    - Oren Yomtov (@orenyomtov, Fireblocks).
     - Austin Chu, Sohee Kim, and Corban Villa, as part of a U.C. Berkeley
       security research project.
   - CVE ID: [CVE-2026-33895](https://www.cve.org/CVERecord?id=CVE-2026-33895)
