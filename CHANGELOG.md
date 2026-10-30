@@ -354,8 +354,10 @@ Forge ChangeLog
     CVE-2026-25793, CVE-2022-35961). Applications relying on signature
     uniqueness (i.e., dedup by signature bytes, replay tracking, signed-object
     canonicalization checks) may be bypassed.
-  - Reported as part of a U.C. Berkeley security research project by:
-    - Austin Chu, Sohee Kim, and Corban Villa.
+  - Reported by:
+    - Oren Yomtov (Fireblocks).
+    - Austin Chu, Sohee Kim, and Corban Villa, as part of a U.C. Berkeley
+      security research project.
   - CVE ID: [CVE-2026-33895](https://www.cve.org/CVERecord?id=CVE-2026-33895)
   - GHSA ID: [GHSA-q67f-28xg-22rw](https://github.com/digitalbazaar/forge/security/advisories/GHSA-q67f-28xg-22rw)
 - **HIGH**: `basicConstraints` bypass in certificate chain verification.
