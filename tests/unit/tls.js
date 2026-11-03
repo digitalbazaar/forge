@@ -492,6 +492,117 @@ require('../../lib/util');
       });
     });
 
+    describe('ServerHello compression method', function() {
+      // see GHSA-w4xr-hqv8-ch44
+      // set the compression method of the ServerHello in plaintext TLS
+      // records (ServerHello body: version, random, session_id,
+      // cipher_suite, compression_method)
+      function _setCompressionMethod(bytes, method) {
+        var b = forge.util.createBuffer(bytes);
+        var out = '';
+        while(b.length() > 0) {
+          var header = b.getBytes(3);
+          var fragment = b.getBytes(b.getInt16());
+          if(header.charCodeAt(0) === forge.tls.ContentType.handshake &&
+            fragment.charCodeAt(0) === forge.tls.HandshakeType.server_hello) {
+            var offset = 4 + 2 + 32;
+            offset += 1 + fragment.charCodeAt(offset) + 2;
+            fragment = fragment.substr(0, offset) +
+              String.fromCharCode(method) + fragment.substr(offset + 1);
+          }
+          out += header + forge.util.int32ToBytes(fragment.length).substr(2) +
+            fragment;
+        }
+        return out;
+      }
+
+      var keys = forge.pki.rsa.generateKeyPair(512);
+      var cert = forge.pki.createCertificate();
+      cert.publicKey = keys.publicKey;
+      cert.serialNumber = '01';
+      cert.validity.notBefore = new Date();
+      cert.validity.notAfter = new Date();
+      cert.validity.notAfter.setFullYear(
+        cert.validity.notBefore.getFullYear() + 1);
+      cert.setSubject([{name: 'commonName', value: 'server'}]);
+      cert.setIssuer([{name: 'commonName', value: 'server'}]);
+      cert.sign(keys.privateKey);
+      var serverCert = forge.pki.certificateToPem(cert);
+      var serverKey = forge.pki.privateKeyToPem(keys.privateKey);
+
+      function _handshake(method) {
+        var end = {};
+        var log = {connected: false, errors: []};
+        var first = true;
+        var clientFlights = 0;
+        end.client = forge.tls.createConnection({
+          server: false,
+          caStore: [serverCert],
+          verify: function(c, verified) {
+            return verified;
+          },
+          connected: function() {
+            log.connected = true;
+          },
+          tlsDataReady: function(c) {
+            var bytes = c.tlsData.getBytes();
+            // when the handshake should fail, only send the ClientHello, so
+            // the server's reaction to the client's alert doesn't reach the
+            // client while it is still processing the ServerHello
+            if(clientFlights++ === 0 ||
+              method === forge.tls.CompressionMethod.none) {
+              end.server.process(bytes);
+            }
+          },
+          dataReady: function() {},
+          closed: function() {},
+          error: function(c, error) {
+            log.errors.push(error.message);
+          }
+        });
+        end.server = forge.tls.createConnection({
+          server: true,
+          getCertificate: function() {
+            return serverCert;
+          },
+          getPrivateKey: function() {
+            return serverKey;
+          },
+          connected: function() {},
+          tlsDataReady: function(c) {
+            var bytes = c.tlsData.getBytes();
+            if(first) {
+              // change the server's first flight
+              first = false;
+              bytes = _setCompressionMethod(bytes, method);
+            }
+            end.client.process(bytes);
+          },
+          dataReady: function() {},
+          closed: function() {},
+          error: function() {}
+        });
+        end.client.handshake();
+        log.fail = end.client.fail;
+        return log;
+      }
+
+      it('should connect with no compression', function() {
+        var log = _handshake(forge.tls.CompressionMethod.none);
+        ASSERT.deepEqual(log.errors, []);
+        ASSERT.equal(log.connected, true);
+      });
+
+      [forge.tls.CompressionMethod.deflate, 0xff].forEach(function(method) {
+        it('should fail on compression method ' + method, function() {
+          var log = _handshake(method);
+          ASSERT.deepEqual(log.errors, ['Unsupported compression method.']);
+          ASSERT.equal(log.fail, true);
+          ASSERT.equal(log.connected, false);
+        });
+      });
+    });
+
     describe('heartbeat', function() {
       // heartbeat_request with payload 'abc'
       var REQUEST = forge.util.hexToBytes('1803010006010003616263');

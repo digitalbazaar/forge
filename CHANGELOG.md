@@ -34,6 +34,18 @@ Forge ChangeLog
   - Reported by @manus-pi.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-6cv4-p8m7-4r25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6cv4-p8m7-4r25)
+- **MODERATE**: TLS client crash on an unsupported ServerHello compression
+  method.
+  - A TLS client accepts any compression method in the ServerHello,
+    although it only offers no compression. An unknown method makes
+    `process()` throw an uncaught `Error` at ServerHelloDone, before the
+    server is authenticated. A malicious server, or an on-path attacker, can
+    terminate a Node.js process that passes socket data to `process()`
+    without catching exceptions, including through `forge.tls.wrapSocket`.
+    Servers are not affected.
+  - Reported by @alienkeric.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-w4xr-hqv8-ch44](https://github.com/digitalbazaar/forge/security/advisories/GHSA-w4xr-hqv8-ch44)
 - **LOW**: Ed25519 signature verification accepts small-order public keys.
   - `ed25519.verify()` does not reject public keys of small order, such as
     the identity point. Under such a key, a signature with `S = 0` and a
@@ -77,6 +89,8 @@ Forge ChangeLog
 - [tls] Ignore handshake messages received by a client without a session
   instead of throwing a `TypeError`.
 - [http] Trim header and cookie values in linear time.
+- [tls] Fail a client handshake with an `illegal_parameter` alert when the
+  ServerHello selects a compression method other than none.
 
 ## 1.4.2 - 2026-10-27
 
