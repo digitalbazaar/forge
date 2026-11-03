@@ -16,6 +16,16 @@ Forge ChangeLog
   - Reported by @bhaswanthc.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-3cc4-3294-vgjf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-3cc4-3294-vgjf)
+- **MODERATE**: TLS client crash on a handshake record without a session.
+  - A TLS client throws an uncaught `TypeError` from `process()` when it
+    receives a ServerHello while it has no session: after a `close_notify`
+    alert or a call to `close()`, or before `handshake()` is called. A
+    malicious server, or an on-path attacker, can terminate a Node.js process
+    that passes socket data to `process()` without catching exceptions.
+    Servers are not affected.
+  - Reported by @manus-use.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-j8rw-jp99-435v](https://github.com/digitalbazaar/forge/security/advisories/GHSA-j8rw-jp99-435v)
 - **LOW**: Ed25519 signature verification accepts small-order public keys.
   - `ed25519.verify()` does not reject public keys of small order, such as
     the identity point. Under such a key, a signature with `S = 0` and a
@@ -56,6 +66,8 @@ Forge ChangeLog
     nameConstraints extension now verify when the names are within the
     constraints, instead of always failing. A `verify` callback can still
     override any error.
+- [tls] Ignore handshake messages received by a client without a session
+  instead of throwing a `TypeError`.
 
 ## 1.4.2 - 2026-10-27
 
