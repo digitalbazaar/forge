@@ -26,6 +26,14 @@ Forge ChangeLog
   - Reported by @manus-use.
   - CVE ID: [CVE-TBD]()
   - GHSA ID: [GHSA-j8rw-jp99-435v](https://github.com/digitalbazaar/forge/security/advisories/GHSA-j8rw-jp99-435v)
+- **MODERATE**: ReDoS in `forge.http` response header parsing.
+  - `forge.http` trims response header and `Set-Cookie` values with a
+    regular expression that takes quadratic time on a long run of whitespace
+    followed by another character. A server, or an on-path attacker, can
+    block a `forge.http` client for minutes with one large header.
+  - Reported by @manus-pi.
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-6cv4-p8m7-4r25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6cv4-p8m7-4r25)
 - **LOW**: Ed25519 signature verification accepts small-order public keys.
   - `ed25519.verify()` does not reject public keys of small order, such as
     the identity point. Under such a key, a signature with `S = 0` and a
@@ -68,6 +76,7 @@ Forge ChangeLog
     override any error.
 - [tls] Ignore handshake messages received by a client without a session
   instead of throwing a `TypeError`.
+- [http] Trim header and cookie values in linear time.
 
 ## 1.4.2 - 2026-10-27
 
