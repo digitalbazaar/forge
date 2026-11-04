@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.4.3 - 2026-xx-xx
+## 1.4.3 - 2026-11-03
 
 ### Security
 - **HIGH**: X.509 certificate chain verification ignores name constraints.
