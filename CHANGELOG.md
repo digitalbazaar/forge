@@ -25,6 +25,17 @@ Forge ChangeLog
     to load with "Only two-prime RSAPrivateKey version 0 is supported."
     instead of loading and then producing invalid signatures and failing
     decryption.
+- [rc2] Compute the effective key length mask as RFC 2268 defines it. Key
+  expansion was wrong when the effective key size was not a multiple of 8
+  bits, and two of the RFC 2268 test vectors failed. Reported by @Martomate
+  ([#1120](https://github.com/digitalbazaar/forge/issues/1120)). From PR
+  [#1150](https://github.com/digitalbazaar/forge/pull/1150) by
+  @ArockiaRajamanickam.
+  - **NOTE**: Output changes for effective key sizes that are not a multiple
+    of 8 bits. Data encrypted with such sizes by earlier versions doesn't
+    decrypt with this version (and didn't interoperate with other RC2
+    implementations). The default (128) and other multiples of 8, including
+    the 40 and 128 bit sizes used by PKCS#12, are unchanged.
 
 ## 1.4.3 - 2026-11-03
 
