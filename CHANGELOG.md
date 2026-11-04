@@ -55,6 +55,13 @@ Forge ChangeLog
   same. Reported in [#1081](https://github.com/digitalbazaar/forge/issues/1081).
   From PR [#1082](https://github.com/digitalbazaar/forge/pull/1082) by
   @dhensby.
+- [log] Don't fail to load when `URL` or `window.location.href` isn't
+  available (for example in hybrid mobile runtimes and some test
+  environments). Reported by @elshadsm
+  ([#1117](https://github.com/digitalbazaar/forge/issues/1117)). From PR
+  [#1153](https://github.com/digitalbazaar/forge/pull/1153) by @cpruijsen
+  (similar fix in [#1103](https://github.com/digitalbazaar/forge/pull/1103)
+  by @LaelLuo).
 
 ## 1.4.3 - 2026-11-03
 
