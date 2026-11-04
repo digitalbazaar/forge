@@ -44,7 +44,7 @@ function reloadLog(setup) {
 
 (function() {
   describe('log', function() {
-    it('should load when URL is not a constructor (issue #1117)', function() {
+    it('should load when URL is not a constructor (#1117)', function() {
       if(!isIsolatedNode()) {
         this.skip();
       }
@@ -56,13 +56,25 @@ function reloadLog(setup) {
       });
     });
 
-    it('should load when window.location.href is missing (issue #1117)', function() {
+    it('should load when window.location.href is missing (#1117)',
+      function() {
+        if(!isIsolatedNode()) {
+          this.skip();
+        }
+        ASSERT.doesNotThrow(function() {
+          reloadLog(function() {
+            global.window = {location: {}};
+          });
+        });
+      });
+
+    it('should load with URL and window.location.href', function() {
       if(!isIsolatedNode()) {
         this.skip();
       }
       ASSERT.doesNotThrow(function() {
         reloadLog(function() {
-          global.window = {location: {}};
+          global.window = {location: {href: 'https://example.com/?a=b'}};
         });
       });
     });
