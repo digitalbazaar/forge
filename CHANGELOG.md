@@ -42,6 +42,13 @@ Forge ChangeLog
   Reported in [#932](https://github.com/digitalbazaar/forge/issues/932).
   Based on PR [#933](https://github.com/digitalbazaar/forge/pull/933) by
   @wklaczynski.
+- [ssh] Don't add a leading zero byte to integers with an odd number of hex
+  digits in SSH and PuTTY key encoding. Integers such as the private
+  exponent or primes in `ssh.privateKeyToPutty()` were sometimes encoded
+  with an extra leading zero byte, which RFC 4251 doesn't allow, and PuTTY
+  couldn't load several percent of the keys. Reported by @yammelvin
+  ([#952](https://github.com/digitalbazaar/forge/issues/952)). From PR
+  [#987](https://github.com/digitalbazaar/forge/pull/987) by @romeech91.
 
 ## 1.4.3 - 2026-11-03
 

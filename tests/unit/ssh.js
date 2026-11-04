@@ -171,5 +171,23 @@ require('../../lib/ssh');
         key, {encoding: 'hex', delimiter: ':'});
       ASSERT.equal(fp, '46:54:9a:be:b8:94:22:a0:95:5d:40:41:ae:73:22:ec');
     });
+
+    it('should encode integers as minimal SSH mpints', function() {
+      // see #987: RFC 4251 section 5; a value with an odd number of hex
+      // digits and a first digit of 8-f got an extra leading zero byte
+      var e = new forge.jsbn.BigInteger('10001', 16);
+      [
+        ['9abcdef', '0000000409abcdef'],
+        ['8abcdef0', '00000005008abcdef0'],
+        ['7abcdef0', '000000047abcdef0']
+      ].forEach(function(v) {
+        var n = new forge.jsbn.BigInteger(v[0], 16);
+        var pub = forge.pki.setRsaPublicKey(n, e);
+        var blob = forge.util.decode64(
+          forge.ssh.publicKeyToOpenSSH(pub).split(' ')[1]);
+        ASSERT.equal(forge.util.bytesToHex(blob),
+          '000000077373682d727361' + '00000003010001' + v[1]);
+      });
+    });
   });
 })();
