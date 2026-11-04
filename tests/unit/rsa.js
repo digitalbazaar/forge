@@ -305,6 +305,71 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(PKI.privateKeyInfoToPem(pki), _pem.privateKeyInfo);
     });
 
+    describe('RSAPrivateKey version', function() {
+      // see GHSA-w73w-hhm4-q25p and #1143
+      // 1024-bit three-prime key (version 1, otherPrimeInfos) from OpenSSL
+      var multiPrime =
+      '-----BEGIN RSA PRIVATE KEY-----\r\n' +
+      'MIICfQIBAQKBgQCVR/AyxK7/NmTsq8TyvF/TrsaZhd799FKfvojlRgP3zKEJhiNE\r\n' +
+      'hwAzbyRjiI8xJ00wu4gsbUOvCW7xqMFG9afHjlidbB6VAV4J55kONiLOXz0938hq\r\n' +
+      'rj/mrcMPtdZnw52g4/Tio7q+R5MidybWEVs2pIkoqYiByTze56vjXZeMIQIDAQAB\r\n' +
+      'AoGAVW6AFm3dQI1eoNuEsO4BYWHKop2simXCy0z9h0jUiIIBPzQXBubDxKu8fZyC\r\n' +
+      'yqF1/lEjQ+PTZaiGT0NhIYJ3+AFT1QBioOGCwRcC55ueERMlKv27bne0mmtfObjl\r\n' +
+      'XstIG4Xada+AxHoyIE2Zlr9M13jOsWE0as5VShmcMKxxaCECKzCRQiwKc72Veu38\r\n' +
+      'FMYzjs1G5Iek2wBKT30CfaV+KlC7xJQNP02V/aRc4x8CKx+2U4FpJchYp3SJGPTt\r\n' +
+      'JeCClT0MLHV9jRBZpeIKnAFpMDHpuEIC+aJ3jpsCKyKxoXOUg9mKTqZyzORJMFmz\r\n' +
+      'qsy7Fza93sqOXPM7jT7e4y5fyDjETMx9DkECKwyHd8Soa3IVfMuxIvgZ/h4O2bHN\r\n' +
+      '7n7ZBPPRx5VgRbTU/2KpCdCi5khHXkMCKwizPAMAnGF8ivIkzyE6d9oVl/vQp6Ew\r\n' +
+      'CJodFHiz6Ep+7HJT7A9EXwIy+dMwgYowgYcCKxjQCULoxj84MQ22rfyr+IaiKmkd\r\n' +
+      'KcEXHpd+GQ7rmHkbvQW7MpjwpAjCPq0CKwMqwpPcvDkjhfdXItwGY0Fj/3/NLiAs\r\n' +
+      'QEZb3Pzvi1Wh+b16iFnHFVjc2j0CKxM4Ptl0l5KVo0zC78cW9jZye7G9hzEZsidG\r\n' +
+      'yFGjmFzSidd7ZuKg33semN8=\r\n' +
+      '-----END RSA PRIVATE KEY-----\r\n';
+
+      function _setVersion(pem, version) {
+        var obj = PKI.privateKeyToAsn1(PKI.privateKeyFromPem(pem));
+        obj.value[0].value = String.fromCharCode(version);
+        return FORGE.pem.encode({
+          type: 'RSA PRIVATE KEY',
+          body: FORGE.asn1.toDer(obj).getBytes()
+        });
+      }
+
+      it('should not read a multi-prime key', function() {
+        ASSERT.throws(function() {
+          PKI.privateKeyFromPem(multiPrime);
+        }, /Only two-prime RSAPrivateKey version 0 is supported/);
+      });
+
+      it('should not read a multi-prime key in a PrivateKeyInfo', function() {
+        var obj = FORGE.asn1.fromDer(FORGE.pem.decode(multiPrime)[0].body);
+        var pem = PKI.privateKeyInfoToPem(PKI.wrapRsaPrivateKey(obj));
+        ASSERT.throws(function() {
+          PKI.privateKeyFromPem(pem);
+        }, /Only two-prime RSAPrivateKey version 0 is supported/);
+      });
+
+      it('should not read a version 1 key without otherPrimeInfos',
+        function() {
+          ASSERT.throws(function() {
+            PKI.privateKeyFromPem(_setVersion(_pem.privateKey, 1));
+          }, /Only two-prime RSAPrivateKey version 0 is supported/);
+        });
+
+      it('should not read a version 17 key', function() {
+        ASSERT.throws(function() {
+          PKI.privateKeyFromPem(_setVersion(_pem.privateKey, 17));
+        }, /Only two-prime RSAPrivateKey version 0 is supported/);
+      });
+
+      it('should read a version 0 key', function() {
+        var pem = _setVersion(_pem.privateKey, 0);
+        ASSERT.equal(pem, _pem.privateKey);
+        ASSERT.equal(
+          PKI.privateKeyToPem(PKI.privateKeyFromPem(pem)), _pem.privateKey);
+      });
+    });
+
     (function() {
       var algorithms = ['aes128', 'aes192', 'aes256', '3des', 'des'];
       algorithms.forEach(function(algorithm) {
