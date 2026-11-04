@@ -62,6 +62,10 @@ Forge ChangeLog
   [#1153](https://github.com/digitalbazaar/forge/pull/1153) by @cpruijsen
   (similar fix in [#1103](https://github.com/digitalbazaar/forge/pull/1103)
   by @LaelLuo).
+- [prng] Use the Node.js `crypto.randomBytes()` seed data as raw bytes. It
+  was decoded as UTF-8, which turned many bytes into U+FFFD and reduced the
+  entropy of each reseed of forge's PRNG (used by `forge.random` in Node.js)
+  from about 256 to about 156 bits.
 
 ## 1.4.3 - 2026-11-03
 
