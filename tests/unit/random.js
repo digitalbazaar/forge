@@ -14,6 +14,34 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(b.length, 10);
     });
 
+    // in Node.js the seed file is crypto.randomBytes(), which must be used as
+    // raw bytes; before 1.4.4 it was decoded as UTF-8
+    function _assertBinary(bytes, needed) {
+      ASSERT.equal(bytes.length, needed);
+      for(var i = 0; i < bytes.length; ++i) {
+        ASSERT.ok(bytes.charCodeAt(i) <= 0xff);
+      }
+    }
+
+    it('should get raw bytes from the Node.js seed file', function() {
+      if(!UTIL.isNodejs) {
+        this.skip();
+      }
+      _assertBinary(RANDOM.createInstance().seedFileSync(1024), 1024);
+    });
+
+    it('should get raw bytes from the async Node.js seed file',
+      function(done) {
+        if(!UTIL.isNodejs) {
+          this.skip();
+        }
+        RANDOM.createInstance().seedFile(1024, function(err, bytes) {
+          ASSERT.ifError(err);
+          _assertBinary(bytes, 1024);
+          done();
+        });
+      });
+
     it('should use a synchronous seed file', function() {
       var random = RANDOM.createInstance();
       random.seedFileSync = function(needed) {
