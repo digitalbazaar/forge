@@ -3,6 +3,29 @@ Forge ChangeLog
 
 ## 1.4.4 - 2026-xx-xx
 
+### Security
+- **LOW**: RSA multi-prime private keys are read as two-prime keys.
+  - `pki.privateKeyFromPem()` and `pki.privateKeyFromAsn1()` ignore the
+    RSAPrivateKey version and any otherPrimeInfos, so a multi-prime key
+    (RFC 8017 A.1.2) is read with only its first two primes. forge doesn't
+    support multi-prime keys: signatures made with such a key are invalid,
+    and each one reveals a factor of the modulus to anyone who sees it. Keys
+    that forge or most other tools generate are two-prime and not
+    affected. Replace multi-prime keys that were used to sign with forge.
+  - Found while reviewing
+    [#1143](https://github.com/digitalbazaar/forge/issues/1143).
+  - CVE ID: [CVE-TBD]()
+  - GHSA ID: [GHSA-w73w-hhm4-q25p](https://github.com/digitalbazaar/forge/security/advisories/GHSA-w73w-hhm4-q25p)
+
+### Fixed
+- [rsa] Reject RSAPrivateKeys with a version other than 0 or with
+  otherPrimeInfos. Reported by @Jennifer-first
+  ([#1143](https://github.com/digitalbazaar/forge/issues/1143)).
+  - **NOTE**: Multi-prime keys, and keys with an invalid version, now fail
+    to load with "Only two-prime RSAPrivateKey version 0 is supported."
+    instead of loading and then producing invalid signatures and failing
+    decryption.
+
 ## 1.4.3 - 2026-11-03
 
 ### Security
