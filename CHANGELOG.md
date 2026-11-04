@@ -49,6 +49,12 @@ Forge ChangeLog
   couldn't load several percent of the keys. Reported by @yammelvin
   ([#952](https://github.com/digitalbazaar/forge/issues/952)). From PR
   [#987](https://github.com/digitalbazaar/forge/pull/987) by @romeech91.
+- [jsbn] Detect Node.js with `util.isNodejs` instead of a missing `navigator`
+  global, which Node.js 21+ defines. jsbn used a browser code path with
+  26-bit digits instead of 28-bit digits on Node.js 21+. Results are the
+  same. Reported in [#1081](https://github.com/digitalbazaar/forge/issues/1081).
+  From PR [#1082](https://github.com/digitalbazaar/forge/pull/1082) by
+  @dhensby.
 
 ## 1.4.3 - 2026-11-03
 

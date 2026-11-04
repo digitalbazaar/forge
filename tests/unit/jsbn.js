@@ -1,7 +1,17 @@
 var ASSERT = require('assert');
 var JSBN = require('../../lib/jsbn');
+var UTIL = require('../../lib/util');
 
 describe('jsbn', function() {
+  it('should use the Node.js digit size in Node.js', function() {
+    // see #1081: Node.js 21+ has a navigator global, which jsbn took as a
+    // browser
+    if(!UTIL.isNodejs) {
+      this.skip();
+    }
+    ASSERT.equal(new JSBN.BigInteger('1').DB, 28);
+  });
+
   describe('GHSA-5m6q-g25r-mvwx', function() {
     // regression tests for GHSA-5m6q-g25r-mvwx
     // test BigInteger.modInverse does not infinite loop with 0 inputs.
