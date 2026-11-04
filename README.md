@@ -915,7 +915,7 @@ var verified = ED25519.verify({
 // `verified` is true/false (always false for small-order public keys, such
 // as the identity point, which have no private key)
 
-// sign a message passed as a buffer
+// verify a message passed as a buffer
 var verified = ED25519.verify({
   // also accepts a forge ByteBuffer or Uint8Array
   message: Buffer.from('test', 'utf8'),
