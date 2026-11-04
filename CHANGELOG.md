@@ -36,6 +36,12 @@ Forge ChangeLog
     decrypt with this version (and didn't interoperate with other RC2
     implementations). The default (128) and other multiples of 8, including
     the 40 and 128 bit sizes used by PKCS#12, are unchanged.
+- [util] Encode the low byte of characters over 0xff in `util.encode64()`,
+  as Node.js does for 'binary' strings, instead of returning invalid base64.
+  Input should still be a binary string (use `util.encodeUtf8()` for text).
+  Reported in [#932](https://github.com/digitalbazaar/forge/issues/932).
+  Based on PR [#933](https://github.com/digitalbazaar/forge/pull/933) by
+  @wklaczynski.
 
 ## 1.4.3 - 2026-11-03
 

@@ -228,6 +228,19 @@ var UTIL = require('../../lib/util');
       ASSERT.equal(UTIL.encode64(s1), s2);
     });
 
+    it('should base64 encode with padding', function() {
+      ASSERT.equal(UTIL.encode64('a'), 'YQ==');
+      ASSERT.equal(UTIL.encode64('ab'), 'YWI=');
+      ASSERT.equal(UTIL.encode64('\xff\xfe'), '//4=');
+    });
+
+    it('should base64 encode the low byte of characters over 0xff', function() {
+      // see #932; as Node.js does for 'binary' strings
+      ASSERT.equal(UTIL.encode64('a\u20ac'), 'Yaw=');
+      ASSERT.equal(UTIL.encode64('\u0100'), 'AA==');
+      ASSERT.equal(UTIL.encode64('\u20ac\u20ac\u20ac'), 'rKys');
+    });
+
     it('should base64 decode some bytes', function() {
       var s1 = '00010203050607080A0B0C0D0F1011121415161719';
       var s2 = 'MDAwMTAyMDMwNTA2MDcwODBBMEIwQzBEMEYxMDExMTIxNDE1MTYxNzE5';
