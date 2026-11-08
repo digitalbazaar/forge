@@ -172,6 +172,41 @@ var UTIL = require('../../lib/util');
       '0pRXsBgGNbe1FClekomqKBeeuTfBgyKd+HhabcCNc6Q7kZBfBU9T0JUFhPj5ut39\r\n' +
       'JYiOgKdXRs1MdQqnl0Q=\r\n' +
       '-----END PKCS7-----\r\n',
+    signedDataNoAttrsBadSig:
+      '-----BEGIN PKCS7-----\r\n' +
+      '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\r\n' +
+      'CkViDnIVfo8EvGUdqt8=\r\n' +
+      '-----END PKCS7-----\r\n',
     signedDataWithAttrs1949GeneralizedTime:
       '-----BEGIN PKCS7-----\r\n' +
       'MIIGRwYJKoZIhvcNAQcCoIIGODCCBjQCAQExDzANBglghkgBZQMEAgEFADAcBgkq\r\n' +
@@ -699,6 +734,54 @@ var UTIL = require('../../lib/util');
       p7.sign({detached: true});
       var pem = PKCS7.messageToPem(p7);
       ASSERT.equal(pem, _pem.detachedSignature);
+    });
+
+    it('should verify PKCS#7 signature w/o attributes', function() {
+      var p7 = PKCS7.messageFromPem(_pem.signedDataNoAttrs);
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
+      ASSERT.equal(verified, true);
+    });
+
+    it('should fail to verify bad PKCS#7 signature w/o attributes', function() {
+      var p7 = PKCS7.messageFromPem(_pem.signedDataNoAttrsBadSig);
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
+      ASSERT.equal(verified, false);
+    });
+
+    it('should verify PKCS#7 signature w/attributes', function() {
+      var p7 = PKCS7.messageFromPem(_pem.signedDataWithAttrs1950UTCTime);
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
+      ASSERT.equal(verified, true);
+    });
+
+    it('should verify PKCS#7 detached signature', function() {
+      var p7 = PKCS7.messageFromPem(_pem.detachedSignature);
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
+      ASSERT.equal(verified, true);
+    });
+
+    it('should fail to verify bad PKCS#7 detached signature', function() {
+      var p7 = PKCS7.messageFromPem(_pem.detachedSignature);
+      p7.content = UTIL.createBuffer('To be verified.', 'utf8');
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), { validityCheckDate: new Date('2012-12-25T00:00:00Z') });
+      ASSERT.equal(verified, false);
+    });
+
+    it('should callback with a status and certificate', function() {
+      var p7 = PKCS7.messageFromPem(_pem.detachedSignature);
+      p7.content = UTIL.createBuffer('To be signed.', 'utf8');
+      var callback = (err, res) => {
+        ASSERT.equal(err, null);
+        ASSERT.equal(res.verified, true);
+        ASSERT.equal(res.signer.serialNumber, '00d4541c40d835e2f3');
+      };
+      var options = {
+        onSignatureVerificationComplete: callback,
+        validityCheckDate: new Date('2012-12-25T00:00:00Z'),
+      };
+      var verified = p7.verify(PKI.createCaStore([_pem.certificate]), options);
+      ASSERT.equal(verified, true);
     });
 
     it('should create PKCS#7 SignedData with content-type, message-digest, ' +
