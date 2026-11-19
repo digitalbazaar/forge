@@ -2873,8 +2873,12 @@ var UTIL = require('../../lib/util');
       }]
     }, {
       name: 'subjectKeyIdentifier'
+    }, {
+      name: 'authorityKeyIdentifier',
+      keyIdentifier: true,
+      authorityCertIssuer: true,
+      serialNumber: true
     });
-    // FIXME: add authorityKeyIdentifier extension
     cert.setExtensions(extensions);
 
     cert.sign(signingKey);
