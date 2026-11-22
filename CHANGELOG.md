@@ -1,6 +1,8 @@
 Forge ChangeLog
 ===============
 
+## 1.4.4 - 2026-xx-xx
+
 ## 1.4.3 - 2026-11-03
 
 ### Security
@@ -14,7 +16,7 @@ Forge ChangeLog
     critical nameConstraints extension is rejected as an unsupported critical
     extension.
   - Reported by @bhaswanthc.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-125336](https://www.cve.org/CVERecord?id=CVE-2026-125336)
   - GHSA ID: [GHSA-3cc4-3294-vgjf](https://github.com/digitalbazaar/forge/security/advisories/GHSA-3cc4-3294-vgjf)
 - **MODERATE**: TLS client crash on a handshake record without a session.
   - A TLS client throws an uncaught `TypeError` from `process()` when it
@@ -24,7 +26,7 @@ Forge ChangeLog
     that passes socket data to `process()` without catching exceptions.
     Servers are not affected.
   - Reported by @manus-use.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-125334](https://www.cve.org/CVERecord?id=CVE-2026-125334)
   - GHSA ID: [GHSA-j8rw-jp99-435v](https://github.com/digitalbazaar/forge/security/advisories/GHSA-j8rw-jp99-435v)
 - **MODERATE**: ReDoS in `forge.http` response header parsing.
   - `forge.http` trims response header and `Set-Cookie` values with a
@@ -32,7 +34,7 @@ Forge ChangeLog
     followed by another character. A server, or an on-path attacker, can
     block a `forge.http` client for minutes with one large header.
   - Reported by @manus-pi.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-125333](https://www.cve.org/CVERecord?id=CVE-2026-125333)
   - GHSA ID: [GHSA-6cv4-p8m7-4r25](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6cv4-p8m7-4r25)
 - **MODERATE**: TLS client crash on an unsupported ServerHello compression
   method.
@@ -44,7 +46,7 @@ Forge ChangeLog
     without catching exceptions, including through `forge.tls.wrapSocket`.
     Servers are not affected.
   - Reported by @alienkeric.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-125332](https://www.cve.org/CVERecord?id=CVE-2026-125332)
   - GHSA ID: [GHSA-w4xr-hqv8-ch44](https://github.com/digitalbazaar/forge/security/advisories/GHSA-w4xr-hqv8-ch44)
 - **LOW**: Ed25519 signature verification accepts small-order public keys.
   - `ed25519.verify()` does not reject public keys of small order, such as
@@ -56,7 +58,7 @@ Forge ChangeLog
     keys from `ed25519.generateKeyPair()` or other honest key generation are
     not affected.
   - Reported by @analisaperlengkapan.
-  - CVE ID: [CVE-TBD]()
+  - CVE ID: [CVE-2026-125335](https://www.cve.org/CVERecord?id=CVE-2026-125335)
   - GHSA ID: [GHSA-6889-vf6x-f3g5](https://github.com/digitalbazaar/forge/security/advisories/GHSA-6889-vf6x-f3g5)
 
 ### Added
