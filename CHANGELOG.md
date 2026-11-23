@@ -1,7 +1,7 @@
 Forge ChangeLog
 ===============
 
-## 1.4.4 - 2026-xx-xx
+## 1.4.4 - 2026-11-22
 
 ### Security
 - **LOW**: RSA multi-prime private keys are read as two-prime keys.
